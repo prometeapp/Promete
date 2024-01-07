@@ -1,0 +1,21 @@
+using System;
+
+namespace Promete
+{
+	public static class VectorExtension
+	{
+		private static float Dpi => DF.Window.PixelRatio;
+		public static Vector ToDeviceCoord(this Vector v)
+			=> v * Dpi;
+
+		public static Vector ToVirtualCoord(this Vector v)
+			=> v / Dpi;
+
+		public static VectorInt ToDeviceCoord(this VectorInt v)
+			=> (VectorInt)((Vector)v * Dpi);
+
+		public static VectorInt ToVirtualCoord(this VectorInt v)
+			=> (VectorInt)((Vector)v / Dpi);
+	}
+
+}
