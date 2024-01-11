@@ -249,6 +249,8 @@ namespace Promete.Internal
 			Time.Now += deltaTime;
 			Time.DeltaTime = deltaTime;
 
+			DF.Console.Cls();
+
 			CalculateFps();
 			UpdateInput();
 
@@ -277,6 +279,26 @@ namespace Promete.Internal
 				key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
 				key.ElapsedTime = isPressed ? key.ElapsedTime + Time.DeltaTime : 0;
 			});
+
+			DF.Console.Print($"[Gamepads: {input.Gamepads.Count}]");
+			foreach (var pad in input.Gamepads)
+			{
+				DF.Console.Print($"  [Joysticks: {pad.Thumbsticks.Count}]");
+				foreach (var joystick in pad.Thumbsticks)
+				{
+					DF.Console.Print($"  * ({joystick.X:F}, {joystick.Y:F})");
+				}
+				DF.Console.Print($"  [Buttons: {pad.Buttons.Count}]");
+				foreach (var button in pad.Buttons)
+				{
+					DF.Console.Print($"  {button.Index}. {button.Name}: {button.Pressed}");
+				}
+				DF.Console.Print($"  [Triggers: {pad.Triggers.Count}]");
+				foreach (var trigger in pad.Triggers)
+				{
+					DF.Console.Print($"  {trigger.Index}. {trigger.Position}");
+				}
+			}
 
 			var mouse = input.Mice[0];
 			var wheel = mouse.ScrollWheels[0];
