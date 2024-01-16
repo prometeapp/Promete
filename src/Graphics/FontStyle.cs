@@ -1,6 +1,6 @@
 namespace Promete
 {
-	public enum DFFontStyle
+	public enum FontStyle
 	{
 		Normal, Bold, Italic, BoldItalic,
 	}

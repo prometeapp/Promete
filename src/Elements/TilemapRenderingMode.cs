@@ -1,9 +1,8 @@
-namespace Promete
+namespace Promete.Elements;
+
+public enum TilemapRenderingMode
 {
-	public enum TilemapRenderingMode
-	{
-		Auto,
-		RenderAll,
-		Scan
-	}
+	Auto,
+	RenderAll,
+	Scan
 }

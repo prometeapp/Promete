@@ -5,7 +5,7 @@ namespace Promete
 	/// <summary>
 	/// 便利な数学系メソッドを提供します。
 	/// </summary>
-	public static class DFMath
+	public static class MathHelper
 	{
 		/// <summary>
 		/// 線形補間移動を計算します。

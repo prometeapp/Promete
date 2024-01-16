@@ -1,7 +1,8 @@
 using System;
 using System.Drawing;
+using Silk.NET.Input;
 
-namespace Promete
+namespace Promete.Windowing
 {
 	/// <summary>
 	/// Provides Game API.
@@ -21,7 +22,7 @@ namespace Promete
 		/// <summary>
 		/// Get or set device-unit size of this game window.
 		/// </summary>
-		VectorInt ActualSize { get; [Obsolete("will be deleted in 4.0.0")] set; }
+		VectorInt ActualSize { get; }
 
 		/// <summary>
 		/// Get or set X-coord location of this game window.
@@ -46,12 +47,12 @@ namespace Promete
 		/// <summary>
 		/// Get or set device-unit width of this game window.
 		/// </summary>
-		int ActualWidth { get; [Obsolete("will be deleted in 4.0.0")] set; }
+		int ActualWidth { get; }
 
 		/// <summary>
 		/// Get or set device-unit height of this game window.
 		/// </summary>
-		int ActualHeight { get; [Obsolete("will be deleted in 4.0.0")] set; }
+		int ActualHeight { get; }
 
 		/// <summary>
 		/// Get or set whether this game window is visible.
@@ -68,13 +69,13 @@ namespace Promete
 		/// </summary>
 		bool IsFullScreen { get; set; }
 
-		/// <summary>
-		/// Get or set whether this game window is launched as a capture mode.
-		/// </summary>
-		bool IsCaptureMode { get; }
+		float TotalTime { get; }
 
-		[Obsolete("will be deleted in 4.0.0")]
-		bool FollowsDpi { get; set; }
+		float DeltaTime { get; }
+
+		long FramePerSeconds { get; }
+
+		long UpdatePerSeconds { get; }
 
 		/// <summary>
 		/// Get or set total frame count after this game window starts.
@@ -97,14 +98,14 @@ namespace Promete
 		string Title { get; set; }
 
 		/// <summary>
-		/// Get or set background color this game window is visible.
-		/// </summary>
-		Color BackgroundColor { get; set; }
-
-		/// <summary>
 		/// Get or set this game window mode.
 		/// </summary>
 		WindowMode Mode { get; set; }
+
+		/// <summary>
+		/// INTERNAL API (Not use this)
+		/// </summary>
+		IInputContext? _RawInputContext { get; }
 
 		/// <summary>
 		/// Take a screenshot and generate a texture from it.
@@ -138,6 +139,11 @@ namespace Promete
 		event Action? Render;
 
 		/// <summary>
+		/// Occured when this game closed.
+		/// </summary>
+		event Action? Destroy;
+
+		/// <summary>
 		/// Occured before this game updates the frame.
 		/// </summary>
 		event Action? PreUpdate;
@@ -150,7 +156,7 @@ namespace Promete
 		/// <summary>
 		/// Occured when the user drops files into the window.
 		/// </summary>
-		event Action<DFFileDroppedEventArgs>? FileDropped;
+		event Action<FileDroppedEventArgs>? FileDropped;
 
 		/// <summary>
 		/// Occured when this game window resized.

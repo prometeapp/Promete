@@ -1,4 +1,4 @@
-namespace Promete
+namespace Promete.Windowing
 {
 	/// <summary>
 	/// Enumerates modes of the Promete Window.

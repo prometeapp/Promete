@@ -128,7 +128,7 @@ namespace Promete
 					while (Gain > 0)
 					{
 						var current = (w.ElapsedMilliseconds / 1000f) / time;
-						Gain = DFMath.Lerp(current, firstGain, 0);
+						Gain = MathHelper.Lerp(current, firstGain, 0);
 						await Task.Delay(1);
 					}
 					cts?.Cancel();

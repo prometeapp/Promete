@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<Nullable>Enable</Nullable>
-		<LangVersion>10.0</LangVersion>
+		<LangVersion>12</LangVersion>
 		<NoWarn>CS1591</NoWarn>
 	</PropertyGroup>
 
@@ -16,6 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="NVorbis" Version="0.10.1" />
 		<PackageReference Include="Silk.NET" Version="2.15.0" />
 		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.21.1.1" />

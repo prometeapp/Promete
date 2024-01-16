@@ -9,9 +9,9 @@ using SixLabors.ImageSharp.Processing;
 
 namespace Promete
 {
-	public static class TextTextureGenerator
+	public static class GlyphRenderer
 	{
-		internal static Texture2D Generate(string text, DFFont font, System.Drawing.Color? color, System.Drawing.Color? borderColor, int borderThickness)
+		internal static Texture2D Generate(string text, Font font, System.Drawing.Color? color, System.Drawing.Color? borderColor, int borderThickness)
 		{
 			var f = ResolveFont(font);
 			var size = TextMeasurer.Measure(text, new RendererOptions(f));
@@ -32,7 +32,7 @@ namespace Promete
 			return Texture2D.LoadFrom(img);
 		}
 
-		internal static Font ResolveFont(DFFont f)
+		internal static SixLabors.Fonts.Font ResolveFont(Font f)
 		{
 			FontFamily family;
 			if (fontCache.ContainsKey(f.Id))
@@ -57,7 +57,7 @@ namespace Promete
 				throw new ArgumentException("Font class must have either a path or a stream.");
 			}
 			fontCache[f.Id] = family;
-			return new Font(family, f.Size, (FontStyle)f.FontStyle);
+			return new SixLabors.Fonts.Font(family, f.Size, (SixLabors.Fonts.FontStyle)f.FontStyle);
 		}
 
 		private static readonly Dictionary<object, FontFamily> fontCache = new();

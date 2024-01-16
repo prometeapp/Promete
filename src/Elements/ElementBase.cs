@@ -1,99 +1,104 @@
 using System.Collections.Generic;
 using System.Linq;
+using Promete.Elements.Components;
 
-namespace Promete
+namespace Promete.Elements;
+
+public abstract class ElementBase
 {
-	public abstract class ElementBase
+	public virtual string Name { get; set; } = "";
+	public virtual Vector Location { get; set; }
+	public virtual Vector Scale { get; set; } = (1, 1);
+	public virtual VectorInt Size { get; set; }
+
+	public int Width
 	{
-		public virtual string Name { get; set; } = "";
-		public virtual Vector Location { get; set; }
-		public virtual Vector Scale { get; set; } = (1, 1);
-		public virtual VectorInt Size { get; set; }
-		public int Width { get => Size.X; set => Size = (value, Height); }
-		public int Height { get => Size.Y; set => Size = (Width, value); }
+		get => Size.X;
+		set => Size = (value, Height);
+	}
 
-		public Vector AbsoluteLocation { get; private set; }
-		public Vector AbsoluteScale { get; private set; }
+	public int Height
+	{
+		get => Size.Y;
+		set => Size = (Width, value);
+	}
 
-		public Container? Parent { get; internal set; }
+	public Vector AbsoluteLocation { get; private set; }
+	public Vector AbsoluteScale { get; private set; }
 
-		public ElementBase()
-		{
-			ComputeTransform();
-		}
+	public Container? Parent { get; internal set; }
 
-		public T AddComponent<T>() where T : Component
-		{
-			var com = New<T>.Instance();
-			com.Element = this;
-			components.Add(com);
-			com.OnStart();
-			return com;
-		}
+	private readonly List<Component> components = [];
 
-		public T? GetComponent<T>() where T : Component
-		{
-			return EnumerateComponents<T>().FirstOrDefault();
-		}
+	public ElementBase()
+	{
+		ComputeTransform();
+	}
 
-		public T[] GetComponents<T>() where T : Component
-		{
-			return EnumerateComponents<T>().ToArray();
-		}
+	public T AddComponent<T>() where T : Component
+	{
+		var com = New<T>.Instance();
+		com.Element = this;
+		components.Add(com);
+		com.OnStart();
+		return com;
+	}
 
-		public IEnumerable<T> EnumerateComponents<T>() where T : Component
-		{
-			return components.OfType<T>();
-		}
+	public T? GetComponent<T>() where T : Component
+	{
+		return EnumerateComponents<T>().FirstOrDefault();
+	}
 
-		public void RemoveComponent(Component c)
-		{
-			c.OnDestroy();
-			c.Element = null!;
-			components.Remove(c);
-		}
+	public T[] GetComponents<T>() where T : Component
+	{
+		return EnumerateComponents<T>().ToArray();
+	}
 
-		public void Destroy()
-		{
-			OnDestroy();
-			for (var i = 0; i < components.Count; i++)
-				components[i].OnDestroy();
-		}
+	public IEnumerable<T> EnumerateComponents<T>() where T : Component
+	{
+		return components.OfType<T>();
+	}
 
-		internal void ComputeTransform()
-		{
-			// Compute global location and scale
-			AbsoluteLocation = Location;
-			AbsoluteScale = Scale;
+	public void RemoveComponent(Component c)
+	{
+		c.OnDestroy();
+		c.Element = null!;
+		components.Remove(c);
+	}
 
-			var p = Parent;
-			if (p == null) return;
-			AbsoluteScale *= p.AbsoluteScale;
-			AbsoluteLocation *= p.AbsoluteScale;
-			AbsoluteLocation += p.AbsoluteLocation;
-		}
+	public void Destroy()
+	{
+		OnDestroy();
+		for (var i = 0; i < components.Count; i++)
+			components[i].OnDestroy();
+	}
 
-		internal virtual void Update()
-		{
-			ComputeTransform();
-			OnUpdate();
-			for (var i = 0; i < components.Count; i++)
-				components[i].OnUpdate();
-		}
+	internal void ComputeTransform()
+	{
+		// Compute global location and scale
+		AbsoluteLocation = Location;
+		AbsoluteScale = Scale;
 
-		internal virtual void Render()
-		{
-			OnRender();
-			for (var i = 0; i < components.Count; i++)
-				components[i].OnRender();
-		}
+		var p = Parent;
+		if (p == null) return;
+		AbsoluteScale *= p.AbsoluteScale;
+		AbsoluteLocation *= p.AbsoluteScale;
+		AbsoluteLocation += p.AbsoluteLocation;
+	}
 
-		protected virtual void OnUpdate() { }
+	internal virtual void Update()
+	{
+		ComputeTransform();
+		OnUpdate();
+		for (var i = 0; i < components.Count; i++)
+			components[i].OnUpdate();
+	}
 
-		protected virtual void OnRender() { }
+	protected virtual void OnUpdate()
+	{
+	}
 
-		protected virtual void OnDestroy() { }
-
-		private readonly List<Component> components = new();
+	protected virtual void OnDestroy()
+	{
 	}
 }

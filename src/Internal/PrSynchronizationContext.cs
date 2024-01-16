@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace Promete
+namespace Promete.Internal
 {
 	public class PrSynchronizationContext : SynchronizationContext
 	{

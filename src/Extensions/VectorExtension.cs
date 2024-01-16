@@ -4,7 +4,7 @@ namespace Promete
 {
 	public static class VectorExtension
 	{
-		private static float Dpi => DF.Window.PixelRatio;
+		private static float Dpi => /* TODO */ 1;
 		public static Vector ToDeviceCoord(this Vector v)
 			=> v * Dpi;
 

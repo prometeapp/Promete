@@ -26,8 +26,8 @@ namespace Promete.Internal
 		{
 			FontSize = 16;
 			DF.Window.Start += () => {
-				text = new TextElement("", DFFont.GetDefault(), Color.White);
-				heightCalculator = new TextElement("", DFFont.GetDefault(), Color.White);
+				text = new TextElement("", Font.GetDefault(), Color.White);
+				heightCalculator = new TextElement("", Font.GetDefault(), Color.White);
 				maxLine = CalculateMaxLine();
 			};
 			DF.Window.Render += () =>
@@ -72,7 +72,7 @@ namespace Promete.Internal
 			var w = DF.Window;
 			if (f.Size != FontSize || prevFont != FontPath)
 			{
-				heightCalculator.Font = text.Font = FontPath == null ? DFFont.GetDefault(FontSize) : new DFFont(FontPath, FontSize);
+				heightCalculator.Font = text.Font = FontPath == null ? Font.GetDefault(FontSize) : new Font(FontPath, FontSize);
 				maxLine = CalculateMaxLine();
 			}
 

@@ -6,7 +6,7 @@ namespace Promete
 	/// <summary>
 	/// Arguments for file-dropped-event.
 	/// </summary>
-	public struct DFFileDroppedEventArgs
+	public struct FileDroppedEventArgs
 	{
 		/// <summary>
 		/// Get pathes of dropped files.
@@ -18,6 +18,6 @@ namespace Promete
 		/// </summary>
 		public string Path => Pathes.First();
 
-		public DFFileDroppedEventArgs(string[] pathes) => Pathes = pathes;
+		public FileDroppedEventArgs(string[] pathes) => Pathes = pathes;
 	}
 }
