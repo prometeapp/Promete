@@ -11,7 +11,7 @@
 		<description>A lightweight, extensible and easy game engine.</description>
 		<copyright>(C)2024 Ebise Lutica</copyright>
 		<tags>GameEngine</tags>
-			<license type="expression">MIT</license>
+		<license type="expression">MIT</license>
 		<releaseNotes>
 			See https://github.com/EbiseLutica/Promete/releases/tag/3.2.0
 		</releaseNotes>

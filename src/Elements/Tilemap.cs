@@ -34,6 +34,10 @@ public class Tilemap : ElementBase
 		}
 	}
 
+	public int TilesCount => tiles.Count;
+
+	private readonly Dictionary<VectorInt, (ITile tile, Color? color)> tiles;
+
 	public Tilemap(VectorInt tileSize)
 	{
 		TileSize = tileSize;
@@ -227,6 +231,4 @@ public class Tilemap : ElementBase
 		foreach (var t in tiles)
 			yield return (t.Key, t.Value.tile, t.Value.color);
 	}
-
-	private readonly Dictionary<VectorInt, (ITile tile, Color? color)> tiles;
 }

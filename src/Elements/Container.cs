@@ -80,45 +80,5 @@ public class Container : ElementBase, IEnumerable<ElementBase>
 		}
 	}
 
-	internal override void Render()
-	{
-		if (IsTrimmable)
-			TrimStart();
-		base.Render();
-		for (var i = 0; i < children.Count; i++)
-		{
-			children[i].Render();
-		}
-
-		if (IsTrimmable)
-			TrimEnd();
-	}
-
-	private void TrimStart()
-	{
-		DF.GL.Enable(GLEnum.ScissorTest);
-		var left = (VectorInt)AbsoluteLocation.ToDeviceCoord();
-		var size = (VectorInt)(Size * AbsoluteScale).ToDeviceCoord();
-
-		if (left.X < 0) left.X = 0;
-		if (left.Y < 0) left.Y = 0;
-
-		if (left.X + size.X > DF.Window.ActualWidth)
-			size.X = left.X + size.X - DF.Window.ActualWidth;
-
-		if (left.Y + size.Y > DF.Window.ActualHeight)
-			size.Y = left.Y + size.Y - DF.Window.ActualHeight;
-
-		left.Y = DF.Window.ActualHeight - left.Y - size.Y;
-
-		DF.GL.Scissor(left.X, left.Y, (uint)size.X, (uint)size.Y);
-	}
-
-	private void TrimEnd()
-	{
-		DF.GL.Scissor(0, 0, (uint)DF.Window.ActualWidth, (uint)DF.Window.ActualHeight);
-		DF.GL.Disable(GLEnum.ScissorTest);
-	}
-
 	private readonly List<ElementBase> children = new();
 }

@@ -7,14 +7,20 @@ namespace Promete.Elements;
 /// </summary>
 public class Shape : ElementBase
 {
+	public Color Color { get; }
+	public int LineWidth { get; }
+	public Color? LineColor { get; }
+	public VectorInt[] Vertices { get; }
+	public ShapeType Type { get; }
+
 	private Shape(Color c, ShapeType type, int lineWidth, Color? lineColor, params VectorInt[] vertices)
 	{
-		color = c;
-		this.lineWidth = lineWidth;
-		this.lineColor = lineColor;
+		Color = c;
+		LineWidth = lineWidth;
+		LineColor = lineColor;
 
-		this.vertices = vertices;
-		this.type = type;
+		Vertices = vertices;
+		Type = type;
 	}
 
 	public static Shape CreatePixel(VectorInt p, Color color)
@@ -49,23 +55,4 @@ public class Shape : ElementBase
 	public static Shape CreateTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Color color, int lineWidth = 0,
 		Color? lineColor = null)
 		=> CreateTriangle((x1, y1), (x2, y2), (x3, y3), color, lineWidth, lineColor);
-
-	protected override void OnRender()
-	{
-		RenderTo(AbsoluteLocation, AbsoluteScale);
-	}
-
-	internal void RenderTo(Vector absoluteLocation, Vector absoluteScale)
-	{
-		if (vertices.Length == 0)
-			return;
-
-		DF.PrimitiveDrawer.Draw(absoluteLocation, absoluteScale, vertices, type, color, lineWidth, lineColor);
-	}
-
-	private readonly Color color;
-	private readonly int lineWidth;
-	private readonly Color? lineColor;
-	private readonly VectorInt[] vertices;
-	private readonly ShapeType type;
 }

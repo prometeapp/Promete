@@ -2,7 +2,7 @@ using System;
 using System.Linq.Expressions;
 using System.Runtime.Serialization;
 
-namespace Promete
+namespace Promete.Internal
 {
 	/// <summary>
 	/// リフレクションを用いつつも高速に、動的にインスタンスを生成します。

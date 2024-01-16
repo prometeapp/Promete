@@ -1,6 +1,6 @@
 ﻿namespace Promete.Elements.Renderer;
 
-public class ElementRendererBase
+public abstract class ElementRendererBase
 {
-	
+	public abstract void Render(ElementBase element);
 }

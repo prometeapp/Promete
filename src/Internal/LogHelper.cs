@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Promete.Internal
 {
-	static class LogHelper
+	internal static class LogHelper
 	{
 		public static void NotImpl(string context)
 		{

@@ -12,7 +12,7 @@ namespace Promete.Windowing.GLDesktop
 	/// <summary>
 	/// A implementation of <see cref="IWindow"/> for the desktop environment.
 	/// </summary>
-	public sealed class PrOpenGLDesktopWindow : IWindow
+	public sealed class OpenGLDesktopWindow : IWindow
 	{
 		public VectorInt Location
 		{
@@ -114,6 +114,8 @@ namespace Promete.Windowing.GLDesktop
 		}
 		public IInputContext? _RawInputContext { get; private set; }
 
+		public GL GL => gl ?? throw new InvalidOperationException("window is not loaded");
+
 		private int frameCount;
 		private int updateCount;
 		private int prevSecond;
@@ -123,7 +125,7 @@ namespace Promete.Windowing.GLDesktop
 		private readonly PrometeApp app;
 		private readonly Silk.NET.Windowing.IWindow window;
 
-		public PrOpenGLDesktopWindow(PrometeApp app)
+		public OpenGLDesktopWindow(PrometeApp app)
 		{
 			this.app = app;
 
@@ -196,7 +198,8 @@ namespace Promete.Windowing.GLDesktop
 			gl.ClearColor(app.BackgroundColor);
 			gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-			app.Root.Render();
+			app.Render(app.Root);
+
 			Render?.Invoke();
 		}
 
@@ -210,8 +213,8 @@ namespace Promete.Windowing.GLDesktop
 			CalculateFps();
 
 			PreUpdate?.Invoke();
-			Update?.Invoke();
 			app.Root.Update();
+			Update?.Invoke();
 			CoroutineRunner.Update();
 			PostUpdate?.Invoke();
 

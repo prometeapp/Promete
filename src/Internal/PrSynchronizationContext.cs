@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace Promete.Internal
 {
-	public class PrSynchronizationContext : SynchronizationContext
+	internal class PrSynchronizationContext : SynchronizationContext
 	{
 		readonly ConcurrentQueue<(SendOrPostCallback callback, object? state)> continuations = new();
 

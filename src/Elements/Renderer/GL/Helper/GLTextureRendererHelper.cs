@@ -1,16 +1,20 @@
 ﻿#pragma warning disable RECS0018 // 等値演算子による浮動小数点値の比較
+using System;
 using System.Drawing;
 using System.Numerics;
+using Promete.Internal;
+using Promete.Windowing;
+using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Internal
+namespace Promete.Elements.Renderer.GL.Helper
 {
 	/// <summary>
 	/// <see cref="Texture2D"/> オブジェクトをバッファ上に描画する機能を提供します。
 	/// </summary>
-	internal class DesktopTextureDrawer : ITextureDrawer
+	public class GLTextureRendererHelper
 	{
-        private static readonly string VertexShaderSource = @"
+		private const string VertexShaderSource = @"
 			#version 330 core
 			layout (location = 0) in vec2 vPos;
 			layout (location = 1) in vec2 vUv;
@@ -24,7 +28,7 @@ namespace Promete.Internal
 			}
         ";
 
-        private static readonly string FragmentShaderSource = @"
+		private const string FragmentShaderSource = @"
 			#version 330 core
 			in vec2 fUv;
 
@@ -39,9 +43,17 @@ namespace Promete.Internal
 			}
         ";
 
-		public DesktopTextureDrawer()
+		private uint shader;
+
+		private readonly OpenGLDesktopWindow window;
+
+		public GLTextureRendererHelper(IWindow window)
 		{
-			DF.Window.Start += () => {
+			this.window = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+
+			window.Start += () => {
+				var gl = this.window.GL;
+
 				// --- 頂点シェーダー ---
 				var vsh = gl.CreateShader(GLEnum.VertexShader);
 				gl.ShaderSource(vsh, VertexShaderSource);
@@ -88,12 +100,14 @@ namespace Promete.Internal
 			var right = left + w;
 			var bottom = top + h;
 
+			var gl = window.GL;
+
 			// カリング
-			if (left > DF.Window.ActualWidth || top > DF.Window.ActualHeight || right < 0 || bottom < 0)
+			if (left > window.ActualWidth || top > window.ActualHeight || right < 0 || bottom < 0)
 				return;
 
-			var hw = DF.Window.ActualWidth / 2;
-			var hh = DF.Window.ActualHeight / 2;
+			var hw = window.ActualWidth / 2;
+			var hh = window.ActualHeight / 2;
 
 			var (x0, y0) = (right, top).ToViewportPoint(hw, hh);
 			var (x1, y1) = (right, bottom).ToViewportPoint(hw, hh);
@@ -157,6 +171,7 @@ namespace Promete.Internal
 
 		public unsafe int GenerateTexture(byte[] bmp, int width, int height)
 		{
+			var gl = window.GL;
 			fixed (byte* b = bmp)
 			{
 				var texture = gl.GenTexture();
@@ -169,9 +184,5 @@ namespace Promete.Internal
 				return (int)texture;
 			}
 		}
-
-		private static GL gl => DF.GL;
-
-		private uint shader;
 	}
 }

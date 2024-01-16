@@ -39,12 +39,6 @@ public class Sprite : ElementBase
 		size = null;
 	}
 
-	protected override void OnRender()
-	{
-		if (Texture is not Texture2D tex) return;
-		DF.TextureDrawer.Draw(tex, AbsoluteLocation, AbsoluteScale, TintColor, Width, Height);
-	}
-
 	protected override void OnDestroy()
 	{
 		if (generatedTexture != null)

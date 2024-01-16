@@ -17,9 +17,9 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="NVorbis" Version="0.10.1" />
-		<PackageReference Include="Silk.NET" Version="2.15.0" />
-		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.21.1.1" />
+		<PackageReference Include="NVorbis" Version="0.10.5" />
+		<PackageReference Include="Silk.NET" Version="2.20.0" />
+		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.21.1.2" />
 		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta11" />
 	</ItemGroup>
 </Project>

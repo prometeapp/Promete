@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Promete.Elements;
+using Promete.Elements.Renderer;
 using Promete.Internal;
 using Promete.Windowing;
 
@@ -22,8 +23,9 @@ public sealed class PrometeApp : IDisposable
 	private readonly ServiceCollection services;
 	private readonly ServiceProvider provider;
 	private readonly Queue<Action> nextFrameQueue = new();
+	private readonly Dictionary<Type, ElementRendererBase> renderers = new();
 
-	private PrometeApp(ServiceCollection services)
+	private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
 	{
 		SynchronizationContext.SetSynchronizationContext(new PrSynchronizationContext());
 
@@ -31,6 +33,11 @@ public sealed class PrometeApp : IDisposable
 		RegisterAllScenes();
 		services.AddSingleton(this);
 		provider = services.BuildServiceProvider();
+
+		foreach (var (elementType, rendererType) in rendererTypes)
+		{
+			renderers[elementType] = provider.GetService(rendererType) as ElementRendererBase ?? throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
+		}
 	}
 
 	public static PrometeAppBuilder Create()
@@ -74,6 +81,12 @@ public sealed class PrometeApp : IDisposable
 		currentScene.OnStart();
 	}
 
+	public void Render(ElementBase element)
+	{
+		var renderer = renderers[element.GetType()];
+		renderer.Render(element);
+	}
+
 	private void OnUpdate()
 	{
 		currentScene?.OnUpdate();
@@ -104,6 +117,7 @@ public sealed class PrometeApp : IDisposable
 	public sealed class PrometeAppBuilder
 	{
 		private readonly ServiceCollection services;
+		private readonly Dictionary<Type, Type> rendererTypes = new();
 
 		internal PrometeAppBuilder()
 		{
@@ -116,10 +130,18 @@ public sealed class PrometeApp : IDisposable
 			return this;
 		}
 
+		public PrometeAppBuilder UseRenderer<TElementType, TRendererType>()
+			where TRendererType : ElementRendererBase
+			where TElementType : ElementBase
+		{
+			rendererTypes[typeof(TElementType)] = typeof(TRendererType);
+			return Use<TRendererType>();
+		}
+
 		public PrometeApp Build<TWindow>() where TWindow : IWindow
 		{
 			services.AddSingleton(typeof(IWindow), typeof(TWindow));
-			return new PrometeApp(services);
+			return new PrometeApp(services, rendererTypes);
 		}
 	}
 }
