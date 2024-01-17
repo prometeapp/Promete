@@ -16,7 +16,26 @@ public partial class Keyboard
 	public Keyboard(IWindow window)
 	{
 		this.window = window;
-		window.Start += OnStart;
+		var input = window._RawInputContext;
+		if (input == null) throw new InvalidOperationException("BUG: RawInputContext is null.");
+
+		var kb = input.Keyboards[0];
+		kb.KeyChar += (_, e) =>
+		{
+			keychars.Enqueue(e);
+			KeyPress?.Invoke(new KeyPressEventArgs(e));
+		};
+		kb.KeyDown += (_, e, _) =>
+		{
+			KeyOf(e.ToPromete()).IsKeyDown = true;
+			KeyDown?.Invoke(new KeyEventArgs(e.ToPromete()));
+		};
+		kb.KeyUp += (_, e, _) =>
+		{
+			KeyUp?.Invoke(new KeyEventArgs(e.ToPromete()));
+			KeyOf(e.ToPromete()).IsKeyUp = true;
+		};
+
 		window.PreUpdate += OnPreUpdate;
 		window.PostUpdate += OnPostUpdate;
 		window.Destroy += OnDestroy;
@@ -69,30 +88,6 @@ public partial class Keyboard
 	/// <returns></returns>
 	public bool HasChar() => keychars.Count > 0;
 
-	private void OnStart()
-	{
-		var input = window._RawInputContext;
-		if (input == null) throw new InvalidOperationException("BUG: RawInputContext is null.");
-
-		var kb = input.Keyboards[0];
-		kb.KeyChar += (_, e) =>
-		{
-			keychars.Enqueue(e);
-			KeyPress?.Invoke(new KeyPressEventArgs(e));
-		};
-		kb.KeyDown += (_, e, _) =>
-		{
-			KeyOf(e.ToPromete()).IsKeyDown = true;
-			KeyDown?.Invoke(new KeyEventArgs(e.ToPromete()));
-		};
-		kb.KeyUp += (_, e, _) =>
-		{
-			KeyUp?.Invoke(new KeyEventArgs(e.ToPromete()));
-			KeyOf(e.ToPromete()).IsKeyUp = true;
-		};
-
-	}
-
 	private void OnPreUpdate()
 	{
 		var input = window._RawInputContext;
@@ -124,7 +119,6 @@ public partial class Keyboard
 
 	private void OnDestroy()
 	{
-		window.Start -= OnStart;
 		window.PreUpdate -= OnPreUpdate;
 		window.PostUpdate -= OnPostUpdate;
 		window.Destroy -= OnDestroy;

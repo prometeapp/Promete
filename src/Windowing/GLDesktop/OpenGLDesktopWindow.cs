@@ -177,7 +177,8 @@ namespace Promete.Windowing.GLDesktop
 
 		private void OnLoad()
 		{
-			gl = GL.GetApi(window);
+			gl = window.CreateOpenGL();
+			_RawInputContext = window.CreateInput();
 			textureFactory = new OpenGLTextureFactory(gl);
 			screenshotBuffer = new byte[ActualWidth * ActualHeight * 4];
 

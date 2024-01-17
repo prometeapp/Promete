@@ -54,30 +54,28 @@ namespace Promete.Elements.Renderer.GL.Helper
 		{
 			this.window = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
-			window.Start += () => {
-				var gl = this.window.GL;
+			var gl = this.window.GL;
 
-				// --- 頂点シェーダー ---
-				var vsh = gl.CreateShader(GLEnum.VertexShader);
-				gl.ShaderSource(vsh, VertexShaderSource);
-				gl.CompileShader(vsh);
+			// --- 頂点シェーダー ---
+			var vsh = gl.CreateShader(GLEnum.VertexShader);
+			gl.ShaderSource(vsh, VertexShaderSource);
+			gl.CompileShader(vsh);
 
-				// --- フラグメントシェーダー ---
-				var fsh = gl.CreateShader(GLEnum.FragmentShader);
-				gl.ShaderSource(fsh, FragmentShaderSource);
-				gl.CompileShader(fsh);
+			// --- フラグメントシェーダー ---
+			var fsh = gl.CreateShader(GLEnum.FragmentShader);
+			gl.ShaderSource(fsh, FragmentShaderSource);
+			gl.CompileShader(fsh);
 
-				// --- シェーダーを紐付ける ---
-				shader = gl.CreateProgram();
-				gl.AttachShader(shader, vsh);
-				gl.AttachShader(shader, fsh);
-				gl.LinkProgram(shader);
-				gl.DetachShader(shader, vsh);
-				gl.DetachShader(shader, fsh);
+			// --- シェーダーを紐付ける ---
+			shader = gl.CreateProgram();
+			gl.AttachShader(shader, vsh);
+			gl.AttachShader(shader, fsh);
+			gl.LinkProgram(shader);
+			gl.DetachShader(shader, vsh);
+			gl.DetachShader(shader, fsh);
 
-				gl.DeleteShader(vsh);
-				gl.DeleteShader(fsh);
-			};
+			gl.DeleteShader(vsh);
+			gl.DeleteShader(fsh);
 		}
 
 		/// <summary>

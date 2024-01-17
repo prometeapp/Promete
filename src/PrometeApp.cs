@@ -7,6 +7,7 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Promete.Elements;
 using Promete.Elements.Renderer;
+using Promete.Graphics;
 using Promete.Internal;
 using Promete.Windowing;
 
@@ -23,6 +24,7 @@ public sealed class PrometeApp : IDisposable
 	private readonly ServiceCollection services;
 	private readonly ServiceProvider provider;
 	private readonly Queue<Action> nextFrameQueue = new();
+	private readonly Dictionary<Type, Type> rendererTypes;
 	private readonly Dictionary<Type, ElementRendererBase> renderers = new();
 
 	private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
@@ -30,14 +32,11 @@ public sealed class PrometeApp : IDisposable
 		SynchronizationContext.SetSynchronizationContext(new PrSynchronizationContext());
 
 		this.services = services;
+		this.rendererTypes = rendererTypes;
 		RegisterAllScenes();
+		services.AddSingleton<GlyphRenderer>();
 		services.AddSingleton(this);
 		provider = services.BuildServiceProvider();
-
-		foreach (var (elementType, rendererType) in rendererTypes)
-		{
-			renderers[elementType] = provider.GetService(rendererType) as ElementRendererBase ?? throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
-		}
 	}
 
 	public static PrometeAppBuilder Create()
@@ -49,7 +48,7 @@ public sealed class PrometeApp : IDisposable
 	{
 		var window = provider.GetService<IWindow>() ?? throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
 
-		window.Start += LoadScene<TScene>;
+		window.Start += OnStart<TScene>;
 		window.Update += OnUpdate;
 		window.Run();
 		return statusCode;
@@ -85,6 +84,16 @@ public sealed class PrometeApp : IDisposable
 	{
 		var renderer = renderers[element.GetType()];
 		renderer.Render(element);
+	}
+
+	private void OnStart<TScene>() where TScene : Scene
+	{
+		foreach (var (elementType, rendererType) in rendererTypes)
+		{
+			renderers[elementType] = provider.GetService(rendererType) as ElementRendererBase ?? throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
+		}
+
+		LoadScene<TScene>();
 	}
 
 	private void OnUpdate()

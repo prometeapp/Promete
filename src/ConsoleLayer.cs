@@ -11,7 +11,7 @@ namespace Promete;
 /// <summary>
 /// A simple text-based console component.
 /// </summary>
-public class Console
+public class ConsoleLayer
 {
 	public VectorInt Cursor { get; set; }
 
@@ -33,16 +33,13 @@ public class Console
 	private readonly IWindow window;
 	private readonly List<string> consoleBuffer = [];
 
-	public Console(PrometeApp app, IWindow window, GlyphRenderer glyphRenderer)
+	public ConsoleLayer(PrometeApp app, IWindow window, GlyphRenderer glyphRenderer)
 	{
 		this.window = window;
 		FontSize = 16;
-		window.Start += () =>
-		{
-			text = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
-			heightCalculator = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
-			maxLine = CalculateMaxLine();
-		};
+		text = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
+		heightCalculator = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
+		maxLine = CalculateMaxLine();
 		window.Render += () =>
 		{
 			if (text == null) return;

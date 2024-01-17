@@ -35,7 +35,17 @@ public class Mouse
 	public Mouse(IWindow window)
 	{
 		this.window = window;
-		window.Start += OnStart;
+
+		var input = window._RawInputContext ?? throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
+
+		mouse = input.Mice[0];
+		mouse.DoubleClickTime = 0;
+
+		mouse.Click += OnMouseClick;
+		mouse.MouseDown += OnMouseDown;
+		mouse.MouseUp += OnMouseUp;
+		mouse.MouseMove += OnMouseMove;
+
 		window.PreUpdate += OnPreUpdate;
 		window.PostUpdate += OnPostUpdate;
 		window.Destroy += OnDestroy;
@@ -45,20 +55,6 @@ public class Mouse
 		{
 			buttons[i] = new MouseButton();
 		}
-	}
-
-	private void OnStart()
-	{
-		var input = window._RawInputContext;
-		if (input == null) return;
-
-		mouse = input.Mice[0];
-		mouse.DoubleClickTime = 0;
-
-		mouse.Click += OnMouseClick;
-		mouse.MouseDown += OnMouseDown;
-		mouse.MouseUp += OnMouseUp;
-		mouse.MouseMove += OnMouseMove;
 	}
 
 	private void OnPreUpdate()
@@ -88,7 +84,6 @@ public class Mouse
 
 	private void OnDestroy()
 	{
-		window.Start -= OnStart;
 		window.PreUpdate -= OnPreUpdate;
 		window.PostUpdate -= OnPostUpdate;
 		window.Destroy -= OnDestroy;
