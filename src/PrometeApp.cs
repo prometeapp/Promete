@@ -15,7 +15,8 @@ namespace Promete;
 
 public sealed class PrometeApp : IDisposable
 {
-	public Container Root { get; } = new();
+	public Container? Root => currentScene?.Root;
+
 	public Color BackgroundColor { get; set; } = Color.Black;
 
 	private Scene? currentScene;

@@ -3,9 +3,9 @@ using Promete.Graphics;
 
 namespace Promete.Elements;
 
-public class Sprite : ElementBase
+public class Sprite(ITexture texture) : ElementBase
 {
-	public ITexture? Texture { get; set; }
+	public ITexture? Texture { get; set; } = texture;
 
 	public Color? TintColor { get; set; }
 
@@ -13,11 +13,6 @@ public class Sprite : ElementBase
 	{
 		get => size ?? Texture?.Size ?? (0, 0);
 		set => size = value;
-	}
-
-	public Sprite(ITexture texture)
-	{
-		Texture = texture;
 	}
 
 	public void ResetSize()
