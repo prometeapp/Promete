@@ -220,7 +220,6 @@ namespace Promete.Windowing.GLDesktop
 			PreUpdate?.Invoke();
 			app.Root.Update();
 			Update?.Invoke();
-			CoroutineRunner.Update();
 			PostUpdate?.Invoke();
 
 			TotalFrame++;
