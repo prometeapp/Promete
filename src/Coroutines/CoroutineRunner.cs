@@ -4,88 +4,87 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Promete
+namespace Promete.Coroutines;
+
+/// <summary>
+/// A static coroutine manager class.
+/// </summary>
+public static class CoroutineRunner
 {
 	/// <summary>
-	/// A static coroutine manager class.
+	/// Start the specified coroutine.
 	/// </summary>
-	public static class CoroutineRunner
+	public static Coroutine Start(IEnumerator coroutine)
 	{
-		/// <summary>
-		/// Start the specified coroutine.
-		/// </summary>
-		public static Coroutine Start(IEnumerator coroutine)
-		{
-			var c = new Coroutine(coroutine);
+		var c = new Coroutine(coroutine);
 
-			coroutines[c] = null;
-			c.Start();
-			return c;
-		}
+		coroutines[c] = null;
+		c.Start();
+		return c;
+	}
 
-		/// <summary>
-		/// Stop the specified coroutine.
-		/// </summary>
-		public static void Stop(Coroutine coroutine)
-		{
-			coroutines.Remove(coroutine);
-			coroutine.Stop();
-		}
+	/// <summary>
+	/// Stop the specified coroutine.
+	/// </summary>
+	public static void Stop(Coroutine coroutine)
+	{
+		coroutines.Remove(coroutine);
+		coroutine.Stop();
+	}
 
-		/// <summary>
-		/// Stop all running coroutines.
-		/// </summary>
-		public static void Clear()
-		{
-			// Stop
-			coroutines.Keys.ToList().ForEach(c => c.Stop());
-			coroutines.Clear();
-		}
+	/// <summary>
+	/// Stop all running coroutines.
+	/// </summary>
+	public static void Clear()
+	{
+		// Stop
+		coroutines.Keys.ToList().ForEach(c => c.Stop());
+		coroutines.Clear();
+	}
 
-		internal static void Update()
+	internal static void Update()
+	{
+		foreach (var (coroutine, obj) in coroutines.Select(c => (c.Key, c.Value)).ToArray())
 		{
-			foreach (var (coroutine, obj) in coroutines.Select(c => (c.Key, c.Value)).ToArray())
+			var currentInst = ToYieldInstruction(obj);
+
+			if (!currentInst.KeepWaiting)
 			{
-				var currentInst = ToYieldInstruction(obj);
-
-				if (!currentInst.KeepWaiting)
+				try
 				{
-					try
+					if (coroutine.MoveNext())
 					{
-						if (coroutine.MoveNext())
-						{
-							var cur = coroutine.Current;
-							// IEnumerator が来たら再度コルーチン開始する
-							cur = cur is IEnumerator ie ? Start(ie) : cur;
-							coroutines[coroutine] = cur;
-						}
-						else
-						{
-							Stop(coroutine);
-							coroutine.ThenAction?.Invoke(obj);
-						}
+						var cur = coroutine.Current;
+						// IEnumerator が来たら再度コルーチン開始する
+						cur = cur is IEnumerator ie ? Start(ie) : cur;
+						coroutines[coroutine] = cur;
 					}
-					catch (Exception ex)
+					else
 					{
-						coroutine.Stop();
-						coroutine.ErrorAction?.Invoke(ex);
+						Stop(coroutine);
+						coroutine.ThenAction?.Invoke(obj);
 					}
+				}
+				catch (Exception ex)
+				{
+					coroutine.Stop();
+					coroutine.ErrorAction?.Invoke(ex);
 				}
 			}
 		}
-
-		private static YieldInstruction ToYieldInstruction(object? obj)
-		{
-			return obj switch
-			{
-				YieldInstruction y => y,
-				IEnumerator ie => Start(ie),
-				Task t => t.ToYieldInstruction(),
-				ValueTask t => t.ToYieldInstruction(),
-				_ => new WaitUntilNextFrame(),
-			};
-		}
-
-		private static readonly Dictionary<Coroutine, object?> coroutines = new();
 	}
+
+	private static YieldInstruction ToYieldInstruction(object? obj)
+	{
+		return obj switch
+		{
+			YieldInstruction y => y,
+			IEnumerator ie => Start(ie),
+			Task t => t.ToYieldInstruction(),
+			ValueTask t => t.ToYieldInstruction(),
+			_ => new WaitUntilNextFrame(),
+		};
+	}
+
+	private static readonly Dictionary<Coroutine, object?> coroutines = new();
 }

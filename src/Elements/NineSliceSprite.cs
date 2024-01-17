@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.IO;
+using Promete.Graphics;
 
 namespace Promete.Elements;
 
@@ -20,25 +21,6 @@ public class NineSliceSprite : ElementBase
 	public NineSliceSprite(Texture9Sliced texture)
 	{
 		Texture = texture;
-		Size = Texture.Size;
+		base.Size = Texture.Size;
 	}
-
-	public NineSliceSprite(string path, int left, int top, int right, int bottom)
-	{
-		generatedTexture = Texture = Texture9Sliced.LoadFrom(path, left, top, right, bottom);
-		Size = Texture.Size;
-	}
-
-	public NineSliceSprite(Stream stream, int left, int top, int right, int bottom)
-	{
-		generatedTexture = Texture = Texture9Sliced.LoadFrom(stream, left, top, right, bottom);
-		Size = Texture.Size;
-	}
-
-	protected override void OnDestroy()
-	{
-		generatedTexture?.Dispose();
-	}
-
-	private readonly Texture9Sliced? generatedTexture;
 }

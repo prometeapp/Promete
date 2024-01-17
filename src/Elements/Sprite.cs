@@ -1,11 +1,11 @@
 ﻿using System.Drawing;
-using System.IO;
+using Promete.Graphics;
 
 namespace Promete.Elements;
 
 public class Sprite : ElementBase
 {
-	public Texture2D? Texture { get; set; }
+	public ITexture? Texture { get; set; }
 
 	public Color? TintColor { get; set; }
 
@@ -15,23 +15,9 @@ public class Sprite : ElementBase
 		set => size = value;
 	}
 
-	public Sprite()
-	{
-	}
-
-	public Sprite(Texture2D texture)
+	public Sprite(ITexture texture)
 	{
 		Texture = texture;
-	}
-
-	public Sprite(string path)
-	{
-		Texture = generatedTexture = Texture2D.LoadFrom(path);
-	}
-
-	public Sprite(Stream stream)
-	{
-		Texture = generatedTexture = Texture2D.LoadFrom(stream);
 	}
 
 	public void ResetSize()
@@ -39,12 +25,5 @@ public class Sprite : ElementBase
 		size = null;
 	}
 
-	protected override void OnDestroy()
-	{
-		if (generatedTexture != null)
-			generatedTexture.Value.Dispose();
-	}
-
-	private readonly Texture2D? generatedTexture;
 	private VectorInt? size;
 }

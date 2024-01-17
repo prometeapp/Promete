@@ -1,7 +1,9 @@
-namespace Promete
+namespace Promete.Graphics;
+
+public enum FontStyle
 {
-	public enum FontStyle
-	{
-		Normal, Bold, Italic, BoldItalic,
-	}
+	Normal,
+	Bold,
+	Italic,
+	BoldItalic,
 }

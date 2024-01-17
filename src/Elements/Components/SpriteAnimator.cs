@@ -1,4 +1,5 @@
 using System;
+using Promete.Graphics;
 
 namespace Promete.Elements.Components;
 
@@ -7,7 +8,7 @@ public class SpriteAnimator : Component
 	/// <summary>
 	/// Get an array of textures to animate.
 	/// </summary>
-	public Texture2D[] Textures { get; set; } = Array.Empty<Texture2D>();
+	public ITexture[] Textures { get; set; } = Array.Empty<ITexture>();
 
 	/// <summary>
 	/// Get whether this sprite is animating.

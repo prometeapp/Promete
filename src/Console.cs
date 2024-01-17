@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Promete.Elements;
+using Promete.Graphics;
 using Promete.Windowing;
 
 namespace Promete;
@@ -32,14 +33,14 @@ public class Console
 	private readonly IWindow window;
 	private readonly List<string> consoleBuffer = [];
 
-	public Console(PrometeApp app, IWindow window)
+	public Console(PrometeApp app, IWindow window, GlyphRenderer glyphRenderer)
 	{
 		this.window = window;
 		FontSize = 16;
 		window.Start += () =>
 		{
-			text = new Text("", Font.GetDefault(), Color.White);
-			heightCalculator = new Text("", Font.GetDefault(), Color.White);
+			text = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
+			heightCalculator = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
 			maxLine = CalculateMaxLine();
 		};
 		window.Render += () =>

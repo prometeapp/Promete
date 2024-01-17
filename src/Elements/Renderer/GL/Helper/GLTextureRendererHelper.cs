@@ -2,6 +2,9 @@
 using System;
 using System.Drawing;
 using System.Numerics;
+using Promete.Exceptions;
+using Promete.Graphics;
+using Promete.Graphics.GL;
 using Promete.Internal;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
@@ -10,7 +13,7 @@ using Silk.NET.OpenGL;
 namespace Promete.Elements.Renderer.GL.Helper
 {
 	/// <summary>
-	/// <see cref="Texture2D"/> オブジェクトをバッファ上に描画する機能を提供します。
+	/// <see cref="GLTexture2D"/> オブジェクトをバッファ上に描画する機能を提供します。
 	/// </summary>
 	public class GLTextureRendererHelper
 	{
@@ -80,13 +83,15 @@ namespace Promete.Elements.Renderer.GL.Helper
 		/// <summary>
 		/// テクスチャを描画します。
 		/// </summary>
-		public unsafe void Draw(Texture2D texture, Vector location, Vector scale, Color? color = null, float? width = null, float? height = null, float angle = 0)
+		public unsafe void Draw(ITexture texture, Vector location, Vector scale, Color? color = null, float? width = null, float? height = null, float angle = 0)
 		{
-			if (texture.IsDestroyed)
+			if (texture is not GLTexture2D glTexture) return;
+
+			if (glTexture.IsDisposed)
 			{
-				LogHelper.Warn("This texture (Handle ID: " + texture.Handle + ") is destroyed");
-				return;
+				throw new TextureDisposedException();
 			}
+
 			location = location.ToDeviceCoord();
 			scale = scale.ToDeviceCoord();
 
@@ -130,7 +135,7 @@ namespace Promete.Elements.Renderer.GL.Helper
 				x2, y2, 0f, 1f,
 				x3, y3, 0f, 0f,
 			};
-			uint verticesSize = 4 * 4;
+			const uint verticesSize = 4 * 4;
 			gl.BufferData(GLEnum.ArrayBuffer, verticesSize * sizeof(float), vertices, GLEnum.StaticDraw);
 
 			// --- EBO ---
@@ -155,7 +160,7 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 			gl.UseProgram(shader);
 			gl.ActiveTexture(GLEnum.Texture0);
-			gl.BindTexture(GLEnum.Texture2D, (uint)texture.Handle);
+			gl.BindTexture(GLEnum.Texture2D, (uint)glTexture.Handle);
 			var uTexture0 = gl.GetUniformLocation(shader, "uTexture0");
 			gl.Uniform1(uTexture0, 0);
 			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");

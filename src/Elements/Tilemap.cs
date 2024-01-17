@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
+using Promete.Graphics;
 
 namespace Promete.Elements;
 
-public class Tilemap : ElementBase
+public class Tilemap(VectorInt tileSize) : ElementBase
 {
 	/// <summary>
 	/// Get or set size of grid.
 	/// </summary>
-	public VectorInt TileSize { get; set; }
+	public VectorInt TileSize { get; set; } = tileSize;
 
 	/// <summary>
 	/// Get or set default tint color of tiles.
@@ -19,30 +19,9 @@ public class Tilemap : ElementBase
 
 	public TilemapRenderingMode RenderingMode { get; set; } = TilemapRenderingMode.Auto;
 
-	public TilemapRenderingMode PreferredRenderingMode
-	{
-		get
-		{
-			var tileSize = TileSize * AbsoluteScale;
-			// ウィンドウ内に存在し得る最大のタイル数を概算する
-			var (ww, wh) = DF.Window.Size;
-			var maxTilesX = ww / tileSize.X + 2;
-			var maxTilesY = wh / tileSize.Y + 2;
-			var maxTilesInWindow = maxTilesX * maxTilesY;
-			// 存在しうるタイル数より実際のタイル数のほうが多い場合、画面を走査するほうがループ数を減らせる可能性がある
-			return maxTilesInWindow < tiles.Count ? TilemapRenderingMode.Scan : TilemapRenderingMode.RenderAll;
-		}
-	}
+	public IReadOnlyDictionary<VectorInt, (ITile tile, Color? color)> Tiles => tiles.AsReadOnly();
 
-	public int TilesCount => tiles.Count;
-
-	private readonly Dictionary<VectorInt, (ITile tile, Color? color)> tiles;
-
-	public Tilemap(VectorInt tileSize)
-	{
-		TileSize = tileSize;
-		tiles = new Dictionary<VectorInt, (ITile tile, Color? color)>();
-	}
+	private readonly Dictionary<VectorInt, (ITile tile, Color? color)> tiles = new();
 
 	/// <summary>
 	/// Get or set the tile at the specified position.
@@ -60,54 +39,6 @@ public class Tilemap : ElementBase
 	{
 		get => GetTileAt(point);
 		set => SetTile(point, value);
-	}
-
-	protected override void OnRender()
-	{
-		var mode = RenderingMode == TilemapRenderingMode.Auto ? PreferredRenderingMode : RenderingMode;
-
-		if (mode == TilemapRenderingMode.Scan) ScanAndRender();
-		else FullRender();
-	}
-
-	private void ScanAndRender()
-	{
-		var tileSize = TileSize * AbsoluteScale;
-		var (ww, wh) = DF.Window.Size;
-		var maxTilesX = ww / tileSize.X + 2;
-		var maxTilesY = wh / tileSize.Y + 2;
-
-		var tl = -AbsoluteLocation / tileSize;
-		if (tl.X < 0) tl.X--;
-		if (tl.Y < 0) tl.Y--;
-		var (tx, ty) = (VectorInt)tl;
-
-		for (var y = ty; y < ty + maxTilesY; y++)
-		{
-			for (var x = tx; x < tx + maxTilesX; x++)
-			{
-				var dest = AbsoluteLocation + (x, y) * TileSize * AbsoluteScale;
-				this[x, y]?.Draw(this, (x, y), dest, GetTileColorAt(x, y));
-			}
-		}
-	}
-
-	private void FullRender()
-	{
-		// カリング
-		bool filter(KeyValuePair<VectorInt, (ITile, Color?)> kv)
-		{
-			var (left, top) = AbsoluteLocation + kv.Key * TileSize * AbsoluteScale;
-			var right = left + TileSize.X * AbsoluteScale.X;
-			var bottom = top + TileSize.Y * AbsoluteScale.Y;
-			return left <= DF.Window.ActualWidth && top <= DF.Window.ActualHeight && right >= 0 && bottom >= 0;
-		}
-
-		foreach (var (tl, (tile, color)) in tiles.Where(filter))
-		{
-			var dest = AbsoluteLocation + tl * TileSize * AbsoluteScale;
-			tile.Draw(this, tl, dest, color);
-		}
 	}
 
 	protected override void OnDestroy()

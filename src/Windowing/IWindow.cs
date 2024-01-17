@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using Promete.Graphics;
 using Silk.NET.Input;
 
 namespace Promete.Windowing
@@ -107,11 +108,7 @@ namespace Promete.Windowing
 		/// </summary>
 		IInputContext? _RawInputContext { get; }
 
-		/// <summary>
-		/// Take a screenshot and generate a texture from it.
-		/// </summary>
-		/// <returns>A screenshot as a texture</returns>
-		Texture2D TakeScreenshot();
+		TextureFactory TextureFactory { get; }
 
 		/// <summary>
 		/// Open this window and start game.
@@ -122,6 +119,12 @@ namespace Promete.Windowing
 		/// Exit this game by the specified status code.
 		/// </summary>
 		void Exit();
+
+		/// <summary>
+		/// Take a screenshot and generate a texture from it.
+		/// </summary>
+		/// <returns>A screenshot as a texture</returns>
+		ITexture TakeScreenshot();
 
 		/// <summary>
 		/// Occured when this game starts.

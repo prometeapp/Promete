@@ -1,14 +1,15 @@
 using System.Drawing;
+using Promete.Graphics;
 
 namespace Promete.Elements;
 
 public class Text : ElementBase
 {
-	public Texture2D RenderedTexture => texture;
+	public ITexture? RenderedTexture { get; private set; }
 
 	public override VectorInt Size
 	{
-		get => texture.Size;
+		get => RenderedTexture?.Size ?? (0, 0);
 		set
 		{
 			/* nop */
@@ -45,27 +46,21 @@ public class Text : ElementBase
 		set => SetAndUpdateTexture(ref font, value);
 	}
 
-	private Texture2D texture;
-	private string content = "";
+	private string content;
 	private Color? textColor;
 	private Color? borderColor;
 	private int borderThickness;
 	private Font font;
 
-	public Text() : this("")
+	private readonly GlyphRenderer glyphRenderer;
+
+	public Text(GlyphRenderer glyphRenderer, string content = "") : this(glyphRenderer, content, Font.GetDefault(16))
 	{
 	}
 
-	public Text(string content) : this(content, Font.GetDefault(16))
+	public Text(GlyphRenderer glyphRenderer, string content, Font font, Color? color = null)
 	{
-	}
-
-	public Text(string content, Font font) : this(content, font, null)
-	{
-	}
-
-	public Text(string content, Font font, Color? color)
-	{
+		this.glyphRenderer = glyphRenderer;
 		this.content = content;
 		this.font = font;
 		textColor = color;
@@ -73,22 +68,9 @@ public class Text : ElementBase
 		RenderTexture();
 	}
 
-	public Text(string content, float fontSize) : this(content, fontSize, FontStyle.Normal)
-	{
-	}
-
-	public Text(string content, float fontSize, FontStyle fontStyle) : this(content, fontSize, fontStyle, null)
-	{
-	}
-
-	public Text(string content, float fontSize, FontStyle fontStyle, Color? color) : this(content,
-		Font.GetDefault(fontSize, fontStyle), color)
-	{
-	}
-
 	protected override void OnDestroy()
 	{
-		texture.Dispose();
+		RenderedTexture?.Dispose();
 	}
 
 	private void SetAndUpdateTexture<T>(ref T variable, T value)
@@ -100,8 +82,8 @@ public class Text : ElementBase
 
 	private void RenderTexture()
 	{
-		texture.Dispose();
+		RenderedTexture?.Dispose();
 
-		texture = GlyphRenderer.Generate(Content, Font, Color, BorderColor, BorderThickness);
+		RenderedTexture = glyphRenderer.Generate(Content, Font, Color, BorderColor, BorderThickness);
 	}
 }

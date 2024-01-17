@@ -1,4 +1,5 @@
 using System;
+using Promete.Graphics;
 using SixLabors.ImageSharp;
 using Silk.NET.Windowing;
 using Silk.NET.Maths;
@@ -114,6 +115,8 @@ namespace Promete.Windowing.GLDesktop
 		}
 		public IInputContext? _RawInputContext { get; private set; }
 
+		public TextureFactory TextureFactory => textureFactory ?? throw new InvalidOperationException("window is not loaded");
+
 		public GL GL => gl ?? throw new InvalidOperationException("window is not loaded");
 
 		private int frameCount;
@@ -121,6 +124,7 @@ namespace Promete.Windowing.GLDesktop
 		private int prevSecond;
 		private byte[] screenshotBuffer = Array.Empty<byte>();
 		private GL? gl;
+		private TextureFactory? textureFactory;
 
 		private readonly PrometeApp app;
 		private readonly Silk.NET.Windowing.IWindow window;
@@ -145,9 +149,9 @@ namespace Promete.Windowing.GLDesktop
 			window.FocusChanged += v => IsFocused = v;
 		}
 
-		public Texture2D TakeScreenshot()
+		public ITexture TakeScreenshot()
 		{
-			return Texture2D.LoadFrom(TakeScreenshotAsImage());
+			return TextureFactory.LoadFromImageSharpImage(TakeScreenshotAsImage());
 		}
 
 		public void Run()
@@ -174,6 +178,7 @@ namespace Promete.Windowing.GLDesktop
 		private void OnLoad()
 		{
 			gl = GL.GetApi(window);
+			textureFactory = new OpenGLTextureFactory(gl);
 			screenshotBuffer = new byte[ActualWidth * ActualHeight * 4];
 
 			Start?.Invoke();
@@ -228,11 +233,11 @@ namespace Promete.Windowing.GLDesktop
 
 		private void CalculateUps()
 		{
-			frameCount++;
+			updateCount++;
 			if (Environment.TickCount - prevSecond <= 1000) return;
 
-			UpdatePerSeconds = frameCount;
-			frameCount = 0;
+			UpdatePerSeconds = updateCount;
+			updateCount = 0;
 			prevSecond = Environment.TickCount;
 		}
 
