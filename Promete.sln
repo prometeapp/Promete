@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete", "src\Promete.csproj", "{2ACE8212-D057-459D-A088-21F734BC7A3F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete", "Promete\Promete.csproj", "{2ACE8212-D057-459D-A088-21F734BC7A3F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete.Example", "Promete.Example\Promete.Example.csproj", "{9B06C032-4FAC-4A39-B5A5-B8AB9D967C53}"
 EndProject
