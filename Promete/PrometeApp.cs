@@ -83,8 +83,8 @@ public sealed class PrometeApp : IDisposable
 
 	public void Render(ElementBase element)
 	{
-		var renderer = renderers[element.GetType()];
-		renderer.Render(element);
+		var renderer = ResolveRenderer(element);
+		renderer?.Render(element);
 	}
 
 	private void OnStart<TScene>() where TScene : Scene
@@ -110,6 +110,23 @@ public sealed class PrometeApp : IDisposable
 		{
 			nextFrameQueue.Dequeue()();
 		}
+	}
+
+	private ElementRendererBase? ResolveRenderer(ElementBase el)
+	{
+		var elType = el.GetType();
+		if (renderers.TryGetValue(elType, out var renderer)) return renderer;
+
+		// el の型が登録されていない場合、el の型の親クラスの型が登録されているかを確認する
+		var alternativeRendererType = renderers.Keys.FirstOrDefault(k => elType.IsSubclassOf(k));
+		if (alternativeRendererType is null)
+		{
+			LogHelper.Warn($"The renderer for \"{elType}\" is not registered.");
+			return null;
+		}
+
+		renderers[elType] = renderers[alternativeRendererType];
+		return renderers[elType];
 	}
 
 	private void RegisterAllScenes()
