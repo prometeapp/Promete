@@ -121,7 +121,8 @@ namespace Promete.Windowing.GLDesktop
 
 		private int frameCount;
 		private int updateCount;
-		private int prevSecond;
+		private int prevSecondUps;
+		private int prevSecondFps;
 		private byte[] screenshotBuffer = Array.Empty<byte>();
 		private GL? gl;
 		private TextureFactory? textureFactory;
@@ -205,6 +206,7 @@ namespace Promete.Windowing.GLDesktop
 			gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
 			app.Render(app.Root);
+			CalculateFps();
 
 			Render?.Invoke();
 		}
@@ -216,10 +218,9 @@ namespace Promete.Windowing.GLDesktop
 			DeltaTime = deltaTime;
 
 			CalculateUps();
-			CalculateFps();
 
 			PreUpdate?.Invoke();
-			app.Root.Update();
+			app.Root?.Update();
 			Update?.Invoke();
 			PostUpdate?.Invoke();
 
@@ -234,21 +235,21 @@ namespace Promete.Windowing.GLDesktop
 		private void CalculateUps()
 		{
 			updateCount++;
-			if (Environment.TickCount - prevSecond <= 1000) return;
+			if (Environment.TickCount - prevSecondUps <= 1000) return;
 
 			UpdatePerSeconds = updateCount;
 			updateCount = 0;
-			prevSecond = Environment.TickCount;
+			prevSecondUps = Environment.TickCount;
 		}
 
 		private void CalculateFps()
 		{
 			frameCount++;
-			if (Environment.TickCount - prevSecond <= 1000) return;
+			if (Environment.TickCount - prevSecondFps <= 1000) return;
 
-			UpdatePerSeconds = frameCount;
+			FramePerSeconds = frameCount;
 			frameCount = 0;
-			prevSecond = Environment.TickCount;
+			prevSecondFps = Environment.TickCount;
 		}
 
 		public event Action? Start;
