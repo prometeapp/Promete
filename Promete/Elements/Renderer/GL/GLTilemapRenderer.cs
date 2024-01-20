@@ -47,8 +47,11 @@ public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) :
 			for (var x = tx; x < tx + maxTilesX; x++)
 			{
 				var dest = tilemap.AbsoluteLocation + (x, y) * tilemap.TileSize * tilemap.AbsoluteScale;
-				// TODO
-				// tilemap[x, y]?.Draw(this, (x, y), dest, GetTileColorAt(x, y));
+				var texture = tilemap[x, y]?.GetTexture(tilemap, (x, y), window);
+
+				if (texture == null) continue;
+
+				helper.Draw(texture, dest, tilemap.AbsoluteScale, tilemap.GetTileColorAt(x, y));
 			}
 		}
 	}
@@ -64,11 +67,12 @@ public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) :
 			return left <= window.ActualWidth && top <= window.ActualHeight && right >= 0 && bottom >= 0;
 		}
 
-		foreach (var (tl, (tile, color)) in tilemap.Tiles.Where(filter))
+		foreach (var (tileLocation, (tile, color)) in tilemap.Tiles.Where(filter))
 		{
-			var dest = tilemap.AbsoluteLocation + tl * tilemap.TileSize * tilemap.AbsoluteScale;
-			// TODo
-			// tile.Draw(this, tl, dest, color);
+			var dest = tilemap.AbsoluteLocation + tileLocation * tilemap.TileSize * tilemap.AbsoluteScale;
+			var texture = tile.GetTexture(tilemap, tileLocation, window);
+
+			helper.Draw(texture, dest, tilemap.AbsoluteScale, color);
 		}
 	}
 }

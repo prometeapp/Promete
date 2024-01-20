@@ -1,4 +1,6 @@
 using System;
+using Promete.Elements;
+using Promete.Windowing;
 
 namespace Promete.Graphics;
 
@@ -58,24 +60,24 @@ public class Tile : ITile
 		Texture = Animations[0];
 	}
 
-	// public void Draw(Tilemap map, VectorInt _, Vector locationToDraw, Color? color)
-	// {
-	// 	if (prevFrameCount != DF.Window.TotalFrame)
-	// 	{
-	// 		if (timer > Interval)
-	// 		{
-	// 			animationState++;
-	// 			if (animationState >= Animations.Length)
-	// 				animationState = 0;
-	// 			timer = 0;
-	// 		}
-	//
-	// 		Texture = Animations[animationState];
-	// 		timer += Time.DeltaTime;
-	// 	}
-	// 	prevFrameCount = DF.Window.TotalFrame;
-	// 	DF.TextureDrawer.Draw(Texture, locationToDraw, map.AbsoluteScale, color);
-	// }
+	public ITexture GetTexture(Tilemap map, VectorInt tileLocation, IWindow window)
+	{
+		if (prevFrameCount != window.TotalFrame)
+		{
+			if (timer > Interval)
+			{
+				animationState++;
+				if (animationState >= Animations.Length)
+					animationState = 0;
+				timer = 0;
+			}
+
+			Texture = Animations[animationState];
+			timer += window.DeltaTime;
+		}
+		prevFrameCount = window.TotalFrame;
+		return Texture;
+	}
 
 	/// <summary>
 	/// この <see cref="Tile"/> を削除します。

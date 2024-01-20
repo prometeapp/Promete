@@ -1,4 +1,6 @@
 using System.Drawing;
+using Promete.Elements;
+using Promete.Windowing;
 
 namespace Promete.Graphics;
 
@@ -7,7 +9,7 @@ namespace Promete.Graphics;
 /// </summary>
 public interface ITile
 {
-	// void Draw(Tilemap map, VectorInt tileLocation, Vector locationToDraw, Color? color);
+	ITexture GetTexture(Tilemap map, VectorInt tileLocation, IWindow window);
 
 	/// <summary>
 	/// この <see cref="ITile"/> を破棄します。
