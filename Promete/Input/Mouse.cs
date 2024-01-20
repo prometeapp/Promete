@@ -26,6 +26,8 @@ public class Mouse
 
 	public MouseButton this[int index] => buttons[index];
 
+	public MouseButton this[MouseButtonType type] => buttons[(int)type];
+
 	private bool isMouseOnWindow = false;
 	private IMouse? mouse;
 
