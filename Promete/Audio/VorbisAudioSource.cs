@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NVorbis;
+using Promete.Internal;
 
 namespace Promete.Audio;
 
@@ -13,7 +14,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 	/// Get the total number of samples.
 	/// </summary>
 	/// <returns></returns>
-	public int? Samples => (int)reader.TotalSamples;
+	public int? Samples => (int)reader.TotalSamples * reader.Channels;
 
 	/// <summary>
 	/// Get channels.
@@ -30,31 +31,37 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 	/// </summary>
 	public int SampleRate => reader.SampleRate;
 
+	private short[] store = [];
+
 	/// <summary>
 	/// Initialize a new instance of <see cref="VorbisAudioSource"/> class with specified file path.
 	/// </summary>
 	public VorbisAudioSource(string path)
 	{
 		reader = new NVorbis.VorbisReader(path);
+
+		var temp = new float[Samples ?? 0];
+		store = new short[Samples ?? 0];
+
+		reader.ReadSamples(temp, 0, temp.Length);
+
+		var tempSpan = temp.AsSpan();
+		var storeSpan = store.AsSpan();
+
+		unchecked
+		{
+			for (var i = 0; i < tempSpan.Length; i++)
+			{
+				storeSpan[i] = (short)(tempSpan[i] * short.MaxValue);
+			}
+		}
 	}
 
-	public IEnumerable<(short left, short right)> EnumerateSamples(int? loopStart)
+	public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
 	{
-		var buf = new float[2];
-		reader.SamplePosition = 0;
-		static short ToShort(float data) => (short)(data * short.MaxValue);
-		do
-		{
-			while (reader.ReadSamples(buf, 0, Channels) > 0)
-			{
-				yield return (ToShort(buf[0]), ToShort(buf[Channels == 1 ? 0 : 1]));
-			}
-
-			if (loopStart is { } a)
-			{
-				reader.SamplePosition = a;
-			}
-		} while (loopStart != null);
+		var actualReadSize = Math.Min(buffer.Length, store.Length - offset);
+		Buffer.BlockCopy(store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
+		return (actualReadSize, actualReadSize < buffer.Length);
 	}
 
 	/// <summary>

@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
+using Promete.Audio.Internal;
 using Silk.NET.OpenAL;
 
 namespace Promete.Audio;
@@ -49,12 +48,9 @@ public class AudioPlayer : IDisposable
 	public float Gain
 	{
 		get => gain;
-		set
-		{
+		set =>
 			// 0...1の範囲に矯正
 			gain = Math.Max(0, Math.Min(1, value));
-			al.SetListenerProperty(ListenerFloat.Gain, gain);
-		}
 	}
 
 	/// <summary>
@@ -88,8 +84,10 @@ public class AudioPlayer : IDisposable
 	/// </summary>
 	public int LengthInSamples { get; private set; }
 
+	public int BufferSize { get; set; } = 22050;
+
 	private float gain;
-	private CancellationTokenSource? cts;
+	private StopTokenSource? stopToken;
 
 	private readonly AL al;
 	private readonly ALContext alc;
@@ -101,11 +99,11 @@ public class AudioPlayer : IDisposable
 	/// </summary>
 	/// <param name="source">A <see cref="IAudioSource"/> to play.</param>
 	/// <param name="loop">Sample number of loop point. To disable loop, specify<c>null</c>.</param>
-	public async Task PlayAsync(IAudioSource source, int? loop = default)
+	public async ValueTask PlayAsync(IAudioSource source, int? loop = default)
 	{
-		cts?.Cancel();
-		cts = new CancellationTokenSource();
-		await PlayAsync(source, loop, cts.Token);
+		stopToken?.Stop();
+		stopToken = new StopTokenSource();
+		await PlayAsync(source, loop, stopToken);
 	}
 
 	/// <summary>
@@ -113,10 +111,15 @@ public class AudioPlayer : IDisposable
 	/// </summary>
 	/// <param name="source">A <see cref="IAudioSource"/> to play.</param>
 	/// <param name="loop">Sample number of loop point. To disable loop, specify<c>null</c>.</param>
-	public void Play(IAudioSource source, int? loop = default)
+	public async void Play(IAudioSource source, int? loop = default)
 	{
-#pragma warning disable CS4014
-		PlayAsync(source, loop);
+		if (IsPlaying)
+		{
+			Stop();
+		}
+
+		stopToken = new StopTokenSource();
+		await PlayAsync(source, loop, stopToken);
 	}
 
 	/// <summary>
@@ -127,7 +130,7 @@ public class AudioPlayer : IDisposable
 	{
 		if (time == 0)
 		{
-			cts?.Cancel();
+			stopToken?.Stop();
 		}
 		else
 		{
@@ -143,7 +146,7 @@ public class AudioPlayer : IDisposable
 					await Task.Delay(1);
 				}
 
-				cts?.Cancel();
+				stopToken?.Stop();
 				w.Stop();
 				while (IsPlaying)
 					await Task.Delay(10);
@@ -159,13 +162,12 @@ public class AudioPlayer : IDisposable
 	/// </summary>
 	/// <param name="source"><see cref="IAudioSource"/> to play.</param>
 	/// <returns></returns>
-	public async Task PlayOneShotAsync(IAudioSource source)
+	public async ValueTask PlayOneShotAsync(IAudioSource source)
 	{
-		var buf = source.EnumerateSamples(null).GetEnumerator();
-		if (source.Samples is not { } samples)
+		if (source.Samples is null)
 			throw new ArgumentException("PlayOneShot requires AudioSource which has determined length.");
-		var buffer = new short[samples];
-		FillBuffer(buffer, buf, default);
+		var buffer = new short[source.Samples.Value * 2];
+		// FillBuffer(buffer, buf, default);
 		var alSrc = al.GenSource();
 		var alBuf = al.GenBuffer();
 		al.BufferData(alBuf, BufferFormat.Stereo16, buffer, source.SampleRate);
@@ -178,11 +180,12 @@ public class AudioPlayer : IDisposable
 			al.SetSourceProperty(alSrc, SourceInteger.Buffer, alBuf);
 			al.SourcePlay(alSrc);
 			while (GetState(al, alSrc) == (int)SourceState.Playing)
-				await Task.Delay(10).ConfigureAwait(false);
+				await Task.Yield();
 		}
 
 		al.DeleteSource(alSrc);
 		al.DeleteBuffer(alBuf);
+		return;
 
 		static int GetState(AL al, uint alSrc)
 		{
@@ -200,103 +203,117 @@ public class AudioPlayer : IDisposable
 		alc.CloseDevice((Device*)device);
 		al.Dispose();
 		alc.Dispose();
+
+		GC.SuppressFinalize(this);
 	}
 
-	private async Task PlayAsync(IAudioSource source, int? loop = default, CancellationToken ct = default)
+	private async ValueTask PlayAsync(IAudioSource source, int? loop, StopTokenSource st)
 	{
-		var enumerator = source.EnumerateSamples(loop).GetEnumerator();
-		var arr = new short[source.SampleRate / 2];
+		var samples = new short[BufferSize];
 		TimeInSamples = Time = 0;
 
 		LengthInSamples = source.Samples ?? 0;
 		Length = (int)(LengthInSamples / (float)source.SampleRate * 1000);
 
-		var alSrc = al.GenSource();
-		var alBuffersA = al.GenBuffers(1);
-		var alBuffersB = al.GenBuffers(1);
-		var current = false;
+		using var alSource = new ALSource(al);
+		using var buffer1 = new ALBuffer(al);
+		using var buffer2 = new ALBuffer(al);
+		var currentSample = 0;
+		var nextBufferIndex = 0;
 
+		uint[] singleArray = [0];
+
+		int sampleSize;
+		bool isFinished;
+
+		QueueData();
+		QueueData();
+
+		al.SourcePlay(alSource.Handle);
+		IsPlaying = true;
+
+		while (true)
 		{
-			var isFinished = !FillBuffer(arr, enumerator, ct);
-			al.BufferData(alBuffersA[0], BufferFormat.Stereo16, arr, source.SampleRate);
-			if (!isFinished)
+			al.SetSourceProperty(alSource.Handle, SourceFloat.Pitch, Pitch);
+			al.SetSourceProperty(alSource.Handle, SourceFloat.Gain, Gain);
+
+			al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out var processedCount);
+
+			await Task.Delay(1).ConfigureAwait(false);
+
+			if (st.IsStopRequested)
 			{
-				isFinished = !FillBuffer(arr, enumerator, ct);
-				al.BufferData(alBuffersB[0], BufferFormat.Stereo16, arr, source.SampleRate);
-			}
-
-			al.SourceQueueBuffers(alSrc, alBuffersA);
-			al.SourceQueueBuffers(alSrc, alBuffersB);
-			al.SourcePlay(alSrc);
-			IsPlaying = true;
-			var prevOffset = 0;
-			var sampleCount = 1;
-			while (!ct.IsCancellationRequested)
-			{
-				int processedCount;
-
-				al.SetSourceProperty(alSrc, SourceFloat.Pitch, Pitch);
-				do
-				{
-					al.GetSourceProperty(alSrc, GetSourceInteger.BuffersProcessed, out processedCount);
-					al.GetSourceProperty(alSrc, GetSourceInteger.SampleOffset, out var offset);
-					if (prevOffset > offset)
-					{
-						sampleCount++;
-						TimeInSamples = (arr.Length / 2) * sampleCount;
-					}
-
-					TimeInSamples += offset - prevOffset;
-					if (TimeInSamples > LengthInSamples) TimeInSamples = LengthInSamples;
-					Time = (int)(TimeInSamples / (float)source.SampleRate * 1000);
-					prevOffset = offset;
-					await Task.Delay(1, ct).ConfigureAwait(false);
-				} while (processedCount == 0 && !ct.IsCancellationRequested);
-
-				while (processedCount > 0 && !ct.IsCancellationRequested)
-				{
-					var currentBuffer = current ? alBuffersA : alBuffersB;
-					al.SourceUnqueueBuffers(alSrc, currentBuffer);
-					if (!isFinished)
-					{
-						isFinished = !FillBuffer(arr, enumerator, ct);
-						al.BufferData(currentBuffer[0], BufferFormat.Stereo16, arr, source.SampleRate);
-						al.SourceQueueBuffers(alSrc, currentBuffer);
-					}
-
-					processedCount--;
-					current ^= true;
-				}
-
-				al.GetSourceProperty(alSrc, GetSourceInteger.BuffersQueued, out int queuedCount);
-				if (queuedCount > 0)
-				{
-					al.GetSourceProperty(alSrc, GetSourceInteger.SourceState, out var state);
-					if (state != (int)SourceState.Playing)
-						al.SourcePlay(alSrc);
-				}
-				else
-					break;
-
-				await Task.Delay(10, ct).ConfigureAwait(false);
-			}
-
-			IsPlaying = false;
-		}
-	}
-
-	private static bool FillBuffer(short[] buffer, IEnumerator<(short l, short r)> enumerator, CancellationToken ct)
-	{
-		var res = true;
-		for (var i = 0; i < buffer.Length; i += 2)
-		{
-			if (ct.IsCancellationRequested)
+				IsPlaying = false;
 				break;
-			(buffer[i], buffer[i + 1]) = res ? enumerator.Current : (default, default);
-			if (!enumerator.MoveNext())
-				res = false;
+			}
+
+			if (processedCount == 0) continue;
+
+			DequeueBuffer(nextBufferIndex == 0 ? buffer1 : buffer2);
+			QueueData();
+
+			al.GetSourceProperty(alSource.Handle, GetSourceInteger.SourceState, out var state);
+			if (state != (int)SourceState.Playing)
+				al.SourcePlay(alSource.Handle);
+
+			if (!isFinished) continue;
+			if (loop is not {} loopStartSample) break;
+			currentSample = loopStartSample;
 		}
 
-		return res;
+		if (!st.IsStopRequested)
+		{
+			int processed;
+			do
+			{
+				al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out processed);
+				await Task.Yield();
+			} while (processed < 2);
+		}
+
+		IsPlaying = false;
+		return;
+
+		void EnqueueBuffer(ALBuffer alBuffer)
+		{
+			singleArray[0] = alBuffer.Handle;
+			al.SourceQueueBuffers(alSource.Handle, singleArray);
+		}
+
+		void DequeueBuffer(ALBuffer alBuffer)
+		{
+			singleArray[0] = alBuffer.Handle;
+			al.SourceUnqueueBuffers(alSource.Handle, singleArray);
+		}
+
+		void QueueData()
+		{
+			(sampleSize, isFinished) = source.FillSamples(samples, currentSample);
+			currentSample += sampleSize;
+			var nextBuffer = nextBufferIndex == 0 ? buffer1 : buffer2;
+
+			if (isFinished)
+			{
+				if (sampleSize == 0) return;
+				BufferExactSizeDataUnsafely();
+			}
+			else
+			{
+				al.BufferData(nextBuffer.Handle, BufferFormat.Stereo16, samples, source.SampleRate);
+			}
+
+			EnqueueBuffer(nextBuffer);
+
+			nextBufferIndex ^= 1;
+			return;
+
+			unsafe void BufferExactSizeDataUnsafely()
+			{
+				fixed (short* samplePtr = samples)
+				{
+					al.BufferData(nextBuffer.Handle, BufferFormat.Stereo16, samplePtr, sampleSize * sizeof(short), source.SampleRate);
+				}
+			}
+		}
 	}
 }

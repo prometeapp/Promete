@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Promete.Audio;
 
@@ -29,6 +31,13 @@ public class WaveAudioSource : IAudioSource
 	/// </summary>
 	public int SampleRate => sampleRate;
 
+	public int? Length => store.Length;
+
+	private readonly short[] store;
+	private readonly int channels;
+	private readonly int bits;
+	private readonly int sampleRate;
+
 	/// <summary>
 	/// Initialize a new instance of <see cref="WaveAudioSource"/> class with specified file path.
 	/// </summary>
@@ -38,46 +47,16 @@ public class WaveAudioSource : IAudioSource
 		store = LoadWave(File.OpenRead(path), out channels, out bits, out sampleRate);
 	}
 
-	public IEnumerable<(short left, short right)> EnumerateSamples(int? loopStart)
+	public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
 	{
-		int currentSample = 0;
-		while (true)
-		{
-			var Sample = bits == 16 ? (PullDelegate)Pull16 : Pull;
-			switch (channels)
-			{
-				case 1:
-					var sample = Sample(ref currentSample);
-					yield return (sample, sample);
-					break;
-				case 2:
-					var right = Sample(ref currentSample);
-					yield return (Sample(ref currentSample), right);
-					break;
-			}
-
-			if (currentSample >= store.Length)
-			{
-				// ループ処理
-				if (loopStart is int loop)
-				{
-					currentSample = loop * channels * bits / 8;
-				}
-				else
-				{
-					break;
-				}
-			}
-		}
+		var actualReadSize = Math.Min(buffer.Length, store.Length - offset);
+		Buffer.BlockCopy(store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
+		return (actualReadSize, actualReadSize < buffer.Length);
 	}
 
-	private short Pull(ref int currentSample) => (short)(store[currentSample++] * 128);
-	private short Pull16(ref int currentSample) => (short)(store[currentSample++] | (store[currentSample++] << 8));
-
-	private static byte[] LoadWave(Stream stream, out int channels, out int bits, out int rate)
+	private static short[] LoadWave(Stream stream, out int channels, out int bits, out int rate)
 	{
-		if (stream == null)
-			throw new ArgumentNullException(nameof(stream));
+		ArgumentNullException.ThrowIfNull(stream);
 
 		using var reader = new BinaryReader(stream);
 		// RIFF header
@@ -85,14 +64,14 @@ public class WaveAudioSource : IAudioSource
 		if (riff != "RIFF")
 			throw new NotSupportedException("Specified stream is not a wave file.");
 
-		int riffChunkSize = reader.ReadInt32();
+		var riffChunkSize = reader.ReadInt32();
 
 		string format = new(reader.ReadChars(4));
 		if (format != "WAVE")
 			throw new NotSupportedException("Specified stream is not a wave file.");
 
 		// WAVE header
-		string fmt = "";
+		var fmt = "";
 		var size = 0;
 		while (true)
 		{
@@ -104,8 +83,8 @@ public class WaveAudioSource : IAudioSource
 		}
 
 		reader.ReadInt16();
-		int fileChannels = reader.ReadInt16();
-		int sampleRate = reader.ReadInt32();
+		var fileChannels = reader.ReadInt16();
+		var sampleRate = reader.ReadInt32();
 		reader.ReadInt32();
 		reader.ReadInt16();
 		int bitsPerSample = reader.ReadInt16();
@@ -114,16 +93,15 @@ public class WaveAudioSource : IAudioSource
 		if (size - 16 > 0)
 			reader.ReadBytes(size - 16);
 
-		if (bitsPerSample != 8 && bitsPerSample != 16)
+		if (bitsPerSample is not 8 and not 16)
 			throw new NotSupportedException("Promete only supports 8bit or 16bit per sample.");
 
-		if (fileChannels < 1 || 2 < fileChannels)
+		if (fileChannels is < 1 or > 2)
 			throw new NotSupportedException("Promete only supports 1ch or 2ch audio.");
 
-		var data = "";
 		while (true)
 		{
-			data = new string(reader.ReadChars(4));
+			var data = new string(reader.ReadChars(4));
 			size = reader.ReadInt32();
 			if (data == "data")
 				break;
@@ -134,13 +112,21 @@ public class WaveAudioSource : IAudioSource
 		bits = bitsPerSample;
 		rate = sampleRate;
 
-		return reader.ReadBytes(size);
+		var rawData = reader.ReadBytes(size);
+
+		if (bits != 8) return MemoryMarshal.Cast<byte, short>(rawData).ToArray();
+
+		var shortData = new short[rawData.Length / (bitsPerSample / 8)];
+		var span = rawData.AsSpan();
+
+		unchecked
+		{
+			for (var i = 0; i < shortData.Length; i++)
+			{
+				shortData[i] = (short)((span[i] - 128) * 256);
+			}
+		}
+
+		return shortData;
 	}
-
-	private readonly byte[] store;
-	private readonly int channels;
-	private readonly int bits;
-	private readonly int sampleRate;
-
-	private delegate short PullDelegate(ref int currentSample);
 }

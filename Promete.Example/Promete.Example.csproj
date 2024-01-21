@@ -8,7 +8,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\src\Promete.csproj" />
+      <ProjectReference Include="..\Promete\Promete.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="assets\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="assets\kagerou.ogg">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

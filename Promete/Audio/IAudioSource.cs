@@ -7,10 +7,6 @@ namespace Promete.Audio;
 /// </summary>
 public interface IAudioSource
 {
-	/// <summary>
-	/// Enumerate samples.
-	/// </summary>
-	IEnumerable<(short left, short right)> EnumerateSamples(int? loopStart);
 
 	/// <summary>
 	/// Get samples of this <see cref="IAudioSource"/>. Return <c>null</c> if unspecified.
@@ -31,4 +27,9 @@ public interface IAudioSource
 	/// Get the sampling frequency.
 	/// </summary>
 	int SampleRate { get; }
+
+	/// <summary>
+	/// サンプルデータを配列に読み込みます。
+	/// </summary>
+	(int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset);
 }
