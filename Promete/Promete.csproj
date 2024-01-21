@@ -5,10 +5,21 @@
 		<Nullable>Enable</Nullable>
 		<LangVersion>12</LangVersion>
 		<NoWarn>CS1591</NoWarn>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PackageId>Promete</PackageId>
+		<Version>0.1.0</Version>
+		<PackageTags>Game Engine;2D;gamedev;games;gaming;windowing;OpenGL</PackageTags>
+		<Description>
+			A lightweight, extensible and easy game engine.
+		</Description>
+		<Authors>Ebise Lutica</Authors>
+		<Copyright>(C)2024 Ebise Lutica</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/EbiseLutica/Promete</PackageProjectUrl>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
 	<ItemGroup>
