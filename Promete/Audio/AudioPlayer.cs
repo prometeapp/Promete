@@ -15,29 +15,26 @@ public class AudioPlayer : IDisposable
 	/// <summary>
 	/// Initialize a new instance of <see cref="AudioPlayer"/> .
 	/// </summary>
-	public AudioPlayer()
+	public unsafe AudioPlayer()
 	{
-		unsafe
+		try
 		{
-			try
-			{
-				al = AL.GetApi();
-				alc = ALContext.GetApi();
-			}
-			catch (FileNotFoundException)
-			{
-				// OpenALがOSに存在しない場合、OpenAL Softを使用する
-				al = AL.GetApi(true);
-				alc = ALContext.GetApi(true);
-			}
-
-			var d = alc.OpenDevice("");
-			var c = alc.CreateContext(d, null);
-			alc.MakeContextCurrent(c);
-			device = (nint)d;
-			context = (nint)c;
+			al = AL.GetApi();
+			alc = ALContext.GetApi();
 		}
+		catch (FileNotFoundException)
+		{
+			// OpenALがOSに存在しない場合、OpenAL Softを使用する
+			al = AL.GetApi(true);
+			alc = ALContext.GetApi(true);
+		}
+		al.DistanceModel(DistanceModel.None);
 
+		var d = alc.OpenDevice("");
+		var c = alc.CreateContext(d, null);
+		alc.MakeContextCurrent(c);
+		device = (nint)d;
+		context = (nint)c;
 		Gain = 1;
 	}
 
@@ -48,9 +45,17 @@ public class AudioPlayer : IDisposable
 	public float Gain
 	{
 		get => gain;
-		set =>
-			// 0...1の範囲に矯正
-			gain = Math.Max(0, Math.Min(1, value));
+		set => gain = Math.Clamp(value, 0f, 1f);
+	}
+
+	/// <summary>
+	/// Get or set pan.
+	/// </summary>
+	/// <value>Volume range in -1.0 ~ 1.0.</value>
+	public float Pan
+	{
+		get => pan;
+		set => pan = Math.Clamp(value, -1f, 1f);
 	}
 
 	/// <summary>
@@ -84,9 +89,10 @@ public class AudioPlayer : IDisposable
 	/// </summary>
 	public int LengthInSamples { get; private set; }
 
-	public int BufferSize { get; set; } = 22050;
+	public int BufferSize { get; set; } = 10000;
 
 	private float gain;
+	private float pan;
 	private StopTokenSource? stopToken;
 
 	private readonly AL al;
@@ -161,37 +167,34 @@ public class AudioPlayer : IDisposable
 	/// Play specified <see cref="IAudioSource"/> instantly.
 	/// </summary>
 	/// <param name="source"><see cref="IAudioSource"/> to play.</param>
+	/// <param name="_gain">再生する音量。</param>
+	/// <param name="pitch">再生時のピッチ。</param>
 	/// <returns></returns>
-	public async ValueTask PlayOneShotAsync(IAudioSource source)
+	public async ValueTask PlayOneShotAsync(IAudioSource source, float _gain = 1, float pitch = 1, float pan = 0)
 	{
 		if (source.Samples is null)
 			throw new ArgumentException("PlayOneShot requires AudioSource which has determined length.");
-		var buffer = new short[source.Samples.Value * 2];
-		// FillBuffer(buffer, buf, default);
-		var alSrc = al.GenSource();
-		var alBuf = al.GenBuffer();
-		al.BufferData(alBuf, BufferFormat.Stereo16, buffer, source.SampleRate);
-		al.SetSourceProperty(alSrc, SourceInteger.Buffer, alBuf);
-		al.SourcePlay(alSrc);
+		var buffer = new short[source.Samples.Value];
+		source.FillSamples(buffer, 0);
+		using var alSrc = new ALSource(al);
+		using var alBuf = new ALBuffer(al);
+		al.BufferData(alBuf.Handle, BufferFormat.Stereo16, buffer, source.SampleRate);
+		al.SourceQueueBuffers(alSrc.Handle, [alBuf.Handle]);
 
-		while (GetState(al, alSrc) == (int)SourceState.Playing)
+		al.SourcePlay(alSrc.Handle);
+		al.SetSourceProperty(alSrc.Handle, SourceFloat.Gain, _gain);
+		al.SetSourceProperty(alSrc.Handle, SourceFloat.Pitch, pitch);
+		al.SetSourceProperty(alSrc.Handle, SourceVector3.Position, pan, 0, -MathF.Sqrt(1f - pan * pan));
+		al.SetSourceProperty(alSrc.Handle, SourceBoolean.SourceRelative, true);
+		al.SetSourceProperty(alSrc.Handle, SourceFloat.MaxDistance, 1);
+		al.SetSourceProperty(alSrc.Handle, SourceFloat.ReferenceDistance, 0.5f);
+
+		int buffersProcessed;
+		do
 		{
-			al.BufferData(alBuf, BufferFormat.Stereo16, buffer, source.SampleRate);
-			al.SetSourceProperty(alSrc, SourceInteger.Buffer, alBuf);
-			al.SourcePlay(alSrc);
-			while (GetState(al, alSrc) == (int)SourceState.Playing)
-				await Task.Yield();
-		}
-
-		al.DeleteSource(alSrc);
-		al.DeleteBuffer(alBuf);
-		return;
-
-		static int GetState(AL al, uint alSrc)
-		{
-			al.GetSourceProperty(alSrc, GetSourceInteger.SourceState, out var state);
-			return state;
-		}
+			al.GetSourceProperty(alSrc.Handle, GetSourceInteger.BuffersProcessed, out buffersProcessed);
+			await Task.Yield();
+		} while (buffersProcessed < 1);
 	}
 
 	/// <summary>
@@ -232,10 +235,15 @@ public class AudioPlayer : IDisposable
 		al.SourcePlay(alSource.Handle);
 		IsPlaying = true;
 
+		al.SetSourceProperty(alSource.Handle, SourceBoolean.SourceRelative, true);
+		al.SetSourceProperty(alSource.Handle, SourceFloat.MaxDistance, 1);
+		al.SetSourceProperty(alSource.Handle, SourceFloat.ReferenceDistance, 0.5f);
+
 		while (true)
 		{
 			al.SetSourceProperty(alSource.Handle, SourceFloat.Pitch, Pitch);
 			al.SetSourceProperty(alSource.Handle, SourceFloat.Gain, Gain);
+			al.SetSourceProperty(alSource.Handle, SourceVector3.Position, pan, 0, 0);
 
 			al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out var processedCount);
 
