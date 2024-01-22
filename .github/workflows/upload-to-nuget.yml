@@ -25,7 +25,7 @@ jobs:
       working-directory: ./Promete
 
     - name: Generate nuget package.
-      run: dotnet pack --configuration Release -o nupkg --version-suffix build-${{ github.sha:6 }}
+      run: dotnet pack --configuration Release -o nupkg --version-suffix build-${GITHUB_SHA::6}
       working-directory: ./Promete
 
     - name: Publish to nuget
