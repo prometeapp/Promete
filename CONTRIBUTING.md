@@ -1,64 +1,60 @@
-# Contribution guide
+# コントリビューションの手引き
 
-[日本語](CONTRIBUTING-ja.md)
+**コントリビュートにご協力いただきありがとうございます！その前に、このガイドをお読みいただければと思います。**
 
-Thanks for contributing! Before that, please read this guide.
+## 貢献者へ
 
-## To Conrtibutors
-
-Please agree that the source code you provided for this project will be licensed as described in the LICENSE file as same as other code.
+あなたがこのプロジェクトに提供したソースコードには、他のコードと同様に LICENSE ファイルに記載されるライセンスが付与されることに同意してください。
 
 ## Issue
 
-If you want me to add new features or find bugs, please post it to [GitHub Issues](https://github.com/EbiseLutica/Promete/Issues). Before making Issue, to avoid duplication, please make sure there are no same issues. If exists, upvote it by using reactions or comments.
+新機能の要望やバグ報告などは [GitHub Issues](https://github.com/EbiseLutica/Promete/Issues) にてお願いします。 Issue を作成する前に、重複を避けるため既に存在している同じような Issue が存在しないかどうか検索をしてください。もし存在するならば、リアクションやコメントを用いて upvote してください。
 
-## Documentation
+## 文書化
 
-- Japanese document: `/docs/ja`
-- English document:  `/docs/`
+作成中。
 
-## Continuous Integration
+## 継続的インテグレーション
 
-Promete uses AppVeyor to automatic deployment. Its configuration is in `/appveyor.yml`.
+Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは  `.github/workflow` にあります。
 
-## Coding Style
+## コーディング規則
 
-Basically I compliant [C# Coding Conventions (Official)](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/inside-a-program/coding-conventions). Moreover, follow the rules below:
+基本的には [C# のコーディング規則(公式)](https://docs.microsoft.com/ja-jp/dotnet/csharp/programming-guide/inside-a-program/coding-conventions) に従います。その上で、次の規約に従うこと
 
-+ Use 4-character tabs for indentation
-+ DON'T make fields `public`
-+ Define members of classes and structs the following orders:
-	+ Properties
-	+ Constructor(s)
-		+ If have many ones, arrange in ascending order of arguments.
-	+ Methods
-	+ Overridden Methods
-	+ Fields
-	+ Nested classes, structs and interfaces
-	+ Delegates
-+ If you overload methods, locate them adjacently.
-+ Define an entrypoint method in a dedicated `static` class.
-+ Make string-variables non-null, and initialize them with empty string.
+- インデントは4文字タブ(ハードタブ)にすること。
+- フィールドを `public` にしないこと。
+- アクセス修飾子は必ず省略しないこと。
+- クラスや構造体のメンバーは次の順番で定義すること。
+	- プロパティ
+	- フィールド
+	- コンストラクター
+		- 複数存在する場合は、仮引数の少ない順に並べること。
+	- メソッド
+	- オーバーライドされたメソッド
+	- ネストされたクラス, 構造体, インターフェイス
+	- デリゲート
+- メソッドをオーバーロードする場合は連続して配置すること。
+- 文字列変数は基本的に Null 非許容とし、初期値として空文字列を挿入すること。
 
-## Design Guideline
+## 設計上の規則
 
-### DO NOT make public API dependent on external libraries such as Silk.NET
+### 公開APIをSilk.NET等の外部ライブラリに依存させないこと
 
-Promete API is designed to be backend (such as Silk.NET) independent.
+Prometeでは、Silk.NET等のバックエンドに依存しないようAPIを設計しています。
 
-Do not use the type in the backend for arguments or return value of the newly added API.
+新しくAPIを追加する場合、このようなバックエンドにある型を引数や戻り値に使用しないでください。
+内部的に使う場合、プラグイン向けの場合や、private、internalなメンバーの場合は使用しても良いです。
 
-However, it is allowed to be used internally or for private or internal members.
+## デプロイ手順
 
-## To deploy
+デプロイはメイン開発者の @EbiseLutica が行います。従ってこの項目はフォークされたプロジェクトの管理者向けの情報となります。
 
-This project is always deployed by @Xeltica, a main developer. So this note is for forked projects' maintainers.
+1. 最新版の変更がビルドできて、サンプルコードに不具合が発生しないことを確認する
+2. master に最新版をコミットする
+3. Promete/Promete.csproj 内のバージョン表記を書き換える
+4. 上記の変更をコミットする
+5. push する
+6. :pray:
 
-1. Make sure latest changes can be built and there is no wrong behaviors in sample code.
-1. Commit latest to master
-1. Rewrite version number at Promete/Promete.nuspec
-1. Rewrite version number at appveyor.yml
-1. Commit changes of 3. and 4.
-1. Add a tag named as version number to the commit.
-1. Push it
-1. :pray:
+## デプロイに問題が起きた場合
