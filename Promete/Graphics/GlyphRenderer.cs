@@ -16,6 +16,7 @@ namespace Promete.Graphics;
 public class GlyphRenderer(IWindow window)
 {
 	private readonly Dictionary<object, FontFamily> fontCache = new();
+	private readonly FontCollection fontCollection = new FontCollection();
 
 	public Text CreateElement(string content)
 	{
@@ -64,7 +65,7 @@ public class GlyphRenderer(IWindow window)
 		}
 		else if (f.Path != null && File.Exists(f.Path))
 		{
-			family = new FontCollection().Install(f.Path);
+			family = fontCollection.Install(f.Path);
 		}
 		else if (f.Path != null)
 		{
@@ -73,7 +74,7 @@ public class GlyphRenderer(IWindow window)
 		else if (f.Stream != null)
 		{
 			f.Stream.Position = 0;
-			family = new FontCollection().Install(f.Stream);
+			family = fontCollection.Install(f.Stream);
 		}
 		else
 		{
