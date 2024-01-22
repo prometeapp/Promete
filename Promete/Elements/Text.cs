@@ -54,16 +54,19 @@ public class Text : ElementBase
 
 	private readonly GlyphRenderer glyphRenderer;
 
-	public Text(GlyphRenderer glyphRenderer, string content = "") : this(glyphRenderer, content, Font.GetDefault(16))
-	{
-	}
-
-	public Text(GlyphRenderer glyphRenderer, string content, Font font, Color? color = null)
+	public Text(
+		GlyphRenderer glyphRenderer,
+		string content,
+		Font? font = default,
+		Color? color = default,
+		string name = "",
+		Vector? location = default,
+		Vector? scale = default) : base(name, location, scale)
 	{
 		this.glyphRenderer = glyphRenderer;
 		this.content = content;
-		this.font = font;
-		textColor = color;
+		this.font = font ?? Font.GetDefault(16);
+		textColor = color ?? System.Drawing.Color.White;
 
 		RenderTexture();
 	}

@@ -7,10 +7,20 @@ namespace Promete;
 /// </summary>
 public abstract class Scene
 {
+
 	/// <summary>
 	/// Get a root container of this scene.
 	/// </summary>
-	public Container Root { get; } = new();
+	public Container Root { get; }
+	public Scene()
+	{
+		Root = Setup();
+	}
+
+	public virtual Container Setup()
+	{
+		return [];
+	}
 
 	/// <summary>
 	/// Called when the scene starts.

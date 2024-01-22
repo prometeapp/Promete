@@ -31,8 +31,17 @@ public abstract class ElementBase
 
 	private readonly List<Component> components = [];
 
-	public ElementBase()
+	public ElementBase(
+		string name = "",
+		Vector? location = default,
+		Vector? scale = default,
+		VectorInt? size = default
+		)
 	{
+		Name = name;
+		Location = location ?? (0, 0);
+		Scale = scale ?? (1, 1);
+		Size = size ?? (0, 0);
 		ComputeTransform();
 	}
 

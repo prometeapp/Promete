@@ -5,7 +5,12 @@ using Promete.Graphics;
 
 namespace Promete.Elements;
 
-public class Tilemap(VectorInt tileSize) : ElementBase
+public class Tilemap(VectorInt tileSize,
+	Color? defaultColor = default,
+	TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto,
+	string name = "",
+	Vector? location = default,
+	Vector? scale = default) : ElementBase(name, location, scale)
 {
 	/// <summary>
 	/// Get or set size of grid.
@@ -15,9 +20,9 @@ public class Tilemap(VectorInt tileSize) : ElementBase
 	/// <summary>
 	/// Get or set default tint color of tiles.
 	/// </summary>
-	public Color? DefaultColor { get; set; }
+	public Color? DefaultColor { get; set; } = defaultColor;
 
-	public TilemapRenderingMode RenderingMode { get; set; } = TilemapRenderingMode.Auto;
+	public TilemapRenderingMode RenderingMode { get; set; } = renderingMode;
 
 	public IReadOnlyDictionary<VectorInt, (ITile tile, Color? color)> Tiles => tiles.AsReadOnly();
 

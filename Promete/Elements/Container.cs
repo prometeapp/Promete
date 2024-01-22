@@ -3,19 +3,19 @@ using System.Collections.Generic;
 
 namespace Promete.Elements;
 
-public class Container : ElementBase, IEnumerable<ElementBase>
+public class Container(
+	bool isTrimmable = false,
+	string name = "",
+	Vector? location = default,
+	Vector? scale = default,
+	VectorInt? size = default)
+	: ElementBase(name, location, scale, size), IEnumerable<ElementBase>
 {
 	public int Count => children.Count;
 
 	public ElementBase this[int index] => children[index];
 
-	public bool IsTrimmable { get; set; }
-
-	public Container()
-	{
-	}
-
-	public Container(bool isTrimmable) => IsTrimmable = isTrimmable;
+	public bool IsTrimmable { get; set; } = isTrimmable;
 
 	public void Insert(int index, ElementBase item)
 	{
