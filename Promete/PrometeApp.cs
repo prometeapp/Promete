@@ -83,7 +83,7 @@ public sealed class PrometeApp : IDisposable
 		currentScene.OnStart();
 	}
 
-	public void Render(ElementBase element)
+	public void RenderElement(ElementBase element)
 	{
 		var renderer = ResolveRenderer(element);
 		renderer?.Render(element);

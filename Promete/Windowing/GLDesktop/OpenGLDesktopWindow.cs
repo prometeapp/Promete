@@ -205,7 +205,7 @@ namespace Promete.Windowing.GLDesktop
 			gl.ClearColor(app.BackgroundColor);
 			gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-			app.Render(app.Root);
+			if (app.Root != null) app.RenderElement(app.Root);
 			CalculateFps();
 
 			Render?.Invoke();

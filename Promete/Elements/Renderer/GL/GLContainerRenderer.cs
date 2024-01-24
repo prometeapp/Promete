@@ -15,7 +15,7 @@ public class GLContainerRenderer(PrometeApp app, IWindow window) : ElementRender
 		if (container.IsTrimmable) TrimStart(container, w.GL);
 		for (var i = 0; i < container.Count; i++)
 		{
-			app.Render(container[i]);
+			app.RenderElement(container[i]);
 		}
 		if (container.IsTrimmable) TrimEnd(w.GL);
 	}

@@ -43,7 +43,7 @@ public class ConsoleLayer
 		window.Render += () =>
 		{
 			if (text == null) return;
-			app.Render(text);
+			app.RenderElement(text);
 		};
 
 		window.PostUpdate += UpdateConsole;
