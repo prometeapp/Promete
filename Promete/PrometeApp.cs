@@ -73,6 +73,11 @@ public sealed class PrometeApp : IDisposable
 		nextFrameQueue.Enqueue(action);
 	}
 
+	public T? GetPlugin<T>() where T : class
+	{
+		return provider.GetService<T>();
+	}
+
 	public void Dispose()
 	{
 		provider.Dispose();
