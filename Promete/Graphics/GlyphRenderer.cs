@@ -36,7 +36,7 @@ public class GlyphRenderer(IWindow window)
 	public ITexture Generate(string text, Font font, SDColor? color, SDColor? borderColor, int borderThickness)
 	{
 		var f = ResolveFont(font);
-		var size = TextMeasurer.Measure(text, new RendererOptions(f));
+		var size = TextMeasurer.MeasureBounds(text, new TextOptions(f));
 		using var img = new Image<Rgba32>((int)size.Width + 8, (int)size.Height + 8);
 		var col = color ?? System.Drawing.Color.Black;
 		var isColor = Color.FromRgba(col.R, col.G, col.B, col.A);
@@ -45,7 +45,7 @@ public class GlyphRenderer(IWindow window)
 		{
 			var bc = borderColor.Value;
 			var isBorderColor = Color.FromRgba(bc.R, bc.G, bc.B, bc.A);
-			img.Mutate(ctx => ctx.DrawText(text, f, new SolidBrush(isColor), new Pen(isBorderColor, borderThickness),
+			img.Mutate(ctx => ctx.DrawText(text, f, new SolidBrush(isColor), new SolidPen(isBorderColor, borderThickness),
 				PointF.Empty));
 		}
 		else
@@ -65,16 +65,16 @@ public class GlyphRenderer(IWindow window)
 		}
 		else if (f.Path != null && File.Exists(f.Path))
 		{
-			family = fontCollection.Install(f.Path);
+			family = fontCollection.Add(f.Path);
 		}
 		else if (f.Path != null)
 		{
-			family = SystemFonts.Find(f.Path);
+			family = SystemFonts.Get(f.Path);
 		}
 		else if (f.Stream != null)
 		{
 			f.Stream.Position = 0;
-			family = fontCollection.Install(f.Stream);
+			family = fontCollection.Add(f.Stream);
 		}
 		else
 		{

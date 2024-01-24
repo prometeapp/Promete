@@ -9,10 +9,6 @@ public class TextureDisposedException : System.Exception
 	{
 	}
 
-	protected TextureDisposedException(SerializationInfo info, StreamingContext context) : base(info, context)
-	{
-	}
-
 	public TextureDisposedException(string? message) : base(message)
 	{
 	}

@@ -14,10 +14,4 @@ public class ObjectDestroyedException : System.Exception
 	public ObjectDestroyedException(string message, System.Exception inner) : base(message, inner)
 	{
 	}
-
-	protected ObjectDestroyedException(
-		System.Runtime.Serialization.SerializationInfo info,
-		System.Runtime.Serialization.StreamingContext context) : base(info, context)
-	{
-	}
 }
