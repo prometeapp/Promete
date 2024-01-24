@@ -4,7 +4,7 @@ using Promete.Graphics;
 
 namespace Promete.Example;
 
-public class TimeText(GlyphRenderer glyphRenderer) : Text(glyphRenderer, "", Graphics.Font.GetDefault(64), System.Drawing.Color.White)
+public class TimeText() : Text("", Graphics.Font.GetDefault(64), System.Drawing.Color.White)
 {
 	private int updateTimer = 0;
 	protected override void OnUpdate()
