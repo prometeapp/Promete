@@ -19,6 +19,8 @@ public sealed class PrometeApp : IDisposable
 
 	public Color BackgroundColor { get; set; } = Color.Black;
 
+	public IWindow Window { get; private set; }
+
 	public static PrometeApp? Current { get; private set; }
 
 	private Scene? currentScene;
@@ -41,8 +43,11 @@ public sealed class PrometeApp : IDisposable
 		RegisterAllScenes();
 		services.AddSingleton<GlyphRenderer>();
 		services.AddSingleton(this);
+
 		provider = services.BuildServiceProvider();
 		Current = this;
+
+		Window = provider.GetService<IWindow>() ?? throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
 	}
 
 	public static PrometeAppBuilder Create()
@@ -52,20 +57,16 @@ public sealed class PrometeApp : IDisposable
 
 	public int Run<TScene>() where TScene : Scene
 	{
-		var window = provider.GetService<IWindow>() ?? throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
-
-		window.Start += OnStart<TScene>;
-		window.Update += OnUpdate;
-		window.Run();
+		Window.Start += OnStart<TScene>;
+		Window.Update += OnUpdate;
+		Window.Run();
 		return statusCode;
 	}
 
 	public void Exit(int status = 0)
 	{
 		statusCode = status;
-		var window = provider.GetService<IWindow>() ?? throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
-
-		window.Exit();
+		Window.Exit();
 	}
 
 	public void NextFrame(Action action)
