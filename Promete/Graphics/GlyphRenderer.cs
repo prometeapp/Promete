@@ -33,12 +33,18 @@ public class GlyphRenderer(IWindow window)
 		return new Text(this, content, font, color);
 	}
 
+	public Rect GetTextBounds(string text, Font font)
+	{
+		var f = ResolveFont(font);
+		return GetTextBounds(text, f);
+	}
+
 	public ITexture Generate(string text, Font font, SDColor? color, SDColor? borderColor, int borderThickness)
 	{
 		var f = ResolveFont(font);
-		var size = TextMeasurer.MeasureBounds(text, new TextOptions(f));
+		var size = GetTextBounds(text, f);
 		using var img = new Image<Rgba32>((int)size.Width + 8, (int)size.Height + 8);
-		var col = color ?? System.Drawing.Color.Black;
+		var col = color ?? SDColor.Black;
 		var isColor = Color.FromRgba(col.R, col.G, col.B, col.A);
 
 		if (borderColor != null)
@@ -54,6 +60,12 @@ public class GlyphRenderer(IWindow window)
 		}
 
 		return window.TextureFactory.LoadFromImageSharpImage(img);
+	}
+
+	private Rect GetTextBounds(string text, SixLabors.Fonts.Font font)
+	{
+		var size = TextMeasurer.MeasureBounds(text, new TextOptions(font));
+		return new Rect(0, 0, (int)size.Width, (int)size.Height);
 	}
 
 	private SixLabors.Fonts.Font ResolveFont(Font f)
