@@ -163,6 +163,11 @@ public class AudioPlayer : IDisposable
 		Time = TimeInSamples = 0;
 	}
 
+	public async void PlayOneShot(IAudioSource source, float _gain = 1, float pitch = 1, float pan = 0)
+	{
+		await PlayOneShotAsync(source, _gain, pitch, pan);
+	}
+
 	/// <summary>
 	/// Play specified <see cref="IAudioSource"/> instantly.
 	/// </summary>
@@ -193,7 +198,7 @@ public class AudioPlayer : IDisposable
 		do
 		{
 			al.GetSourceProperty(alSrc.Handle, GetSourceInteger.BuffersProcessed, out buffersProcessed);
-			await Task.Yield();
+			await Task.Delay(1);
 		} while (buffersProcessed < 1);
 	}
 

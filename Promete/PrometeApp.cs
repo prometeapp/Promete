@@ -27,10 +27,12 @@ public sealed class PrometeApp : IDisposable
 	private readonly Queue<Action> nextFrameQueue = new();
 	private readonly Dictionary<Type, Type> rendererTypes;
 	private readonly Dictionary<Type, ElementRendererBase> renderers = new();
+	private PrSynchronizationContext synchronizationContext;
 
 	private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
 	{
-		SynchronizationContext.SetSynchronizationContext(new PrSynchronizationContext());
+		synchronizationContext = new PrSynchronizationContext();
+		SynchronizationContext.SetSynchronizationContext(synchronizationContext);
 
 		this.services = services;
 		this.rendererTypes = rendererTypes;
@@ -102,6 +104,7 @@ public sealed class PrometeApp : IDisposable
 		currentScene?.OnUpdate();
 
 		ProcessNextFrameQueue();
+		synchronizationContext.Update();
 	}
 
 	private void ProcessNextFrameQueue()
