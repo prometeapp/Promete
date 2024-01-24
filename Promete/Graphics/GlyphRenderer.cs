@@ -16,22 +16,7 @@ namespace Promete.Graphics;
 public class GlyphRenderer(IWindow window)
 {
 	private readonly Dictionary<object, FontFamily> fontCache = new();
-	private readonly FontCollection fontCollection = new FontCollection();
-
-	public Text CreateElement(string content)
-	{
-		return CreateElement(content, Font.GetDefault(16));
-	}
-
-	public Text CreateElement(string content, Font font)
-	{
-		return CreateElement(content, font, SDColor.White);
-	}
-
-	public Text CreateElement(string content, Font font, SDColor? color)
-	{
-		return new Text(this, content, font, color);
-	}
+	private readonly FontCollection fontCollection = new();
 
 	public Rect GetTextBounds(string text, Font font)
 	{

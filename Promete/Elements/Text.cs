@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using Promete.Graphics;
 
@@ -55,7 +56,6 @@ public class Text : ElementBase
 	private readonly GlyphRenderer glyphRenderer;
 
 	public Text(
-		GlyphRenderer glyphRenderer,
 		string content,
 		Font? font = default,
 		Color? color = default,
@@ -63,7 +63,7 @@ public class Text : ElementBase
 		Vector? location = default,
 		Vector? scale = default) : base(name, location, scale)
 	{
-		this.glyphRenderer = glyphRenderer;
+		glyphRenderer = PrometeApp.Current?.GetPlugin<GlyphRenderer>() ?? throw new InvalidOperationException("System is not initialized yet!");
 		this.content = content;
 		this.font = font ?? Font.GetDefault(16);
 		textColor = color ?? System.Drawing.Color.White;
