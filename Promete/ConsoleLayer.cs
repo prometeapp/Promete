@@ -37,8 +37,8 @@ public class ConsoleLayer
 	{
 		this.window = window;
 		FontSize = 16;
-		text = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
-		heightCalculator = new Text(glyphRenderer, "", Font.GetDefault(), Color.White);
+		text = new Text("", Font.GetDefault(), Color.White);
+		heightCalculator = new Text("", Font.GetDefault(), Color.White);
 		maxLine = CalculateMaxLine();
 		window.Render += () =>
 		{
