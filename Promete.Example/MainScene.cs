@@ -10,15 +10,17 @@ namespace Promete.Example;
 
 public class MainScene : Scene
 {
+	private Tilemap map;
+
 	private readonly PrometeApp app;
 	private readonly IWindow window;
 	private readonly Keyboard keyboard;
 	private readonly ConsoleLayer console;
-	private readonly Tilemap map;
 	private readonly Mouse mouse;
 	private readonly ITile tile;
-	private AudioPlayer player;
-	private VorbisAudioSource sound;
+	private readonly AudioPlayer player;
+	private readonly VorbisAudioSource sound;
+	private readonly WaveAudioSource sfx1;
 
 	public MainScene(PrometeApp app, IWindow window, Keyboard keyboard, Mouse mouse, ConsoleLayer console)
 	{
@@ -28,14 +30,21 @@ public class MainScene : Scene
 		this.mouse = mouse;
 		this.console = console;
 
-		Root.Add(map = new Tilemap((16, 16)));
+		player = new AudioPlayer();
+		sound = new VorbisAudioSource("assets/kagerou.ogg");
+		sfx1 = new WaveAudioSource("assets/lineclear.wav");
+
 		tile = new Tile(window.TextureFactory.CreateSolid(Color.Red, (16, 16)));
 	}
 
-	public override void OnStart()
+	public override Container Setup()
 	{
-		player = new AudioPlayer();
-		sound = new VorbisAudioSource("assets/kagerou.ogg");
+		map = new Tilemap((16, 16));
+		string a = "";
+		return new Container
+		{
+			map,
+		};
 	}
 
 	public override void OnUpdate()
@@ -44,6 +53,8 @@ public class MainScene : Scene
 		console.Print("Hello, Promete!");
 		console.Print($"FPS: {window.FramePerSeconds}");
 		console.Print($"UPS: {window.UpdatePerSeconds}");
+		var pan = (mouse.Position.X - window.Size.X / 2) / (window.Size.X / 2f);
+		console.Print($"pan: {pan}");
 
 		if (keyboard.Escape.IsKeyDown)
 		{
@@ -61,5 +72,25 @@ public class MainScene : Scene
 			if (player.IsPlaying) player.Stop();
 			else player.Play(sound);
 		}
+
+		if (mouse[MouseButtonType.Right].IsButtonDown)
+		{
+			player.PlayOneShotAsync(sfx1, mouse.Position.Y / (float)window.Height, 2f, pan);
+		}
+
+		if (keyboard.Number1.IsKeyDown)
+		{
+			TestAwaitingTaskAsync();
+		}
+	}
+
+	private async void TestAwaitingTaskAsync()
+	{
+		player.PlayOneShot(sfx1);
+		await Task.Delay(1000);
+		player.PlayOneShot(sfx1);
+		await Task.Delay(1000);
+		player.PlayOneShot(sfx1);
+		await Task.Delay(1000);
 	}
 }

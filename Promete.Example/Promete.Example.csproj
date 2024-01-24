@@ -12,11 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="assets\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Update="assets\kagerou.ogg">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="assets\lineclear.wav">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
