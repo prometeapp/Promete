@@ -19,6 +19,8 @@ public sealed class PrometeApp : IDisposable
 
 	public Color BackgroundColor { get; set; } = Color.Black;
 
+	public static PrometeApp? Current { get; private set; }
+
 	private Scene? currentScene;
 	private int statusCode = 0;
 
@@ -27,7 +29,7 @@ public sealed class PrometeApp : IDisposable
 	private readonly Queue<Action> nextFrameQueue = new();
 	private readonly Dictionary<Type, Type> rendererTypes;
 	private readonly Dictionary<Type, ElementRendererBase> renderers = new();
-	private PrSynchronizationContext synchronizationContext;
+	private readonly PrSynchronizationContext synchronizationContext;
 
 	private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
 	{
@@ -40,6 +42,7 @@ public sealed class PrometeApp : IDisposable
 		services.AddSingleton<GlyphRenderer>();
 		services.AddSingleton(this);
 		provider = services.BuildServiceProvider();
+		Current = this;
 	}
 
 	public static PrometeAppBuilder Create()
