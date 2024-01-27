@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Promete.Input.Internal;
-using Promete.Internal;
 using Promete.Windowing;
 
 namespace Promete.Input;
@@ -16,10 +15,9 @@ public partial class Keyboard
 	public Keyboard(IWindow window)
 	{
 		this.window = window;
-		var input = window._RawInputContext;
-		if (input == null) throw new InvalidOperationException("BUG: RawInputContext is null.");
+		var kb = GetCurrentKeyboard();
+		if (kb == null) throw new InvalidOperationException("BUG: RawInputContext is null.");
 
-		var kb = input.Keyboards[0];
 		kb.KeyChar += (_, e) =>
 		{
 			keychars.Enqueue(e);
@@ -88,12 +86,20 @@ public partial class Keyboard
 	/// <returns></returns>
 	public bool HasChar() => keychars.Count > 0;
 
+	public void OpenVirtualKeyboard()
+	{
+		GetCurrentKeyboard()?.BeginInput();
+	}
+
+	public void CloseVirtualKeyboard()
+	{
+		GetCurrentKeyboard()?.EndInput();
+	}
+
 	private void OnPreUpdate()
 	{
-		var input = window._RawInputContext;
-		if (input == null) return;
-
-		var kb = input.Keyboards[0];
+		var kb = GetCurrentKeyboard();
+		if (kb == null) return;
 
 		Parallel.ForEach(allCodes, keyCode =>
 		{
@@ -122,6 +128,13 @@ public partial class Keyboard
 		window.PreUpdate -= OnPreUpdate;
 		window.PostUpdate -= OnPostUpdate;
 		window.Destroy -= OnDestroy;
+	}
+
+	private Silk.NET.Input.IKeyboard? GetCurrentKeyboard()
+	{
+		var input = window._RawInputContext;
+		var kb = input?.Keyboards[0];
+		return kb;
 	}
 
 	public event Action<KeyEventArgs>? KeyDown;
