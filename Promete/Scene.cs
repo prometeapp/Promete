@@ -37,20 +37,6 @@ public abstract class Scene
 	}
 
 	/// <summary>
-	/// Called when updating frame of the scene.
-	/// </summary>
-	public virtual void OnPreUpdate()
-	{
-	}
-
-	/// <summary>
-	/// Called when updating frame of the scene.
-	/// </summary>
-	public virtual void OnPostUpdate()
-	{
-	}
-
-	/// <summary>
 	/// Called when the scene is disposed.
 	/// </summary>
 	public virtual void OnDestroy()
