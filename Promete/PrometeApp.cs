@@ -98,6 +98,11 @@ public sealed class PrometeApp : IDisposable
 		renderer?.Render(element);
 	}
 
+	public void UpdateElement(ElementBase element)
+	{
+		element.Update();
+	}
+
 	private void OnStart<TScene>() where TScene : Scene
 	{
 		foreach (var (elementType, rendererType) in rendererTypes)

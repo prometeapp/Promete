@@ -220,7 +220,7 @@ namespace Promete.Windowing.GLDesktop
 			CalculateUps();
 
 			PreUpdate?.Invoke();
-			app.Root?.Update();
+			if (app.Root != null) app.UpdateElement(app.Root);
 			Update?.Invoke();
 			PostUpdate?.Invoke();
 
