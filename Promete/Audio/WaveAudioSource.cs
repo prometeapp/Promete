@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 namespace Promete.Audio;
 
@@ -38,13 +36,15 @@ public class WaveAudioSource : IAudioSource
 	private readonly int bits;
 	private readonly int sampleRate;
 
-	/// <summary>
-	/// Initialize a new instance of <see cref="WaveAudioSource"/> class with specified file path.
-	/// </summary>
-	/// <param name="path">ファイルパス。</param>
 	public WaveAudioSource(string path)
+		: this(File.OpenRead(path))
 	{
-		store = LoadWave(File.OpenRead(path), out channels, out bits, out sampleRate);
+
+	}
+
+	public WaveAudioSource(Stream stream)
+	{
+		store = LoadWave(stream, out channels, out bits, out sampleRate);
 	}
 
 	public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)

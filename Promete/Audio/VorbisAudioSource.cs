@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
+using System.IO;
 using NVorbis;
-using Promete.Internal;
 
 namespace Promete.Audio;
 
@@ -31,14 +30,16 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 	/// </summary>
 	public int SampleRate => reader.SampleRate;
 
-	private short[] store = [];
+	private readonly short[] store;
 
-	/// <summary>
-	/// Initialize a new instance of <see cref="VorbisAudioSource"/> class with specified file path.
-	/// </summary>
 	public VorbisAudioSource(string path)
+		: this(File.OpenRead(path))
 	{
-		reader = new NVorbis.VorbisReader(path);
+	}
+
+	public VorbisAudioSource(Stream stream)
+	{
+		reader = new VorbisReader(stream);
 
 		var temp = new float[Samples ?? 0];
 		store = new short[Samples ?? 0];
