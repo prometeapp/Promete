@@ -97,5 +97,15 @@ namespace Promete
 			location = Location;
 			size = Size;
 		}
+
+		/// <summary>
+		/// この矩形と指定された矩形が重なっているかどうかを判定します。
+		/// </summary>
+		/// <param name="rect">判定する矩形。</param>
+		/// <returns>重なっている場合は <see langword="true"/>、それ以外の場合は <see langword="false"/>。</returns>
+		public bool Intersect(RectInt rect)
+		{
+			return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
+		}
 	}
 }
