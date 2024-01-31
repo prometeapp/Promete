@@ -8,24 +8,30 @@ using SilkMouseButton = Silk.NET.Input.MouseButton;
 namespace Promete.Input;
 
 /// <summary>
-/// This class gets the mouse cursor position, mouse button status, etc. This class can not be inherited.
+/// マウスカーソルの位置や、ボタン入力、ホイールスクロールの情報を取得する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public class Mouse
+public sealed class Mouse
 {
 	/// <summary>
-	/// Get mouse cursor coordinates.
+	/// マウスカーソルの位置を取得します。
 	/// </summary>
-	/// <value>The position.</value>
 	public VectorInt Position { get; private set; }
 
 	/// <summary>
-	/// Get mouse wheel scroll amount.
+	/// マウスホイールのスクロール量を取得します。
 	/// </summary>
-	/// <value></value>
 	public Vector Scroll { get; private set; }
 
+	/// <summary>
+	/// 指定したボタンの情報を取得します。
+	/// </summary>
+	/// <param name="index">ボタン番号。</param>
 	public MouseButton this[int index] => buttons[index];
 
+	/// <summary>
+	/// 指定したボタンの情報を取得します。
+	/// </summary>
+	/// <param name="type">ボタンタイプ。</param>
 	public MouseButton this[MouseButtonType type] => buttons[(int)type];
 
 	private bool isMouseOnWindow = false;

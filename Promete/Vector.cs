@@ -97,8 +97,7 @@ namespace Promete
 		/// </summary>
 		public bool Equals(Vector other)
 		{
-			return X == other.X &&
-				Y == other.Y;
+			return X == other.X && Y == other.Y;
 		}
 
 		/// <summary>

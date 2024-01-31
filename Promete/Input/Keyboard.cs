@@ -8,7 +8,10 @@ using Promete.Windowing;
 
 namespace Promete.Input;
 
-public partial class Keyboard
+/// <summary>
+/// キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
+/// </summary>
+public sealed partial class Keyboard
 {
 	private readonly IWindow window;
 
@@ -40,22 +43,22 @@ public partial class Keyboard
 	}
 
 	/// <summary>
-	/// Get all key codes;
+	/// 存在する全てのキーコードを列挙します。
 	/// </summary>
 	public IEnumerable<KeyCode> AllKeyCodes => allCodes;
 
 	/// <summary>
-	/// Get all pressed keys.
+	/// 現在押されている全てのキーを列挙します。
 	/// </summary>
 	public IEnumerable<KeyCode> AllPressedKeys => allCodes.Where(c => KeyOf(c).IsPressed);
 
 	/// <summary>
-	/// Get all keys which pressed then.
+	/// このフレームで押された全てのキーを列挙します。
 	/// </summary>
 	public IEnumerable<KeyCode> AllDownKeys => allCodes.Where(c => KeyOf(c).IsKeyDown);
 
 	/// <summary>
-	/// Get all keys which released then.
+	/// このフレームで離された全てのキーを列挙します。
 	/// </summary>
 	public IEnumerable<KeyCode> AllUpKeys => allCodes.Where(c => KeyOf(c).IsKeyUp);
 
@@ -63,7 +66,8 @@ public partial class Keyboard
 	private readonly KeyCode[] allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
 
 	/// <summary>
-	/// Get input string from the keyboard buffer.
+	/// キーボードバッファに蓄積されている、入力された文字列を取得します。
+	/// 呼び出した時点でバッファはクリアされます。
 	/// </summary>
 	public string GetString()
 	{
@@ -76,21 +80,28 @@ public partial class Keyboard
 	}
 
 	/// <summary>
-	/// Get an input char from the keyboard buffer.
+	/// キーボードバッファに蓄積されている、入力された文字を取得します。
+	/// 呼び出した時点でその文字はバッファから削除されます。
 	/// </summary>
 	public char GetChar() => HasChar() ? keychars.Dequeue() : '\0';
 
 	/// <summary>
-	/// Check whether some chars in the keyboard buffer.
+	/// キーボードバッファにデータが存在するかどうかを取得します。
 	/// </summary>
 	/// <returns></returns>
 	public bool HasChar() => keychars.Count > 0;
 
+	/// <summary>
+	/// モバイル デバイス等で仮想キーボードを開きます。
+	/// </summary>
 	public void OpenVirtualKeyboard()
 	{
 		GetCurrentKeyboard()?.BeginInput();
 	}
 
+	/// <summary>
+	/// モバイル デバイス等で仮想キーボードを閉じます。
+	/// </summary>
 	public void CloseVirtualKeyboard()
 	{
 		GetCurrentKeyboard()?.EndInput();

@@ -1,22 +1,22 @@
 namespace Promete
 {
 	/// <summary>
-	/// Rectangle structure.
+	/// 位置とサイズからなる矩形を表します。構成する数値が整数なバージョン。
 	/// </summary>
 	public struct RectInt
 	{
 		/// <summary>
-		/// Get or set the location of this rect.
+		/// この矩形の位置を取得または設定します。
 		/// </summary>
 		public VectorInt Location { get; set; }
 
 		/// <summary>
-		/// Get or set the size of this rect.
+		/// この矩形のサイズを取得または設定します。
 		/// </summary>
 		public VectorInt Size { get; set; }
 
 		/// <summary>
-		/// Get or set the left position of this rect.
+		/// この矩形の左端の位置を取得または設定します。
 		/// </summary>
 		public int Left
 		{
@@ -25,7 +25,7 @@ namespace Promete
 		}
 
 		/// <summary>
-		/// Get or set the top position of this rect.
+		/// この矩形の上端の位置を取得または設定します。
 		/// </summary>
 		public int Top
 		{
@@ -34,7 +34,7 @@ namespace Promete
 		}
 
 		/// <summary>
-		/// Get or set the right position of this rect.
+		///	この矩形の右端の位置を取得または設定します。
 		/// </summary>
 		public int Right
 		{
@@ -43,7 +43,7 @@ namespace Promete
 		}
 
 		/// <summary>
-		/// Get or set the bottom position of this rect.
+		/// この矩形の下端の位置を取得または設定します。
 		/// </summary>
 		public int Bottom
 		{
@@ -52,7 +52,7 @@ namespace Promete
 		}
 
 		/// <summary>
-		/// Get or set width of this rect.
+		/// この矩形の幅を取得または設定します。
 		/// </summary>
 		public int Width
 		{
@@ -61,7 +61,7 @@ namespace Promete
 		}
 
 		/// <summary>
-		/// Get or set height of this rect.
+		/// この矩形の高さを取得または設定します。
 		/// </summary>
 		public int Height
 		{
@@ -70,8 +70,10 @@ namespace Promete
 		}
 
 		/// <summary>
-		/// Initialize a new instance of <see cref="RectInt"/> class.
+		/// <see cref="Rect"/> 構造体の新しいインスタンスを初期化します。
 		/// </summary>
+		/// <param name="location"></param>
+		/// <param name="size"></param>
 		public RectInt(VectorInt location, VectorInt size)
 		{
 			Location = location;
@@ -79,8 +81,12 @@ namespace Promete
 		}
 
 		/// <summary>
-		/// Initialize a new instance of <see cref="RectInt"/> class.
+		/// <see cref="Rect"/> 構造体の新しいインスタンスを初期化します。
 		/// </summary>
+		/// <param name="left"></param>
+		/// <param name="top"></param>
+		/// <param name="width"></param>
+		/// <param name="height"></param>
 		public RectInt(int left, int top, int width, int height)
 			: this(new VectorInt(left, top), new VectorInt(width, height)) { }
 

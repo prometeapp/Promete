@@ -9,20 +9,28 @@ using Promete.Windowing;
 namespace Promete;
 
 /// <summary>
-/// A simple text-based console component.
+/// 画面上に簡易な文字出力を行うレイヤーを提供する Promete プラグインです。
 /// </summary>
 public class ConsoleLayer
 {
+	/// <summary>
+	/// 現在のコンソール上のカーソル位置を取得または設定します。
+	/// </summary>
 	public VectorInt Cursor { get; set; }
 
+	/// <summary>
+	/// 現在のフォントサイズを取得または設定します。
+	/// </summary>
 	public int FontSize { get; set; }
 
+	/// <summary>
+	/// 現在使用しているフォントのパスを取得または設定します。
+	/// </summary>
 	public string? FontPath { get; set; }
 
 	/// <summary>
-	/// Get or set a text color of the console.
+	/// 現在の文字色を取得または設定します。
 	/// </summary>
-	/// <value></value>
 	public Color TextColor { get; set; } = Color.White;
 
 	private Text? text;
@@ -33,7 +41,7 @@ public class ConsoleLayer
 	private readonly IWindow window;
 	private readonly List<string> consoleBuffer = [];
 
-	public ConsoleLayer(PrometeApp app, IWindow window, GlyphRenderer glyphRenderer)
+	public ConsoleLayer(PrometeApp app, IWindow window)
 	{
 		this.window = window;
 		FontSize = 16;
@@ -49,6 +57,9 @@ public class ConsoleLayer
 		window.PostUpdate += UpdateConsole;
 	}
 
+	/// <summary>
+	/// コンソール上の文字列を完全に消去します。
+	/// </summary>
 	public void Clear()
 	{
 		consoleBuffer.Clear();
@@ -56,6 +67,10 @@ public class ConsoleLayer
 		Cursor = VectorInt.Zero;
 	}
 
+	/// <summary>
+	/// コンソール上に、指定したオブジェクトを出力します。
+	/// </summary>
+	/// <param name="obj">表示するデータ。</param>
 	public void Print(object? obj)
 	{
 		var line = obj as string ?? obj?.ToString() ?? "null";

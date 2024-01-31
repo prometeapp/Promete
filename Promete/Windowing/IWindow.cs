@@ -6,7 +6,7 @@ using Silk.NET.Input;
 namespace Promete.Windowing
 {
 	/// <summary>
-	/// Provides Game API.
+	/// ゲーム実行用のウィンドウを表します。
 	/// </summary>
 	public interface IWindow
 	{

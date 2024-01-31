@@ -3,13 +3,12 @@ using Promete.Elements;
 namespace Promete;
 
 /// <summary>
-/// Abstract scene class.
+/// シーンを表す抽象クラスです。
 /// </summary>
 public abstract class Scene
 {
-
 	/// <summary>
-	/// Get a root container of this scene.
+	/// このシーンのルートコンテナを取得します。
 	/// </summary>
 	public Container Root { get; }
 	public Scene()

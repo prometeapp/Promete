@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 namespace Promete.Elements;
 
+/// <summary>
+/// 全ての Element を入れ子できる Element。
+/// </summary>
+/// <param name="isTrimmable">範囲外に出た子要素を描画しないかどうか。</param>
+/// <param name="name">この Container の名前。</param>
+/// <param name="location">この Container の位置。</param>
+/// <param name="scale">この Container のスケール。</param>
+/// <param name="size">この Container のサイズ。</param>
 public class Container(
 	bool isTrimmable = false,
 	string name = "",
