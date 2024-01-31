@@ -11,12 +11,13 @@ public abstract class Scene
 	/// このシーンのルートコンテナを取得します。
 	/// </summary>
 	public Container Root { get; }
-	public Scene()
+
+	protected Scene()
 	{
 		Root = Setup();
 	}
 
-	public virtual Container Setup()
+	protected virtual Container Setup()
 	{
 		return [];
 	}
