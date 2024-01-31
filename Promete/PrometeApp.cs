@@ -153,6 +153,9 @@ public sealed class PrometeApp : IDisposable
 		var types = asm.GetTypes();
 		foreach (var type in types.Where(t => t.IsSubclassOf(typeof(Scene))))
 		{
+			// IgnoredSceneAttribute が付与されている場合は無視する
+			if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null) continue;
+
 			// Scene 派生クラスを登録する
 			services.AddTransient(type);
 		}
