@@ -144,6 +144,19 @@ public sealed class PrometeApp : IDisposable
 	}
 
 	/// <summary>
+	/// シーンを読み込みます。現在読み込まれているシーンがある場合、そのシーンは破棄されます。
+	/// </summary>
+	/// <param name="typeScene">読み込むシーン。</param>
+	/// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
+	public void LoadScene(Type typeScene)
+	{
+		currentScene?.OnDestroy();
+
+		currentScene = provider.GetService(typeScene) as Scene ?? throw new ArgumentException($"The scene \"{typeScene}\" is not registered.");
+		currentScene.OnStart();
+	}
+
+	/// <summary>
 	/// 指定した Element を描画します。
 	/// </summary>
 	/// <param name="element">描画対象の Element。</param>
