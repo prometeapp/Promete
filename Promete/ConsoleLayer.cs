@@ -54,6 +54,8 @@ public class ConsoleLayer
 			app.RenderElement(text);
 		};
 
+		app.SceneWillChange += Clear;
+
 		window.PostUpdate += UpdateConsole;
 	}
 
