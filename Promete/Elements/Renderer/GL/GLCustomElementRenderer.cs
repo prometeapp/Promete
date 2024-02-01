@@ -5,26 +5,26 @@ using Silk.NET.OpenGL;
 
 namespace Promete.Elements.Renderer.GL;
 
-public class GLContainerRenderer(PrometeApp app, IWindow window) : ElementRendererBase
+public class GLCustomElementRenderer(PrometeApp app, IWindow window) : ElementRendererBase
 {
 	public override void Render(ElementBase element)
 	{
-		var container = (Container)element;
+		var el = (CustomElement)element;
 		var w = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
-		if (container.IsTrimmable) TrimStart(container, w.GL);
-		for (var i = 0; i < container.Count; i++)
+		if (el.isTrimmable) TrimStart(el, w.GL);
+		for (var i = 0; i < el.children.Count; i++)
 		{
-			app.RenderElement(container[i]);
+			app.RenderElement(el.children[i]);
 		}
-		if (container.IsTrimmable) TrimEnd(w.GL);
+		if (el.isTrimmable) TrimEnd(w.GL);
 	}
 
-	private void TrimStart(Container container, Silk.NET.OpenGL.GL gl)
+	private void TrimStart(CustomElement el, Silk.NET.OpenGL.GL gl)
 	{
 		gl.Enable(GLEnum.ScissorTest);
-		var left = (VectorInt)container.AbsoluteLocation.ToDeviceCoord();
-		var size = (VectorInt)(container.Size * container.AbsoluteScale).ToDeviceCoord();
+		var left = (VectorInt)el.AbsoluteLocation.ToDeviceCoord();
+		var size = (VectorInt)(el.Size * el.AbsoluteScale).ToDeviceCoord();
 
 		if (left.X < 0) left.X = 0;
 		if (left.Y < 0) left.Y = 0;

@@ -6,24 +6,34 @@ namespace Promete.Elements;
 /// <summary>
 /// 全ての Element を入れ子できる Element。
 /// </summary>
-/// <param name="isTrimmable">範囲外に出た子要素を描画しないかどうか。</param>
-/// <param name="name">この Container の名前。</param>
-/// <param name="location">この Container の位置。</param>
-/// <param name="scale">この Container のスケール。</param>
-/// <param name="size">この Container のサイズ。</param>
-public class Container(
-	bool isTrimmable = false,
-	string name = "",
-	Vector? location = default,
-	Vector? scale = default,
-	VectorInt? size = default)
-	: ElementBase(name, location, scale, size), IEnumerable<ElementBase>
+public class Container : CustomElement, IEnumerable<ElementBase>
 {
 	public int Count => children.Count;
 
 	public ElementBase this[int index] => children[index];
 
-	public bool IsTrimmable { get; set; } = isTrimmable;
+	public bool IsTrimmable
+	{
+		get => isTrimmable;
+		set => isTrimmable = value;
+	}
+
+	/// <summary>
+	/// Container の新しいインスタンスを初期化します。
+	/// </summary>
+	/// <param name="isTrimmable">範囲外に出た子要素を描画しないかどうか。</param>
+	/// <param name="name">この Container の名前。</param>
+	/// <param name="location">この Container の位置。</param>
+	/// <param name="scale">この Container のスケール。</param>
+	/// <param name="size">この Container のサイズ。</param>
+	public Container(bool isTrimmable = false,
+		string name = "",
+		Vector? location = default,
+		Vector? scale = default,
+		VectorInt? size = default) : base(name, location, scale, size)
+	{
+		IsTrimmable = isTrimmable;
+	}
 
 	public void Insert(int index, ElementBase item)
 	{
@@ -77,15 +87,4 @@ public class Container(
 	{
 		return children.GetEnumerator();
 	}
-
-	internal override void Update()
-	{
-		base.Update();
-		for (var i = 0; i < children.Count; i++)
-		{
-			children[i].Update();
-		}
-	}
-
-	private readonly List<ElementBase> children = new();
 }

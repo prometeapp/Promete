@@ -31,7 +31,7 @@ public abstract class ElementBase
 
 	private readonly List<Component> components = [];
 
-	public ElementBase(
+	protected ElementBase(
 		string name = "",
 		Vector? location = default,
 		Vector? scale = default,

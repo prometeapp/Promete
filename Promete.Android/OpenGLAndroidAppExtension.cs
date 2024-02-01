@@ -10,7 +10,7 @@ public static class OpenGLAndroidAppExtension
 	public static PrometeApp BuildWithAndroid(this PrometeApp.PrometeAppBuilder builder)
 	{
 		return builder
-			.UseRenderer<Container, GLContainerRenderer>()
+			.UseRenderer<Container, GLCustomElementRenderer>()
 			.UseRenderer<NineSliceSprite, GLNineSliceSpriteRenderer>()
 			.UseRenderer<Shape, GLShapeRenderer>()
 			.UseRenderer<Sprite, GLSpriteRenderer>()

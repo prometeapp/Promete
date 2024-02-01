@@ -10,7 +10,8 @@ public static class OpenGLDesktopAppExtension
 	public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder)
 	{
 		return builder
-			.UseRenderer<Container, GLContainerRenderer>()
+			.UseRenderer<CustomElement, GLCustomElementRenderer>()
+			.UseRenderer<Container, GLCustomElementRenderer>()
 			.UseRenderer<NineSliceSprite, GLNineSliceSpriteRenderer>()
 			.UseRenderer<Shape, GLShapeRenderer>()
 			.UseRenderer<Sprite, GLSpriteRenderer>()
