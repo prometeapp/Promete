@@ -137,10 +137,7 @@ public sealed class PrometeApp : IDisposable
 	/// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
 	public void LoadScene<TScene>() where TScene : Scene
 	{
-		currentScene?.OnDestroy();
-
-		currentScene = provider.GetService<TScene>() ?? throw new ArgumentException($"The scene \"{nameof(TScene)}\" is not registered.");
-		currentScene.OnStart();
+		LoadScene(typeof(TScene));
 	}
 
 	/// <summary>
@@ -153,6 +150,7 @@ public sealed class PrometeApp : IDisposable
 		currentScene?.OnDestroy();
 
 		currentScene = provider.GetService(typeScene) as Scene ?? throw new ArgumentException($"The scene \"{typeScene}\" is not registered.");
+		SceneWillChange?.Invoke();
 		currentScene.OnStart();
 	}
 
@@ -263,4 +261,6 @@ public sealed class PrometeApp : IDisposable
 			return new PrometeApp(services, rendererTypes);
 		}
 	}
+
+	public event Action? SceneWillChange;
 }
