@@ -9,8 +9,8 @@ public class CustomElement(
 	VectorInt? size = default
 ) : ElementBase(name, location, scale, size)
 {
-	internal bool isTrimmable;
-	internal readonly List<ElementBase> children = [];
+	protected internal bool isTrimmable;
+	protected internal readonly List<ElementBase> children = [];
 
 	internal override void Update()
 	{
