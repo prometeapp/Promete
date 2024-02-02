@@ -23,9 +23,7 @@ var app = PrometeApp.Create()
     .BuildWithOpenGLDesktop();
 
 app.Run<MainScene>();
-```
 
-```csharp
 public class MainScene(IWindow window, Keyboard keyboard)
 {
     private ITexture texture1;
@@ -52,10 +50,6 @@ public class MainScene(IWindow window, Keyboard keyboard)
     }
 }
 ```
-
-### 高速な動作
-
-C# 12の言語機能を駆使し、なるべくオーバーヘッドを減らした設計を取り入れています。
 
 ### クロスプラットフォーム
 
