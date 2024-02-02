@@ -3,7 +3,7 @@ using Silk.NET.OpenAL;
 
 namespace Promete.Audio.Internal;
 
-struct ALSource(AL al) : IDisposable
+internal struct ALSource(AL al) : IDisposable
 {
 	public uint Handle { get; } = al.GenSource();
 

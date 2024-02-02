@@ -36,7 +36,7 @@ public class MainScene : Scene
 		tile = new Tile(window.TextureFactory.CreateSolid(Color.SlateGray, (16, 16)));
 	}
 
-	public override Container Setup()
+	protected override Container Setup()
 	{
 		map = new Tilemap((16, 16));
 
