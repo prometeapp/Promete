@@ -6,6 +6,9 @@ Promete Engine は、.NET 8以降を対象とする、2Dグラフィックに特
 
 シンプルなAPI、高速な動作、充実した機能、高い拡張性を持ちます。
 
+その名は、ギリシャ神話に登場する神[「プロメテウス」](https://ja.wikipedia.org/wiki/%E3%83%97%E3%83%AD%E3%83%A1%E3%83%BC%E3%83%86%E3%82%A6%E3%82%B9)に由来します。プロメテウスは、土を捏ねて人間を産み出し、火を盗んで人間に与えたとされます。<br/>
+そうしたプロメテウスのように、クリエイターに力を与え、作品に命を吹き込む存在でありたいという願いが、このエンジンには込められています。
+
 ## 特徴
 
 ### シンプルなAPI
@@ -20,9 +23,7 @@ var app = PrometeApp.Create()
     .BuildWithOpenGLDesktop();
 
 app.Run<MainScene>();
-```
 
-```csharp
 public class MainScene(IWindow window, Keyboard keyboard)
 {
     private ITexture texture1;
@@ -49,10 +50,6 @@ public class MainScene(IWindow window, Keyboard keyboard)
     }
 }
 ```
-
-### 高速な動作
-
-C# 12の言語機能を駆使し、なるべくオーバーヘッドを減らした設計を取り入れています。
 
 ### クロスプラットフォーム
 
