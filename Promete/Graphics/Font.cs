@@ -89,9 +89,5 @@ public class Font
 		return System.HashCode.Combine(Path, Stream, Size, FontStyle);
 	}
 
-	private static readonly Stream defaultFont =
-		typeof(Font).Assembly.GetManifestResourceStream(
-			typeof(Font).Assembly.GetManifestResourceNames().First(n => n.Contains("font.ttf"))
-		) ?? throw new InvalidOperationException(
-			"Internal Error of Promete: font.ttf does not exist in the manifest resource.");
+	private static readonly Stream defaultFont = EmbeddedResource.GetResourceAsStream("Promete.Resources.font.ttf");
 }

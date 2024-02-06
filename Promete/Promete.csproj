@@ -24,6 +24,10 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="Resources/font.ttf" />
+		<EmbeddedResource Include="Resources\shaders\texture.vert" />
+		<EmbeddedResource Include="Resources\shaders\texture.frag" />
+		<EmbeddedResource Include="Resources\shaders\primitive.vert" />
+		<EmbeddedResource Include="Resources\shaders\primitive.frag" />
 	</ItemGroup>
 
 	<ItemGroup>

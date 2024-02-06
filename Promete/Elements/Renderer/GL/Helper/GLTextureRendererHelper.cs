@@ -17,35 +17,6 @@ namespace Promete.Elements.Renderer.GL.Helper
 	/// </summary>
 	public class GLTextureRendererHelper
 	{
-		private const string VertexShaderSource = @"
-			#version 330 core
-			layout (location = 0) in vec2 vPos;
-			layout (location = 1) in vec2 vUv;
-
-			out vec2 fUv;
-
-			void main()
-			{
-				gl_Position = vec4(vPos.x, vPos.y, 0.0, 1.0);
-				fUv = vUv;
-			}
-        ";
-
-		private const string FragmentShaderSource = @"
-			#version 330 core
-			in vec2 fUv;
-
-			uniform sampler2D uTexture0;
-			uniform vec4 uTintColor;
-
-			out vec4 FragColor;
-
-			void main()
-			{
-				FragColor = texture(uTexture0, fUv) * uTintColor;
-			}
-        ";
-
 		private uint shader;
 
 		private uint vbo, vao, ebo;
@@ -60,12 +31,12 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 			// --- 頂点シェーダー ---
 			var vsh = gl.CreateShader(GLEnum.VertexShader);
-			gl.ShaderSource(vsh, VertexShaderSource);
+			gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture.vert"));
 			gl.CompileShader(vsh);
 
 			// --- フラグメントシェーダー ---
 			var fsh = gl.CreateShader(GLEnum.FragmentShader);
-			gl.ShaderSource(fsh, FragmentShaderSource);
+			gl.ShaderSource(fsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture.frag"));
 			gl.CompileShader(fsh);
 
 			// --- シェーダーを紐付ける ---
@@ -106,6 +77,8 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 			location = location.ToDeviceCoord();
 			scale = scale.ToDeviceCoord();
+
+			var matrix = Matrix4x4.Identity * Matrix4x4.CreateFromYawPitchRoll(0, 0, angle);
 
 			var w = width ?? texture.Size.X;
 			var h = height ?? texture.Size.Y;
@@ -161,6 +134,8 @@ namespace Promete.Elements.Renderer.GL.Helper
 			gl.UseProgram(shader);
 			gl.ActiveTexture(GLEnum.Texture0);
 			gl.BindTexture(GLEnum.Texture2D, (uint)glTexture.Handle);
+			var uModel = gl.GetUniformLocation(shader, "uModel");
+			gl.UniformMatrix4(uModel, 1, false, (float*)&matrix);
 			var uTexture0 = gl.GetUniformLocation(shader, "uTexture0");
 			gl.Uniform1(uTexture0, 0);
 			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");

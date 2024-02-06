@@ -9,28 +9,6 @@ namespace Promete.Elements.Renderer.GL.Helper;
 
 public class GLPrimitiveRendererHelper
 {
-	private const string VertexShaderSource = @"
-			#version 330 core
-			layout (location = 0) in vec2 vPos;
-
-			void main()
-			{
-				gl_Position = vec4(vPos.x, vPos.y, 0.0, 1.0);
-			}
-        ";
-
-	private const string FragmentShaderSource = @"
-			#version 330 core
-			uniform vec4 uTintColor;
-
-			out vec4 FragColor;
-
-			void main()
-			{
-				FragColor = uTintColor;
-			}
-        ";
-
 	private uint shader;
 	private uint vao, vbo, ebo;
 
@@ -44,12 +22,12 @@ public class GLPrimitiveRendererHelper
 		var gl = this.window.GL;
 		// --- 頂点シェーダー ---
 		var vsh = gl.CreateShader(GLEnum.VertexShader);
-		gl.ShaderSource(vsh, VertexShaderSource);
+		gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.vert"));
 		gl.CompileShader(vsh);
 
 		// --- フラグメントシェーダー ---
 		var fsh = gl.CreateShader(GLEnum.FragmentShader);
-		gl.ShaderSource(fsh, FragmentShaderSource);
+		gl.ShaderSource(fsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.frag"));
 		gl.CompileShader(fsh);
 
 		// --- シェーダーを紐付ける ---
