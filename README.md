@@ -24,7 +24,7 @@ var app = PrometeApp.Create()
 
 app.Run<MainScene>();
 
-public class MainScene(IWindow window, Keyboard keyboard)
+public class MainScene(Keyboard keyboard)
 {
     private ITexture texture1;
     private ITexture texture2;
@@ -45,7 +45,7 @@ public class MainScene(IWindow window, Keyboard keyboard)
     {
         if (keyboard.Escape.IsKeyDown)
         {
-            window.Close();
+            Window.Close();
         }
     }
 }
