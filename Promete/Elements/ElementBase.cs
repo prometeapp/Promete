@@ -98,7 +98,6 @@ public abstract class ElementBase
 
 	internal virtual void Update()
 	{
-		ComputeTransform();
 		OnUpdate();
 		for (var i = 0; i < components.Count; i++)
 			components[i].OnUpdate();
