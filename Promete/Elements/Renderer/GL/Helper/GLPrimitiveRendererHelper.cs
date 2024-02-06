@@ -132,14 +132,6 @@ public class GLPrimitiveRendererHelper
 		if (lineWidth > 0 && lineColor is { } lc)
 		{
 			gl.LineWidth(lineWidth);
-
-			// --- VAO ---
-			var vao = gl.GenVertexArray();
-			gl.BindVertexArray(vao);
-
-			// --- VBO ---
-			var vbo = gl.GenBuffer();
-			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
 			gl.BufferData(GLEnum.ArrayBuffer, (uint)vertices.Length * 2 * sizeof(float), v, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
@@ -151,10 +143,6 @@ public class GLPrimitiveRendererHelper
 			gl.Uniform4(uTintColor, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
 
 			gl.DrawArrays(PrimitiveType.LineLoop, 0, (uint)vertices.Length);
-
-			// --- 不要なデータを開放 ---
-			gl.DeleteBuffer(vbo);
-			gl.DeleteVertexArray(vao);
 		}
 
 		gl.Disable(EnableCap.Blend);
