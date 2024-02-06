@@ -6,11 +6,11 @@ namespace Promete.Example.examples;
 
 
 [Demo("/sample3", "ドラッグアンドドロップの例")]
-public class Sample3ExampleScene(PrometeApp app, IWindow window, ConsoleLayer console, Keyboard keyboard) : Scene
+public class Sample3ExampleScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
 	public override void OnStart()
 	{
-		window.FileDropped += OnFileDrop;
+		Window.FileDropped += OnFileDrop;
 		console.Print("Drop some files");
 		console.Print("Press [ESC] to return");
 	}
@@ -18,12 +18,12 @@ public class Sample3ExampleScene(PrometeApp app, IWindow window, ConsoleLayer co
 	public override void OnUpdate()
 	{
 		if (keyboard.Escape.IsKeyUp)
-			app.LoadScene<MainScene>();
+			App.LoadScene<MainScene>();
 	}
 
 	public override void OnDestroy()
 	{
-		window.FileDropped -= OnFileDrop!;
+		Window.FileDropped -= OnFileDrop!;
 	}
 
 	private void OnFileDrop(FileDroppedEventArgs e)

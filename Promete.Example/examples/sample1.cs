@@ -4,7 +4,7 @@ using Promete.Input;
 namespace Promete.Example.examples;
 
 [Demo("/sample1", @"""Hello world!""")]
-public class Sample1ExampleScene(ConsoleLayer console, PrometeApp app, Keyboard keyboard) : Scene
+public class Sample1ExampleScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
 	public override void OnStart()
 	{
@@ -16,7 +16,7 @@ public class Sample1ExampleScene(ConsoleLayer console, PrometeApp app, Keyboard 
 	{
 		if (keyboard.Escape.IsKeyDown)
 		{
-			app.LoadScene<MainScene>();
+			App.LoadScene<MainScene>();
 		}
 	}
 }

@@ -6,7 +6,7 @@ using Promete.Windowing;
 namespace Promete.Example.examples.audio;
 
 [Demo("/audio/wav sfx", "短い効果音をいくつか再生します")]
-public class WavExampleScene(PrometeApp app, IWindow window, Keyboard keyboard, ConsoleLayer console) : Scene
+public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
 	private readonly AudioPlayer player = new();
 	private readonly WaveAudioSource sfx = new("assets/lineclear.wav");
@@ -24,6 +24,6 @@ public class WavExampleScene(PrometeApp app, IWindow window, Keyboard keyboard, 
 			player.PlayOneShotAsync(sfx);
 
 		if (keyboard.Escape.IsKeyUp)
-			app.LoadScene<MainScene>();
+			App.LoadScene<MainScene>();
 	}
 }

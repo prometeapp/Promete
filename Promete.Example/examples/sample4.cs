@@ -10,7 +10,7 @@ namespace Promete.Example.examples;
 
 
 [Demo("/sample4", "簡易テキストエディタ")]
-public class TextEditorScene(PrometeApp app, IWindow window, ConsoleLayer console, Keyboard keyboard) : Scene
+public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
 	private readonly StringBuilder buf = new();
 	private Text? editorView;
@@ -36,6 +36,6 @@ public class TextEditorScene(PrometeApp app, IWindow window, ConsoleLayer consol
 		if (keyboard.HasChar()) buf.Append(keyboard.GetString());
 
 		if (keyboard.Escape.IsKeyUp)
-			app.LoadScene<MainScene>();
+			App.LoadScene<MainScene>();
 	}
 }

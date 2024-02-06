@@ -6,17 +6,17 @@ using Promete.Windowing;
 namespace Promete.Example.examples.audio;
 
 [Demo("/audio/ogg vorbis", "BGM を再生します")]
-public class OggVorbisExampleScene(PrometeApp app, IWindow window, Keyboard keyboard, ConsoleLayer console) : Scene
+public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
 	private readonly AudioPlayer audio = new();
 	private IAudioSource bgm = new VorbisAudioSource("./assets/kagerou.ogg");
 
 	public override void OnStart()
 	{
-		window.Title = "Ogg Vorbis playback example";
+		Window.Title = "Ogg Vorbis playback example";
 		console.Print("Ogg Vorbis playback Example");
 
-		window.FileDropped += WindowOnFileDropped;
+		Window.FileDropped += WindowOnFileDropped;
 	}
 
 	public override void OnUpdate()
@@ -32,7 +32,7 @@ public class OggVorbisExampleScene(PrometeApp app, IWindow window, Keyboard keyb
 		               """);
 
 		if (keyboard.Escape.IsKeyUp)
-			app.LoadScene<MainScene>();
+			App.LoadScene<MainScene>();
 
 		if (keyboard.Up.IsKeyDown)
 			audio.Gain += 0.1f;
@@ -59,7 +59,7 @@ public class OggVorbisExampleScene(PrometeApp app, IWindow window, Keyboard keyb
 	{
 		audio.Stop();
 		audio.Dispose();
-		window.FileDropped -= WindowOnFileDropped;
+		Window.FileDropped -= WindowOnFileDropped;
 	}
 
 	private void WindowOnFileDropped(FileDroppedEventArgs e)

@@ -1,4 +1,6 @@
+using System;
 using Promete.Elements;
+using Promete.Windowing;
 
 namespace Promete;
 
@@ -11,6 +13,10 @@ public abstract class Scene
 	/// このシーンのルートコンテナを取得します。
 	/// </summary>
 	public Container Root { get; }
+
+	protected PrometeApp App => PrometeApp.Current ?? throw new InvalidOperationException("PrometeApp is not initialized.");
+
+	protected IWindow Window => App.Window ?? throw new InvalidOperationException("Window is not initialized.");
 
 	protected Scene()
 	{

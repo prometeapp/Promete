@@ -8,7 +8,7 @@ namespace Promete.Example.examples;
 
 
 [Demo("/sample5", "10000スプライトを表示してFPSを計測します")]
-public class BenchmarkScene(PrometeApp app, IWindow window, Keyboard keyboard) : Scene
+public class BenchmarkScene(Keyboard keyboard) : Scene
 {
 	private ITexture strawberry;
 	private bool initialized;
@@ -16,11 +16,11 @@ public class BenchmarkScene(PrometeApp app, IWindow window, Keyboard keyboard) :
 
 	public override async void OnStart()
 	{
-		strawberry = window.TextureFactory.Load("assets/ichigo.png");
+		strawberry = Window.TextureFactory.Load("assets/ichigo.png");
 		for (var i = 0; i < 10000; i++)
 		{
-			window.Title = $"Creating sprites {(int)((i + 1) / 10000f * 100)}%";
-			Root.Add(new Sprite(strawberry, location: rnd.NextVector(window.Width - 16, window.Height - 16)));
+			Window.Title = $"Creating sprites {(int)((i + 1) / 10000f * 100)}%";
+			Root.Add(new Sprite(strawberry, location: rnd.NextVector(Window.Width - 16, Window.Height - 16)));
 			if (i % 1000 == 0)
 				await Task.Delay(1);
 		}
@@ -31,10 +31,10 @@ public class BenchmarkScene(PrometeApp app, IWindow window, Keyboard keyboard) :
 	public override void OnUpdate()
 	{
 		if (!initialized) return;
-		window.Title = $"{window.FramePerSeconds} FPS";
+		Window.Title = $"{Window.FramePerSeconds} FPS";
 
 		if (keyboard.Escape.IsKeyUp)
-			app.LoadScene<MainScene>();
+			App.LoadScene<MainScene>();
 	}
 
 	public override void OnDestroy()

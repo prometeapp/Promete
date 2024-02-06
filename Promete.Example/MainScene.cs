@@ -7,7 +7,7 @@ using static Promete.Example.Kernel.DemoKernel;
 
 namespace Promete.Example;
 
-public class MainScene(PrometeApp app, IWindow window, Mouse mouse, Keyboard keyboard, ConsoleLayer console) : Scene
+public class MainScene(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : Scene
 {
 	public override void OnStart()
 	{
@@ -67,14 +67,14 @@ public class MainScene(PrometeApp app, IWindow window, Mouse mouse, Keyboard key
 						CurrentIndex = 0;
 						break;
 					case SceneFile file:
-						app.LoadScene(file.Scene);
+						App.LoadScene(file.Scene);
 						break;
 				}
 			}
 		}
 		else if (keyboard.Escape.IsKeyDown)
 		{
-			app.Exit();
+			App.Exit();
 		}
 	}
 }
