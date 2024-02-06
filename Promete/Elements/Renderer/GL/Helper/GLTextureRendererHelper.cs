@@ -48,6 +48,8 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 		private uint shader;
 
+		private uint vbo, vao, ebo;
+
 		private readonly OpenGLDesktopWindow window;
 
 		public GLTextureRendererHelper(IWindow window)
@@ -76,6 +78,18 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 			gl.DeleteShader(vsh);
 			gl.DeleteShader(fsh);
+
+			// --- VAO ---
+			vao = gl.GenVertexArray();
+			gl.BindVertexArray(vao);
+
+			// --- VBO ---
+			vbo = gl.GenBuffer();
+			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+
+			// --- EBO ---
+			ebo = gl.GenBuffer();
+			gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 		}
 
 		/// <summary>
@@ -117,16 +131,7 @@ namespace Promete.Elements.Renderer.GL.Helper
 			var (x2, y2) = (left, bottom).ToViewportPoint(hw, hh);
 			var (x3, y3) = (left, top).ToViewportPoint(hw, hh);
 
-			// TODO 無駄が多いのでキャッシュする
-
-			// --- VAO ---
-			var vao = gl.GenVertexArray();
-			gl.BindVertexArray(vao);
-
-			// --- VBO ---
-			var vbo = gl.GenBuffer();
-			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
-            var vertices = stackalloc float[]
+			var vertices = stackalloc float[]
 			{
 				x0, y0, 1f, 0f,
 				x1, y1, 1f, 1f,
@@ -136,9 +141,6 @@ namespace Promete.Elements.Renderer.GL.Helper
 			const uint verticesSize = 4 * 4;
 			gl.BufferData(GLEnum.ArrayBuffer, verticesSize * sizeof(float), vertices, GLEnum.StaticDraw);
 
-			// --- EBO ---
-			var ebo = gl.GenBuffer();
-			gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 			var indices = stackalloc uint[]
 			{
 				0, 1, 3,
@@ -165,27 +167,6 @@ namespace Promete.Elements.Renderer.GL.Helper
 			var c = color ?? Color.White;
 			gl.Uniform4(uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
 			gl.DrawElements(GLEnum.Triangles, indicesSize, GLEnum.UnsignedInt, null);
-
-			// --- 不要なデータを開放 ---
-			gl.DeleteBuffer(vbo);
-			gl.DeleteBuffer(ebo);
-			gl.DeleteVertexArray(vao);
-		}
-
-		public unsafe int GenerateTexture(byte[] bmp, int width, int height)
-		{
-			var gl = window.GL;
-			fixed (byte* b = bmp)
-			{
-				var texture = gl.GenTexture();
-				gl.ActiveTexture(GLEnum.Texture0);
-				gl.BindTexture(GLEnum.Texture2D, texture);
-
-				gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-				gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-				gl.TexImage2D(GLEnum.Texture2D, 0, (int)GLEnum.Rgba, (uint)width, (uint)height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, b);
-				return (int)texture;
-			}
 		}
 	}
 }

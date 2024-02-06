@@ -32,6 +32,7 @@ public class GLPrimitiveRendererHelper
         ";
 
 	private uint shader;
+	private uint vao, vbo, ebo;
 
 	private readonly OpenGLDesktopWindow window;
 
@@ -61,6 +62,17 @@ public class GLPrimitiveRendererHelper
 
 		gl.DeleteShader(vsh);
 		gl.DeleteShader(fsh);
+
+		// --- VAO ---
+		vao = gl.GenVertexArray();
+		gl.BindVertexArray(vao);
+
+		// --- VBO ---
+		vbo = gl.GenBuffer();
+		gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+		// --- EBO ---
+		ebo = gl.GenBuffer();
+		gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 	}
 
 	public unsafe void Draw(Vector originLocation, Vector originScale, VectorInt[] vertices, ShapeType type,
@@ -90,14 +102,6 @@ public class GLPrimitiveRendererHelper
 		if (color.A > 0)
 		{
 			if (type == ShapeType.Line) gl.LineWidth(lineWidth);
-
-			// --- VAO ---
-			var vao = gl.GenVertexArray();
-			gl.BindVertexArray(vao);
-
-			// --- VBO ---
-			var vbo = gl.GenBuffer();
-			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
 			gl.BufferData(GLEnum.ArrayBuffer, (uint)vertices.Length * 2 * sizeof(float), v, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
@@ -110,9 +114,6 @@ public class GLPrimitiveRendererHelper
 
 			if (type == ShapeType.Rect)
 			{
-				// --- EBO ---
-				var ebo = gl.GenBuffer();
-				gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 				var indices = stackalloc uint[]
 				{
 					0, 1, 2,
@@ -121,18 +122,11 @@ public class GLPrimitiveRendererHelper
 				uint indicesSize = 3 * 2;
 				gl.BufferData(GLEnum.ElementArrayBuffer, indicesSize * sizeof(uint), indices, GLEnum.StaticDraw);
 				gl.DrawElements(GLEnum.Triangles, indicesSize, GLEnum.UnsignedInt, null);
-
-				gl.DeleteBuffer(ebo);
 			}
 			else
 			{
 				gl.DrawArrays(ToGLType(type), 0, (uint)vertices.Length);
 			}
-
-			// --- 不要なデータを開放 ---
-			gl.DeleteBuffer(vbo);
-			gl.DeleteVertexArray(vao);
-
 		}
 
 		if (lineWidth > 0 && lineColor is { } lc)
