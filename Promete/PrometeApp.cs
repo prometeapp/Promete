@@ -247,12 +247,18 @@ public sealed class PrometeApp : IDisposable
 			return this;
 		}
 
-		public PrometeAppBuilder UseRenderer<TElementType, TRendererType>()
-			where TRendererType : ElementRendererBase
-			where TElementType : ElementBase
+		public PrometeAppBuilder Use<TPlugin, TImpl>() where TPlugin : class where TImpl : class, TPlugin
 		{
-			rendererTypes[typeof(TElementType)] = typeof(TRendererType);
-			return Use<TRendererType>();
+			services.AddSingleton<TPlugin, TImpl>();
+			return this;
+		}
+
+		public PrometeAppBuilder UseRenderer<TElement, TRenderer>()
+			where TRenderer : ElementRendererBase
+			where TElement : ElementBase
+		{
+			rendererTypes[typeof(TElement)] = typeof(TRenderer);
+			return Use<TRenderer>();
 		}
 
 		public PrometeApp Build<TWindow>() where TWindow : IWindow
