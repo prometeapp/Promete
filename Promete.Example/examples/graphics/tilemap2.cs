@@ -88,6 +88,7 @@ public class Tilemap2ExampleScene(PrometeApp app, IWindow window, Keyboard keybo
 			};
 		if (keyboard.Z.IsKeyDown) Root.Scale *= 2.0f;
 		if (keyboard.X.IsKeyDown) Root.Scale *= 0.5f;
+		map.Angle += mouse.Scroll.Y > 0 ? 1 : mouse.Scroll.Y < 0 ? -1 : 0;
 
 		previousMousePosition = mouse.Position;
 	}
