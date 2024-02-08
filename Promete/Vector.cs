@@ -60,6 +60,8 @@ namespace Promete
 
 		public static implicit operator Vector((float x, float y) v1) => new(v1.x, v1.y);
 
+		public static explicit operator Vector2(Vector v) => new(v.X, v.Y);
+
 		/// <summary>
 		/// Get angle between 2 vectors.
 		/// </summary>

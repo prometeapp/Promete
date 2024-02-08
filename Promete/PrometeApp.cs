@@ -160,7 +160,6 @@ public sealed class PrometeApp : IDisposable
 	/// <param name="element">描画対象の Element。</param>
 	public void RenderElement(ElementBase element)
 	{
-		element.ComputeTransform();
 		var renderer = ResolveRenderer(element);
 		renderer?.Render(element);
 	}

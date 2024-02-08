@@ -8,6 +8,6 @@ public class GLSpriteRenderer(GLTextureRendererHelper helper) : ElementRendererB
 	{
 		var sprite = (Sprite)element;
 		if (sprite.Texture is not { } tex) return;
-		helper.Draw(tex, sprite.AbsoluteLocation, sprite.AbsoluteScale, sprite.TintColor, sprite.Width, sprite.Height);
+		helper.Draw(tex, sprite, sprite.TintColor);
 	}
 }

@@ -7,6 +7,8 @@ public class GLTextRenderer(GLTextureRendererHelper helper) : ElementRendererBas
 	public override void Render(ElementBase element)
 	{
 		var text = (Text)element;
-		helper.Draw(text.RenderedTexture, text.AbsoluteLocation, text.AbsoluteScale);
+		var texture = text.RenderedTexture;
+		if (texture == null) return;
+		helper.Draw(texture, text);
 	}
 }

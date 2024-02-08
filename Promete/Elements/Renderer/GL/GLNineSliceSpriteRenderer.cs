@@ -21,7 +21,7 @@ public class GLNineSliceSpriteRenderer(GLTextureRendererHelper helper) : Element
 
 		void Draw(ITexture tex, Vector location, float? width = null, float? height = null)
 		{
-			helper.Draw(tex, loc + location * scale, scale, el.TintColor, width, height);
+			helper.Draw(tex, el, el.TintColor, location, width, height);
 		}
 
 		// 9枚を全て描画する

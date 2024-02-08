@@ -7,6 +7,6 @@ public class GLShapeRenderer(GLPrimitiveRendererHelper helper) : ElementRenderer
 	public override void Render(ElementBase element)
 	{
 		var el = (Shape)element;
-		helper.Draw(el.AbsoluteLocation, el.AbsoluteScale, el.Vertices, el.Type, el.Color, el.LineWidth, el.LineColor);
+		helper.Draw(el, el.Vertices, el.Type, el.Color, el.LineWidth, el.LineColor);
 	}
 }

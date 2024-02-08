@@ -66,61 +66,56 @@ namespace Promete.Elements.Renderer.GL.Helper
 		/// <summary>
 		/// テクスチャを描画します。
 		/// </summary>
-		public unsafe void Draw(ITexture texture, Vector location, Vector scale, Color? color = null, float? width = null, float? height = null, float angle = 0)
+		public unsafe void Draw(ITexture texture, ElementBase el, Color? color = null, Vector? additionalLocation = null, float? overriddenWidth = null, float? overriddenHeight = null)
 		{
-			if (texture is not GLTexture2D glTexture) return;
+			if (texture is not GLTexture2D glTexture) throw new ArgumentException("Texture is not a GLTexture2D", nameof(texture));
+			if (glTexture.IsDisposed) throw new TextureDisposedException();
 
-			if (glTexture.IsDisposed)
-			{
-				throw new TextureDisposedException();
-			}
+			var finalAngle = el.AbsoluteAngle;
+			var finalScale = el.AbsoluteScale;
 
-			location = location.ToDeviceCoord();
-			scale = scale.ToDeviceCoord();
+			var finalWidth = overriddenWidth ?? el.Width;
+			var finalHeight = overriddenHeight ?? el.Height;
 
-			var matrix = Matrix4x4.Identity * Matrix4x4.CreateFromYawPitchRoll(0, 0, angle);
-
-			var w = width ?? texture.Size.X;
-			var h = height ?? texture.Size.Y;
-
-			w *= scale.X;
-			h *= scale.Y;
-
-			var (left, top) = location;
-			var right = left + w;
-			var bottom = top + h;
+			Span<Vector> worldVertices =
+			[
+				(finalWidth, 0),
+				(finalWidth, finalHeight),
+				(0, finalHeight),
+				(0, 0),
+			];
 
 			var gl = window.GL;
+			var bb = new Rect(0, 0, window.ActualWidth, window.ActualHeight);
+			var isOutside = true;
 
-			// カリング
-			if (left > window.ActualWidth || top > window.ActualHeight || right < 0 || bottom < 0)
-				return;
+			var halfWidth = window.ActualWidth / 2;
+			var halfHeight = window.ActualHeight / 2;
 
-			var hw = window.ActualWidth / 2;
-			var hh = window.ActualHeight / 2;
-
-			var (x0, y0) = (right, top).ToViewportPoint(hw, hh);
-			var (x1, y1) = (right, bottom).ToViewportPoint(hw, hh);
-			var (x2, y2) = (left, bottom).ToViewportPoint(hw, hh);
-			var (x3, y3) = (left, top).ToViewportPoint(hw, hh);
-
-			var vertices = stackalloc float[]
+			for (var i = 0; i < worldVertices.Length; i++)
 			{
-				x0, y0, 1f, 0f,
-				x1, y1, 1f, 1f,
-				x2, y2, 0f, 1f,
-				x3, y3, 0f, 0f,
-			};
-			const uint verticesSize = 4 * 4;
-			gl.BufferData(GLEnum.ArrayBuffer, verticesSize * sizeof(float), vertices, GLEnum.StaticDraw);
+				worldVertices[i] = RenderingHelper.Transform(worldVertices[i], el, additionalLocation);
+				if (worldVertices[i].In(bb)) isOutside = false;
+				worldVertices[i] = worldVertices[i].ToViewportPoint(halfWidth, halfHeight);
+			}
+			// どの頂点も画面内になければ描画しない
+			if (isOutside) return;
 
-			var indices = stackalloc uint[]
-			{
+			Span<float> vertices =
+			[
+				worldVertices[0].X, worldVertices[0].Y, 1f, 0f,
+				worldVertices[1].X, worldVertices[1].Y, 1f, 1f,
+				worldVertices[2].X, worldVertices[2].Y, 0f, 1f,
+				worldVertices[3].X, worldVertices[3].Y, 0f, 0f,
+			];
+			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
+
+			Span<uint> indices =
+			[
 				0, 1, 3,
 				1, 2, 3,
-			};
-			uint indicesSize = 3 * 2;
-			gl.BufferData(GLEnum.ElementArrayBuffer, indicesSize * sizeof(uint), indices, GLEnum.StaticDraw);
+			];
+			gl.BufferData<uint>(GLEnum.ElementArrayBuffer, indices, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
 			gl.Enable(GLEnum.Blend);
@@ -134,14 +129,12 @@ namespace Promete.Elements.Renderer.GL.Helper
 			gl.UseProgram(shader);
 			gl.ActiveTexture(GLEnum.Texture0);
 			gl.BindTexture(GLEnum.Texture2D, (uint)glTexture.Handle);
-			var uModel = gl.GetUniformLocation(shader, "uModel");
-			gl.UniformMatrix4(uModel, 1, false, (float*)&matrix);
 			var uTexture0 = gl.GetUniformLocation(shader, "uTexture0");
 			gl.Uniform1(uTexture0, 0);
 			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
 			var c = color ?? Color.White;
 			gl.Uniform4(uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
-			gl.DrawElements(GLEnum.Triangles, indicesSize, GLEnum.UnsignedInt, null);
+			gl.DrawElements(GLEnum.Triangles, (uint)indices.Length, GLEnum.UnsignedInt, null);
 		}
 	}
 }

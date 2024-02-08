@@ -7,10 +7,30 @@ namespace Promete.Elements;
 
 public abstract class ElementBase
 {
+	/// <summary>
+	/// この要素の名前を取得または設定します。
+	/// </summary>
 	public virtual string Name { get; set; } = "";
+
+	/// <summary>
+	/// この要素の位置を取得または設定します。
+	/// </summary>
 	public virtual Vector Location { get; set; }
+
+	/// <summary>
+	/// この要素のスケールを取得または設定します。
+	/// </summary>
 	public virtual Vector Scale { get; set; } = (1, 1);
+
+	/// <summary>
+	/// この要素のサイズを取得または設定します。
+	/// </summary>
 	public virtual VectorInt Size { get; set; }
+
+	/// <summary>
+	/// この要素の角度（0-360）を取得または設定します。
+	/// </summary>
+	public virtual float Angle { get; set; }
 
 	public int Width
 	{
@@ -24,25 +44,20 @@ public abstract class ElementBase
 		set => Size = (Width, value);
 	}
 
-	public Vector AbsoluteLocation { get; private set; }
-	public Vector AbsoluteScale { get; private set; }
+	public Vector AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
+	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
+	public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
 
 	public Container? Parent { get; internal set; }
 
 	private readonly List<Component> components = [];
 
-	protected ElementBase(
-		string name = "",
-		Vector? location = default,
-		Vector? scale = default,
-		VectorInt? size = default
-		)
+	protected ElementBase(string name = "", Vector? location = default, Vector? scale = default, VectorInt? size = default)
 	{
 		Name = name;
 		Location = location ?? (0, 0);
 		Scale = scale ?? (1, 1);
 		Size = size ?? (0, 0);
-		ComputeTransform();
 	}
 
 	public T AddComponent<T>() where T : Component
@@ -81,19 +96,6 @@ public abstract class ElementBase
 		OnDestroy();
 		for (var i = 0; i < components.Count; i++)
 			components[i].OnDestroy();
-	}
-
-	internal void ComputeTransform()
-	{
-		// Compute global location and scale
-		AbsoluteLocation = Location;
-		AbsoluteScale = Scale;
-
-		var p = Parent;
-		if (p == null) return;
-		AbsoluteScale *= p.AbsoluteScale;
-		AbsoluteLocation *= p.AbsoluteScale;
-		AbsoluteLocation += p.AbsoluteLocation;
 	}
 
 	internal virtual void Update()

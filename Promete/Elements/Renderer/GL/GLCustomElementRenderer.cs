@@ -23,8 +23,8 @@ public class GLCustomElementRenderer(PrometeApp app, IWindow window) : ElementRe
 	private void TrimStart(CustomElement el, Silk.NET.OpenGL.GL gl)
 	{
 		gl.Enable(GLEnum.ScissorTest);
-		var left = (VectorInt)el.AbsoluteLocation.ToDeviceCoord();
-		var size = (VectorInt)(el.Size * el.AbsoluteScale).ToDeviceCoord();
+		var left = (VectorInt)el.AbsoluteLocation;
+		var size = (VectorInt)(el.Size * el.AbsoluteScale);
 
 		if (left.X < 0) left.X = 0;
 		if (left.Y < 0) left.Y = 0;

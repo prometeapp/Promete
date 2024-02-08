@@ -53,10 +53,9 @@ public class GLPrimitiveRendererHelper
 		gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 	}
 
-	public unsafe void Draw(Vector originLocation, Vector originScale, VectorInt[] vertices, ShapeType type,
-		Color color, int lineWidth = 0, Color? lineColor = null)
+	public unsafe void Draw(ElementBase el, Span<VectorInt> worldVertices, ShapeType type, Color color, int lineWidth = 0, Color? lineColor = null)
 	{
-		if (vertices.Length == 0)
+		if (worldVertices.Length == 0)
 			return;
 
 		var gl = window.GL;
@@ -67,20 +66,21 @@ public class GLPrimitiveRendererHelper
 		gl.Enable(EnableCap.Blend);
 		gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-		var v = stackalloc float[vertices.Length * 2];
+		Span<float> vertices = stackalloc float[worldVertices.Length * 2];
 
-		for (var i = 0; i < vertices.Length; i++)
+		for (var i = 0; i < worldVertices.Length; i++)
 		{
-			var dest = originLocation + vertices[i] * originScale;
-			var (x, y) = dest.ToDeviceCoord().ToViewportPoint(hw, hh);
-			v[i * 2 + 0] = x;
-			v[i * 2 + 1] = y;
+			var vertex = RenderingHelper.Transform(worldVertices[i], el);
+
+			var (x, y) = vertex.ToViewportPoint(hw, hh);
+			vertices[i * 2 + 0] = x;
+			vertices[i * 2 + 1] = y;
 		}
 
 		if (color.A > 0)
 		{
 			if (type == ShapeType.Line) gl.LineWidth(lineWidth);
-			gl.BufferData(GLEnum.ArrayBuffer, (uint)vertices.Length * 2 * sizeof(float), v, GLEnum.StaticDraw);
+			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
 			gl.UseProgram(shader);
@@ -92,25 +92,24 @@ public class GLPrimitiveRendererHelper
 
 			if (type == ShapeType.Rect)
 			{
-				var indices = stackalloc uint[]
+				Span<uint> indices = stackalloc uint[]
 				{
 					0, 1, 2,
 					0, 2, 3,
 				};
-				uint indicesSize = 3 * 2;
-				gl.BufferData(GLEnum.ElementArrayBuffer, indicesSize * sizeof(uint), indices, GLEnum.StaticDraw);
-				gl.DrawElements(GLEnum.Triangles, indicesSize, GLEnum.UnsignedInt, null);
+				gl.BufferData<uint>(GLEnum.ElementArrayBuffer, indices, GLEnum.StaticDraw);
+				gl.DrawElements(GLEnum.Triangles, (uint)indices.Length, GLEnum.UnsignedInt, null);
 			}
 			else
 			{
-				gl.DrawArrays(ToGLType(type), 0, (uint)vertices.Length);
+				gl.DrawArrays(ToGLType(type), 0, (uint)worldVertices.Length);
 			}
 		}
 
 		if (lineWidth > 0 && lineColor is { } lc)
 		{
 			gl.LineWidth(lineWidth);
-			gl.BufferData(GLEnum.ArrayBuffer, (uint)vertices.Length * 2 * sizeof(float), v, GLEnum.StaticDraw);
+			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
 			gl.UseProgram(shader);
@@ -120,7 +119,7 @@ public class GLPrimitiveRendererHelper
 			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
 			gl.Uniform4(uTintColor, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
 
-			gl.DrawArrays(PrimitiveType.LineLoop, 0, (uint)vertices.Length);
+			gl.DrawArrays(PrimitiveType.LineLoop, 0, (uint)worldVertices.Length);
 		}
 
 		gl.Disable(EnableCap.Blend);
@@ -137,5 +136,25 @@ public class GLPrimitiveRendererHelper
 			ShapeType.Polygon => PrimitiveType.TriangleStrip,
 			_ => throw new ArgumentException(null, nameof(type)),
 		};
+	}
+
+	private static Vector Transform(Vector vertex, ElementBase el, Vector? additionalLocation)
+	{
+		vertex = vertex
+			.Translate(additionalLocation ?? (0, 0))
+			.Rotate(MathHelper.ToRadian(el.Angle))
+			.Scale(el.Scale)
+			.Translate(el.Location);
+		var parent = el.Parent;
+		while (parent != null)
+		{
+			vertex = vertex
+				.Rotate(MathHelper.ToRadian(parent.Angle))
+				.Scale(parent.Scale)
+				.Translate(parent.Location);
+			parent = parent.Parent;
+		}
+
+		return vertex;
 	}
 }

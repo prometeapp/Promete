@@ -46,33 +46,35 @@ public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) :
 		{
 			for (var x = tx; x < tx + maxTilesX; x++)
 			{
-				var dest = tilemap.AbsoluteLocation + (x, y) * tilemap.TileSize * tilemap.AbsoluteScale;
+				var offset = (x, y) * tilemap.TileSize;
 				var texture = tilemap[x, y]?.GetTexture(tilemap, (x, y), window);
 
 				if (texture == null) continue;
 
-				helper.Draw(texture, dest, tilemap.AbsoluteScale, tilemap.GetTileColorAt(x, y));
+				helper.Draw(texture, tilemap, tilemap.GetTileColorAt(x, y), offset, tilemap.TileSize.X, tilemap.TileSize.Y);
 			}
 		}
 	}
 
 	private void FullRender(Tilemap tilemap)
 	{
+		foreach (var (tileLocation, (tile, color)) in tilemap.Tiles.Where(Filter))
+		{
+			var offset = tileLocation * tilemap.TileSize;
+			var texture = tile.GetTexture(tilemap, tileLocation, window);
+
+			helper.Draw(texture, tilemap, color, offset, tilemap.TileSize.X, tilemap.TileSize.Y);
+		}
+
+		return;
+
 		// カリング
-		bool filter(KeyValuePair<VectorInt, (ITile, Color?)> kv)
+		bool Filter(KeyValuePair<VectorInt, (ITile, Color?)> kv)
 		{
 			var (left, top) = tilemap.AbsoluteLocation + kv.Key * tilemap.TileSize * tilemap.AbsoluteScale;
 			var right = left + tilemap.TileSize.X * tilemap.AbsoluteScale.X;
 			var bottom = top + tilemap.TileSize.Y * tilemap.AbsoluteScale.Y;
 			return left <= window.ActualWidth && top <= window.ActualHeight && right >= 0 && bottom >= 0;
-		}
-
-		foreach (var (tileLocation, (tile, color)) in tilemap.Tiles.Where(filter))
-		{
-			var dest = tilemap.AbsoluteLocation + tileLocation * tilemap.TileSize * tilemap.AbsoluteScale;
-			var texture = tile.GetTexture(tilemap, tileLocation, window);
-
-			helper.Draw(texture, dest, tilemap.AbsoluteScale, color);
 		}
 	}
 }
