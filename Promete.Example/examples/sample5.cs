@@ -7,7 +7,7 @@ using Promete.Windowing;
 namespace Promete.Example.examples;
 
 
-[Demo("/sample5", "10000スプライトを表示してFPSを計測します")]
+[Demo("/sample5.demo", "10000スプライトを表示してFPSを計測します")]
 public class BenchmarkScene(Keyboard keyboard) : Scene
 {
 	private ITexture strawberry;

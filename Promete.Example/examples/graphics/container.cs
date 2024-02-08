@@ -7,7 +7,7 @@ using Promete.Windowing;
 
 namespace Promete.Example.examples.graphics;
 
-[Demo("/graphics/container", "Elementをコンテナーにいくつか追加する例")]
+[Demo("/graphics/container.demo", "Elementをコンテナーにいくつか追加する例")]
 public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
 {
 	private ITexture ichigo;

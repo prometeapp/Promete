@@ -5,7 +5,7 @@ using Promete.Windowing;
 
 namespace Promete.Example.examples.audio;
 
-[Demo("/audio/wav sfx", "短い効果音をいくつか再生します")]
+[Demo("/audio/wav sfx.demo", "短い効果音をいくつか再生します")]
 public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
 	private readonly AudioPlayer player = new();

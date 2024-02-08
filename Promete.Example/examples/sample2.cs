@@ -6,7 +6,7 @@ using Promete.Windowing;
 
 namespace Promete.Example.examples;
 
-[Demo("/sample2", "簡単なお絵かきツール")]
+[Demo("/sample2.demo", "簡単なお絵かきツール")]
 public class Sample2ExampleScene(ConsoleLayer console, Mouse mouse, Keyboard keyboard) : Scene
 {
 	private VectorInt previousPosition;

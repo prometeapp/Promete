@@ -5,7 +5,7 @@ using Promete.Windowing;
 namespace Promete.Example.examples;
 
 
-[Demo("/sample3", "ドラッグアンドドロップの例")]
+[Demo("/sample3.demo", "ドラッグアンドドロップの例")]
 public class Sample3ExampleScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
 	public override void OnStart()

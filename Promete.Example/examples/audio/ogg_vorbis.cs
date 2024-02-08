@@ -5,7 +5,7 @@ using Promete.Windowing;
 
 namespace Promete.Example.examples.audio;
 
-[Demo("/audio/ogg vorbis", "BGM を再生します")]
+[Demo("/audio/ogg vorbis.demo", "BGM を再生します")]
 public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
 	private readonly AudioPlayer audio = new();

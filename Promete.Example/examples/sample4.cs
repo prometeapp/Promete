@@ -9,7 +9,7 @@ using Promete.Windowing;
 namespace Promete.Example.examples;
 
 
-[Demo("/sample4", "簡易テキストエディタ")]
+[Demo("/sample4.demo", "簡易テキストエディタ")]
 public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
 	private readonly StringBuilder buf = new();

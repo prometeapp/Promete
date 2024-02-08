@@ -7,7 +7,7 @@ using Promete.Windowing;
 
 namespace Promete.Example.examples.graphics;
 
-[Demo("/graphics/tilemap2", "タイルマップを作成し動かします")]
+[Demo("/graphics/tilemap2.demo", "タイルマップを作成し動かします")]
 public class Tilemap2ExampleScene(PrometeApp app, IWindow window, Keyboard keyboard, Mouse mouse, ConsoleLayer console) : Scene
 {
 	private ITexture texture = window.TextureFactory.Load("assets/ichigo.png");
