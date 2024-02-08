@@ -55,13 +55,7 @@ public class Text : ElementBase
 
 	private readonly GlyphRenderer glyphRenderer;
 
-	public Text(
-		string content,
-		Font? font = default,
-		Color? color = default,
-		string name = "",
-		Vector? location = default,
-		Vector? scale = default) : base(name, location, scale)
+	public Text(string content, Font? font = default, Color? color = default)
 	{
 		glyphRenderer = PrometeApp.Current?.GetPlugin<GlyphRenderer>() ?? throw new InvalidOperationException("System is not initialized yet!");
 		this.content = content;

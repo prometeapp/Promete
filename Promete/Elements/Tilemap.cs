@@ -5,12 +5,7 @@ using Promete.Graphics;
 
 namespace Promete.Elements;
 
-public class Tilemap(VectorInt tileSize,
-	Color? defaultColor = default,
-	TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto,
-	string name = "",
-	Vector? location = default,
-	Vector? scale = default) : ElementBase(name, location, scale)
+public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto) : ElementBase
 {
 	/// <summary>
 	/// Get or set size of grid.

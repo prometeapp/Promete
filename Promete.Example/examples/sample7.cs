@@ -28,15 +28,16 @@ public class SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard, Mou
 	{
 		tParent = Window.TextureFactory.CreateSolid(Color.DarkBlue, (160, 120));
 		tChild = Window.TextureFactory.CreateSolid(Color.Chocolate, (32, 32));
-		spriteParent = new Sprite(tParent, location: (0, 0));
-		spriteChild = new Sprite(tChild, location: (32, 32));
 
 		return
 		[
-			wrapper = new Container(scale: (1, 1), location: (320, 240))
-			{
-				spriteParent, spriteChild,
-			},
+			wrapper = new Container()
+				.Scale((2, 2))
+				.Location(320, 240)
+				.Children(
+					spriteParent = new Sprite(tParent).Location(0, 0),
+					spriteChild = new Sprite(tChild).Location(32, 32)
+				),
 		];
 	}
 

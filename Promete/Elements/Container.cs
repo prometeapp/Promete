@@ -26,11 +26,7 @@ public class Container : CustomElement, IEnumerable<ElementBase>
 	/// <param name="location">この Container の位置。</param>
 	/// <param name="scale">この Container のスケール。</param>
 	/// <param name="size">この Container のサイズ。</param>
-	public Container(bool isTrimmable = false,
-		string name = "",
-		Vector? location = default,
-		Vector? scale = default,
-		VectorInt? size = default) : base(name, location, scale, size)
+	public Container(bool isTrimmable = false)
 	{
 		IsTrimmable = isTrimmable;
 	}

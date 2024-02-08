@@ -2,12 +2,7 @@
 
 namespace Promete.Elements;
 
-public class CustomElement(
-	string name = "",
-	Vector? location = default,
-	Vector? scale = default,
-	VectorInt? size = default
-) : ElementBase(name, location, scale, size)
+public class CustomElement : ElementBase
 {
 	protected internal bool isTrimmable;
 	protected internal readonly List<ElementBase> children = [];

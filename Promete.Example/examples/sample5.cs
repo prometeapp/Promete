@@ -20,7 +20,10 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
 		for (var i = 0; i < 10000; i++)
 		{
 			Window.Title = $"Creating sprites {(int)((i + 1) / 10000f * 100)}%";
-			Root.Add(new Sprite(strawberry, location: rnd.NextVector(Window.Width - 16, Window.Height - 16)));
+			Root.Add(
+				new Sprite(strawberry)
+					.Location(rnd.NextVector(Window.Width, Window.Height))
+			);
 			if (i % 1000 == 0)
 				await Task.Delay(1);
 		}

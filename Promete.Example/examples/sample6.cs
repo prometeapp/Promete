@@ -9,24 +9,24 @@ namespace Promete.Example.examples;
 [Demo("sample6.demo", "スプライトの回転テスト")]
 public class SpriteRotateTestScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
 {
-	private ITexture tIchigo;
+	private ITexture tSolid;
 	private Sprite sprite;
 	private Container wrapper;
-	private float angle = 0;
+	private float angle;
 
 	protected override Container Setup()
 	{
-		tIchigo = Window.TextureFactory.CreateSolid(Color.Chartreuse, (32, 32));
-		sprite = new Sprite(tIchigo, location: (0, 0));
+		tSolid = Window.TextureFactory.CreateSolid(Color.Chartreuse, (32, 32));
 
 		return
 		[
-			wrapper = new Container(scale: (2, 2))
-			{
-				Shape.CreateLine(-32, 0, 32, 0, Color.Red),
-				Shape.CreateLine(0, -32, 0, 32, Color.Blue),
-				sprite,
-			},
+			wrapper = new Container()
+				.Scale((2, 2))
+				.Children(
+					Shape.CreateLine(-32, 0, 32, 0, Color.Red),
+					Shape.CreateLine(0, -32, 0, 32, Color.Blue),
+					sprite = new Sprite(tSolid)
+				),
 		];
 	}
 

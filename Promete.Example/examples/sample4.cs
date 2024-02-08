@@ -20,7 +20,8 @@ public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
 		console.Print("Promete Text Editor");
 		console.Print("Press [ESC] to exit");
 
-		editorView = new Text("", font: Font.GetDefault(16), color: Color.White, location: (8, 64));
+		editorView = new Text("", font: Font.GetDefault(16), color: Color.White)
+			.Location(8, 64);
 		Root.Add(editorView);
 
 		// 実行前に残ったキー入力をクリア

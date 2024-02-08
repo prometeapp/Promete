@@ -4,12 +4,7 @@ using Promete.Graphics;
 
 namespace Promete.Elements;
 
-public class NineSliceSprite(
-	Texture9Sliced texture,
-	Color? tintColor = default,
-	string name = "",
-	Vector? location = default,
-	Vector? scale = default) : ElementBase(name, location, scale, texture.Size)
+public class NineSliceSprite(Texture9Sliced texture, Color? tintColor = default) : ElementBase
 {
 	/// <summary>
 	/// Get or set the texture.

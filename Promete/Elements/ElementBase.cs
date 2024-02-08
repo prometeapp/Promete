@@ -52,14 +52,6 @@ public abstract class ElementBase
 
 	private readonly List<Component> components = [];
 
-	protected ElementBase(string name = "", Vector? location = default, Vector? scale = default, VectorInt? size = default)
-	{
-		Name = name;
-		Location = location ?? (0, 0);
-		Scale = scale ?? (1, 1);
-		Size = size ?? (0, 0);
-	}
-
 	public T AddComponent<T>() where T : Component
 	{
 		var com = New<T>.Instance();

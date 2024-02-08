@@ -18,7 +18,8 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
 		ichigo = Window.TextureFactory.Load("assets/ichigo.png");
 		Root.Add(container);
 
-		var canvas = new Container(location: (400, 200));
+		var canvas = new Container()
+			.Location(400, 200);
 
 		var random = new Random(300);
 

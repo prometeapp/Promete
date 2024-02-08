@@ -72,9 +72,10 @@ public class SpriteRotateTest3Scene(ConsoleLayer console, Keyboard keyboard, Mou
 
 	private Container CreateIchigo(Vector location)
 	{
-		return new Container(location: location)
-		{
-			new Sprite(tIchigo),
-		};
+		return new Container()
+			.Location(location)
+			.Children(
+				new Sprite(tIchigo)
+			);
 	}
 }
