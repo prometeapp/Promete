@@ -10,15 +10,15 @@
 
 	<PropertyGroup>
 		<PackageId>Promete</PackageId>
-		<VersionPrefix>0.5.0</VersionPrefix>
+		<VersionPrefix>0.6.0</VersionPrefix>
 		<PackageTags>Game Engine;2D;gamedev;games;gaming;windowing;OpenGL</PackageTags>
-		<Description>
-			A lightweight, extensible and easy game engine.
+		<Description>A lightweight, extensible and easy game engine.
 		</Description>
 		<Authors>Ebise Lutica</Authors>
 		<Copyright>(C)2024 Promete Developers</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/prometeapp/Promete</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 
