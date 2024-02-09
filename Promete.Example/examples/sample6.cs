@@ -10,8 +10,8 @@ namespace Promete.Example.examples;
 public class SpriteRotateTestScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
 {
 	private ITexture tSolid;
-	private Sprite sprite;
 	private Container wrapper;
+	private Sprite sprite;
 	private float angle;
 
 	protected override Container Setup()
