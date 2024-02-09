@@ -57,7 +57,8 @@ public static class SetupApiExtension
 
 	public static T Children<T>(this T el, params ElementBase[] children) where T : Container
 	{
-		return el.Children(children);
+		el.AddRange(children);
+		return el;
 	}
 
 	public static T Children<T>(this T el, IEnumerable<ElementBase> children) where T : Container
