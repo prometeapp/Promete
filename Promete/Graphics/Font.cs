@@ -36,17 +36,6 @@ public class Font
 	public FontStyle FontStyle { get; private set; }
 
 	/// <summary>
-	/// Get a default font.
-	/// </summary>
-	/// <param name="size">Font size.</param>
-	/// <param name="style">Font style.</param>
-	/// <returns>Generated defualt font.</returns>
-	public static Font GetDefault(float size = 16, FontStyle style = FontStyle.Normal)
-	{
-		return new Font(defaultFont, "__PROMETE_SYSTEM_EMBEDDED_FONT_MPLUS__", size, style);
-	}
-
-	/// <summary>
 	/// Initialize a new instance of <see cref="Font"/> class.
 	/// </summary>
 	/// <param name="path">relative path to the font, or font-family name of system fonts.</param>
@@ -73,6 +62,17 @@ public class Font
 		Stream = stream;
 		Size = size;
 		FontStyle = style;
+	}
+
+	/// <summary>
+	/// Get a default font.
+	/// </summary>
+	/// <param name="size">Font size.</param>
+	/// <param name="style">Font style.</param>
+	/// <returns>Generated defualt font.</returns>
+	public static Font GetDefault(float size = 16, FontStyle style = FontStyle.Normal)
+	{
+		return new Font(defaultFont, "__PROMETE_SYSTEM_EMBEDDED_FONT_MPLUS__", size, style);
 	}
 
 	public override bool Equals(object? obj)
