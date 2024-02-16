@@ -271,7 +271,7 @@ public class AudioPlayer : IDisposable
 
 			if (!isFinished) continue;
 			if (loop is not {} loopStartSample) break;
-			currentSample = loopStartSample;
+			currentSample = loopStartSample * source.Channels;
 		}
 
 		if (!st.IsStopRequested)
