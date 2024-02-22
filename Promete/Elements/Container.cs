@@ -44,7 +44,7 @@ public class Container : CustomElement, IEnumerable<ElementBase>
 
 	public void Add(ElementBase item)
 	{
-		item.Parent = this;
+		children.Add(item);
 	}
 
 	public void AddRange(IEnumerable<ElementBase> elements)
