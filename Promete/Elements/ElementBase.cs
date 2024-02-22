@@ -48,7 +48,7 @@ public abstract class ElementBase
 	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
 	public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
 
-	public Container? Parent { get; internal set; }
+	public ElementBase? Parent { get; internal set; }
 
 	private readonly List<Component> components = [];
 

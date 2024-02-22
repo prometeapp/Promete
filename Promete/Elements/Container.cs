@@ -44,7 +44,6 @@ public class Container : CustomElement, IEnumerable<ElementBase>
 
 	public void Add(ElementBase item)
 	{
-		children.Add(item);
 		item.Parent = this;
 	}
 

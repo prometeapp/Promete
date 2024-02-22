@@ -12,6 +12,7 @@ public class CustomElement : ElementBase
 		base.Update();
 		for (var i = 0; i < children.Count; i++)
 		{
+			children[i].Parent = this;
 			children[i].Update();
 		}
 	}
