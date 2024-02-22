@@ -1,5 +1,6 @@
 ﻿using Promete.Elements.Renderer.GL.Helper;
 using Promete.Graphics;
+using Promete.Graphics.GL;
 
 namespace Promete.Elements.Renderer.GL;
 
@@ -21,7 +22,10 @@ public class GLNineSliceSpriteRenderer(GLTextureRendererHelper helper) : Element
 
 		void Draw(ITexture tex, Vector location, float? width = null, float? height = null)
 		{
-			helper.Draw(tex, el, el.TintColor, location, width, height);
+			var glTexture = (GLTexture2D)tex;
+			var w = width ?? glTexture.Size.X;
+			var h = height ?? glTexture.Size.Y;
+			helper.Draw(tex, el, el.TintColor, location, w, h);
 		}
 
 		// 9枚を全て描画する
