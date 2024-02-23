@@ -43,14 +43,12 @@ public class GLPrimitiveRendererHelper
 
 		// --- VAO ---
 		vao = gl.GenVertexArray();
-		gl.BindVertexArray(vao);
 
 		// --- VBO ---
 		vbo = gl.GenBuffer();
-		gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+
 		// --- EBO ---
 		ebo = gl.GenBuffer();
-		gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 	}
 
 	public unsafe void Draw(ElementBase el, Span<VectorInt> worldVertices, ShapeType type, Color color, int lineWidth = 0, Color? lineColor = null)
@@ -70,7 +68,7 @@ public class GLPrimitiveRendererHelper
 
 		for (var i = 0; i < worldVertices.Length; i++)
 		{
-			var vertex = RenderingHelper.Transform(worldVertices[i], el);
+			var vertex = RenderingHelper.Transform(worldVertices[i], el) * window.PixelRatio;
 
 			var (x, y) = vertex.ToViewportPoint(hw, hh);
 			vertices[i * 2 + 0] = x;
@@ -80,6 +78,9 @@ public class GLPrimitiveRendererHelper
 		if (color.A > 0)
 		{
 			if (type == ShapeType.Line) gl.LineWidth(lineWidth);
+			gl.BindVertexArray(vao);
+			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+
 			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
@@ -92,6 +93,7 @@ public class GLPrimitiveRendererHelper
 
 			if (type == ShapeType.Rect)
 			{
+				gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 				Span<uint> indices = stackalloc uint[]
 				{
 					0, 1, 2,
@@ -109,6 +111,9 @@ public class GLPrimitiveRendererHelper
 		if (lineWidth > 0 && lineColor is { } lc)
 		{
 			gl.LineWidth(lineWidth);
+
+			gl.BindVertexArray(vao);
+			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
 			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
