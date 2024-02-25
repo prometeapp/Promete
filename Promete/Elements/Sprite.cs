@@ -3,7 +3,7 @@ using Promete.Graphics;
 
 namespace Promete.Elements;
 
-public class Sprite(ITexture texture, Color? tintColor = default) : ElementBase
+public class Sprite(ITexture? texture = null, Color? tintColor = default) : ElementBase
 {
 	public ITexture? Texture { get; set; } = texture;
 
