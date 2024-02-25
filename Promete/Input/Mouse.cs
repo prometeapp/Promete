@@ -70,7 +70,7 @@ public sealed class Mouse
 		if (mouse == null) return;
 		var wheel = mouse.ScrollWheels[0];
 		Scroll = (wheel.X, wheel.Y);
-		Position = ((int)mouse.Position.X, (int)mouse.Position.Y);
+		Position = VectorInt.From(mouse.Position / window.Scale);
 
 		for (var i = 0; i < buttons.Length; i++)
 		{
@@ -108,7 +108,7 @@ public sealed class Mouse
 		var id = (int)btn;
 		if (id < 0 || buttons.Length <= id) return;
 
-		Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos)));
+		Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos / window.Scale)));
 	}
 
 	private void OnMouseDown(IMouse mouse, SilkMouseButton btn)
@@ -117,7 +117,7 @@ public sealed class Mouse
 		if (id < 0 || buttons.Length <= id) return;
 
 		buttons[id].IsButtonDown = true;
-		ButtonDown?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position)));
+		ButtonDown?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / window.Scale)));
 	}
 
 	private void OnMouseUp(IMouse mouse, SilkMouseButton btn)
@@ -126,11 +126,12 @@ public sealed class Mouse
 		if (id < 0 || buttons.Length <= id) return;
 
 		buttons[id].IsButtonUp = true;
-		ButtonUp?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position)));
+		ButtonUp?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / window.Scale)));
 	}
 
 	private void OnMouseMove(IMouse mouse, Vector2 pos)
 	{
+		pos /= window.Scale;
 		Move?.Invoke(new MouseEventArgs((VectorInt)Vector.From(pos)));
 
 		// マウスが画面に出入りしたときのイベント発火条件をチェックする

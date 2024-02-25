@@ -23,15 +23,15 @@ namespace Promete.Windowing.GLDesktop
 
 		public VectorInt Size
 		{
-			get => (window.Size.X, window.Size.Y);
+			get => size;
 			set
 			{
-				window.Size = new(value.X, value.Y);
-				screenshotBuffer = new byte[ActualWidth * ActualHeight * 4];
+				size = value;
+				UpdateWindowSize();
 			}
 		}
 
-		public VectorInt ActualSize => (window.FramebufferSize.X, window.FramebufferSize.Y);
+		public VectorInt ActualSize => new VectorInt(window.FramebufferSize.X, window.FramebufferSize.Y) / Scale;
 
 		public int X
 		{
@@ -55,6 +55,20 @@ namespace Promete.Windowing.GLDesktop
 		{
 			get => Size.Y;
 			set => Size = (Width, value);
+		}
+
+		public int Scale
+		{
+			get => scale;
+			set
+			{
+				if (value is not 1 and not 2 and not 4 and not 8)
+				{
+					throw new ArgumentOutOfRangeException(nameof(value), "Scale must be 1, 2, 4, or 8.");
+				}
+				scale = value;
+				UpdateWindowSize();
+			}
 		}
 
 		public int ActualWidth => ActualSize.X;
@@ -119,11 +133,13 @@ namespace Promete.Windowing.GLDesktop
 
 		public GL GL => gl ?? throw new InvalidOperationException("window is not loaded");
 
+		private int scale = 1;
 		private int frameCount;
 		private int updateCount;
 		private int prevSecondUps;
 		private int prevSecondFps;
 		private byte[] screenshotBuffer = Array.Empty<byte>();
+		private VectorInt size = (640, 480);
 		private GL? gl;
 		private TextureFactory? textureFactory;
 
@@ -181,7 +197,7 @@ namespace Promete.Windowing.GLDesktop
 			gl = window.CreateOpenGL();
 			_RawInputContext = window.CreateInput();
 			textureFactory = new OpenGLTextureFactory(gl);
-			screenshotBuffer = new byte[ActualWidth * ActualHeight * 4];
+			UpdateWindowSize();
 
 			Start?.Invoke();
 		}
@@ -250,6 +266,12 @@ namespace Promete.Windowing.GLDesktop
 			FramePerSeconds = frameCount;
 			frameCount = 0;
 			prevSecondFps = Environment.TickCount;
+		}
+
+		private void UpdateWindowSize()
+		{
+			window.Size = new Vector2D<int>(Size.X, Size.Y) * scale;
+			screenshotBuffer = new byte[window.FramebufferSize.X * window.FramebufferSize.Y * 4];
 		}
 
 		public event Action? Start;

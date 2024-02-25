@@ -49,6 +49,12 @@ public sealed class OpenGLAndroidWindow : IWindow
 
 	public int ActualHeight => ActualSize.Y;
 
+	public int Scale
+	{
+		get => 1;
+		set { /* do nothing */ }
+	}
+
 	public bool IsVisible
 	{
 		get => true;

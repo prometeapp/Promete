@@ -26,6 +26,14 @@ namespace Promete.Windowing
 		VectorInt ActualSize { get; }
 
 		/// <summary>
+		/// ゲーム ウィンドウの拡大率を取得または設定します。
+		/// 1, 2, 4, 8 のいずれかの値を指定します。
+		/// 設定すると、<see cref="Size"/> 等のプロパティやレンダラーが用いる座標は変わりませんが、ウィンドウのみが拡大されます。
+		/// これにより、ドット ベースのゲームを等倍拡大し、高解像度ディスプレイ等でプレイしやすくなります。
+		/// </summary>
+		int Scale { get; set; }
+
+		/// <summary>
 		/// Get or set X-coord location of this game window.
 		/// </summary>
 		int X { get; set; }
