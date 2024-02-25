@@ -52,15 +52,12 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 			// --- VAO ---
 			vao = gl.GenVertexArray();
-			gl.BindVertexArray(vao);
 
 			// --- VBO ---
 			vbo = gl.GenBuffer();
-			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
 
 			// --- EBO ---
 			ebo = gl.GenBuffer();
-			gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
 		}
 
 		/// <summary>
@@ -94,12 +91,17 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 			for (var i = 0; i < worldVertices.Length; i++)
 			{
-				worldVertices[i] = RenderingHelper.Transform(worldVertices[i], el, additionalLocation);
+				worldVertices[i] = RenderingHelper.Transform(worldVertices[i], el, additionalLocation) *
+				                   window.PixelRatio;
 				if (worldVertices[i].In(bb)) isOutside = false;
 				worldVertices[i] = worldVertices[i].ToViewportPoint(halfWidth, halfHeight);
 			}
 			// どの頂点も画面内になければ描画しない
 			if (isOutside) return;
+
+			gl.BindVertexArray(vao);
+			gl.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
+			gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
 
 			Span<float> vertices =
 			[
@@ -134,7 +136,7 @@ namespace Promete.Elements.Renderer.GL.Helper
 			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
 			var c = color ?? Color.White;
 			gl.Uniform4(uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
-			gl.DrawElements(GLEnum.Triangles, (uint)indices.Length, GLEnum.UnsignedInt, null);
+			gl.DrawElements(PrimitiveType.Triangles, (uint)indices.Length, DrawElementsType.UnsignedInt, (void*)0);
 		}
 	}
 }
