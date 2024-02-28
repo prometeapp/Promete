@@ -61,7 +61,9 @@ public class ImGuiHost : ElementBase
 		public override void Render(ElementBase element)
 		{
 			var host = element as ImGuiHost ?? throw new InvalidOperationException("The element is not ImguiHost.");
-			host.controller.Update(PrometeApp.Current!.Window!.DeltaTime);
+			var window = PrometeApp.Current!.Window!;
+			host.controller.Update(window.DeltaTime);
+			ImGuiNET.ImGui.GetIO().FontGlobalScale = window.Scale * window.PixelRatio;
 			host.RenderAction();
 			host.controller.Render();
 		}
