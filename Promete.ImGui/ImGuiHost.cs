@@ -56,6 +56,8 @@ public class ImGuiHost : ElementBase
 	protected override void OnDestroy()
 	{
 		controller.Dispose();
+		Marshal.FreeCoTaskMem(fontData);
+		font.Destroy();
 	}
 
 	public class ImGuiHostRenderer : ElementRendererBase
