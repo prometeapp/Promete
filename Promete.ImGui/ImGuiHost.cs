@@ -26,12 +26,14 @@ public class ImGuiHost : ElementBase
 		var silkWindowField = typeof(OpenGLDesktopWindow).GetField("window", BindingFlags.Instance | BindingFlags.NonPublic);
 		var silkWindow = silkWindowField?.GetValue(glWindow) as Silk.NET.Windowing.IWindow ??
 		                 throw new InvalidOperationException("BUG: Failed to get native window.");
-		controller = new ImGuiController(glWindow.GL, silkWindow, window._RawInputContext, ConfigureFont);
+		controller = new ImGuiController(glWindow.GL, silkWindow, window._RawInputContext, ConfigureImGui);
 	}
 
-	private unsafe void ConfigureFont()
+	private unsafe void ConfigureImGui()
 	{
 		var io = ImGuiNET.ImGui.GetIO();
+		io.NativePtr->IniFilename = null;
+
 		var config = new ImFontConfigPtr(ImGuiNative.ImFontConfig_ImFontConfig())
 		{
 			GlyphRanges = io.Fonts.GetGlyphRangesJapanese(),
@@ -56,7 +58,7 @@ public class ImGuiHost : ElementBase
 		controller.Dispose();
 	}
 
-	public class ImguiHostRenderer : ElementRendererBase
+	public class ImGuiHostRenderer : ElementRendererBase
 	{
 		public override void Render(ElementBase element)
 		{

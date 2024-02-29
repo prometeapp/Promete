@@ -12,15 +12,7 @@ namespace Promete.Example.examples;
 public class ImGuiExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
 	private ImGuiHost _imguiHost;
-
 	private Sprite? ichigo;
-
-	protected override Container Setup()
-	{
-		return [
-			_imguiHost = new ImGuiHost(OnRender),
-		];
-	}
 
 	public override void OnStart()
 	{
@@ -35,9 +27,17 @@ public class ImGuiExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 		}
 	}
 
+	protected override Container Setup()
+	{
+		return [
+			_imguiHost = new ImGuiHost(OnRender),
+		];
+	}
+
 	private void OnRender()
 	{
 		UI.Begin("ImGui Window");
+
 		UI.Text("Hello, ImGui from Promete!");
 		if (UI.Button($"{(ichigo == null ? "Show" : "Hide")} Ichigo"))
 		{
@@ -47,6 +47,7 @@ public class ImGuiExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 		{
 			App.LoadScene<MainScene>();
 		}
+		UI.End();
 	}
 
 	private void ToggleIchigo()
