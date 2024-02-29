@@ -108,7 +108,7 @@ namespace Promete.Windowing.GLDesktop
 		// TODO: ゲーム起動前に変更可能にする
 		public int RefreshRate => 60;
 
-		public float PixelRatio => window.FramebufferSize.X / window.Size.X;
+		public float PixelRatio => window.Size.X == 0 ? 1 : window.FramebufferSize.X / window.Size.X;
 
 		public WindowMode Mode
 		{
