@@ -3,30 +3,56 @@ using System.Runtime.InteropServices;
 using ImGuiNET;
 using Promete.Elements;
 using Promete.Elements.Renderer;
+using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL.Extensions.ImGui;
 
 namespace Promete.ImGui;
 
-public class ImGuiHost : ElementBase
+/// <summary>
+/// ImGUI との連携を提供する Promete プラグインです。このクラスは継承できません。
+/// 本プラグインは、Prometeが OpenGL デスクトップバックエンドである場合にのみ使用できます。
+/// </summary>
+public sealed class ImGuiPlugin
 {
-	public Action RenderAction { get; set; }
+	public Action? OnRender { get; set; }
 
 	private ImFontPtr font;
 	private nint fontData;
 
 	private readonly ImGuiController controller;
+	private readonly IWindow window;
+	private readonly PrometeApp app;
 
-	public ImGuiHost(Action renderAction)
+	/// <summary>
+	/// ImGuiPlugin の新しいインスタンスを初期化します。
+	/// </summary>
+	/// <param name="app"></param>
+	/// <param name="window"></param>
+	/// <exception cref="NotSupportedException">OpenGL デスクトップバックエンドでない場合スローされます。</exception>
+	public ImGuiPlugin(PrometeApp app, IWindow window)
 	{
-		RenderAction = renderAction;
-		var window = PrometeApp.Current?.Window ?? throw new InvalidOperationException("Promete is not initialized.");
-		var glWindow = window as OpenGLDesktopWindow ??
-		               throw new InvalidOperationException("Promete.ImGui only supports OpenGL backend.");
-		var silkWindowField = typeof(OpenGLDesktopWindow).GetField("window", BindingFlags.Instance | BindingFlags.NonPublic);
-		var silkWindow = silkWindowField?.GetValue(glWindow) as Silk.NET.Windowing.IWindow ??
-		                 throw new InvalidOperationException("BUG: Failed to get native window.");
-		controller = new ImGuiController(glWindow.GL, silkWindow, window._RawInputContext, ConfigureImGui);
+		this.window = window;
+		this.app = app;
+		// PrometeがOpenGLバックエンドでなければ例外をスローする
+		if (window is not OpenGLDesktopWindow glWindow)
+		{
+			throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
+		}
+
+		var nativeWindow = GetNativeWindow();
+		controller = new ImGuiController(glWindow.GL, nativeWindow, window._RawInputContext, ConfigureImGui);
+
+		this.window.Destroy += OnWindowDestroy;
+		this.window.Render += OnWindowRender;
+		this.app.SceneWillChange += OnSceneWillChange;
+	}
+
+	private Silk.NET.Windowing.IWindow GetNativeWindow()
+	{
+		var field = typeof(OpenGLDesktopWindow).GetField("window", BindingFlags.Instance | BindingFlags.NonPublic);
+		return field?.GetValue(window as OpenGLDesktopWindow) as Silk.NET.Windowing.IWindow ??
+		       throw new InvalidOperationException("BUG: Failed to get native window.");
 	}
 
 	private unsafe void ConfigureImGui()
@@ -47,29 +73,29 @@ public class ImGuiHost : ElementBase
 		using var fontStream = typeof(PrometeApp).Assembly.GetManifestResourceStream("Promete.Resources.font.ttf") ?? throw new InvalidOperationException("Failed to load font.");
 		using var memoryStream = new MemoryStream();
 		fontStream.CopyTo(memoryStream);
-		var fontBytes = memoryStream.ToArray();
-		fontData = Marshal.AllocCoTaskMem(fontBytes.Length);
-		Marshal.Copy(fontBytes, 0, fontData, fontBytes.Length);
-		font = io.Fonts.AddFontFromMemoryTTF(fontData, fontBytes.Length, 18, config);
+		var bytes = memoryStream.ToArray();
+		fontData = Marshal.AllocCoTaskMem(bytes.Length);
+		Marshal.Copy(bytes, 0, fontData, bytes.Length);
+		font = io.Fonts.AddFontFromMemoryTTF(fontData, bytes.Length, 18, config);
 	}
 
-	protected override void OnDestroy()
+	private void OnWindowRender()
+	{
+		controller.Update(window.DeltaTime);
+		ImGuiNET.ImGui.GetIO().FontGlobalScale = window.Scale * window.PixelRatio;
+		OnRender?.Invoke();
+		controller.Render();
+	}
+
+	private void OnWindowDestroy()
 	{
 		controller.Dispose();
 		Marshal.FreeCoTaskMem(fontData);
 		font.Destroy();
 	}
 
-	public class ImGuiHostRenderer : ElementRendererBase
+	private void OnSceneWillChange()
 	{
-		public override void Render(ElementBase element)
-		{
-			var host = element as ImGuiHost ?? throw new InvalidOperationException("The element is not ImguiHost.");
-			var window = PrometeApp.Current!.Window!;
-			host.controller.Update(window.DeltaTime);
-			ImGuiNET.ImGui.GetIO().FontGlobalScale = window.Scale * window.PixelRatio;
-			host.RenderAction();
-			host.controller.Render();
-		}
+		OnRender = null;
 	}
 }

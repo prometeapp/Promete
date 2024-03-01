@@ -8,15 +8,15 @@ using UI = ImGuiNET.ImGui;
 
 namespace Promete.Example.examples;
 
-[Demo("/imgui.demo", "ImGui example")]
-public class ImGuiExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
+[Demo("/plugins/imgui.demo", "ImGui example")]
+public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
 {
-	private ImGuiHost _imguiHost;
 	private Sprite? ichigo;
 
 	public override void OnStart()
 	{
 		Window.Mode = WindowMode.Resizable;
+		imgui.OnRender = OnRender;
 	}
 
 	public override void OnUpdate()
@@ -25,13 +25,6 @@ public class ImGuiExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 		{
 			App.LoadScene<MainScene>();
 		}
-	}
-
-	protected override Container Setup()
-	{
-		return [
-			_imguiHost = new ImGuiHost(OnRender),
-		];
 	}
 
 	private void OnRender()

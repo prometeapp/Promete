@@ -8,9 +8,9 @@ using Promete.ImGui;
 var app = PrometeApp.Create()
 	.Use<Keyboard>()
 	.Use<Mouse>()
-	.Use<ConsoleLayer>()
 	.Use<Gamepads>()
-	.UseImGui()
+	.Use<ConsoleLayer>()
+	.Use<ImGuiPlugin>()
 	.BuildWithOpenGLDesktop();
 
 app.Run<MainScene>();
