@@ -15,7 +15,10 @@ namespace Promete.ImGui;
 /// </summary>
 public sealed class ImGuiPlugin
 {
-	public Action? OnRender { get; set; }
+	/// <summary>
+	/// ウィンドウのスケーリング値と同期するかどうかを取得または設定します。
+	/// </summary>
+	public bool IsSyncronizeWithWindowScaling { get; set; }
 
 	private ImFontPtr font;
 	private nint fontData;
@@ -45,7 +48,6 @@ public sealed class ImGuiPlugin
 
 		this.window.Destroy += OnWindowDestroy;
 		this.window.Render += OnWindowRender;
-		this.app.SceneWillChange += OnSceneWillChange;
 	}
 
 	private Silk.NET.Windowing.IWindow GetNativeWindow()
@@ -82,8 +84,11 @@ public sealed class ImGuiPlugin
 	private void OnWindowRender()
 	{
 		controller.Update(window.DeltaTime);
-		ImGuiNET.ImGui.GetIO().FontGlobalScale = window.Scale * window.PixelRatio;
-		OnRender?.Invoke();
+		if (IsSyncronizeWithWindowScaling)
+		{
+			ImGuiNET.ImGui.GetIO().FontGlobalScale = window.Scale * window.PixelRatio;
+		}
+		Render?.Invoke();
 		controller.Render();
 	}
 
@@ -94,8 +99,5 @@ public sealed class ImGuiPlugin
 		font.Destroy();
 	}
 
-	private void OnSceneWillChange()
-	{
-		OnRender = null;
-	}
+	public event Action? Render;
 }

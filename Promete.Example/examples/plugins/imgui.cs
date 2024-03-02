@@ -16,7 +16,7 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
 	public override void OnStart()
 	{
 		Window.Mode = WindowMode.Resizable;
-		imgui.OnRender = OnRender;
+		imgui.Render += OnRender;
 	}
 
 	public override void OnUpdate()
@@ -25,6 +25,13 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
 		{
 			App.LoadScene<MainScene>();
 		}
+	}
+
+	public override void OnDestroy()
+	{
+		imgui.Render -= OnRender;
+		ichigo?.Destroy();
+		ichigo?.Texture?.Dispose();
 	}
 
 	private void OnRender()
@@ -41,6 +48,8 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
 			App.LoadScene<MainScene>();
 		}
 		UI.End();
+
+		UI.ShowDemoWindow();
 	}
 
 	private void ToggleIchigo()
