@@ -5,11 +5,11 @@ name: "Promete.ImGui: Upload to NuGet"
 
 on:
   push:
-    branches: [ "master" ]
+    tags:
+      - 'imgui-*'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +25,7 @@ jobs:
       working-directory: ./Promete.ImGui
 
     - name: Generate nuget package.
-      run: dotnet pack --configuration Release -o nupkg --version-suffix build-${GITHUB_SHA::6}
+      run: dotnet pack --configuration Release -o nupkg
       working-directory: ./Promete.ImGui
 
     - name: Publish to nuget
@@ -33,5 +33,3 @@ jobs:
       env:
         nuget_api_key: ${{ secrets.NUGET_API_KEY }}
       working-directory: ./Promete.ImGui/nupkg
-
-
