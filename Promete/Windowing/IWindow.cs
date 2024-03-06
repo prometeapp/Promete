@@ -1,5 +1,7 @@
 using System;
 using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
 using Promete.Graphics;
 using Silk.NET.Input;
 
@@ -133,6 +135,13 @@ namespace Promete.Windowing
 		/// </summary>
 		/// <returns>A screenshot as a texture</returns>
 		ITexture TakeScreenshot();
+
+		/// <summary>
+		/// Save a screenshot as PNG to the specified path.
+		/// </summary>
+		/// <param name="path">Path</param>
+		/// <param name="ct">Cancellation Token of this task.</param>
+		Task SaveScreenshotAsync(string path, CancellationToken ct = default);
 
 		/// <summary>
 		/// Occured when this game starts.

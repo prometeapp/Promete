@@ -132,6 +132,11 @@ public sealed class OpenGLAndroidWindow : IWindow
 		throw new NotImplementedException();
 	}
 
+	public Task SaveScreenshotAsync(string path, CancellationToken ct = default)
+	{
+		throw new NotImplementedException();
+	}
+
 	private void OnLoad()
 	{
 		gl = view.CreateOpenGL();

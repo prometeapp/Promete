@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Promete.Graphics;
 using SixLabors.ImageSharp;
 using Silk.NET.Windowing;
@@ -171,6 +173,12 @@ namespace Promete.Windowing.GLDesktop
 			return TextureFactory.LoadFromImageSharpImage(TakeScreenshotAsImage());
 		}
 
+		public async Task SaveScreenshotAsync(string path, CancellationToken ct = default)
+		{
+			var img = TakeScreenshotAsImage();
+			await img.SaveAsPngAsync("path", ct);
+		}
+
 		public void Run()
 		{
 			window.Run();
@@ -185,7 +193,7 @@ namespace Promete.Windowing.GLDesktop
 		{
 			fixed (byte* buffer = screenshotBuffer)
 			{
-				gl?.ReadPixels(0, 0, (uint)ActualWidth, (uint)ActualHeight, GLEnum.Rgba, GLEnum.UnsignedByte, buffer);
+				gl?.ReadPixels(0, 0, (uint)ActualWidth, (uint)ActualHeight, PixelFormat.Rgba, PixelType.UnsignedByte, buffer);
 			}
 			var img = Image.LoadPixelData<Rgba32>(screenshotBuffer, ActualWidth, ActualHeight);
 			img.Mutate(i => i.Flip(FlipMode.Vertical));
