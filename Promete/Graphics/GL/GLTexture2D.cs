@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 namespace Promete.Graphics.GL;
 
@@ -15,7 +16,7 @@ public class GLTexture2D : ITexture
 	/// <summary>
 	/// Get size of this texture.
 	/// </summary>
-	public VectorInt Size { get; }
+	public Vector2 Size { get; }
 
 	/// <summary>
 	/// Get whether this texture has been destroyed.
@@ -24,7 +25,7 @@ public class GLTexture2D : ITexture
 
 	private readonly Silk.NET.OpenGL.GL gl;
 
-	internal GLTexture2D(int handle, VectorInt size, Silk.NET.OpenGL.GL gl)
+	internal GLTexture2D(int handle, Vector2 size, Silk.NET.OpenGL.GL gl)
 	{
 		this.gl = gl;
 		Handle = handle;

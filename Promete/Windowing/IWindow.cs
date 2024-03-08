@@ -1,5 +1,5 @@
 using System;
-using System.Drawing;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Promete.Graphics;
@@ -15,17 +15,17 @@ namespace Promete.Windowing
 		/// <summary>
 		/// Get or set location of this game window.
 		/// </summary>
-		VectorInt Location { get; set; }
+		Vector2 Location { get; set; }
 
 		/// <summary>
 		/// Get or set size of this game window.
 		/// </summary>
-		VectorInt Size { get; set; }
+		Vector2 Size { get; set; }
 
 		/// <summary>
 		/// Get or set device-unit size of this game window.
 		/// </summary>
-		VectorInt ActualSize { get; }
+		Vector2 ActualSize { get; }
 
 		/// <summary>
 		/// ゲーム ウィンドウの拡大率を取得または設定します。

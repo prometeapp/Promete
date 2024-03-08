@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 
 namespace Promete.Graphics;
 
@@ -10,7 +11,7 @@ public interface ITexture : IDisposable
 	/// <summary>
 	/// このテクスチャのサイズを取得します。
 	/// </summary>
-	VectorInt Size { get; }
+	Vector2 Size { get; }
 
 	/// <summary>
 	/// このテクスチャが破棄されているかどうかを取得します。

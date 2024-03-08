@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 namespace Promete.Graphics;
 
@@ -17,9 +18,9 @@ public readonly struct Texture9Sliced : IDisposable
 	public ITexture BottomCenter { get; }
 	public ITexture BottomRight { get; }
 
-	public VectorInt Size { get; }
+	public Vector2 Size { get; }
 
-	internal Texture9Sliced(ITexture[] textures, VectorInt size)
+	internal Texture9Sliced(ITexture[] textures, Vector2 size)
 	{
 		TopLeft = textures[0];
 		TopCenter = textures[1];
