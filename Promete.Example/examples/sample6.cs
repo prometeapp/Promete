@@ -7,19 +7,24 @@ using Promete.Input;
 namespace Promete.Example.examples;
 
 [Demo("sample6.demo", "スプライトの回転テスト")]
-public class SpriteRotateTestScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
+public class SpriteRotateTestScene : Scene
 {
 	private ITexture tSolid;
 	private Container wrapper;
 	private Sprite sprite;
 	private float angle;
 
-	protected override Container Setup()
+	private Keyboard _keyboard;
+	private Mouse _mouse;
+
+	public SpriteRotateTestScene(Keyboard keyboard, Mouse mouse)
 	{
+		_keyboard = keyboard;
+		_mouse = mouse;
+
 		tSolid = Window.TextureFactory.CreateSolid(Color.Chartreuse, (32, 32));
 
-		return
-		[
+		Root = [
 			wrapper = new Container()
 				.Scale((2, 2))
 				.Children(
@@ -36,14 +41,14 @@ public class SpriteRotateTestScene(ConsoleLayer console, Keyboard keyboard, Mous
 		if (angle > 360) angle -= 360;
 		sprite.Angle = angle;
 
-		if (keyboard.Escape.IsKeyUp)
+		if (_keyboard.Escape.IsKeyUp)
 			App.LoadScene<MainScene>();
 
-		if (keyboard.Space.IsKeyDown)
+		if (_keyboard.Space.IsKeyDown)
 		{
 			wrapper.Scale = wrapper.Scale.X == 1 ? (2, 2) : (1, 1);
 		}
 
-		wrapper.Location = mouse.Position;
+		wrapper.Location = _mouse.Position;
 	}
 }

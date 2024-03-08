@@ -34,10 +34,6 @@ public class MainScene : Scene
 		sound = new VorbisAudioSource(MainActivity.CurrentAssets!.Open("assets/kagerou.ogg"));
 
 		tile = new Tile(window.TextureFactory.CreateSolid(Color.SlateGray, (16, 16)));
-	}
-
-	protected override Container Setup()
-	{
 		map = new Tilemap((16, 16));
 
 		var tw = window.Width / 16;
@@ -51,10 +47,7 @@ public class MainScene : Scene
 			}
 		}
 
-		return new Container
-		{
-			map,
-		};
+		Root = [map];
 	}
 
 	public override void OnUpdate()

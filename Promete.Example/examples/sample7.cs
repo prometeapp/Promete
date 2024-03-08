@@ -7,7 +7,7 @@ using Promete.Input;
 namespace Promete.Example.examples;
 
 [Demo("sample7.demo", "スプライトの回転テスト2")]
-public class SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
+public class SpriteRotateTest2Scene : Scene
 {
 	private ITexture tParent, tChild;
 	private Sprite spriteParent, spriteChild;
@@ -15,6 +15,9 @@ public class SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard, Mou
 	private float angle = 0;
 	private int mode = 0;
 	private bool isPlaying = true;
+
+	private ConsoleLayer _console;
+	private Keyboard _keyboard;
 
 	private string ModeText => mode switch
 	{
@@ -24,13 +27,15 @@ public class SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard, Mou
 		_ => "Unknown",
 	};
 
-	protected override Container Setup()
+	public SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard)
 	{
 		tParent = Window.TextureFactory.CreateSolid(Color.DarkBlue, (160, 120));
 		tChild = Window.TextureFactory.CreateSolid(Color.Chocolate, (32, 32));
 
-		return
-		[
+		_console = console;
+		_keyboard = keyboard;
+
+		this.Root = [
 			wrapper = new Container()
 				.Scale((2, 2))
 				.Location(320, 240)
@@ -43,12 +48,12 @@ public class SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard, Mou
 
 	public override void OnUpdate()
 	{
-		console.Clear();
-		console.Print("Angle: " + angle);
-		console.Print("Mode: " + ModeText);
-		console.Print("[1]: Change Mode");
-		console.Print("[SPACE]: Toggle Rotation");
-		console.Print("[ESC]: return");
+		_console.Clear();
+		_console.Print("Angle: " + angle);
+		_console.Print("Mode: " + ModeText);
+		_console.Print("[1]: Change Mode");
+		_console.Print("[SPACE]: Toggle Rotation");
+		_console.Print("[ESC]: return");
 
 		if (isPlaying)
 		{
@@ -70,27 +75,27 @@ public class SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard, Mou
 				break;
 		}
 
-		if (keyboard.Escape.IsKeyUp)
+		if (_keyboard.Escape.IsKeyUp)
 			App.LoadScene<MainScene>();
 
-		if (keyboard.Number1.IsKeyDown)
+		if (_keyboard.Number1.IsKeyDown)
 		{
 			wrapper.Angle = spriteChild.Angle = 0;
 			mode = (mode + 1) % 3;
 		}
 
-		if (keyboard.Space.IsKeyDown)
+		if (_keyboard.Space.IsKeyDown)
 		{
 			isPlaying ^= true;
 		}
 
-		if (keyboard.Left.IsKeyDown)
+		if (_keyboard.Left.IsKeyDown)
 		{
 			angle = (int)(angle - 1);
 			if (angle < 0) angle = 360;
 		}
 
-		if (keyboard.Right.IsKeyDown)
+		if (_keyboard.Right.IsKeyDown)
 		{
 			angle = (int)(angle + 1);
 			if (angle > 360) angle = 0;

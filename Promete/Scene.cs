@@ -12,7 +12,7 @@ public abstract class Scene
 	/// <summary>
 	/// このシーンのルートコンテナを取得します。
 	/// </summary>
-	public Container Root { get; } = new Container().Name("Root");
+	public Container Root { get; protected set; } = new Container().Name("Root");
 
 	protected PrometeApp App => PrometeApp.Current ?? throw new InvalidOperationException("PrometeApp is not initialized.");
 
