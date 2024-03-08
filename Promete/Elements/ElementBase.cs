@@ -32,6 +32,11 @@ public abstract class ElementBase
 	/// </summary>
 	public virtual float Angle { get; set; }
 
+	/// <summary>
+	/// この要素が破棄されたかどうかを取得します。
+	/// </summary>
+	public bool IsDestroyed { get; private set; }
+
 	public int Width
 	{
 		get => Size.X;
@@ -85,6 +90,8 @@ public abstract class ElementBase
 
 	public void Destroy()
 	{
+		if (IsDestroyed) return;
+		IsDestroyed = true;
 		OnDestroy();
 		for (var i = 0; i < components.Count; i++)
 			components[i].OnDestroy();

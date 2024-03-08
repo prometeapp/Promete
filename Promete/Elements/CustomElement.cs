@@ -15,5 +15,8 @@ public class CustomElement : ElementBase
 			children[i].Parent = this;
 			children[i].Update();
 		}
+
+		// 破棄された子要素を削除
+		children.RemoveAll(e => e.IsDestroyed);
 	}
 }
