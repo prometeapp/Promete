@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Numerics;
 using Promete.Elements;
 using Promete.Graphics;
 using Promete.Windowing;
@@ -16,7 +17,7 @@ public class ConsoleLayer
 	/// <summary>
 	/// 現在のコンソール上のカーソル位置を取得または設定します。
 	/// </summary>
-	public VectorInt Cursor { get; set; }
+	public Vector2 Cursor { get; set; }
 
 	/// <summary>
 	/// 現在のフォントサイズを取得または設定します。
@@ -66,7 +67,7 @@ public class ConsoleLayer
 	{
 		consoleBuffer.Clear();
 		FontSize = 16;
-		Cursor = VectorInt.Zero;
+		Cursor = Vector2.Zero;
 	}
 
 	/// <summary>
@@ -76,7 +77,7 @@ public class ConsoleLayer
 	public void Print(object? obj)
 	{
 		var line = obj as string ?? obj?.ToString() ?? "null";
-		var (x, y) = Cursor;
+		var (x, y) = Cursor.ToInt();
 		x = Math.Max(0, x);
 		y = Math.Max(0, y);
 		if (y < consoleBuffer.Count)
@@ -91,7 +92,7 @@ public class ConsoleLayer
 			consoleBuffer.Add(new string(' ', x) + line);
 		}
 
-		Cursor = new VectorInt(0, y + 1);
+		Cursor = new Vector2(0, y + 1);
 	}
 
 	private void UpdateConsole()

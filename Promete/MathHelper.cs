@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 namespace Promete
 {
@@ -50,7 +51,7 @@ namespace Promete
 		/// <param name="time">Time.</param>
 		/// <param name="start">Start.</param>
 		/// <param name="end">End.</param>
-		public static Vector Lerp(float time, Vector start, Vector end) => (Lerp(time, start.X, end.X), Lerp(time, start.Y, end.Y));
+		public static Vector2 Lerp(float time, Vector2 start, Vector2 end) => new (Lerp(time, start.X, end.X), Lerp(time, start.Y, end.Y));
 
 		/// <summary>
 		/// 減速移動を計算します。
@@ -59,7 +60,7 @@ namespace Promete
 		/// <param name="time">Time.</param>
 		/// <param name="start">Start.</param>
 		/// <param name="end">End.</param>
-		public static Vector EaseOut(float time, Vector start, Vector end) => (EaseOut(time, start.X, end.X), EaseOut(time, start.Y, end.Y));
+		public static Vector2 EaseOut(float time, Vector2 start, Vector2 end) => new (EaseOut(time, start.X, end.X), EaseOut(time, start.Y, end.Y));
 
 		/// <summary>
 		/// 加速移動を計算します。
@@ -68,7 +69,7 @@ namespace Promete
 		/// <param name="time">Time.</param>
 		/// <param name="start">Start.</param>
 		/// <param name="end">End.</param>
-		public static Vector EaseIn(float time, Vector start, Vector end) => (EaseIn(time, start.X, end.X), EaseIn(time, start.Y, end.Y));
+		public static Vector2 EaseIn(float time, Vector2 start, Vector2 end) => new (EaseIn(time, start.X, end.X), EaseIn(time, start.Y, end.Y));
 
 		/// <summary>
 		/// 角度を弧度に変換します。
@@ -83,5 +84,16 @@ namespace Promete
 		/// <returns>The degree.</returns>
 		/// <param name="radian">Radian.</param>
 		public static float ToDegree(float radian) => radian * 180f / (float)Math.PI;
+
+		public static void Deconstruct(this Vector2 vec, out float x, out float y)
+		{
+			x = vec.X;
+			y = vec.Y;
+		}
+
+		public static (int x, int y) ToInt(this Vector2 vec)
+		{
+			return ((int)vec.X, (int)vec.Y);
+		}
 	}
 }

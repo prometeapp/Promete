@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -26,17 +27,17 @@ public abstract class TextureFactory
 	/// <summary>
 	/// 指定したパスからテクスチャを読み込み、切り抜きます。
 	/// </summary>
-	public abstract ITexture[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size);
+	public abstract ITexture[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, Vector2 size);
 
 	/// <summary>
 	/// 指定したストリームからテクスチャを読み込み、切り抜きます。
 	/// </summary>
-	public abstract ITexture[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size);
+	public abstract ITexture[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, Vector2 size);
 
 	/// <summary>
 	/// ビットマップのデータからテクスチャを生成します。
 	/// </summary>
-	public abstract ITexture Create(byte[] bitmap, VectorInt size);
+	public abstract ITexture Create(byte[] bitmap, Vector2 size);
 
 	/// <summary>
 	/// ビットマップのデータからテクスチャを生成します。
@@ -46,7 +47,7 @@ public abstract class TextureFactory
 	/// <summary>
 	/// 指定した色の単色テクスチャを生成します。
 	/// </summary>
-	public abstract ITexture CreateSolid(Color color, VectorInt size);
+	public abstract ITexture CreateSolid(Color color, Vector2 size);
 
 	/// <summary>
 	/// [内部的に使用。] ImageSharp の Image からテクスチャを生成します。

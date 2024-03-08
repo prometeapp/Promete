@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Promete.Graphics;
 using Promete.Graphics.GL;
@@ -25,17 +26,17 @@ public class OpenGLTextureFactory(GL gl) : TextureFactory
 		return LoadFromImageSharpImage(Image.Load(stream));
 	}
 
-	public override ITexture[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size)
+	public override ITexture[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, Vector2 size)
 	{
 		return LoadSpriteSheet(Image.Load(path), horizontalCount, verticalCount, size);
 	}
 
-	public override ITexture[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size)
+	public override ITexture[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, Vector2 size)
 	{
 		return LoadSpriteSheet(Image.Load(stream), horizontalCount, verticalCount, size);
 	}
 
-	public override ITexture Create(byte[] bitmap, VectorInt size)
+	public override ITexture Create(byte[] bitmap, Vector2 size)
 	{
 		return new GLTexture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, gl);
 	}
@@ -55,9 +56,9 @@ public class OpenGLTextureFactory(GL gl) : TextureFactory
 		return Create(arr, (width, height));
 	}
 
-	public override ITexture CreateSolid(Color color, VectorInt size)
+	public override ITexture CreateSolid(Color color, Vector2 size)
 	{
-		var arr = new byte[size.X, size.Y, 4];
+		var arr = new byte[(int)size.X, (int)size.Y, 4];
 
 		for (var y = 0; y < size.Y; y++)
 		for (var x = 0; x < size.X; x++)

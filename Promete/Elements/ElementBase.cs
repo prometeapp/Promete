@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Promete.Elements.Components;
 using Promete.Internal;
 
@@ -15,17 +16,17 @@ public abstract class ElementBase
 	/// <summary>
 	/// この要素の位置を取得または設定します。
 	/// </summary>
-	public virtual Vector Location { get; set; }
+	public virtual Vector2 Location { get; set; }
 
 	/// <summary>
 	/// この要素のスケールを取得または設定します。
 	/// </summary>
-	public virtual Vector Scale { get; set; } = (1, 1);
+	public virtual Vector2 Scale { get; set; } = new (1, 1);
 
 	/// <summary>
 	/// この要素のサイズを取得または設定します。
 	/// </summary>
-	public virtual VectorInt Size { get; set; }
+	public virtual Vector2 Size { get; set; }
 
 	/// <summary>
 	/// この要素の角度（0-360）を取得または設定します。
@@ -49,8 +50,8 @@ public abstract class ElementBase
 		set => Size = (Width, value);
 	}
 
-	public Vector AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
-	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
+	public Vector2 AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
+	public Vector2 AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
 	public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
 
 	public ElementBase? Parent { get; internal set; }

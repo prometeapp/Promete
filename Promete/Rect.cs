@@ -1,3 +1,6 @@
+using System;
+using System.Numerics;
+
 namespace Promete
 {
 	/// <summary>
@@ -8,12 +11,12 @@ namespace Promete
 		/// <summary>
 		/// この矩形の位置を取得または設定します。
 		/// </summary>
-		public Vector Location { get; set; }
+		public Vector2 Location { get; set; }
 
 		/// <summary>
 		/// この矩形のサイズを取得または設定します。
 		/// </summary>
-		public Vector Size { get; set; }
+		public Vector2 Size { get; set; }
 
 		/// <summary>
 		/// この矩形の左端の位置を取得または設定します。
@@ -21,7 +24,7 @@ namespace Promete
 		public float Left
 		{
 			get => Location.X;
-			set => Location = new Vector(value, Top);
+			set => Location = new Vector2(value, Top);
 		}
 
 		/// <summary>
@@ -30,7 +33,7 @@ namespace Promete
 		public float Top
 		{
 			get => Location.Y;
-			set => Location = new Vector(Left, value);
+			set => Location = new Vector2(Left, value);
 		}
 
 		/// <summary>
@@ -57,7 +60,7 @@ namespace Promete
 		public float Width
 		{
 			get => Size.X;
-			set => Size = new Vector(value, Height);
+			set => Size = new Vector2(value, Height);
 		}
 
 		/// <summary>
@@ -66,7 +69,7 @@ namespace Promete
 		public float Height
 		{
 			get => Size.Y;
-			set => Size = new Vector(Width, value);
+			set => Size = new Vector2(Width, value);
 		}
 
 		/// <summary>
@@ -74,7 +77,7 @@ namespace Promete
 		/// </summary>
 		/// <param name="location">位置。</param>
 		/// <param name="size">サイズ。</param>
-		public Rect(Vector location, Vector size)
+		public Rect(Vector2 location, Vector2 size)
 		{
 			Location = location;
 			Size = size;
@@ -88,7 +91,7 @@ namespace Promete
 		/// <param name="width">幅。</param>
 		/// <param name="height">高さ。</param>
 		public Rect(float left, float top, float width, float height)
-			: this(new Vector(left, top), new Vector(width, height)) { }
+			: this(new Vector2(left, top), new Vector2(width, height)) { }
 
 		public void Deconstruct(out float x, out float y, out float width, out float height)
 		{
@@ -98,7 +101,7 @@ namespace Promete
 			height = Height;
 		}
 
-		public void Deconstruct(out Vector location, out Vector size)
+		public void Deconstruct(out Vector2 location, out Vector2 size)
 		{
 			location = Location;
 			size = Size;
@@ -109,7 +112,7 @@ namespace Promete
 		/// </summary>
 		/// <param name="rect">判定する矩形。</param>
 		/// <returns>重なっている場合は <see langword="true"/>、それ以外の場合は <see langword="false"/>。</returns>
-		public bool Intersect(RectInt rect)
+		public bool Intersect(Rect rect)
 		{
 			return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
 		}
