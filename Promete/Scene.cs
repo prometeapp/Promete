@@ -12,21 +12,11 @@ public abstract class Scene
 	/// <summary>
 	/// このシーンのルートコンテナを取得します。
 	/// </summary>
-	public Container Root { get; }
+	public Container Root { get; } = new Container().Name("Root");
 
 	protected PrometeApp App => PrometeApp.Current ?? throw new InvalidOperationException("PrometeApp is not initialized.");
 
 	protected IWindow Window => App.Window ?? throw new InvalidOperationException("Window is not initialized.");
-
-	protected Scene()
-	{
-		Root = Setup();
-	}
-
-	protected virtual Container Setup()
-	{
-		return [];
-	}
 
 	/// <summary>
 	/// Called when the scene starts.
