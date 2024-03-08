@@ -5,11 +5,11 @@ using Silk.NET.OpenGL;
 
 namespace Promete.Elements.Renderer.GL;
 
-public class GLCustomElementRenderer(PrometeApp app, IWindow window) : ElementRendererBase
+public class GLContainbleElementRenderer(PrometeApp app, IWindow window) : ElementRendererBase
 {
 	public override void Render(ElementBase element)
 	{
-		var el = (CustomElement)element;
+		var el = (ContainableElementBase)element;
 		var w = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
 		if (el.isTrimmable) TrimStart(el, w.GL);
@@ -20,7 +20,7 @@ public class GLCustomElementRenderer(PrometeApp app, IWindow window) : ElementRe
 		if (el.isTrimmable) TrimEnd(w.GL);
 	}
 
-	private void TrimStart(CustomElement el, Silk.NET.OpenGL.GL gl)
+	private void TrimStart(ContainableElementBase el, Silk.NET.OpenGL.GL gl)
 	{
 		gl.Enable(GLEnum.ScissorTest);
 		var left = (VectorInt)el.AbsoluteLocation;

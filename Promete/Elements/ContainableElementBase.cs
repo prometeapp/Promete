@@ -2,7 +2,7 @@
 
 namespace Promete.Elements;
 
-public class CustomElement : ElementBase
+public abstract class ContainableElementBase : ElementBase
 {
 	protected internal bool isTrimmable;
 	protected internal readonly List<ElementBase> children = [];

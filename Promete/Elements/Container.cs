@@ -6,7 +6,7 @@ namespace Promete.Elements;
 /// <summary>
 /// 全ての Element を入れ子できる Element。
 /// </summary>
-public class Container : CustomElement, IEnumerable<ElementBase>
+public class Container : ContainableElementBase, IEnumerable<ElementBase>
 {
 	public int Count => children.Count;
 
