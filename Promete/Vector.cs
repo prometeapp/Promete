@@ -6,6 +6,7 @@ namespace Promete
 	/// <summary>
 	/// Two dimensional vector.
 	/// </summary>
+	[Obsolete("Use System.Numerics.Vector2 instead.", error: true)]
 	public struct Vector : IEquatable<Vector>
 	{
 		/// <summary>
