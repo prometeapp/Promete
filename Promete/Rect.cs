@@ -109,7 +109,7 @@ namespace Promete
 		/// </summary>
 		/// <param name="rect">判定する矩形。</param>
 		/// <returns>重なっている場合は <see langword="true"/>、それ以外の場合は <see langword="false"/>。</returns>
-		public bool Intersect(RectInt rect)
+		public bool Intersect(Rect rect)
 		{
 			return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
 		}
