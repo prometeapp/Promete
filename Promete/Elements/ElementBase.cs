@@ -49,6 +49,12 @@ public abstract class ElementBase
 		set => Size = (Width, value);
 	}
 
+	/// <summary>
+	/// この要素の Z インデックスを取得または設定します。<br/>
+	/// 要素は Z インデックスの昇順に描画されます。よって、大きいほど手前に描画されます。
+	/// </summary>
+	public int ZIndex { get; set; }
+
 	public Vector AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
 	public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;

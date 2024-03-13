@@ -13,9 +13,9 @@ public class GLContainbleElementRenderer(PrometeApp app, IWindow window) : Eleme
 		var w = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
 		if (el.isTrimmable) TrimStart(el, w.GL);
-		for (var i = 0; i < el.children.Count; i++)
+		for (var i = 0; i < el.sortedChildren.Length; i++)
 		{
-			app.RenderElement(el.children[i]);
+			app.RenderElement(el.sortedChildren[i]);
 		}
 		if (el.isTrimmable) TrimEnd(w.GL);
 	}
