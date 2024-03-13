@@ -1,23 +1,28 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Promete.Elements;
 
 public abstract class ContainableElementBase : ElementBase
 {
+	private bool _isSortingRequested = true;
 	protected internal bool isTrimmable;
-	protected readonly List<ElementBase> children = [];
-
 	protected internal ElementBase[] sortedChildren = [];
 
-	private bool isSortingRequested;
+	protected readonly ObservableCollection<ElementBase> children = [];
+
+	protected ContainableElementBase()
+	{
+		children.CollectionChanged += (sender, args) => RequestSorting();
+	}
 
 	/// <summary>
 	/// 要素のソートを要求します。要求された場合、次のUpdateフレームでソートが行われます。
 	/// </summary>
 	public void RequestSorting()
 	{
-		isSortingRequested = true;
+		_isSortingRequested = true;
 	}
 
 	internal override void Update()
@@ -30,11 +35,15 @@ public abstract class ContainableElementBase : ElementBase
 		}
 
 		// 破棄された子要素を削除
-		var hasDestroyedChildren = children.RemoveAll(e => e.IsDestroyed) > 0;
+		for (var i = children.Count - 1; i >= 0; i--)
+		{
+			if (!children[i].IsDestroyed) continue;
+			children.RemoveAt(i);
+		}
 
-		// ソートが要求されているか、子要素が削除された場合、ソートを行う
-		if (!hasDestroyedChildren && !isSortingRequested) return;
+		// ソートが要求されている場合、ソートを行う
+		if (!_isSortingRequested) return;
 		sortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
-		isSortingRequested = false;
+		_isSortingRequested = false;
 	}
 }

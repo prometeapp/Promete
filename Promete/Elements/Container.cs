@@ -35,26 +35,22 @@ public class Container : ContainableElementBase, IEnumerable<ElementBase>
 	{
 		children.Insert(index, item);
 		item.Parent = this;
-		RequestSorting();
 	}
 
 	public void RemoveAt(int index)
 	{
 		Remove(this[index]);
-		RequestSorting();
 	}
 
 	public void Add(ElementBase item)
 	{
 		children.Add(item);
-		RequestSorting();
 	}
 
 	public void AddRange(IEnumerable<ElementBase> elements)
 	{
 		foreach (var el in elements)
 			Add(el);
-		RequestSorting();
 	}
 
 	public void AddRange(params ElementBase[] elements)
@@ -62,7 +58,10 @@ public class Container : ContainableElementBase, IEnumerable<ElementBase>
 
 	public void Clear()
 	{
-		children.ForEach(child => child.Parent = null);
+		foreach (var el in children)
+		{
+			el.Parent = null;
+		}
 		children.Clear();
 		sortedChildren = [];
 	}
@@ -76,7 +75,6 @@ public class Container : ContainableElementBase, IEnumerable<ElementBase>
 	{
 		item.Parent = null;
 		var status = children.Remove(item);
-		RequestSorting();
 		return status;
 	}
 
