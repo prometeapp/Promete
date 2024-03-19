@@ -96,7 +96,12 @@ namespace Promete.Windowing
 		/// <summary>
 		/// Get or set refresh rate of this game window.
 		/// </summary>
-		int RefreshRate { get; }
+		int RefreshRate { get; set; }
+
+		/// <summary>
+		/// Get or set whether this game window is vsync mode.
+		/// </summary>
+		bool IsVsyncMode { get; set; }
 
 		/// <summary>
 		/// Get or set pixel ratio of this game window.

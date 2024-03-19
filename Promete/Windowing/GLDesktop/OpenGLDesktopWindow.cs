@@ -107,8 +107,17 @@ namespace Promete.Windowing.GLDesktop
 
 		public long UpdatePerSeconds { get; private set; }
 
-		// TODO: ゲーム起動前に変更可能にする
-		public int RefreshRate => 60;
+		public int RefreshRate
+		{
+			get => (int)window.FramesPerSecond;
+			set => window.FramesPerSecond = value;
+		}
+
+		public bool IsVsyncMode
+		{
+			get => window.VSync;
+			set => window.VSync = value;
+		}
 
 		public float PixelRatio => window.Size.X == 0 ? 1 : window.FramebufferSize.X / window.Size.X;
 
@@ -156,7 +165,8 @@ namespace Promete.Windowing.GLDesktop
  			options.Size = new Vector2D<int>(640, 480);
  			options.Title = "Promete Window";
 			options.WindowBorder = WindowBorder.Fixed;
-			options.FramesPerSecond = RefreshRate;
+			options.FramesPerSecond = 60;
+			options.VSync = false;
 
 			window = Window.Create(options);
 			window.Load += OnLoad;
