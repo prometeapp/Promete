@@ -31,6 +31,7 @@ public abstract class ContainableElementBase : ElementBase
 		base.Update();
 		for (var i = 0; i < sortedChildren.Length; i++)
 		{
+			if (children.Count <= i) break;
 			children[i].Parent = this;
 			children[i].Update();
 		}
