@@ -14,6 +14,7 @@ public abstract class ContainableElementBase : ElementBase
 
 	protected ContainableElementBase()
 	{
+
 		children.CollectionChanged += (sender, args) => RequestSorting();
 	}
 

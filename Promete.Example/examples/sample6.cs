@@ -9,7 +9,7 @@ namespace Promete.Example.examples;
 [Demo("sample6.demo", "スプライトの回転テスト")]
 public class SpriteRotateTestScene : Scene
 {
-	private ITexture tSolid;
+	private Texture2D tSolid;
 	private Container wrapper;
 	private Sprite sprite;
 	private float angle;

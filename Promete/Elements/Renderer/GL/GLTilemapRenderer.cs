@@ -47,11 +47,10 @@ public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) :
 			for (var x = tx; x < tx + maxTilesX; x++)
 			{
 				var offset = (x, y) * tilemap.TileSize;
-				var texture = tilemap[x, y]?.GetTexture(tilemap, (x, y), window);
+				var tile = tilemap[x, y];
+				if (tile == null) continue;
 
-				if (texture == null) continue;
-
-				helper.Draw(texture, tilemap, tilemap.GetTileColorAt(x, y), offset, tilemap.TileSize.X, tilemap.TileSize.Y);
+				helper.Draw(tile.GetTexture(tilemap, (x, y), window), tilemap, tilemap.GetTileColorAt(x, y), offset, tilemap.TileSize.X, tilemap.TileSize.Y);
 			}
 		}
 	}

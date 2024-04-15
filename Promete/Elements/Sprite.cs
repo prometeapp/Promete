@@ -3,9 +3,9 @@ using Promete.Graphics;
 
 namespace Promete.Elements;
 
-public class Sprite(ITexture? texture = null, Color? tintColor = default) : ElementBase
+public class Sprite(Texture2D? texture = null, Color? tintColor = default) : ElementBase
 {
-	public ITexture? Texture { get; set; } = texture;
+	public Texture2D? Texture { get; set; } = texture;
 
 	public Color TintColor { get; set; } = tintColor ?? Color.White;
 

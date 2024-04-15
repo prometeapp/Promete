@@ -8,7 +8,7 @@ public class SpriteAnimator : Component
 	/// <summary>
 	/// Get an array of textures to animate.
 	/// </summary>
-	public ITexture[] Textures { get; set; } = Array.Empty<ITexture>();
+	public Texture2D[] Textures { get; set; } = Array.Empty<Texture2D>();
 
 	/// <summary>
 	/// Get whether this sprite is animating.

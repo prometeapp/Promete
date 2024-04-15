@@ -1,11 +1,11 @@
 using System;
 
-namespace Promete.Graphics.GL;
+namespace Promete.Graphics;
 
 /// <summary>
 /// Wrap a handle of 2D texture.
 /// </summary>
-public class GLTexture2D : ITexture
+public readonly struct Texture2D : IDisposable
 {
 	/// <summary>
 	/// Get a OpenGL handle of this texture.
@@ -20,11 +20,11 @@ public class GLTexture2D : ITexture
 	/// <summary>
 	/// Get whether this texture has been destroyed.
 	/// </summary>
-	public bool IsDisposed { get; private set; }
+	public bool IsDisposed => PrometeApp.Current?.DisposedTextureHandles.Contains(Handle) ?? false;
 
 	private readonly Silk.NET.OpenGL.GL gl;
 
-	internal GLTexture2D(int handle, VectorInt size, Silk.NET.OpenGL.GL gl)
+	internal Texture2D(int handle, VectorInt size, Silk.NET.OpenGL.GL gl)
 	{
 		this.gl = gl;
 		Handle = handle;
@@ -32,14 +32,13 @@ public class GLTexture2D : ITexture
 	}
 
 	/// <summary>
-	/// この <see cref="GLTexture2D"/> を破棄します。
+	/// この <see cref="Texture2D"/> を破棄します。
 	/// </summary>
 	public void Dispose()
 	{
 		if (IsDisposed) return;
 
 		gl.DeleteTexture((uint)Handle);
-		IsDisposed = true;
-		GC.SuppressFinalize(this);
+		PrometeApp.Current?.DisposedTextureHandles.Add(Handle);
 	}
 }

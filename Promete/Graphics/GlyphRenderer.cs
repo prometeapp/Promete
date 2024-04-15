@@ -24,7 +24,7 @@ public class GlyphRenderer(IWindow window)
 		return GetTextBounds(text, f);
 	}
 
-	public ITexture Generate(string text, Font font, SDColor? color, SDColor? borderColor, int borderThickness)
+	public Texture2D Generate(string text, Font font, SDColor? color, SDColor? borderColor, int borderThickness)
 	{
 		var f = ResolveFont(font);
 		var size = GetTextBounds(text, f);

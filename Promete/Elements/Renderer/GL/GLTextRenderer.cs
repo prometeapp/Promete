@@ -9,6 +9,6 @@ public class GLTextRenderer(GLTextureRendererHelper helper) : ElementRendererBas
 		var text = (Text)element;
 		var texture = text.RenderedTexture;
 		if (texture == null) return;
-		helper.Draw(texture, text);
+		helper.Draw(texture.Value, text);
 	}
 }

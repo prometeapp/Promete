@@ -10,7 +10,7 @@ namespace Promete.Example.examples.graphics;
 [Demo("/graphics/container.demo", "Elementをコンテナーにいくつか追加する例")]
 public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
 {
-	private ITexture ichigo;
+	private Texture2D ichigo;
 	private readonly Container container = new();
 
 	public override void OnStart()
@@ -25,7 +25,7 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
 
 		VectorInt Rnd() => random.NextVectorInt(256, 256);
 
-		Parallel.For(0L, 120, (_) =>
+		for (var i = 0; i < 120; i++)
 		{
 			var (v1, v2, v3) = (Rnd(), Rnd(), Rnd());
 			switch (random.Next(4))
@@ -44,7 +44,7 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
 						random.NextColor()));
 					break;
 			}
-		});
+		};
 
 		container.Add(new Text("O", font: Font.GetDefault(32), color: Color.White));
 

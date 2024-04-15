@@ -139,7 +139,7 @@ namespace Promete.Windowing
 		/// Take a screenshot and generate a texture from it.
 		/// </summary>
 		/// <returns>A screenshot as a texture</returns>
-		ITexture TakeScreenshot();
+		Texture2D TakeScreenshot();
 
 		/// <summary>
 		/// Save a screenshot as PNG to the specified path.

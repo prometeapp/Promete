@@ -16,42 +16,42 @@ public abstract class TextureFactory
 	/// <summary>
 	/// 指定したパスからテクスチャを読み込みます。
 	/// </summary>
-	public abstract ITexture Load(string path);
+	public abstract Texture2D Load(string path);
 
 	/// <summary>
 	/// 指定したストリームからテクスチャを読み込みます。
 	/// </summary>
-	public abstract ITexture Load(Stream stream);
+	public abstract Texture2D Load(Stream stream);
 
 	/// <summary>
 	/// 指定したパスからテクスチャを読み込み、切り抜きます。
 	/// </summary>
-	public abstract ITexture[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size);
+	public abstract Texture2D[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size);
 
 	/// <summary>
 	/// 指定したストリームからテクスチャを読み込み、切り抜きます。
 	/// </summary>
-	public abstract ITexture[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size);
+	public abstract Texture2D[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size);
 
 	/// <summary>
 	/// ビットマップのデータからテクスチャを生成します。
 	/// </summary>
-	public abstract ITexture Create(byte[] bitmap, VectorInt size);
+	public abstract Texture2D Create(byte[] bitmap, VectorInt size);
 
 	/// <summary>
 	/// ビットマップのデータからテクスチャを生成します。
 	/// </summary>
-	public abstract ITexture Create(byte[,,] bitmap);
+	public abstract Texture2D Create(byte[,,] bitmap);
 
 	/// <summary>
 	/// 指定した色の単色テクスチャを生成します。
 	/// </summary>
-	public abstract ITexture CreateSolid(Color color, VectorInt size);
+	public abstract Texture2D CreateSolid(Color color, VectorInt size);
 
 	/// <summary>
 	/// [内部的に使用。] ImageSharp の Image からテクスチャを生成します。
 	/// </summary>
-	internal abstract ITexture LoadFromImageSharpImage(Image image);
+	internal abstract Texture2D LoadFromImageSharpImage(Image image);
 
 	/// <summary>
 	/// 指定したパスから 9 スライステクスチャを読み込みます。

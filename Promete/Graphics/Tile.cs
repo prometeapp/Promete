@@ -12,12 +12,12 @@ public class Tile : ITile
 	/// <summary>
 	/// 描画されるテクスチャを取得します。
 	/// </summary>
-	public ITexture Texture { get; private set; }
+	public Texture2D Texture { get; private set; }
 
 	/// <summary>
 	/// アニメーションに使われるテクスチャの配列を取得します。
 	/// </summary>
-	public ITexture[] Animations { get; private set; }
+	public Texture2D[] Animations { get; private set; }
 
 	/// <summary>
 	/// アニメーションにおけるテクスチャ1枚あたりの描画時間を取得します。
@@ -30,7 +30,7 @@ public class Tile : ITile
 	/// テクスチャを指定して、<see cref="Tile"/> クラスの新しいインスタンスを初期化します。
 	/// </summary>
 	/// <param name="texture">タイルとして描画されるテクスチャ。</param>
-	public Tile(ITexture texture)
+	public Tile(Texture2D texture)
 		: this(texture, false)
 	{
 	}
@@ -38,7 +38,7 @@ public class Tile : ITile
 	/// <summary>
 	/// <see cref="Tile"/> クラスの新しいインスタンスを初期化します。
 	/// </summary>
-	protected Tile(ITexture texture, bool b1)
+	protected Tile(Texture2D texture, bool b1)
 		: this(new[] { texture }, 0)
 	{
 		textureIsInternal = b1;
@@ -51,7 +51,7 @@ public class Tile : ITile
 	/// <param name="interval">アニメーションの時間。</param>
 	/// <exception cref="ArgumentNullException">animations が <c>null</c> です。</exception>
 	/// <exception cref="ArgumentException">animations の長さが <c>0</c> です。</exception>
-	public Tile(ITexture[] animations, double interval)
+	public Tile(Texture2D[] animations, double interval)
 	{
 		if (animations.Length < 1)
 			throw new ArgumentException(null, nameof(animations));
@@ -60,7 +60,7 @@ public class Tile : ITile
 		Texture = Animations[0];
 	}
 
-	public ITexture GetTexture(Tilemap map, VectorInt tileLocation, IWindow window)
+	public Texture2D GetTexture(Tilemap map, VectorInt tileLocation, IWindow window)
 	{
 		if (prevFrameCount != window.TotalFrame)
 		{

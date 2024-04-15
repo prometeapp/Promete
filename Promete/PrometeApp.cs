@@ -38,6 +38,8 @@ public sealed class PrometeApp : IDisposable
 	/// </summary>
 	public static PrometeApp? Current { get; private set; }
 
+	internal HashSet<int> DisposedTextureHandles { get; } = [];
+
 	private Scene? currentScene;
 	private int statusCode = 0;
 

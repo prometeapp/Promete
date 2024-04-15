@@ -4,8 +4,6 @@ using System.Drawing;
 using System.Numerics;
 using Promete.Exceptions;
 using Promete.Graphics;
-using Promete.Graphics.GL;
-using Promete.Internal;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
@@ -13,7 +11,7 @@ using Silk.NET.OpenGL;
 namespace Promete.Elements.Renderer.GL.Helper
 {
 	/// <summary>
-	/// <see cref="GLTexture2D"/> オブジェクトをバッファ上に描画する機能を提供します。
+	/// <see cref="Texture2D"/> オブジェクトをバッファ上に描画する機能を提供します。
 	/// </summary>
 	public class GLTextureRendererHelper
 	{
@@ -63,11 +61,8 @@ namespace Promete.Elements.Renderer.GL.Helper
 		/// <summary>
 		/// テクスチャを描画します。
 		/// </summary>
-		public unsafe void Draw(ITexture texture, ElementBase el, Color? color = null, Vector? additionalLocation = null, float? overriddenWidth = null, float? overriddenHeight = null)
+		public unsafe void Draw(Texture2D texture, ElementBase el, Color? color = null, Vector? additionalLocation = null, float? overriddenWidth = null, float? overriddenHeight = null)
 		{
-			if (texture is not GLTexture2D glTexture) throw new ArgumentException("Texture is not a GLTexture2D", nameof(texture));
-			if (glTexture.IsDisposed) throw new TextureDisposedException();
-
 			var finalAngle = el.AbsoluteAngle;
 			var finalScale = el.AbsoluteScale;
 
@@ -130,7 +125,7 @@ namespace Promete.Elements.Renderer.GL.Helper
 
 			gl.UseProgram(shader);
 			gl.ActiveTexture(GLEnum.Texture0);
-			gl.BindTexture(GLEnum.Texture2D, (uint)glTexture.Handle);
+			gl.BindTexture(GLEnum.Texture2D, (uint)texture.Handle);
 			var uTexture0 = gl.GetUniformLocation(shader, "uTexture0");
 			gl.Uniform1(uTexture0, 0);
 			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");

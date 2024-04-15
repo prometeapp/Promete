@@ -7,19 +7,19 @@ namespace Promete.Graphics;
 /// </summary>
 public readonly struct Texture9Sliced : IDisposable
 {
-	public ITexture TopLeft { get; }
-	public ITexture TopCenter { get; }
-	public ITexture TopRight { get; }
-	public ITexture MiddleLeft { get; }
-	public ITexture MiddleCenter { get; }
-	public ITexture MiddleRight { get; }
-	public ITexture BottomLeft { get; }
-	public ITexture BottomCenter { get; }
-	public ITexture BottomRight { get; }
+	public Texture2D TopLeft { get; }
+	public Texture2D TopCenter { get; }
+	public Texture2D TopRight { get; }
+	public Texture2D MiddleLeft { get; }
+	public Texture2D MiddleCenter { get; }
+	public Texture2D MiddleRight { get; }
+	public Texture2D BottomLeft { get; }
+	public Texture2D BottomCenter { get; }
+	public Texture2D BottomRight { get; }
 
 	public VectorInt Size { get; }
 
-	internal Texture9Sliced(ITexture[] textures, VectorInt size)
+	internal Texture9Sliced(Texture2D[] textures, VectorInt size)
 	{
 		TopLeft = textures[0];
 		TopCenter = textures[1];

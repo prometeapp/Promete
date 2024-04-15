@@ -6,7 +6,7 @@ namespace Promete.Elements;
 
 public class Text : ElementBase
 {
-	public ITexture? RenderedTexture { get; private set; }
+	public Texture2D? RenderedTexture { get; private set; }
 
 	public override VectorInt Size
 	{
@@ -20,31 +20,56 @@ public class Text : ElementBase
 	public string Content
 	{
 		get => content;
-		set => SetAndUpdateTexture(ref content, value);
+		set
+		{
+			if (content == value) return;
+			content = value;
+			_isUpdateRequested = true;
+		}
 	}
 
 	public Color? Color
 	{
 		get => textColor;
-		set => SetAndUpdateTexture(ref textColor, value);
+		set
+		{
+			if (textColor == value) return;
+			textColor = value;
+			_isUpdateRequested = true;
+		}
 	}
 
 	public Color? BorderColor
 	{
 		get => borderColor;
-		set => SetAndUpdateTexture(ref borderColor, value);
+		set
+		{
+			if (borderColor == value) return;
+			borderColor = value;
+			_isUpdateRequested = true;
+		}
 	}
 
 	public int BorderThickness
 	{
 		get => borderThickness;
-		set => SetAndUpdateTexture(ref borderThickness, value);
+		set
+		{
+			if (borderThickness == value) return;
+			borderThickness = value;
+			_isUpdateRequested = true;
+		}
 	}
 
 	public Font Font
 	{
 		get => font;
-		set => SetAndUpdateTexture(ref font, value);
+		set
+		{
+			if (font.Equals(value)) return;
+			font = value;
+			_isUpdateRequested = true;
+		}
 	}
 
 	private string content;
@@ -52,6 +77,8 @@ public class Text : ElementBase
 	private Color? borderColor;
 	private int borderThickness;
 	private Font font;
+
+	private bool _isUpdateRequested;
 
 	private readonly GlyphRenderer glyphRenderer;
 
@@ -65,22 +92,22 @@ public class Text : ElementBase
 		RenderTexture();
 	}
 
+	protected override void OnUpdate()
+	{
+		if (!_isUpdateRequested) return;
+		RenderTexture();
+		_isUpdateRequested = false;
+	}
+
 	protected override void OnDestroy()
 	{
 		RenderedTexture?.Dispose();
 	}
 
-	private void SetAndUpdateTexture<T>(ref T variable, T value)
-	{
-		if (variable?.Equals(value) ?? false) return;
-		variable = value;
-		RenderTexture();
-	}
-
 	private void RenderTexture()
 	{
-		RenderedTexture?.Dispose();
-
+		var oldTexture = RenderedTexture;
 		RenderedTexture = glyphRenderer.Generate(Content, Font, Color, BorderColor, BorderThickness);
+		oldTexture?.Dispose();
 	}
 }

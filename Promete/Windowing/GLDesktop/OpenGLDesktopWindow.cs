@@ -178,7 +178,7 @@ namespace Promete.Windowing.GLDesktop
 			window.FocusChanged += v => IsFocused = v;
 		}
 
-		public ITexture TakeScreenshot()
+		public Texture2D TakeScreenshot()
 		{
 			return TextureFactory.LoadFromImageSharpImage(TakeScreenshotAsImage());
 		}

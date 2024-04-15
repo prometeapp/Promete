@@ -9,7 +9,7 @@ namespace Promete.Example.examples;
 [Demo("sample8.demo", "スプライトの回転テスト3")]
 public class SpriteRotateTest3Scene : Scene
 {
-	private ITexture tIchigo;
+	private Texture2D tIchigo;
 	private List<Container> allIchigos = [];
 	private float angle = 0;
 	private bool isPlaying = true;

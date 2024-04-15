@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Promete.Graphics;
-using Promete.Graphics.GL;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
@@ -15,32 +14,32 @@ namespace Promete.Windowing.GLDesktop;
 
 public class OpenGLTextureFactory(GL gl) : TextureFactory
 {
-	public override ITexture Load(string path)
+	public override Texture2D Load(string path)
 	{
 		return LoadFromImageSharpImage(Image.Load(path));
 	}
 
-	public override ITexture Load(Stream stream)
+	public override Texture2D Load(Stream stream)
 	{
 		return LoadFromImageSharpImage(Image.Load(stream));
 	}
 
-	public override ITexture[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size)
+	public override Texture2D[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size)
 	{
 		return LoadSpriteSheet(Image.Load(path), horizontalCount, verticalCount, size);
 	}
 
-	public override ITexture[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size)
+	public override Texture2D[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size)
 	{
 		return LoadSpriteSheet(Image.Load(stream), horizontalCount, verticalCount, size);
 	}
 
-	public override ITexture Create(byte[] bitmap, VectorInt size)
+	public override Texture2D Create(byte[] bitmap, VectorInt size)
 	{
-		return new GLTexture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, gl);
+		return new Texture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, gl);
 	}
 
-	public override ITexture Create(byte[,,] bitmap)
+	public override Texture2D Create(byte[,,] bitmap)
 	{
 		var width = bitmap.GetLength(0);
 		var height = bitmap.GetLength(1);
@@ -55,7 +54,7 @@ public class OpenGLTextureFactory(GL gl) : TextureFactory
 		return Create(arr, (width, height));
 	}
 
-	public override ITexture CreateSolid(Color color, VectorInt size)
+	public override Texture2D CreateSolid(Color color, VectorInt size)
 	{
 		var arr = new byte[size.X, size.Y, 4];
 
@@ -71,7 +70,7 @@ public class OpenGLTextureFactory(GL gl) : TextureFactory
 		return Create(arr);
 	}
 
-	internal override ITexture LoadFromImageSharpImage(Image image)
+	internal override Texture2D LoadFromImageSharpImage(Image image)
 	{
 		using var img = image.CloneAs<Rgba32>();
 
@@ -80,12 +79,12 @@ public class OpenGLTextureFactory(GL gl) : TextureFactory
 		return Create(rgbaBytes, (img.Width, img.Height));
 	}
 
-	private ITexture[] LoadSpriteSheet(Image bmp, int horizontalCount, int verticalCount, VectorInt size)
+	private Texture2D[] LoadSpriteSheet(Image bmp, int horizontalCount, int verticalCount, VectorInt size)
 	{
 		using (bmp)
 		using (var img = bmp.CloneAs<Rgba32>())
 		{
-			var textures = new ITexture[verticalCount * horizontalCount];
+			var textures = new Texture2D[verticalCount * horizontalCount];
 
 			for (var y = 0; y < verticalCount; y++)
 			{

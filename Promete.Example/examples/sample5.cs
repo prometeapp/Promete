@@ -10,7 +10,7 @@ namespace Promete.Example.examples;
 [Demo("/sample5.demo", "10000スプライトを表示してFPSを計測します")]
 public class BenchmarkScene(Keyboard keyboard) : Scene
 {
-	private ITexture strawberry;
+	private Texture2D strawberry;
 	private bool initialized;
 	private readonly Random rnd = new();
 

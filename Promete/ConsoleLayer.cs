@@ -34,20 +34,26 @@ public class ConsoleLayer
 	public Color TextColor { get; set; } = Color.White;
 
 	private Text? text;
-	private Text? heightCalculator;
 	private string? prevFont;
 	private int maxLine;
 
 	private readonly IWindow window;
+	private readonly GlyphRenderer glyphRenderer;
 	private readonly List<string> consoleBuffer = [];
 
-	public ConsoleLayer(PrometeApp app, IWindow window)
+	public ConsoleLayer(PrometeApp app, IWindow window, GlyphRenderer glyphRenderer)
 	{
 		this.window = window;
+		this.glyphRenderer = glyphRenderer;
 		FontSize = 16;
 		text = new Text("", Font.GetDefault(), Color.White);
-		heightCalculator = new Text("", Font.GetDefault(), Color.White);
 		maxLine = CalculateMaxLine();
+
+		window.Update += () =>
+		{
+			text.Update();
+		};
+
 		window.Render += () =>
 		{
 			if (text == null) return;
@@ -100,8 +106,7 @@ public class ConsoleLayer
 		var f = text.Font;
 		if (f.Size != FontSize || prevFont != FontPath)
 		{
-			heightCalculator.Font =
-				text.Font = FontPath == null ? Font.GetDefault(FontSize) : new Font(FontPath, FontSize);
+			text.Font = FontPath == null ? Font.GetDefault(FontSize) : new Font(FontPath, FontSize);
 			maxLine = CalculateMaxLine();
 		}
 
@@ -114,13 +119,16 @@ public class ConsoleLayer
 
 	private int CalculateMaxLine()
 	{
-		if (heightCalculator == null) return 0;
+		if (text == null) return 0;
+		var textToTest = "";
 		var l = 0;
+		Rect bounds;
 		do
 		{
-			heightCalculator.Content += "A\n";
+			textToTest += "A\n";
+			bounds = glyphRenderer.GetTextBounds(textToTest, text.Font);
 			l++;
-		} while (heightCalculator.Height < window.Height);
+		} while (bounds.Height < window.Height);
 
 		return l - 1;
 	}
