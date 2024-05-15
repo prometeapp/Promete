@@ -12,7 +12,7 @@ using Color = System.Drawing.Color;
 
 namespace Promete.Windowing.GLDesktop;
 
-public class OpenGLTextureFactory(GL gl) : TextureFactory
+public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
 {
 	public override Texture2D Load(string path)
 	{
@@ -113,6 +113,7 @@ public class OpenGLTextureFactory(GL gl) : TextureFactory
 
 	private unsafe int GenerateTexture(byte[] bitmap, uint width, uint height)
 	{
+		app.ThrowIfNotMainThread();
 		fixed (byte* b = bitmap)
 		{
 			var texture = gl.GenTexture();

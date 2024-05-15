@@ -214,7 +214,7 @@ namespace Promete.Windowing.GLDesktop
 		{
 			gl = window.CreateOpenGL();
 			_RawInputContext = window.CreateInput();
-			textureFactory = new OpenGLTextureFactory(gl);
+			textureFactory = new OpenGLTextureFactory(gl, app);
 			UpdateWindowSize();
 
 			Start?.Invoke();

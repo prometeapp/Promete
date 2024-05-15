@@ -22,6 +22,7 @@ public class GLContainbleElementRenderer(PrometeApp app, IWindow window) : Eleme
 
 	private void TrimStart(ContainableElementBase el, Silk.NET.OpenGL.GL gl)
 	{
+		app.ThrowIfNotMainThread();
 		gl.Enable(GLEnum.ScissorTest);
 		var left = (VectorInt)el.AbsoluteLocation;
 		var size = (VectorInt)(el.Size * el.AbsoluteScale);
@@ -42,6 +43,7 @@ public class GLContainbleElementRenderer(PrometeApp app, IWindow window) : Eleme
 
 	private void TrimEnd(Silk.NET.OpenGL.GL gl)
 	{
+		app.ThrowIfNotMainThread();
 		gl.Scissor(0, 0, (uint)window.ActualWidth, (uint)window.ActualHeight);
 		gl.Disable(GLEnum.ScissorTest);
 	}

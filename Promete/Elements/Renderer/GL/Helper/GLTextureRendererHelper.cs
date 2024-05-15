@@ -63,6 +63,7 @@ namespace Promete.Elements.Renderer.GL.Helper
 		/// </summary>
 		public unsafe void Draw(Texture2D texture, ElementBase el, Color? color = null, Vector? additionalLocation = null, float? overriddenWidth = null, float? overriddenHeight = null)
 		{
+			PrometeApp.Current?.ThrowIfNotMainThread();
 			var finalAngle = el.AbsoluteAngle;
 			var finalScale = el.AbsoluteScale;
 

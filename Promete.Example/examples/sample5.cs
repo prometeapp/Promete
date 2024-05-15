@@ -17,18 +17,8 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
 	public override async void OnStart()
 	{
 		strawberry = Window.TextureFactory.Load("assets/ichigo.png");
-		for (var i = 0; i < 10000; i++)
-		{
-			Window.Title = $"Creating sprites {(int)((i + 1) / 10000f * 100)}%";
-			Root.Add(
-				new Sprite(strawberry)
-					.Location(rnd.NextVector(Window.Width, Window.Height))
-			);
-			if (i % 1000 == 0)
-				await Task.Delay(1);
-		}
-
-		initialized = true;
+		App.NextFrame(Init);
+		Window.Title = "Initializing in background thread...";
 	}
 
 	public override void OnUpdate()
@@ -43,5 +33,20 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
 	public override void OnDestroy()
 	{
 		strawberry.Dispose();
+	}
+
+	private async void Init()
+	{
+		await Task.Factory.StartNew(() =>
+		{
+			for (var i = 0; i < 10000; i++)
+			{
+				var sprite = new Sprite(strawberry)
+					.Location(rnd.NextVector(Window.Width, Window.Height));
+				App.NextFrame(() => Root.Add(sprite));
+			}
+
+			initialized = true;
+		});
 	}
 }

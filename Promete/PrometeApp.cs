@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -45,15 +46,14 @@ public sealed class PrometeApp : IDisposable
 
 	private readonly ServiceCollection services;
 	private readonly ServiceProvider provider;
-	private readonly Queue<Action> nextFrameQueue = new();
+	private readonly ConcurrentQueue<Action> nextFrameQueue = new();
 	private readonly Dictionary<Type, Type> rendererTypes;
 	private readonly Dictionary<Type, ElementRendererBase> renderers = new();
-	private readonly PrSynchronizationContext synchronizationContext;
+	private readonly Thread mainThread;
 
 	private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
 	{
-		synchronizationContext = new PrSynchronizationContext();
-		SynchronizationContext.SetSynchronizationContext(synchronizationContext);
+		mainThread = Thread.CurrentThread;
 
 		this.services = services;
 		this.rendererTypes = rendererTypes;
@@ -175,6 +175,25 @@ public sealed class PrometeApp : IDisposable
 		element.Update();
 	}
 
+	/// <summary>
+	/// このメソッドが呼び出されたスレッドがメインスレッドであるかどうかを取得します。
+	/// </summary>
+	/// <returns></returns>
+	public bool IsMainThread()
+	{
+		return Thread.CurrentThread == mainThread;
+	}
+
+	/// <summary>
+	/// このメソッドが呼び出されたスレッドがメインスレッドでない場合、<see cref="InvalidOperationException"/> をスローします。
+	/// </summary>
+	/// <exception cref="InvalidOperationException"></exception>
+	public void ThrowIfNotMainThread()
+	{
+		if (IsMainThread()) return;
+		throw new InvalidOperationException("This method must be called from the main thread.");
+	}
+
 	private void OnStart<TScene>() where TScene : Scene
 	{
 		foreach (var (elementType, rendererType) in rendererTypes)
@@ -190,14 +209,14 @@ public sealed class PrometeApp : IDisposable
 		currentScene?.OnUpdate();
 
 		ProcessNextFrameQueue();
-		synchronizationContext.Update();
 	}
 
 	private void ProcessNextFrameQueue()
 	{
-		while (nextFrameQueue.Count > 0)
+		while (!nextFrameQueue.IsEmpty)
 		{
-			nextFrameQueue.Dequeue()();
+			if (!nextFrameQueue.TryDequeue(out var task)) return;
+			task();
 		}
 	}
 
