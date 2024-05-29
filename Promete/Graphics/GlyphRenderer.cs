@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Promete.Elements;
 using Promete.Windowing;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;

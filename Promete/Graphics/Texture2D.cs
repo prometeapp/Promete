@@ -17,11 +17,6 @@ public readonly struct Texture2D : IDisposable
 	/// </summary>
 	public VectorInt Size { get; }
 
-	/// <summary>
-	/// Get whether this texture has been destroyed.
-	/// </summary>
-	public bool IsDisposed => PrometeApp.Current?.DisposedTextureHandles.Contains(Handle) ?? false;
-
 	private readonly Silk.NET.OpenGL.GL gl;
 
 	internal Texture2D(int handle, VectorInt size, Silk.NET.OpenGL.GL gl)
@@ -36,9 +31,6 @@ public readonly struct Texture2D : IDisposable
 	/// </summary>
 	public void Dispose()
 	{
-		if (IsDisposed) return;
-
 		gl.DeleteTexture((uint)Handle);
-		PrometeApp.Current?.DisposedTextureHandles.Add(Handle);
 	}
 }
