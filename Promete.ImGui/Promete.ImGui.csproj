@@ -8,8 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Promete" Version="0.8.0-build-5b2440" />
-      <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.20.0" />
+      <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.21.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Promete\Promete.csproj" />
     </ItemGroup>
 
 	<PropertyGroup>
