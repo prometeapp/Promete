@@ -49,7 +49,7 @@ public class GlyphRenderer(IWindow window)
 	private Rect GetTextBounds(string text, SixLabors.Fonts.Font font)
 	{
 		var size = TextMeasurer.MeasureBounds(text, new TextOptions(font));
-		return new Rect(0, 0, (int)size.Width, (int)size.Height);
+		return new Rect(0, 0, (int)size.Right, (int)size.Bottom);
 	}
 
 	private SixLabors.Fonts.Font ResolveFont(Font f)
