@@ -190,7 +190,7 @@ namespace Promete.Windowing.GLDesktop
 		public async Task SaveScreenshotAsync(string path, CancellationToken ct = default)
 		{
 			var img = TakeScreenshotAsImage();
-			await img.SaveAsPngAsync("path", ct);
+			await img.SaveAsPngAsync(path, ct);
 		}
 
 		public void Run()
