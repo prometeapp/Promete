@@ -94,7 +94,11 @@ namespace Promete.Windowing.GLDesktop
 		public string Title
 		{
 			get => window.Title;
-			set => window.Title = value;
+			set
+			{
+				if (window.Title == value) return;
+				window.Title = value;
+			}
 		}
 
 		public long TotalFrame { get; private set; }
