@@ -153,7 +153,7 @@ namespace Promete.Windowing.GLDesktop
 		private int updateCount;
 		private int prevSecondUps;
 		private int prevSecondFps;
-		private byte[] screenshotBuffer = Array.Empty<byte>();
+		private byte[] screenshotBuffer = [];
 		private VectorInt size = (640, 480);
 		private GL? gl;
 		private TextureFactory? textureFactory;
@@ -207,9 +207,9 @@ namespace Promete.Windowing.GLDesktop
 		{
 			fixed (byte* buffer = screenshotBuffer)
 			{
-				gl?.ReadPixels(0, 0, (uint)ActualWidth, (uint)ActualHeight, PixelFormat.Rgba, PixelType.UnsignedByte, buffer);
+				gl?.ReadPixels(0, 0, (uint)(ActualWidth * scale), (uint)(ActualHeight * scale), PixelFormat.Rgba, PixelType.UnsignedByte, buffer);
 			}
-			var img = Image.LoadPixelData<Rgba32>(screenshotBuffer, ActualWidth, ActualHeight);
+			var img = Image.LoadPixelData<Rgba32>(screenshotBuffer, ActualWidth * scale, ActualHeight * scale);
 			img.Mutate(i => i.Flip(FlipMode.Vertical));
 			return img;
 		}
@@ -293,7 +293,7 @@ namespace Promete.Windowing.GLDesktop
 		private void UpdateWindowSize()
 		{
 			window.Size = new Vector2D<int>(Size.X, Size.Y) * scale;
-			screenshotBuffer = new byte[window.FramebufferSize.X * window.FramebufferSize.Y * 4];
+			screenshotBuffer = new byte[window.FramebufferSize.X * window.FramebufferSize.Y * scale * 4];
 		}
 
 		public event Action? Start;
