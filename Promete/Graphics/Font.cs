@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Promete.Graphics;
 
@@ -13,27 +11,29 @@ public class Font
 	/// <summary>
 	/// Get a path to this font, or font-family name.
 	/// </summary>
-	public string? Path { get; private set; }
+	public string? Path { get; }
 
 	/// <summary>
 	/// Get a font identifier.
 	/// </summary>
-	public string Id { get; private set; }
+	public string Id { get; }
 
 	/// <summary>
 	/// Get a path to this font, or font-family name.
 	/// </summary>
-	public Stream? Stream { get; private set; }
+	public Stream? Stream { get; }
 
 	/// <summary>
 	/// Get a size of this font.
 	/// </summary>
-	public float Size { get; private set; }
+	public float Size { get; }
 
 	/// <summary>
 	/// Get a style of this font.
 	/// </summary>
-	public FontStyle FontStyle { get; private set; }
+	public FontStyle FontStyle { get; }
+
+	public bool IsAntialiased { get; } = true;
 
 	/// <summary>
 	/// Initialize a new instance of <see cref="Font"/> class.
@@ -41,12 +41,13 @@ public class Font
 	/// <param name="path">relative path to the font, or font-family name of system fonts.</param>
 	/// <param name="size">font size by pixel unit.</param>
 	/// <param name="style">font style.</param>
-	public Font(string path, float size = 16, FontStyle style = FontStyle.Normal)
+	public Font(string path, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
 	{
 		Path = path;
 		Id = path;
 		Size = size;
 		FontStyle = style;
+		IsAntialiased = isAntialiased;
 	}
 
 	/// <summary>
@@ -56,12 +57,13 @@ public class Font
 	/// <param name="id">An ID to cache this font data.</param>
 	/// <param name="size">font size by pixel unit.</param>
 	/// <param name="style">font style.</param>
-	public Font(Stream stream, string id, float size = 16, FontStyle style = FontStyle.Normal)
+	public Font(Stream stream, string id, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
 	{
 		Id = id;
 		Stream = stream;
 		Size = size;
 		FontStyle = style;
+		IsAntialiased = isAntialiased;
 	}
 
 	/// <summary>
@@ -81,12 +83,13 @@ public class Font
 		       Path == font.Path &&
 		       EqualityComparer<Stream?>.Default.Equals(Stream, font.Stream) &&
 		       Size == font.Size &&
+		       IsAntialiased == font.IsAntialiased &&
 		       FontStyle == font.FontStyle;
 	}
 
 	public override int GetHashCode()
 	{
-		return System.HashCode.Combine(Path, Stream, Size, FontStyle);
+		return System.HashCode.Combine(Path, Stream, Size, FontStyle, IsAntialiased);
 	}
 
 	private static readonly Stream defaultFont = EmbeddedResource.GetResourceAsStream("Promete.Resources.font.ttf");

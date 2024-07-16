@@ -25,22 +25,38 @@ public class GlyphRenderer(IWindow window)
 
 	public Texture2D Generate(string text, Font font, SDColor? color, SDColor? borderColor, int borderThickness)
 	{
-		var f = ResolveFont(font);
-		var size = GetTextBounds(text, f);
+		var imageSharpFont = ResolveFont(font);
+		var size = GetTextBounds(text, imageSharpFont);
 		using var img = new Image<Rgba32>((int)size.Width + 8, (int)size.Height + 8);
 		var col = color ?? SDColor.Black;
-		var isColor = Color.FromRgba(col.R, col.G, col.B, col.A);
+		var imageSharpColor = Color.FromRgba(col.R, col.G, col.B, col.A);
 
+		var textOptions = new RichTextOptions(imageSharpFont);
+		var drawingOptions = new DrawingOptions();
+
+		if (!font.IsAntialiased)
+		{
+			textOptions.HorizontalAlignment = HorizontalAlignment.Left;
+			textOptions.VerticalAlignment = VerticalAlignment.Top;
+			textOptions.KerningMode = KerningMode.None;
+			textOptions.TextAlignment = TextAlignment.Start;
+			drawingOptions.GraphicsOptions.Antialias = false;
+		}
+
+		var brush = new SolidBrush(imageSharpColor);
 		if (borderColor != null)
 		{
 			var bc = borderColor.Value;
-			var isBorderColor = Color.FromRgba(bc.R, bc.G, bc.B, bc.A);
-			img.Mutate(ctx => ctx.DrawText(text, f, new SolidBrush(isColor), new SolidPen(isBorderColor, borderThickness),
-				PointF.Empty));
+			var imageSharpBorderColor = Color.FromRgba(bc.R, bc.G, bc.B, bc.A);
+			var pen = new SolidPen(imageSharpBorderColor, borderThickness);
+			img.Mutate(ctx =>
+			{
+				ctx.DrawText(drawingOptions, textOptions, text, brush, pen);
+			});
 		}
 		else
 		{
-			img.Mutate(ctx => ctx.DrawText(text, f, isColor, PointF.Empty));
+			img.Mutate(ctx => ctx.DrawText(drawingOptions, textOptions, text, brush, null));
 		}
 
 		return window.TextureFactory.LoadFromImageSharpImage(img);
