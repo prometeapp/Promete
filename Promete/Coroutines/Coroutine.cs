@@ -27,6 +27,8 @@ public class Coroutine : YieldInstruction
 	/// </summary>
 	public Action<Exception>? ErrorAction { get; private set; }
 
+	internal bool IsKeepAlive;
+
 	internal object? Current => _runningAction.Current;
 
 	internal Coroutine(IEnumerator runningAction)
@@ -64,6 +66,15 @@ public class Coroutine : YieldInstruction
 	public Coroutine Error(Action<Exception> callback)
 	{
 		ErrorAction = callback;
+		return this;
+	}
+
+	/// <summary>
+	/// シーンが切り替わっても、コルーチンを破棄せず継続するよう設定します。
+	/// </summary>
+	public Coroutine KeepAlive(bool keepAlive = true)
+	{
+		IsKeepAlive = keepAlive;
 		return this;
 	}
 

@@ -16,10 +16,12 @@ namespace Promete.Coroutines
 
 		private readonly Dictionary<Coroutine, object?> coroutines = new();
 
-		public CoroutineManager(IWindow window)
+		public CoroutineManager(PrometeApp app, IWindow window)
 		{
 			_window = window;
 			_window.Update += Update;
+
+			app.SceneWillChange += ClearAllNonKeepAliveCoroutines;
 		}
 
 		/// <summary>
@@ -93,6 +95,12 @@ namespace Promete.Coroutines
 				ValueTask t => new WaitForTask(t),
 				_ => new WaitUntilNextFrame(),
 			};
+		}
+
+		private void ClearAllNonKeepAliveCoroutines()
+		{
+			var nonKeepAliveCoroutines = coroutines.Keys.Where(c => !c.IsKeepAlive).ToList();
+			nonKeepAliveCoroutines.ForEach(Stop);
 		}
 	}
 }
