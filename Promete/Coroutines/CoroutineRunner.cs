@@ -14,7 +14,7 @@ namespace Promete.Coroutines
 	{
 		private readonly IWindow _window;
 
-		private readonly Dictionary<Coroutine, object?> coroutines = new();
+		private readonly Dictionary<Coroutine, YieldInstruction?> coroutines = new();
 
 		public CoroutineManager(PrometeApp app, IWindow window)
 		{
@@ -51,30 +51,25 @@ namespace Promete.Coroutines
 		public void Clear()
 		{
 			// Stop
-			coroutines.Keys.ToList().ForEach(c => c.Stop());
-			coroutines.Clear();
+			coroutines.Keys.ToList().ForEach(Stop);
 		}
 
 		private void Update()
 		{
-			foreach (var (coroutine, obj) in coroutines.Select(c => (c.Key, c.Value)).ToArray())
+			foreach (var (coroutine, instruction) in coroutines.Select(c => (c.Key, c.Value)).ToArray())
 			{
-				var instruction = ToYieldInstruction(obj);
-				if (instruction.KeepWaiting) continue;
+				if (instruction is { KeepWaiting: true }) continue;
 
 				try
 				{
 					if (coroutine.MoveNext())
 					{
-						var cur = coroutine.Current;
-						// IEnumerator が来たら再度コルーチン開始する
-						cur = cur is IEnumerator ie ? Start(ie) : cur;
-						coroutines[coroutine] = cur;
+						coroutines[coroutine] = ToYieldInstruction(coroutine.Current);
 					}
 					else
 					{
 						Stop(coroutine);
-						coroutine.ThenAction?.Invoke(obj);
+						coroutine.ThenAction?.Invoke();
 					}
 				}
 				catch (Exception ex)

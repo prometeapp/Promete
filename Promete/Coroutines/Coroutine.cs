@@ -20,7 +20,7 @@ public class Coroutine : YieldInstruction
 	/// <summary>
 	/// Get the callback to execute after exiting.
 	/// </summary>
-	public Action<object?>? ThenAction { get; private set; }
+	public Action? ThenAction { get; private set; }
 
 	/// <summary>
 	/// Get the callback that executes when an unhandled exception occurs.
@@ -49,9 +49,9 @@ public class Coroutine : YieldInstruction
 	/// <summary>
 	/// Set the callback after the coroutine ends.
 	/// </summary>
-	/// <param name="callback">Callback. The argument is the last <c>yield return</c>ed value of the coroutine.</param>
+	/// <param name="callback">Callback.</param>
 	/// <returns></returns>
-	public Coroutine Then(Action<object?> callback)
+	public Coroutine Then(Action callback)
 	{
 		ThenAction = callback;
 		return this;
