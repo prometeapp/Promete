@@ -53,7 +53,7 @@ public class GLPrimitiveRendererHelper
 
 	public unsafe void Draw(ElementBase el, Span<VectorInt> worldVertices, ShapeType type, Color color, int lineWidth = 0, Color? lineColor = null)
 	{
-		PrometeApp.Current?.ThrowIfNotMainThread();
+		PrometeApp.Current.ThrowIfNotMainThread();
 		if (worldVertices.Length == 0)
 			return;
 

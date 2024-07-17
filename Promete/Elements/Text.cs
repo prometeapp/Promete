@@ -84,7 +84,7 @@ public class Text : ElementBase
 
 	public Text(string content, Font? font = default, Color? color = default)
 	{
-		glyphRenderer = PrometeApp.Current?.GetPlugin<GlyphRenderer>() ?? throw new InvalidOperationException("System is not initialized yet!");
+		glyphRenderer = PrometeApp.Current.GetPlugin<GlyphRenderer>() ?? throw new InvalidOperationException("System is not initialized yet!");
 		this.content = content;
 		this.font = font ?? Font.GetDefault(16);
 		textColor = color ?? System.Drawing.Color.White;

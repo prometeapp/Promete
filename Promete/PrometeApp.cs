@@ -32,14 +32,17 @@ public sealed class PrometeApp : IDisposable
 	/// <summary>
 	/// 実行中のPromete ウィンドウを取得します。
 	/// </summary>
-	public IWindow Window { get; private set; }
+	public IWindow Window { get; }
 
 	/// <summary>
 	/// 実行中の <see cref="PrometeApp"/> を取得します。
+	/// <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
 	/// </summary>
-	public static PrometeApp? Current { get; private set; }
-
-	internal HashSet<int> DisposedTextureHandles { get; } = [];
+	public static PrometeApp Current
+	{
+		get => _current ?? throw new InvalidOperationException("Promete is not initialized.");
+		private set => _current = value;
+	}
 
 	private Scene? currentScene;
 	private int statusCode = 0;
@@ -50,6 +53,8 @@ public sealed class PrometeApp : IDisposable
 	private readonly Dictionary<Type, Type> rendererTypes;
 	private readonly Dictionary<Type, ElementRendererBase> renderers = new();
 	private readonly Thread mainThread;
+
+	private static PrometeApp? _current;
 
 	private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
 	{
@@ -62,8 +67,8 @@ public sealed class PrometeApp : IDisposable
 		services.AddSingleton(this);
 
 		provider = services.BuildServiceProvider();
-		Current = this;
 
+		Current = this;
 		Window = provider.GetService<IWindow>() ?? throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
 	}
 

@@ -8,8 +8,7 @@ namespace Promete.Coroutines;
 /// </summary>
 public class WaitForSeconds(float time) : YieldInstruction
 {
-	private IWindow Window =>
-		PrometeApp.Current?.Window ?? throw new InvalidOperationException("Promete is not initialized");
+	private IWindow Window => PrometeApp.Current.Window;
 
 	public override bool KeepWaiting
 	{
