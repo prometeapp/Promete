@@ -75,7 +75,11 @@ namespace Promete.Coroutines
 				catch (Exception ex)
 				{
 					coroutine.Stop();
-					coroutine.ErrorAction?.Invoke(ex);
+					if (coroutine.ErrorAction == null)
+					{
+						throw;
+					}
+					coroutine.ErrorAction.Invoke(ex);
 				}
 			}
 		}
