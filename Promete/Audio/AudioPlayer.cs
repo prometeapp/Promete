@@ -220,12 +220,13 @@ public class AudioPlayer : IDisposable
 		var samples = new short[BufferSize];
 		TimeInSamples = Time = 0;
 
-		LengthInSamples = source.Samples ?? 0;
+		LengthInSamples = source.Samples / source.Channels ?? 0;
 		Length = (int)(LengthInSamples / (float)source.SampleRate * 1000);
 
 		using var alSource = new ALSource(al);
 		using var buffer1 = new ALBuffer(al);
 		using var buffer2 = new ALBuffer(al);
+		int bufferSampleIndex1 = 0, bufferSampleIndex2 = 0;
 		var currentSample = 0;
 		var nextBufferIndex = 0;
 
@@ -244,34 +245,55 @@ public class AudioPlayer : IDisposable
 		al.SetSourceProperty(alSource.Handle, SourceFloat.MaxDistance, 1);
 		al.SetSourceProperty(alSource.Handle, SourceFloat.ReferenceDistance, 0.5f);
 
+		var prevOffset = 0;
+
+		// 再生ループ
 		while (true)
 		{
+			// 現時点のステータスを取得
 			al.SetSourceProperty(alSource.Handle, SourceFloat.Pitch, Pitch);
 			al.SetSourceProperty(alSource.Handle, SourceFloat.Gain, Gain);
 			al.SetSourceProperty(alSource.Handle, SourceVector3.Position, pan, 0, 0);
-
 			al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out var processedCount);
+
+			// ソースが現在再生しているバッファのサンプル位置を取得し、TimeInSamplesを更新
+			al.GetSourceProperty(alSource.Handle, GetSourceInteger.Buffer, out var currentBuffer);
+			al.GetSourceProperty(alSource.Handle, GetSourceInteger.SampleOffset, out var offset);
+			var sampleOffset = currentBuffer == buffer1.Handle ? bufferSampleIndex1 : bufferSampleIndex2;
+			TimeInSamples = (sampleOffset + offset) / source.Channels;
+			Time = TimeInSamples * 1000 / source.SampleRate;
 
 			await Task.Delay(1).ConfigureAwait(false);
 
+			// 外部から再生停止が要求された場合、再生を終了する
 			if (st.IsStopRequested)
 			{
 				IsPlaying = false;
 				break;
 			}
 
+			// バッファが全て処理されるまで待機
 			if (processedCount == 0) continue;
 
+			// 処理中のバッファがなくなった場合、キューへの詰め直しを行う
 			DequeueBuffer(nextBufferIndex == 0 ? buffer1 : buffer2);
 			QueueData();
 
+			// ソースの再生状態が停止している場合、再生を再開する
 			al.GetSourceProperty(alSource.Handle, GetSourceInteger.SourceState, out var state);
 			if (state != (int)SourceState.Playing)
 				al.SourcePlay(alSource.Handle);
 
+			// まだ再生が終了していない場合は処理を続行
 			if (!isFinished) continue;
+
+			// ループ再生が無効の場合、再生を終了する
 			if (loop is not {} loopStartSample) break;
+
+			// ループ再生の開始位置にシーク
 			currentSample = loopStartSample * source.Channels;
+			TimeInSamples = loopStartSample;
+			Time = TimeInSamples * 1000 / source.SampleRate;
 		}
 
 		if (!st.IsStopRequested)
@@ -302,6 +324,10 @@ public class AudioPlayer : IDisposable
 		void QueueData()
 		{
 			(sampleSize, isFinished) = source.FillSamples(samples, currentSample);
+			if (nextBufferIndex == 0)
+				bufferSampleIndex1 = currentSample;
+			else
+				bufferSampleIndex2 = currentSample;
 			currentSample += sampleSize;
 			var nextBuffer = nextBufferIndex == 0 ? buffer1 : buffer2;
 
