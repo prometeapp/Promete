@@ -53,7 +53,16 @@ public abstract class ElementBase
 	/// この要素の Z インデックスを取得または設定します。<br/>
 	/// 要素は Z インデックスの昇順に描画されます。よって、大きいほど手前に描画されます。
 	/// </summary>
-	public int ZIndex { get; set; }
+	public int ZIndex
+	{
+		get => zIndex;
+		set
+		{
+			if (zIndex == value) return;
+			zIndex = value;
+			Parent?.RequestSorting();
+		}
+	}
 
 	public Vector AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
@@ -62,6 +71,7 @@ public abstract class ElementBase
 	public ContainableElementBase? Parent { get; internal set; }
 
 	private readonly List<Component> components = [];
+	private int zIndex;
 
 	public T AddComponent<T>() where T : Component
 	{
