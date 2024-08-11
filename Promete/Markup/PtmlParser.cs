@@ -117,6 +117,16 @@ public static class PtmlParser
 						throw new InvalidOperationException("Invalid State: " + state);
 				}
 			}
+
+			if (state != State.PlainText)
+			{
+				throw new PtmlParserException($"Unexpected end of text when state is {state}.", i);
+			}
+
+			if (decorationStack.TryPeek(out var t))
+			{
+				throw new PtmlParserException($"Unexpected end of text. Start tag {t.TagName} is not closed.", i);
+			}
 		}
 		catch (PtmlParserException)
 		{
@@ -124,14 +134,6 @@ public static class PtmlParser
 			return (ptml, []);
 		}
 
-		if (state != State.PlainText)
-		{
-			throw new PtmlParserException($"Unexpected end of text when state is {state}.", i);
-		}
-		if (decorationStack.TryPeek(out var t))
-		{
-			throw new PtmlParserException($"Unexpected end of text. Start tag {t.TagName} is not closed.", i);
-		}
 		return (plainTextBuilder.ToString(), decorations.AsReadOnly());
 	}
 
