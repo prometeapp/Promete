@@ -1,4 +1,4 @@
-# <img height="30" src="https://github.com/prometeapp/Promete/raw/main/assets/logo.png" /> Promete
+# <img height="40" src="https://raw.githubusercontent.com/prometeapp/Promete/master/assets/logo.png" /> Promete
 
 [![Nuget](https://img.shields.io/nuget/vpre/Promete.svg?style=for-the-badge)](https://www.nuget.org/packages/Promete/)
 
