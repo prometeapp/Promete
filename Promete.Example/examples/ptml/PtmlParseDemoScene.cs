@@ -28,6 +28,8 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
 		dumpView = new Text("", Font.GetDefault(), Color.White)
 			.Location(8, 140);
 
+		ptmlView.UseRichText = true;
+
 		Root.AddRange([editorView, ptmlView, dumpView]);
 
 		// 実行前に残ったキー入力をクリア
@@ -62,7 +64,11 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
 
 	private void DumpPtml()
 	{
+		if (ptmlView == null) return;
 		if (dumpView == null) return;
+
+		ptmlView.Content = buf.ToString();
+
 		try
 		{
 			var (plainText, decorations) = PtmlParser.Parse(buf.ToString(), true);
