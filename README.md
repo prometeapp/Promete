@@ -1,13 +1,18 @@
-# Promete
+# <img height="30" src="https://github.com/prometeapp/Promete/raw/main/assets/logo.png" /> Promete
 
 [![Nuget](https://img.shields.io/nuget/vpre/Promete.svg?style=for-the-badge)](https://www.nuget.org/packages/Promete/)
 
-Promete Engine は、.NET 8以降を対象とする、2Dグラフィックに特化したゲームエンジンです。
+**⚠ Prometeは現在、アルファ版です。APIや仕様に大きな変更が加えられる可能性があります。実際のゲーム開発にはまだ利用しないでください。**
 
-シンプルなAPI、高速な動作、充実した機能、高い拡張性を持ちます。
+---
+
+Promete は、.NET 8以降を対象とするゲーム開発フレームワーク、ゲームエンジンです。
+
+2Dグラフィクスに特化したシンプルなAPI、高速な動作、充実した機能、高い拡張性を持ちます。
 
 その名は、ギリシャ神話に登場する神[「プロメテウス」](https://ja.wikipedia.org/wiki/%E3%83%97%E3%83%AD%E3%83%A1%E3%83%BC%E3%83%86%E3%82%A6%E3%82%B9)に由来します。プロメテウスは、土を捏ねて人間を産み出し、火を盗んで人間に与えたとされます。<br/>
 そうしたプロメテウスのように、クリエイターに力を与え、作品に命を吹き込む存在でありたいという願いが、このエンジンには込められています。
+
 
 ## 特徴
 

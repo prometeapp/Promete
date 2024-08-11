@@ -1,4 +1,5 @@
-﻿using Promete.Audio;
+﻿using System.Diagnostics;
+using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
 using Promete.Windowing;
@@ -9,7 +10,7 @@ namespace Promete.Example.examples.audio;
 public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
 	private readonly AudioPlayer audio = new();
-	private IAudioSource bgm = new VorbisAudioSource("./assets/kagerou.ogg");
+	private VorbisAudioSource bgm = new VorbisAudioSource("./assets/kagerou.ogg");
 
 	public override void OnStart()
 	{
@@ -21,9 +22,11 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
 	public override void OnUpdate()
 	{
-		console.Cursor += VectorInt.Up * 2;
+		console.Clear();
 		console.Print($"""
 		               Location: {audio.Time / 1000f:0.000} / {audio.Length / 1000f:0.000}
+		               Location in Samples: {audio.TimeInSamples} / {audio.LengthInSamples}
+		               Loaded: {bgm.LoadedSize} / {bgm.Samples}
 		               [↑] Volume Up
 		               [↓] Volume Down
 		               [←] Pitch Down
@@ -49,9 +52,13 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 		if (keyboard.Space.IsKeyDown)
 		{
 			if (audio.IsPlaying)
+			{
 				audio.Stop();
+			}
 			else
-				audio.Play(bgm);
+			{
+				audio.Play(bgm, 0);
+			}
 		}
 	}
 
@@ -69,6 +76,6 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
 		audio.Stop();
 		bgm = new VorbisAudioSource(path);
-		audio.Play(bgm);
+		audio.Play(bgm, 0);
 	}
 }
