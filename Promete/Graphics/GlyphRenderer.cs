@@ -32,6 +32,13 @@ public class GlyphRenderer(IWindow window)
 		var imageSharpColor = Color.FromRgba(col.R, col.G, col.B, col.A);
 
 		var textOptions = new RichTextOptions(imageSharpFont);
+		textOptions.TextRuns =
+		[
+			new RichTextRun()
+			{
+				
+			}
+		];
 		var drawingOptions = new DrawingOptions();
 
 		if (!font.IsAntialiased)
