@@ -36,9 +36,9 @@ public class GlyphRenderer(IWindow window)
 
 		var textOptions = new RichTextOptions(imageSharpFont)
 		{
-			WrappingLength = options.WordWrap ? options.Size.X : 0,
+			WrappingLength = options.WordWrap ? options.Size.X : -1f,
 			VerticalAlignment = options.VerticalAlignment.ToSixLabors(),
-			HorizontalAlignment = (SixLabors.Fonts.HorizontalAlignment)options.HorizontalAlignment,
+			HorizontalAlignment = options.HorizontalAlignment.ToSixLabors(),
 			LineSpacing = options.LineSpacing,
 		};
 		var drawingOptions = new DrawingOptions();
@@ -47,8 +47,7 @@ public class GlyphRenderer(IWindow window)
 		{
 			var (t, decorations) = PtmlParser.Parse(text);
 			text = t;
-			var runs = new List<RichTextRun>();
-			runs.AddRange(decorations.Select(d => CreateRunFromDecoration(d, font)));
+			var runs = decorations.Select(d => CreateRunFromDecoration(d, font)).OfType<RichTextRun>().ToList();
 			textOptions.TextRuns = runs.AsReadOnly();
 		}
 
@@ -117,7 +116,7 @@ public class GlyphRenderer(IWindow window)
 		return new SixLabors.Fonts.Font(family, f.Size, (SixLabors.Fonts.FontStyle)f.FontStyle);
 	}
 
-	private RichTextRun CreateRunFromDecoration(PtmlDecoration decoration, Font baseFont)
+	private RichTextRun? CreateRunFromDecoration(PtmlDecoration decoration, Font baseFont)
 	{
 		var run = new RichTextRun
 		{
@@ -147,10 +146,12 @@ public class GlyphRenderer(IWindow window)
 			{
 				if (int.TryParse(decoration.Attribute, out var size))
 				{
-					run.Font = ResolveFont(With(baseFont, size: size));
+					run.Font = ResolveFont(With(baseFont, size));
 				}
 				break;
 			}
+			default:
+				return null;
 		}
 
 		return run;

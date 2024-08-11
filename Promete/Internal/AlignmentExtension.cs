@@ -6,7 +6,7 @@ internal static class ImageSharpConverterExtension
 {
 	internal static SixLabors.ImageSharp.Color ToSixLabors(this System.Drawing.Color color)
 	{
-		return SixLabors.ImageSharp.Color.FromRgba(color.R, color.G, color.A, color.B);
+		return SixLabors.ImageSharp.Color.FromRgba(color.R, color.G, color.B, color.A);
 	}
 
 	internal static SixLabors.Fonts.VerticalAlignment ToSixLabors(this VerticalAlignment alignment)
