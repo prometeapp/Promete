@@ -4,7 +4,7 @@ using System.Numerics;
 namespace Promete
 {
 	/// <summary>
-	/// Two dimensional vector.
+	/// Two-dimensional vector.
 	/// </summary>
 	public struct Vector : IEquatable<Vector>
 	{
