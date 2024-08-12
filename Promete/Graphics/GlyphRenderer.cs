@@ -20,6 +20,8 @@ public class GlyphRenderer(IWindow window)
 	private readonly Dictionary<object, FontFamily> fontCache = new();
 	private readonly FontCollection fontCollection = new();
 
+	private const char ZeroWidthSpace = '\u200B';
+
 	public Rect GetTextBounds(string text, Font font)
 	{
 		var f = ResolveFont(font);
@@ -46,7 +48,10 @@ public class GlyphRenderer(IWindow window)
 		if (options.UseRichText)
 		{
 			var (t, decorations) = PtmlParser.Parse(text);
-			text = t;
+			// Note: ImageSharpの不具合により、TextRun.Endが文字列の末尾インデックスと同じのときに挙動がおかしくなるため、workaroundとしてZeroWidthSpaceを追加する
+			//       下記が修正され次第対応を外す
+			//       https://github.com/SixLabors/ImageSharp.Drawing/issues/337
+			text = t + ZeroWidthSpace;
 			var runs = decorations.Select(d => CreateRunFromDecoration(d, font)).OfType<RichTextRun>().ToList();
 			textOptions.TextRuns = runs.AsReadOnly();
 		}
