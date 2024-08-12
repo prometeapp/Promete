@@ -11,9 +11,17 @@ public class Text : ElementBase
 	public override VectorInt Size
 	{
 		get => RenderedTexture?.Size ?? (0, 0);
+		set => PreferredSize = value;
+	}
+
+	public VectorInt PreferredSize
+	{
+		get => options.Size;
 		set
 		{
-			/* nop */
+			if (options.Size == value) return;
+			options.Size = value;
+			_isUpdateRequested = true;
 		}
 	}
 
@@ -28,66 +36,118 @@ public class Text : ElementBase
 		}
 	}
 
-	public Color? Color
+	public Color Color
 	{
-		get => textColor;
+		get => options.TextColor;
 		set
 		{
-			if (textColor == value) return;
-			textColor = value;
+			if (options.TextColor == value) return;
+			options.TextColor = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public Color? BorderColor
 	{
-		get => borderColor;
+		get => options.BorderColor;
 		set
 		{
-			if (borderColor == value) return;
-			borderColor = value;
+			if (options.BorderColor == value) return;
+			options.BorderColor = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public int BorderThickness
 	{
-		get => borderThickness;
+		get => options.BorderThickness;
 		set
 		{
-			if (borderThickness == value) return;
-			borderThickness = value;
+			if (options.BorderThickness == value) return;
+			options.BorderThickness = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public Font Font
 	{
-		get => font;
+		get => options.Font;
 		set
 		{
-			if (font.Equals(value)) return;
-			font = value;
+			if (options.Font.Equals(value)) return;
+			options.Font = value;
+			_isUpdateRequested = true;
+		}
+	}
+
+	public float LineSpacing
+	{
+		get => options.LineSpacing;
+		set
+		{
+			if (options.LineSpacing == value) return;
+			options.LineSpacing = value;
+			_isUpdateRequested = true;
+		}
+	}
+
+	public bool WordWrap
+	{
+		get => options.WordWrap;
+		set
+		{
+			if (options.WordWrap == value) return;
+			options.WordWrap = value;
+			_isUpdateRequested = true;
+		}
+	}
+
+	public VerticalAlignment VerticalAlignment
+	{
+		get => options.VerticalAlignment;
+		set
+		{
+			if (options.VerticalAlignment == value) return;
+			options.VerticalAlignment = value;
+			_isUpdateRequested = true;
+		}
+	}
+
+	public HorizontalAlignment HorizontalAlignment
+	{
+		get => options.HorizontalAlignment;
+		set
+		{
+			if (options.HorizontalAlignment == value) return;
+			options.HorizontalAlignment = value;
+			_isUpdateRequested = true;
+		}
+	}
+
+	public bool UseRichText
+	{
+		get => options.UseRichText;
+		set
+		{
+			if (options.UseRichText == value) return;
+			options.UseRichText = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	private string content;
-	private Color? textColor;
-	private Color? borderColor;
-	private int borderThickness;
-	private Font font;
 
 	private bool _isUpdateRequested;
 
+	private readonly TextRenderingOptions options = new();
 	private readonly GlyphRenderer glyphRenderer;
 
 	public Text(string content, Font? font = default, Color? color = default)
 	{
 		glyphRenderer = PrometeApp.Current.GetPlugin<GlyphRenderer>() ?? throw new InvalidOperationException("System is not initialized yet!");
 		this.content = content;
-		this.font = font ?? Font.GetDefault(16);
-		textColor = color ?? System.Drawing.Color.White;
+		options.Font = font ?? Font.GetDefault();
+		options.TextColor = color ?? Color.White;
 
 		RenderTexture();
 	}
@@ -107,7 +167,7 @@ public class Text : ElementBase
 	private void RenderTexture()
 	{
 		var oldTexture = RenderedTexture;
-		RenderedTexture = glyphRenderer.Generate(Content, Font, Color, BorderColor, BorderThickness);
+		RenderedTexture = glyphRenderer.Generate(Content, options);
 		oldTexture?.Dispose();
 	}
 }
