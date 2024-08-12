@@ -38,7 +38,7 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
 
 	public override void OnUpdate()
 	{
-		editorView!.Content = buf.ToString() + (Window.TotalTime % 1 < 0.5 ? '_' : "");
+		editorView!.Content = buf.ToString();
 		if ((keyboard.BackSpace.ElapsedFrameCount == 1 || keyboard.BackSpace.ElapsedTime > 0.5f && keyboard.BackSpace.ElapsedFrameCount % 3 == 0) && buf.Length > 0)
 		{
 			buf.Length--;
