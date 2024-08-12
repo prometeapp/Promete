@@ -4,7 +4,6 @@ using Promete.Elements;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
-using Promete.Windowing;
 
 namespace Promete.Example.examples;
 

@@ -1,6 +1,3 @@
-using Promete.Input;
-using Silk.NET.Input;
-
 namespace Promete.Input.Internal;
 
 internal static class KeyEnumConverter

@@ -1,6 +1,5 @@
 ﻿using Promete.Example.Kernel;
 using Promete.Input;
-using Silk.NET.Input;
 
 namespace Promete.Example.examples.window;
 

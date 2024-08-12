@@ -1,4 +1,3 @@
-using System;
 using Promete.Windowing;
 
 namespace Promete.Coroutines;

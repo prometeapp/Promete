@@ -1,5 +1,4 @@
-﻿using ImGuiNET;
-using Promete.Elements;
+﻿using Promete.Elements;
 using Promete.Example.Kernel;
 using Promete.ImGui;
 using Promete.Input;

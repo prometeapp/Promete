@@ -1,5 +1,4 @@
 using System.Drawing;
-using System.IO;
 using Promete.Graphics;
 
 namespace Promete.Elements;

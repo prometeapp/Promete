@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using Promete.Audio;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Input;

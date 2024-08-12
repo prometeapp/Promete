@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Promete.Internal
 {
 	internal static class LogHelper
