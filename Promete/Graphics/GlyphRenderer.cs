@@ -52,7 +52,15 @@ public class GlyphRenderer(IWindow window)
 			//       下記が修正され次第対応を外す
 			//       https://github.com/SixLabors/ImageSharp.Drawing/issues/337
 			text = t + ZeroWidthSpace;
-			var runs = decorations.Select(d => CreateRunFromDecoration(d, font)).OfType<RichTextRun>().ToList();
+
+			// Note: decorationsを逆順にして重複を除去することで、後に適用されたデコレーションが優先されるようにする
+			var runs = decorations
+				.Select(d => CreateRunFromDecoration(d, font))
+				.OfType<RichTextRun>()
+				.Reverse()
+				.DistinctBy(r => (r.Start, r.End))
+				.Reverse()
+				.ToList();
 			textOptions.TextRuns = runs.AsReadOnly();
 		}
 
@@ -123,6 +131,9 @@ public class GlyphRenderer(IWindow window)
 
 	private RichTextRun? CreateRunFromDecoration(PtmlDecoration decoration, Font baseFont)
 	{
+		// Start == Endの場合は無視
+		if (decoration.Start == decoration.End) return null;
+
 		var run = new RichTextRun
 		{
 			Start = decoration.Start,
@@ -143,6 +154,7 @@ public class GlyphRenderer(IWindow window)
 			}
 			case "color":
 			{
+				if (string.IsNullOrEmpty(decoration.Attribute)) break;
 				var color = FromHtml(decoration.Attribute);
 				run.Brush = new SolidBrush(color.ToSixLabors());
 				break;
