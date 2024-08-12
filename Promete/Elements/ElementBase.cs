@@ -70,54 +70,18 @@ public abstract class ElementBase
 
 	public ContainableElementBase? Parent { get; internal set; }
 
-	private readonly List<Component> components = [];
 	private int zIndex;
-
-	public T AddComponent<T>() where T : Component
-	{
-		var com = New<T>.Instance();
-		com.Element = this;
-		components.Add(com);
-		com.OnStart();
-		return com;
-	}
-
-	public T? GetComponent<T>() where T : Component
-	{
-		return EnumerateComponents<T>().FirstOrDefault();
-	}
-
-	public T[] GetComponents<T>() where T : Component
-	{
-		return EnumerateComponents<T>().ToArray();
-	}
-
-	public IEnumerable<T> EnumerateComponents<T>() where T : Component
-	{
-		return components.OfType<T>();
-	}
-
-	public void RemoveComponent(Component c)
-	{
-		c.OnDestroy();
-		c.Element = null!;
-		components.Remove(c);
-	}
 
 	public void Destroy()
 	{
 		if (IsDestroyed) return;
 		IsDestroyed = true;
 		OnDestroy();
-		for (var i = 0; i < components.Count; i++)
-			components[i].OnDestroy();
 	}
 
 	internal virtual void Update()
 	{
 		OnUpdate();
-		for (var i = 0; i < components.Count; i++)
-			components[i].OnUpdate();
 	}
 
 	protected virtual void OnUpdate()
