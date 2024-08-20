@@ -6,10 +6,9 @@ out vec2 fUv;
 
 uniform mat4 uModel;
 uniform mat4 uProjection;
-uniform mat4 uView;
 
 void main()
 {
-    gl_Position = uProjection * uView * uModel * vec4(vPos.x, vPos.y, 0.0, 1.0);
+    gl_Position = uProjection * uModel * vec4(vPos.x, vPos.y, 0.0, 1.0);
     fUv = vUv;
 }

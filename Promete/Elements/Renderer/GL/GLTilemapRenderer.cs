@@ -57,7 +57,7 @@ public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) :
 
 	private void FullRender(Tilemap tilemap)
 	{
-		foreach (var (tileLocation, (tile, color)) in tilemap.Tiles.Where(Filter))
+		foreach (var (tileLocation, (tile, color)) in tilemap.Tiles)
 		{
 			var offset = tileLocation * tilemap.TileSize;
 			var texture = tile.GetTexture(tilemap, tileLocation, window);
