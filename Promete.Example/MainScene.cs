@@ -1,8 +1,5 @@
 ﻿using Promete.Example.Kernel;
-using Promete.Graphics;
 using Promete.Input;
-using Promete.Windowing;
-
 using static Promete.Example.Kernel.DemoKernel;
 
 namespace Promete.Example;

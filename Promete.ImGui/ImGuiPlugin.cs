@@ -1,8 +1,6 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using ImGuiNET;
-using Promete.Elements;
-using Promete.Elements.Renderer;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL.Extensions.ImGui;

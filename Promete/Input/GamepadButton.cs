@@ -1,6 +1,4 @@
-﻿using Silk.NET.Input;
-
-namespace Promete.Input;
+﻿namespace Promete.Input;
 
 public class GamepadButton
 {

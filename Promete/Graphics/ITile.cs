@@ -1,4 +1,3 @@
-using System.Drawing;
 using Promete.Elements;
 using Promete.Windowing;
 

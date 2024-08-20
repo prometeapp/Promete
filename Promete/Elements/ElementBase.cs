@@ -1,8 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
-using Promete.Elements.Components;
-using Promete.Internal;
-
 namespace Promete.Elements;
 
 public abstract class ElementBase
@@ -53,7 +48,16 @@ public abstract class ElementBase
 	/// この要素の Z インデックスを取得または設定します。<br/>
 	/// 要素は Z インデックスの昇順に描画されます。よって、大きいほど手前に描画されます。
 	/// </summary>
-	public int ZIndex { get; set; }
+	public int ZIndex
+	{
+		get => zIndex;
+		set
+		{
+			if (zIndex == value) return;
+			zIndex = value;
+			Parent?.RequestSorting();
+		}
+	}
 
 	public Vector AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
@@ -61,53 +65,18 @@ public abstract class ElementBase
 
 	public ContainableElementBase? Parent { get; internal set; }
 
-	private readonly List<Component> components = [];
-
-	public T AddComponent<T>() where T : Component
-	{
-		var com = New<T>.Instance();
-		com.Element = this;
-		components.Add(com);
-		com.OnStart();
-		return com;
-	}
-
-	public T? GetComponent<T>() where T : Component
-	{
-		return EnumerateComponents<T>().FirstOrDefault();
-	}
-
-	public T[] GetComponents<T>() where T : Component
-	{
-		return EnumerateComponents<T>().ToArray();
-	}
-
-	public IEnumerable<T> EnumerateComponents<T>() where T : Component
-	{
-		return components.OfType<T>();
-	}
-
-	public void RemoveComponent(Component c)
-	{
-		c.OnDestroy();
-		c.Element = null!;
-		components.Remove(c);
-	}
+	private int zIndex;
 
 	public void Destroy()
 	{
 		if (IsDestroyed) return;
 		IsDestroyed = true;
 		OnDestroy();
-		for (var i = 0; i < components.Count; i++)
-			components[i].OnDestroy();
 	}
 
 	internal virtual void Update()
 	{
 		OnUpdate();
-		for (var i = 0; i < components.Count; i++)
-			components[i].OnUpdate();
 	}
 
 	protected virtual void OnUpdate()

@@ -29,7 +29,26 @@ public class DemoFileSystem
 			var file = new SceneFile(fileName, attribute.Description, type, folder);
 
 			folder.Files.Add(file);
-			folder.Files.Sort((f1, f2) => string.Compare(f1.Name, f2.Name, StringComparison.Ordinal));
+		}
+
+		// フォルダを全てソートする
+		Sort(Root);
+	}
+
+	private void Sort(Folder folder)
+	{
+		folder.Files.Sort((f1, f2) =>
+		{
+			if (f1.GetType() == f2.GetType())
+			{
+				return string.CompareOrdinal(f1.Name, f2.Name);
+			}
+
+			return f1 is Folder ? -1 : 1;
+		});
+		foreach (var subFolder in folder.Files.OfType<Folder>())
+		{
+			Sort(subFolder);
 		}
 	}
 

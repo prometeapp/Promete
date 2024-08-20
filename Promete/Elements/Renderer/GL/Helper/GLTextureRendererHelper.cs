@@ -2,7 +2,6 @@
 using System;
 using System.Drawing;
 using System.Numerics;
-using Promete.Exceptions;
 using Promete.Graphics;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;

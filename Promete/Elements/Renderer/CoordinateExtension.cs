@@ -1,5 +1,3 @@
-using System;
-
 namespace Promete.Elements.Renderer;
 
 /// <summary>
