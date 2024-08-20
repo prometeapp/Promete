@@ -5,6 +5,7 @@ using System.Numerics;
 using Promete.Graphics;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Promete.Elements.Renderer.GL.Helper
@@ -14,9 +15,11 @@ namespace Promete.Elements.Renderer.GL.Helper
 	/// </summary>
 	public class GLTextureRendererHelper
 	{
-		private uint shader;
+		private readonly uint shader;
 
-		private uint vbo, vao, ebo;
+		private readonly uint _vbo, _vao, _ebo;
+
+		private readonly Matrix4x4 _view = Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, -1.0f));
 
 		private readonly OpenGLDesktopWindow window;
 
@@ -47,38 +50,91 @@ namespace Promete.Elements.Renderer.GL.Helper
 			gl.DeleteShader(vsh);
 			gl.DeleteShader(fsh);
 
-			// --- VAO ---
-			vao = gl.GenVertexArray();
+			// X, Y, U, V
+			Span<float> vertices =
+			[
+				0.0f, 0.0f, 0.0f, 0.0f, // 左下
+				1.0f, 0.0f, 1.0f, 0.0f, // 右下
+				1.0f, 1.0f, 1.0f, 1.0f, // 右上
+				0.0f, 1.0f, 0.0f, 1.0f // 左上
+			];
 
-			// --- VBO ---
-			vbo = gl.GenBuffer();
+			// VAO
+			_vao = gl.GenVertexArray();
+			gl.BindVertexArray(_vao);
 
-			// --- EBO ---
-			ebo = gl.GenBuffer();
+			// VBO
+			_vbo = gl.GenBuffer();
+			gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
+			gl.BufferData<float>(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.StaticDraw);
+
+			// 頂点位置属性
+			gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
+			gl.EnableVertexAttribArray(0);
+
+			// テクスチャ座標属性
+			gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+			gl.EnableVertexAttribArray(1);
+
+			gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+			gl.BindVertexArray(0);
+
+			// EBO
+			// _ebo = gl.GenBuffer();
+			// Span<uint> indices = [0, 1, 2, 2, 3, 0];
+			// gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
+			// gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, indices, BufferUsageARB.StaticDraw);
+		}
+
+		public unsafe void Draw(Texture2D texture, ElementBase el, Color? color = null, Vector? pivot = null,
+			float? overriddenWidth = null, float? overriddenHeight = null)
+		{
+			PrometeApp.Current.ThrowIfNotMainThread();
+			var gl = window.GL;
+			var finalWidth = overriddenWidth ?? texture.Size.X;
+			var finalHeight = overriddenHeight ?? texture.Size.Y;
+			var modelMatrix =
+				Matrix4x4.CreateScale(new Vector3(finalWidth, finalHeight, 1))
+				* Matrix4x4.CreateTranslation(new Vector3(-(pivot ?? Vector.Zero).ToNumerics(), 0))
+				* el.ModelMatrix;
+			var viewMatrix = Matrix4x4.Identity;
+			var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, window.ActualWidth, window.ActualHeight, 0, 0.1f, 100f);
+			var c = color ?? Color.White;
+
+			gl.Enable(GLEnum.Blend);
+			gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
+
+			gl.UseProgram(shader);
+			gl.ActiveTexture(TextureUnit.Texture0);
+			gl.BindTexture(TextureTarget.Texture2D, (uint)texture.Handle);
+
+			var uView = gl.GetUniformLocation(shader, "uView");
+			var uModel = gl.GetUniformLocation(shader, "uModel");
+			var uProjection = gl.GetUniformLocation(shader, "uProjection");
+			var uTexture0 = gl.GetUniformLocation(shader, "uTexture0");
+			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
+
+			gl.UniformMatrix4(uView, 1, false, (float*)&viewMatrix);
+			gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
+			gl.UniformMatrix4(uProjection, 1, false, (float*)&projectionMatrix);
+			gl.Uniform1(uTexture0, 0);
+			gl.Uniform4(uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
+
+			gl.BindVertexArray(_vao);
+			gl.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+			gl.BindVertexArray(0);
 		}
 
 		/// <summary>
-		/// テクスチャを描画します。
+		/// 指定した頂点の座標を変換します。
 		/// </summary>
-		public unsafe void Draw(Texture2D texture, ElementBase el, Color? color = null, Vector? additionalLocation = null, float? overriddenWidth = null, float? overriddenHeight = null)
+		/// <param name="el"></param>
+		/// <param name="additionalLocation"></param>
+		/// <param name="worldVertices"></param>
+		/// <returns>座標が一つでも画面内にあれば <see langword="true"/>、そうでなければ <see langword="false"/>。</returns>
+		private bool TransformAll(ElementBase el, Vector? additionalLocation, Span<Vector> worldVertices)
 		{
-			PrometeApp.Current.ThrowIfNotMainThread();
-			var finalAngle = el.AbsoluteAngle;
-			var finalScale = el.AbsoluteScale;
-
-			var finalWidth = overriddenWidth ?? el.Width;
-			var finalHeight = overriddenHeight ?? el.Height;
-
-			Span<Vector> worldVertices =
-			[
-				(finalWidth, 0),
-				(finalWidth, finalHeight),
-				(0, finalHeight),
-				(0, 0),
-			];
-
-			var gl = window.GL;
-			var bb = new Rect(0, 0, window.ActualWidth, window.ActualHeight);
+			var windowBounds = new Rect(0, 0, window.ActualWidth, window.ActualHeight);
 			var isOutside = true;
 
 			var halfWidth = window.ActualWidth / 2;
@@ -88,50 +144,11 @@ namespace Promete.Elements.Renderer.GL.Helper
 			{
 				worldVertices[i] = RenderingHelper.Transform(worldVertices[i], el, additionalLocation) *
 				                   window.PixelRatio;
-				if (worldVertices[i].In(bb)) isOutside = false;
+				if (worldVertices[i].In(windowBounds)) isOutside = false;
 				worldVertices[i] = worldVertices[i].ToViewportPoint(halfWidth, halfHeight);
 			}
-			// どの頂点も画面内になければ描画しない
-			if (isOutside) return;
 
-			gl.BindVertexArray(vao);
-			gl.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
-			gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
-
-			Span<float> vertices =
-			[
-				worldVertices[0].X, worldVertices[0].Y, 1f, 0f,
-				worldVertices[1].X, worldVertices[1].Y, 1f, 1f,
-				worldVertices[2].X, worldVertices[2].Y, 0f, 1f,
-				worldVertices[3].X, worldVertices[3].Y, 0f, 0f,
-			];
-			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
-
-			Span<uint> indices =
-			[
-				0, 1, 3,
-				1, 2, 3,
-			];
-			gl.BufferData<uint>(GLEnum.ElementArrayBuffer, indices, GLEnum.StaticDraw);
-
-			// --- レンダリング ---
-			gl.Enable(GLEnum.Blend);
-			gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
-			gl.VertexAttribPointer(0, 2, GLEnum.Float, false, 4 * sizeof(float), (void*)(0 * sizeof(float)));
-			gl.EnableVertexAttribArray(0);
-			gl.VertexAttribPointer(1, 2, GLEnum.Float, false, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-			gl.EnableVertexAttribArray(1);
-			gl.BindVertexArray(vao);
-
-			gl.UseProgram(shader);
-			gl.ActiveTexture(GLEnum.Texture0);
-			gl.BindTexture(GLEnum.Texture2D, (uint)texture.Handle);
-			var uTexture0 = gl.GetUniformLocation(shader, "uTexture0");
-			gl.Uniform1(uTexture0, 0);
-			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
-			var c = color ?? Color.White;
-			gl.Uniform4(uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
-			gl.DrawElements(PrimitiveType.Triangles, (uint)indices.Length, DrawElementsType.UnsignedInt, (void*)0);
+			return !isOutside;
 		}
 	}
 }

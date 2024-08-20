@@ -1,3 +1,6 @@
+using System.Numerics;
+using Silk.NET.Maths;
+
 namespace Promete.Elements;
 
 public abstract class ElementBase
@@ -10,12 +13,30 @@ public abstract class ElementBase
 	/// <summary>
 	/// この要素の位置を取得または設定します。
 	/// </summary>
-	public virtual Vector Location { get; set; }
+	public Vector Location
+	{
+		get => _location;
+		set
+		{
+			if (_location == value) return;
+			_location = value;
+			_isModelMatrixDirty = true;
+		}
+	}
 
 	/// <summary>
 	/// この要素のスケールを取得または設定します。
 	/// </summary>
-	public virtual Vector Scale { get; set; } = (1, 1);
+	public Vector Scale
+	{
+		get => _scale;
+		set
+		{
+			if (_scale == value) return;
+			_scale = value;
+			_isModelMatrixDirty = true;
+		}
+	}
 
 	/// <summary>
 	/// この要素のサイズを取得または設定します。
@@ -25,7 +46,16 @@ public abstract class ElementBase
 	/// <summary>
 	/// この要素の角度（0-360）を取得または設定します。
 	/// </summary>
-	public virtual float Angle { get; set; }
+	public float Angle
+	{
+		get => _angle;
+		set
+		{
+			if (_angle == value) return;
+			_angle = value;
+			_isModelMatrixDirty = true;
+		}
+	}
 
 	/// <summary>
 	/// この要素が破棄されたかどうかを取得します。
@@ -62,8 +92,15 @@ public abstract class ElementBase
 	public Vector AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
 	public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
-
 	public ContainableElementBase? Parent { get; internal set; }
+
+	internal Matrix4x4 ModelMatrix { get; private set; } = Matrix4x4.Identity;
+
+	private bool _isModelMatrixDirty = true;
+
+	private Vector _location;
+	private Vector _scale = (1, 1);
+	private float _angle;
 
 	private int zIndex;
 
@@ -79,7 +116,30 @@ public abstract class ElementBase
 		OnUpdate();
 	}
 
+	internal void BeforeRender()
+	{
+		if (_isModelMatrixDirty)
+		{
+			UpdateModelMatrix();
+		}
+		OnRender();
+	}
+
+	internal virtual void UpdateModelMatrix()
+	{
+		var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
+		ModelMatrix = Matrix4x4.CreateScale(Scale.X, Scale.Y, 1) *
+			Matrix4x4.CreateRotationZ(MathHelper.ToRadian(Angle)) *
+			Matrix4x4.CreateTranslation(Location.X, Location.Y, 0) *
+			parentMatrix;
+		_isModelMatrixDirty = false;
+	}
+
 	protected virtual void OnUpdate()
+	{
+	}
+
+	protected virtual void OnRender()
 	{
 	}
 

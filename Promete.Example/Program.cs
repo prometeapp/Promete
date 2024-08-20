@@ -4,6 +4,7 @@ using Promete.GLDesktop;
 using Promete.Input;
 
 using Promete.Example;
+using Promete.Example.examples;
 using Promete.ImGui;
 
 var app = PrometeApp.Create()

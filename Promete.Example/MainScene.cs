@@ -22,6 +22,7 @@ public class MainScene(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : S
 		console.Clear();
 		console.Print("Promete Demo\n");
 		console.Print($"現在のディレクトリ: /{CurrentFolder.GetFullPath()}\n");
+		Window.Title = $"Promete Demo - {CurrentFolder.GetFullPath()}";
 
 		for (var i = 0; i < CurrentFolder.Files.Count; i++)
 		{

@@ -47,4 +47,13 @@ public abstract class ContainableElementBase : ElementBase
 		sortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
 		_isSortingRequested = false;
 	}
+
+	internal override void UpdateModelMatrix()
+	{
+		base.UpdateModelMatrix();
+		foreach (var child in children)
+		{
+			child.UpdateModelMatrix();
+		}
+	}
 }
