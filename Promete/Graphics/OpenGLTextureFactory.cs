@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Promete.Graphics;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
@@ -10,9 +9,9 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Color = System.Drawing.Color;
 
-namespace Promete.Windowing.GLDesktop;
+namespace Promete.Graphics;
 
-public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
+public class OpenGLTextureFactory(Silk.NET.OpenGL.GL gl, PrometeApp app) : TextureFactory
 {
 	public override Texture2D Load(string path)
 	{
@@ -36,7 +35,7 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
 
 	public override Texture2D Create(byte[] bitmap, VectorInt size)
 	{
-		return new Texture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, gl);
+		return new Texture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, this);
 	}
 
 	public override Texture2D Create(byte[,,] bitmap)
@@ -68,6 +67,11 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
 		}
 
 		return Create(arr);
+	}
+
+	public override void Delete(Texture2D texture)
+	{
+		gl.DeleteTexture((uint)texture.Handle);
 	}
 
 	internal override Texture2D LoadFromImageSharpImage(Image image)

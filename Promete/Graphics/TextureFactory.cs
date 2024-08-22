@@ -69,6 +69,12 @@ public abstract class TextureFactory
 		return Load9Sliced(Image.Load(stream), left, top, right, bottom);
 	}
 
+	/// <summary>
+	/// 指定したテクスチャを削除します。
+	/// </summary>
+	/// <param name="texture">テクスチャ。</param>
+	public abstract void Delete(Texture2D texture);
+
 	protected virtual Texture9Sliced Load9Sliced(Image bitmap, int left, int top, int right, int bottom)
 	{
 		using var img = bitmap.CloneAs<Rgba32>();
