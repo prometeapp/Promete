@@ -64,7 +64,7 @@ namespace Promete.Coroutines
 				{
 					if (coroutine.MoveNext())
 					{
-						coroutines[coroutine] = ToYieldInstruction(coroutine.Current);
+						coroutines[coroutine] = ToYieldInstruction(coroutine.Current, coroutine.IsKeepAlive);
 					}
 					else
 					{
@@ -84,12 +84,12 @@ namespace Promete.Coroutines
 			}
 		}
 
-		private YieldInstruction ToYieldInstruction(object? obj)
+		private YieldInstruction ToYieldInstruction(object? obj, bool isKeepAlive = false)
 		{
 			return obj switch
 			{
 				YieldInstruction y => y,
-				IEnumerator ie => Start(ie),
+				IEnumerator ie => Start(ie).KeepAlive(isKeepAlive),
 				Task t => new WaitForTask(t),
 				ValueTask t => new WaitForTask(t),
 				_ => new WaitUntilNextFrame(),
