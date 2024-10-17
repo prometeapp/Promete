@@ -13,7 +13,6 @@ public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) :
 	{
 		var tilemap = (Tilemap)element;
 		var mode = tilemap.RenderingMode == TilemapRenderingMode.Auto ? GetPrefferedMode(tilemap) : tilemap.RenderingMode;
-
 		if (mode == TilemapRenderingMode.Scan) ScanAndRender(tilemap);
 		else FullRender(tilemap);
 	}
