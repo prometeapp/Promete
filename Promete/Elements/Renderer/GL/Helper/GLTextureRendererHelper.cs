@@ -97,7 +97,7 @@ namespace Promete.Elements.Renderer.GL.Helper
 				Matrix4x4.CreateScale(new Vector3(finalWidth, finalHeight, 1))
 				* Matrix4x4.CreateTranslation(new Vector3((pivot ?? Vector.Zero).ToNumerics(), 0))
 				* el.ModelMatrix;
-			var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, window.ActualWidth / 2, window.ActualHeight / 2, 0, 0.1f, 100f);
+			var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, window.ActualWidth, window.ActualHeight, 0, 0.1f, 100f);
 			var c = color ?? Color.White;
 
 			gl.Enable(GLEnum.Blend);

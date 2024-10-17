@@ -49,7 +49,7 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
 
 		container.Add(canvas);
 
-		Parallel.For(0L, 8, (_) =>
+		for (var i = 0; i < 8; i++)
 		{
 			container.Add(new Sprite(ichigo)
 			{
@@ -57,7 +57,7 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
 				Scale = Vector.One + random.NextVectorFloat() * 7,
 				TintColor = random.NextColor(),
 			});
-		});
+		}
 
 		console.Print("Scroll to move");
 		console.Print("Press ↑ to scale up");
