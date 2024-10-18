@@ -1,4 +1,5 @@
-﻿using Promete.Elements;
+﻿using System.Drawing;
+using Promete.Elements;
 using Promete.Example.Kernel;
 using Promete.ImGui;
 using Promete.Input;
@@ -42,6 +43,22 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
 		{
 			ToggleIchigo();
 		}
+
+		if (ichigo != null)
+		{
+			var alpha = (int)ichigo.TintColor.A;
+			if (UI.DragInt("alpha", ref alpha, 1, 0, 255))
+			{
+				ichigo.TintColor = Color.FromArgb(alpha, ichigo.TintColor);
+			}
+
+			var vec = ichigo.Size.ToNumerics();
+			if (UI.DragFloat2("size", ref vec))
+			{
+				ichigo.Size = vec.ToPrometeInt();
+			}
+		}
+
 		if (UI.Button("Back"))
 		{
 			App.LoadScene<MainScene>();

@@ -91,8 +91,8 @@ namespace Promete.Elements.Renderer.GL.Helper
 		{
 			PrometeApp.Current.ThrowIfNotMainThread();
 			var gl = window.GL;
-			var finalWidth = overriddenWidth ?? texture.Size.X;
-			var finalHeight = overriddenHeight ?? texture.Size.Y;
+			var finalWidth = overriddenWidth ?? el.Size.X;
+			var finalHeight = overriddenHeight ?? el.Size.Y;
 			var modelMatrix =
 				Matrix4x4.CreateScale(new Vector3(finalWidth, finalHeight, 1))
 				* Matrix4x4.CreateTranslation(new Vector3((pivot ?? Vector.Zero).ToNumerics(), 0))
