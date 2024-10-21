@@ -227,7 +227,7 @@ namespace Promete.Windowing.GLDesktop
 		private void OnResize(Vector2D<int> vec)
 		{
 			gl?.Viewport(window.FramebufferSize);
-
+			Size = ActualSize;
 			Resize?.Invoke();
 		}
 
