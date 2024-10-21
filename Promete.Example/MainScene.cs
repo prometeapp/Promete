@@ -72,7 +72,10 @@ public class MainScene(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : S
 		}
 		else if (keyboard.Escape.IsKeyDown)
 		{
-			App.Exit();
+			if (CurrentFolder.Parent == null) return;
+
+			CurrentFolder = CurrentFolder.Parent;
+			CurrentIndex = 0;
 		}
 	}
 }

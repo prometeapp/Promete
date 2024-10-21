@@ -22,19 +22,14 @@ public class Container : ContainableElementBase, IEnumerable<ElementBase>
 	/// Container の新しいインスタンスを初期化します。
 	/// </summary>
 	/// <param name="isTrimmable">範囲外に出た子要素を描画しないかどうか。</param>
-	/// <param name="name">この Container の名前。</param>
-	/// <param name="location">この Container の位置。</param>
-	/// <param name="scale">この Container のスケール。</param>
-	/// <param name="size">この Container のサイズ。</param>
 	public Container(bool isTrimmable = false)
 	{
 		IsTrimmable = isTrimmable;
 	}
 
-	public void Insert(int index, ElementBase item)
+	public new void Insert(int index, ElementBase item)
 	{
-		children.Insert(index, item);
-		item.Parent = this;
+		base.Insert(index, item);
 	}
 
 	public void RemoveAt(int index)
@@ -42,9 +37,9 @@ public class Container : ContainableElementBase, IEnumerable<ElementBase>
 		Remove(this[index]);
 	}
 
-	public void Add(ElementBase item)
+	public new void Add(ElementBase item)
 	{
-		children.Add(item);
+		base.Add(item);
 	}
 
 	public void AddRange(IEnumerable<ElementBase> elements)
@@ -56,14 +51,9 @@ public class Container : ContainableElementBase, IEnumerable<ElementBase>
 	public void AddRange(params ElementBase[] elements)
 		=> AddRange((IEnumerable<ElementBase>)elements);
 
-	public void Clear()
+	public new void Clear()
 	{
-		foreach (var el in children)
-		{
-			el.Parent = null;
-		}
-		children.Clear();
-		sortedChildren = [];
+		base.Clear();
 	}
 
 	public bool Contains(ElementBase item)
@@ -71,11 +61,9 @@ public class Container : ContainableElementBase, IEnumerable<ElementBase>
 		return children.Contains(item);
 	}
 
-	public bool Remove(ElementBase item)
+	public new bool Remove(ElementBase item)
 	{
-		item.Parent = null;
-		var status = children.Remove(item);
-		return status;
+		return base.Remove(item);
 	}
 
 	public IEnumerator<ElementBase> GetEnumerator()
