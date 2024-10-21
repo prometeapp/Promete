@@ -28,15 +28,21 @@ public class ConsoleLayer
 	/// </summary>
 	public string? FontPath { get; set; }
 
+	public Font Font
+	{
+		get => text.Font;
+		set => text.Font = value;
+	}
+
 	/// <summary>
 	/// 現在の文字色を取得または設定します。
 	/// </summary>
 	public Color TextColor { get; set; } = Color.White;
 
-	private Text? text;
 	private string? prevFont;
 	private int maxLine;
 
+	private readonly Text text;
 	private readonly IWindow window;
 	private readonly GlyphRenderer glyphRenderer;
 	private readonly List<string> consoleBuffer = [];
@@ -56,7 +62,6 @@ public class ConsoleLayer
 
 		window.Render += () =>
 		{
-			if (text == null) return;
 			app.RenderElement(text);
 		};
 
@@ -102,7 +107,6 @@ public class ConsoleLayer
 
 	private void UpdateConsole()
 	{
-		if (text == null) return;
 		var f = text.Font;
 		if (f.Size != FontSize || prevFont != FontPath)
 		{
@@ -119,7 +123,6 @@ public class ConsoleLayer
 
 	private int CalculateMaxLine()
 	{
-		if (text == null) return 0;
 		var textToTest = "";
 		var l = 0;
 		Rect bounds;
