@@ -12,17 +12,17 @@ namespace Promete.Windowing
 	public interface IWindow
 	{
 		/// <summary>
-		/// Get or set location of this game window.
+		/// ゲームウィンドウの位置を取得または設定します。
 		/// </summary>
 		VectorInt Location { get; set; }
 
 		/// <summary>
-		/// Get or set size of this game window.
+		/// ゲームウィンドウのサイズを取得または設定します。
 		/// </summary>
 		VectorInt Size { get; set; }
 
 		/// <summary>
-		/// Get or set device-unit size of this game window.
+		/// ゲームウィンドウのデバイス単位のサイズを取得します。
 		/// </summary>
 		VectorInt ActualSize { get; }
 
@@ -35,155 +35,180 @@ namespace Promete.Windowing
 		int Scale { get; set; }
 
 		/// <summary>
-		/// Get or set X-coord location of this game window.
+		/// ゲームウィンドウのX座標位置を取得または設定します。
 		/// </summary>
 		int X { get; set; }
 
 		/// <summary>
-		/// Get or set Y-coord location of this game window.
+		/// ゲームウィンドウのY座標位置を取得または設定します。
 		/// </summary>
 		int Y { get; set; }
 
 		/// <summary>
-		/// Get or set width of this game window.
+		/// ゲームウィンドウの幅を取得または設定します。
 		/// </summary>
 		int Width { get; set; }
 
 		/// <summary>
-		/// Get or set height of this game window.
+		/// ゲームウィンドウの高さを取得または設定します。
 		/// </summary>
 		int Height { get; set; }
 
 		/// <summary>
-		/// Get or set device-unit width of this game window.
+		/// ゲームウィンドウのデバイス単位の幅を取得します。
 		/// </summary>
 		int ActualWidth { get; }
 
 		/// <summary>
-		/// Get or set device-unit height of this game window.
+		/// ゲームウィンドウのデバイス単位の高さを取得します。
 		/// </summary>
 		int ActualHeight { get; }
 
 		/// <summary>
-		/// Get or set whether this game window is visible.
+		/// ゲームウィンドウが表示されているかどうかを取得または設定します。
 		/// </summary>
 		bool IsVisible { get; set; }
 
 		/// <summary>
-		/// Get or set whether this game window is focused.
+		/// ゲームウィンドウがフォーカスされているかどうかを取得します。
 		/// </summary>
 		bool IsFocused { get; }
 
 		/// <summary>
-		/// Get or set whether this game window is fullscreen.
+		/// ゲームウィンドウが全画面表示かどうかを取得または設定します。
 		/// </summary>
 		bool IsFullScreen { get; set; }
 
+		/// <summary>
+		/// ゲーム起動時からの経過時間を取得または設定します。
+		/// </summary>
 		float TotalTime { get; }
 
+		/// <summary>
+		/// 前回の更新フレームからの経過時間を取得します。
+		/// </summary>
 		float DeltaTime { get; }
 
+		/// <summary>
+		/// レンダリングFPSを取得します。
+		/// </summary>
 		long FramePerSeconds { get; }
 
+		/// <summary>
+		/// 更新FPSを取得します。
+		/// </summary>
 		long UpdatePerSeconds { get; }
 
 		/// <summary>
-		/// Get or set total frame count after this game window starts.
+		/// ゲームウィンドウが開始してからの総フレーム数を取得または設定します。
 		/// </summary>
 		long TotalFrame { get; }
 
 		/// <summary>
-		/// Get or set refresh rate of this game window.
+		/// ゲームウィンドウのリフレッシュレートを取得または設定します。
 		/// </summary>
 		int RefreshRate { get; set; }
 
 		/// <summary>
-		/// Get or set whether this game window is vsync mode.
+		/// ゲームウィンドウがVsyncモードかどうかを取得または設定します。
 		/// </summary>
 		bool IsVsyncMode { get; set; }
 
 		/// <summary>
-		/// Get or set pixel ratio of this game window.
+		/// 更新FPS目標を取得または設定します。
+		/// </summary>
+		int TargetUpdateFps { get; set; }
+
+		/// <summary>
+		/// レンダリングFPS目標を取得または設定します。
+		/// </summary>
+		int TargetRenderFps { get; set; }
+
+		/// <summary>
+		/// ゲームウィンドウのピクセル比率を取得します。
 		/// </summary>
 		float PixelRatio { get; }
 
 		/// <summary>
-		/// Get or set a title of this game window.
+		/// ゲームウィンドウのタイトルを取得または設定します。
 		/// </summary>
 		string Title { get; set; }
 
 		/// <summary>
-		/// Get or set this game window mode.
+		/// ゲームウィンドウのモードを取得または設定します。
 		/// </summary>
 		WindowMode Mode { get; set; }
 
 		/// <summary>
-		/// INTERNAL API (Not use this)
+		/// INTERNAL API (使用しないでください)
 		/// </summary>
 		IInputContext? _RawInputContext { get; }
 
+		/// <summary>
+		/// INTERNAL API (使用しないでください)
+		/// </summary>
 		TextureFactory TextureFactory { get; }
 
 		/// <summary>
-		/// Open this window and start game.
+		/// このウィンドウを開き、ゲームを開始します。
 		/// </summary>
 		void Run();
 
 		/// <summary>
-		/// Exit this game by the specified status code.
+		/// 指定されたステータスコードでゲームを終了します。
 		/// </summary>
 		void Exit();
 
 		/// <summary>
-		/// Take a screenshot and generate a texture from it.
+		/// スクリーンショットを撮り、それをテクスチャとして生成します。
 		/// </summary>
-		/// <returns>A screenshot as a texture</returns>
+		/// <returns>スクリーンショットのテクスチャ</returns>
 		Texture2D TakeScreenshot();
 
 		/// <summary>
-		/// Save a screenshot as PNG to the specified path.
+		/// 指定されたパスにスクリーンショットをPNG形式で保存します。
 		/// </summary>
-		/// <param name="path">Path</param>
-		/// <param name="ct">Cancellation Token of this task.</param>
+		/// <param name="path">パス</param>
+		/// <param name="ct">このタスクのキャンセレーショントークン</param>
 		Task SaveScreenshotAsync(string path, CancellationToken ct = default);
 
 		/// <summary>
-		/// Occured when this game starts.
+		/// ゲームが開始されたときに発生します。
 		/// </summary>
 		event Action? Start;
 
 		/// <summary>
-		/// Occured when this game updates the frame.
+		/// ゲームがフレームを更新するときに発生します。
 		/// </summary>
 		event Action? Update;
 
 		/// <summary>
-		/// Occured when this game renders the frame.
+		/// ゲームがフレームをレンダリングするときに発生します。
 		/// </summary>
 		event Action? Render;
 
 		/// <summary>
-		/// Occured when this game closed.
+		/// ゲームが終了したときに発生します。
 		/// </summary>
 		event Action? Destroy;
 
 		/// <summary>
-		/// Occured before this game updates the frame.
+		/// ゲームがフレームを更新する前に発生します。
 		/// </summary>
 		event Action? PreUpdate;
 
 		/// <summary>
-		/// Occured after this game updates the frame.
+		/// ゲームがフレームを更新した後に発生します。
 		/// </summary>
 		event Action? PostUpdate;
 
 		/// <summary>
-		/// Occured when the user drops files into the window.
+		/// ユーザーがウィンドウにファイルをドロップしたときに発生します。
 		/// </summary>
 		event Action<FileDroppedEventArgs>? FileDropped;
 
 		/// <summary>
-		/// Occured when this game window resized.
+		/// ゲームウィンドウがリサイズされたときに発生します。
 		/// </summary>
 		event Action? Resize;
 	}
