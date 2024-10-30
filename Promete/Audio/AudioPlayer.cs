@@ -8,12 +8,12 @@ using Silk.NET.OpenAL;
 namespace Promete.Audio;
 
 /// <summary>
-/// Provides audio source playback functionality.
+/// オーディオデータを再生するためのクラスです。
 /// </summary>
 public class AudioPlayer : IDisposable
 {
 	/// <summary>
-	/// Initialize a new instance of <see cref="AudioPlayer"/> .
+	/// この <see cref="AudioPlayer"/> の新しいインスタンスを初期化します。
 	/// </summary>
 	public unsafe AudioPlayer()
 	{
@@ -39,9 +39,9 @@ public class AudioPlayer : IDisposable
 	}
 
 	/// <summary>
-	/// Get or set volume.
+	/// 音量を取得または設定します。
 	/// </summary>
-	/// <value>Volume range in 0.0 ~ 1.0.</value>
+	/// <value>音量の範囲は 0.0 ～ 1.0 です。</value>
 	public float Gain
 	{
 		get => gain;
@@ -49,9 +49,9 @@ public class AudioPlayer : IDisposable
 	}
 
 	/// <summary>
-	/// Get or set pan.
+	/// パンを取得または設定します。
+	/// <value>パンの範囲は -1.0 ～ 1.0 です。</value>
 	/// </summary>
-	/// <value>Volume range in -1.0 ~ 1.0.</value>
 	public float Pan
 	{
 		get => pan;
@@ -59,35 +59,40 @@ public class AudioPlayer : IDisposable
 	}
 
 	/// <summary>
-	/// Get or set pitch of this player.
+	/// このプレイヤーのピッチを取得または設定します。
 	/// </summary>
-	/// <value>Pitch ratio value. Default is 1.</value>
+	/// <value>ピッチ比率の値。デフォルトは 1 です。</value>
 	public float Pitch { get; set; } = 1;
 
 	/// <summary>
-	/// Get whether this player is playing。
+	/// このプレイヤーが再生中かどうかを取得します。
 	/// </summary>
 	public bool IsPlaying { get; private set; }
 
 	/// <summary>
-	/// Get current playing time of this player in milliseconds.
+	/// 再生中の音源の現在の再生位置をミリ秒単位で取得します。
 	/// </summary>
 	public int Time { get; private set; }
 
 	/// <summary>
-	/// Get current playing time of this player in samples.
+	/// 再生中の音源の現在の再生位置をサンプル単位で取得します。
 	/// </summary>
 	public int TimeInSamples { get; private set; }
 
 	/// <summary>
-	/// Get length of loaded audio in milliseconds.
+	/// 再生中の音源の長さをミリ秒単位で取得します。
 	/// </summary>
 	public int Length { get; private set; }
 
 	/// <summary>
-	/// Get length of loaded audio in samples.
+	/// 再生中の音源の長さをサンプル単位で取得します。
 	/// </summary>
 	public int LengthInSamples { get; private set; }
+
+	/// <summary>
+	/// このプレイヤーが一時停止中かどうかを取得します。
+	/// </summary>
+	public bool IsPausing { get; private set; }
 
 	public int BufferSize { get; set; } = 10000;
 
@@ -101,10 +106,10 @@ public class AudioPlayer : IDisposable
 	private readonly nint device;
 
 	/// <summary>
-	/// Start playing.
+	/// 再生を開始します。
 	/// </summary>
-	/// <param name="source">A <see cref="IAudioSource"/> to play.</param>
-	/// <param name="loop">Sample number of loop point. To disable loop, specify<c>null</c>.</param>
+	/// <param name="source">再生する音源。</param>
+	/// <param name="loop">ループ開始位置（サンプル単位）。ループ再生を行わない場合は<c>null</c>を指定します。</param>
 	public async ValueTask PlayAsync(IAudioSource source, int? loop = default)
 	{
 		stopToken?.Stop();
@@ -113,10 +118,10 @@ public class AudioPlayer : IDisposable
 	}
 
 	/// <summary>
-	/// Start playing.
+	/// 再生を開始します。
 	/// </summary>
-	/// <param name="source">A <see cref="IAudioSource"/> to play.</param>
-	/// <param name="loop">Sample number of loop point. To disable loop, specify<c>null</c>.</param>
+	/// <param name="source">再生する音源。</param>
+	/// <param name="loop">ループ開始位置（サンプル単位）。ループ再生を行わない場合は<c>null</c>を指定します。</param>
 	public async void Play(IAudioSource source, int? loop = default)
 	{
 		if (IsPlaying)
@@ -129,9 +134,9 @@ public class AudioPlayer : IDisposable
 	}
 
 	/// <summary>
-	/// Stop playing.
+	/// 再生を停止します。
 	/// </summary>
-	/// <param name="time">Fade-out time. Specify 0 to stop soon.</param>
+	/// <param name="time">フェードアウトにかかる時間（秒単位）。0を指定した場合は即時停止します。</param>
 	public void Stop(float time = 0)
 	{
 		if (time == 0)
@@ -163,6 +168,13 @@ public class AudioPlayer : IDisposable
 		Time = TimeInSamples = 0;
 	}
 
+	/// <summary>
+	/// 指定した音源をその場で再生します。
+	/// </summary>
+	/// <param name="source"></param>
+	/// <param name="_gain"></param>
+	/// <param name="pitch"></param>
+	/// <param name="pan"></param>
 	public async void PlayOneShot(IAudioSource source, float _gain = 1, float pitch = 1, float pan = 0)
 	{
 		await PlayOneShotAsync(source, _gain, pitch, pan);
