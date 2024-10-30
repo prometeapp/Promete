@@ -25,6 +25,8 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 		               Location: {audio.Time / 1000f:0.000} / {audio.Length / 1000f:0.000}
 		               Location in Samples: {audio.TimeInSamples} / {audio.LengthInSamples}
 		               Loaded: {bgm.LoadedSize} / {bgm.Samples}
+		               Is Playing: {audio.IsPlaying}
+		               Is Pausing: {audio.IsPausing}
 		               [↑] Volume Up
 		               [↓] Volume Down
 		               [←] Pitch Down
@@ -49,9 +51,13 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
 		if (keyboard.Space.IsKeyDown)
 		{
-			if (audio.IsPlaying)
+			if (audio is { IsPlaying: true, IsPausing: false })
 			{
-				audio.Stop();
+				audio.Pause();
+			}
+			else if (audio.IsPausing)
+			{
+				audio.Resume();
 			}
 			else
 			{

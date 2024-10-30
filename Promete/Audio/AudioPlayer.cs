@@ -134,6 +134,25 @@ public class AudioPlayer : IDisposable
 	}
 
 	/// <summary>
+	/// 一時停止します。
+	/// </summary>
+	public void Pause()
+	{
+		if (!IsPlaying) return;
+		IsPausing = true;
+	}
+
+	/// <summary>
+	/// 一時停止を解除します。
+	/// </summary>
+	public void Resume()
+	{
+		if (!IsPausing) return;
+		IsPausing = false;
+		Console.WriteLine("set IsPausing to false");
+	}
+
+	/// <summary>
 	/// 再生を停止します。
 	/// </summary>
 	/// <param name="time">フェードアウトにかかる時間（秒単位）。0を指定した場合は即時停止します。</param>
@@ -276,6 +295,16 @@ public class AudioPlayer : IDisposable
 			Time = TimeInSamples * 1000 / source.SampleRate;
 
 			await Task.Delay(1).ConfigureAwait(false);
+
+			if (IsPausing)
+			{
+				al.SourcePause(alSource.Handle);
+				while (IsPausing)
+				{
+					await Task.Delay(1).ConfigureAwait(false);
+				}
+				al.SourcePlay(alSource.Handle);
+			}
 
 			// 外部から再生停止が要求された場合、再生を終了する
 			if (st.IsStopRequested)
