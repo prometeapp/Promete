@@ -111,6 +111,19 @@ namespace Promete.Windowing.GLDesktop
 
 		public long UpdatePerSeconds { get; private set; }
 
+		public int TargetFps
+		{
+			get => (int)window.FramesPerSecond;
+			set => window.FramesPerSecond = value;
+		}
+
+		public int TargetUps
+		{
+			get => (int)window.UpdatesPerSecond;
+			set => window.UpdatesPerSecond = value;
+		}
+
+		[Obsolete("Use TargetFps instead.")]
 		public int RefreshRate
 		{
 			get => (int)window.FramesPerSecond;

@@ -104,9 +104,7 @@ namespace Promete.Windowing
 		/// </summary>
 		long TotalFrame { get; }
 
-		/// <summary>
-		/// ゲームウィンドウのリフレッシュレートを取得または設定します。
-		/// </summary>
+		[Obsolete("Use TargetFps instead.")]
 		int RefreshRate { get; set; }
 
 		/// <summary>
@@ -115,14 +113,14 @@ namespace Promete.Windowing
 		bool IsVsyncMode { get; set; }
 
 		/// <summary>
-		/// 更新FPS目標を取得または設定します。
+		/// FPS目標を取得または設定します。
 		/// </summary>
-		int TargetUpdateFps { get; set; }
+		int TargetFps { get; set; }
 
 		/// <summary>
-		/// レンダリングFPS目標を取得または設定します。
+		/// UPS目標を取得または設定します。
 		/// </summary>
-		int TargetRenderFps { get; set; }
+		int TargetUps { get; set; }
 
 		/// <summary>
 		/// ゲームウィンドウのピクセル比率を取得します。
@@ -152,7 +150,7 @@ namespace Promete.Windowing
 		/// <summary>
 		/// このウィンドウを開き、ゲームを開始します。
 		/// </summary>
-		void Run();
+		void Run(WindowOptions opts);
 
 		/// <summary>
 		/// 指定されたステータスコードでゲームを終了します。
