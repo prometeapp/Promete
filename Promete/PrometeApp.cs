@@ -51,7 +51,7 @@ public sealed class PrometeApp : IDisposable
 	private readonly ServiceProvider provider;
 	private readonly ConcurrentQueue<Action> nextFrameQueue = new();
 	private readonly Dictionary<Type, Type> rendererTypes;
-	private readonly Dictionary<Type, ElementRendererBase> renderers = new();
+	private readonly Dictionary<Type, ElementRendererBase?> renderers = new();
 	private readonly Thread mainThread;
 
 	private static PrometeApp? _current;
@@ -249,6 +249,7 @@ public sealed class PrometeApp : IDisposable
 		if (alternativeRendererType is null)
 		{
 			LogHelper.Warn($"The renderer for \"{elType}\" is not registered.");
+			renderers[elType] = null;
 			return null;
 		}
 
