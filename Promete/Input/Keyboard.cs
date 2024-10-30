@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Promete.Input.Internal;
 using Promete.Windowing;
+using Silk.NET.Input;
 
 namespace Promete.Input;
 
@@ -14,33 +15,6 @@ namespace Promete.Input;
 public sealed partial class Keyboard
 {
 	private readonly IWindow window;
-
-	public Keyboard(IWindow window)
-	{
-		this.window = window;
-		var kb = GetCurrentKeyboard();
-		if (kb == null) throw new InvalidOperationException("BUG: RawInputContext is null.");
-
-		kb.KeyChar += (_, e) =>
-		{
-			keychars.Enqueue(e);
-			KeyPress?.Invoke(new KeyPressEventArgs(e));
-		};
-		kb.KeyDown += (_, e, _) =>
-		{
-			KeyOf(e.ToPromete()).IsKeyDown = true;
-			KeyDown?.Invoke(new KeyEventArgs(e.ToPromete()));
-		};
-		kb.KeyUp += (_, e, _) =>
-		{
-			KeyUp?.Invoke(new KeyEventArgs(e.ToPromete()));
-			KeyOf(e.ToPromete()).IsKeyUp = true;
-		};
-
-		window.PreUpdate += OnPreUpdate;
-		window.PostUpdate += OnPostUpdate;
-		window.Destroy += OnDestroy;
-	}
 
 	/// <summary>
 	/// 存在する全てのキーコードを列挙します。
@@ -62,8 +36,20 @@ public sealed partial class Keyboard
 	/// </summary>
 	public IEnumerable<KeyCode> AllUpKeys => allCodes.Where(c => KeyOf(c).IsKeyUp);
 
+	private IKeyboard? _currentKeyboard;
+
 	private readonly Queue<char> keychars = new();
 	private readonly KeyCode[] allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
+
+	public Keyboard(IWindow window)
+	{
+		this.window = window;
+		TryFindKeyboard();
+
+		window.PreUpdate += OnPreUpdate;
+		window.PostUpdate += OnPostUpdate;
+		window.Destroy += OnDestroy;
+	}
 
 	/// <summary>
 	/// キーボードバッファに蓄積されている、入力された文字列を取得します。
@@ -96,7 +82,7 @@ public sealed partial class Keyboard
 	/// </summary>
 	public void OpenVirtualKeyboard()
 	{
-		GetCurrentKeyboard()?.BeginInput();
+		_currentKeyboard?.BeginInput();
 	}
 
 	/// <summary>
@@ -104,19 +90,27 @@ public sealed partial class Keyboard
 	/// </summary>
 	public void CloseVirtualKeyboard()
 	{
-		GetCurrentKeyboard()?.EndInput();
+		_currentKeyboard?.EndInput();
 	}
 
 	private void OnPreUpdate()
 	{
-		var kb = GetCurrentKeyboard();
-		if (kb == null) return;
+		if (_currentKeyboard is { IsConnected: false })
+		{
+			_currentKeyboard.KeyDown -= OnKeyDown;
+			_currentKeyboard.KeyUp -= OnKeyUp;
+			_currentKeyboard.KeyChar -= OnKeyChar;
+			_currentKeyboard = null;
+		}
+
+		if (_currentKeyboard == null) TryFindKeyboard();
+		if (_currentKeyboard == null) return;
 
 		Parallel.ForEach(allCodes, keyCode =>
 		{
 			var silkKey = keyCode.ToSilk();
 			if (silkKey < 0) return;
-			var isPressed = kb.IsKeyPressed(silkKey);
+			var isPressed = _currentKeyboard.IsKeyPressed(silkKey);
 			var key = KeyOf(keyCode);
 			key.IsPressed = isPressed;
 			key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
@@ -141,11 +135,33 @@ public sealed partial class Keyboard
 		window.Destroy -= OnDestroy;
 	}
 
-	private Silk.NET.Input.IKeyboard? GetCurrentKeyboard()
+	private void TryFindKeyboard()
 	{
-		var input = window._RawInputContext;
-		var kb = input?.Keyboards[0];
-		return kb;
+		var input = window._RawInputContext ?? throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
+		if (input.Keyboards.Count == 0) return;
+
+		_currentKeyboard = input.Keyboards[0];
+		_currentKeyboard.KeyDown += OnKeyDown;
+		_currentKeyboard.KeyUp += OnKeyUp;
+		_currentKeyboard.KeyChar += OnKeyChar;
+	}
+
+	private void OnKeyUp(IKeyboard keyboard, Silk.NET.Input.Key e, int i)
+	{
+		KeyUp?.Invoke(new KeyEventArgs(e.ToPromete()));
+		KeyOf(e.ToPromete()).IsKeyUp = true;
+	}
+
+	private void OnKeyDown(IKeyboard keyboard, Silk.NET.Input.Key e, int i)
+	{
+		KeyOf(e.ToPromete()).IsKeyDown = true;
+		KeyDown?.Invoke(new KeyEventArgs(e.ToPromete()));
+	}
+
+	private void OnKeyChar(IKeyboard _, char e)
+	{
+		keychars.Enqueue(e);
+		KeyPress?.Invoke(new KeyPressEventArgs(e));
 	}
 
 	public event Action<KeyEventArgs>? KeyDown;

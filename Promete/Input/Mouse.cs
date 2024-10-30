@@ -46,13 +46,10 @@ public sealed class Mouse
 
 		var input = window._RawInputContext ?? throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
 
-		mouse = input.Mice[0];
-		mouse.DoubleClickTime = 0;
-
-		mouse.Click += OnMouseClick;
-		mouse.MouseDown += OnMouseDown;
-		mouse.MouseUp += OnMouseUp;
-		mouse.MouseMove += OnMouseMove;
+		if (input.Mice.Count == 0)
+		{
+			return;
+		}
 
 		window.PreUpdate += OnPreUpdate;
 		window.PostUpdate += OnPostUpdate;
@@ -67,6 +64,7 @@ public sealed class Mouse
 
 	private void OnPreUpdate()
 	{
+		UpdateMouseDevice();
 		if (mouse == null) return;
 		var wheel = mouse.ScrollWheels[0];
 		Scroll = (wheel.X, wheel.Y);
@@ -101,6 +99,37 @@ public sealed class Mouse
 		mouse.MouseDown -= OnMouseDown;
 		mouse.MouseUp -= OnMouseUp;
 		mouse.MouseMove -= OnMouseMove;
+	}
+
+	private void UpdateMouseDevice()
+	{
+		// 現在使用中のマウスが切断された場合、イベントを解除する
+		if (mouse is { IsConnected: false })
+		{
+			mouse.Click -= OnMouseClick;
+			mouse.MouseDown -= OnMouseDown;
+			mouse.MouseUp -= OnMouseUp;
+			mouse.MouseMove -= OnMouseMove;
+			mouse = null;
+		}
+
+		// マウスが存在しない場合、取得を試みる
+		if (mouse == null)
+		{
+			TryFindMouse();
+		}
+	}
+
+	private void TryFindMouse()
+	{
+		var input = window._RawInputContext ?? throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
+		if (input.Mice.Count == 0) return;
+
+		mouse = input.Mice[0];
+		mouse.Click += OnMouseClick;
+		mouse.MouseDown += OnMouseDown;
+		mouse.MouseUp += OnMouseUp;
+		mouse.MouseMove += OnMouseMove;
 	}
 
 	private void OnMouseClick(IMouse mouse, SilkMouseButton btn, Vector2 pos)
