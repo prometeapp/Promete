@@ -5,7 +5,7 @@ public readonly record struct WindowOptions(
 	VectorInt Size,
 	string Title,
 	int Scale = 1,
-	bool IsFullscreen = false,
+	bool IsFullScreen = false,
 	WindowMode Mode = WindowMode.Fixed,
 	int TargetFps = 60,
 	int TargetUps = 60,

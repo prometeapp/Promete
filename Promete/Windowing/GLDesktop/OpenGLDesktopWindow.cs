@@ -203,7 +203,7 @@ namespace Promete.Windowing.GLDesktop
 				WindowMode.Resizable => WindowBorder.Resizable,
 				_ => throw new ArgumentException(null, nameof(opts.Mode)),
 			};
-			options.WindowState = opts.IsFullscreen ? WindowState.Fullscreen : WindowState.Normal;
+			options.WindowState = opts.IsFullScreen ? WindowState.Fullscreen : WindowState.Normal;
 			options.FramesPerSecond = opts.TargetFps;
 			options.UpdatesPerSecond = opts.TargetUps;
 			options.VSync = opts.IsVsyncMode;
