@@ -270,12 +270,14 @@ namespace Promete.Windowing.GLDesktop
 			CalculateFps();
 
 			Render?.Invoke();
+
+			TotalTime += (float)delta;
+			TotalFrame++;
 		}
 
 		private void OnUpdateFrame(double delta)
 		{
 			var deltaTime = (float)delta;
-			TotalTime += deltaTime;
 			DeltaTime = deltaTime;
 
 			CalculateUps();
@@ -284,8 +286,6 @@ namespace Promete.Windowing.GLDesktop
 			if (app.Root != null) app.UpdateElement(app.Root);
 			Update?.Invoke();
 			PostUpdate?.Invoke();
-
-			TotalFrame++;
 		}
 
 		private void OnUnload()
