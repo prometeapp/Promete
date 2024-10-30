@@ -87,11 +87,24 @@ public sealed class PrometeApp : IDisposable
 	/// <returns>終了ステータスコード。</returns>
 	public int Run<TScene>() where TScene : Scene
 	{
+		return Run<TScene>(WindowOptions.Default);
+	}
+
+	/// <summary>
+	/// Promete アプリケーションを実行します。
+	/// </summary>
+	/// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
+	/// <param name="opts">ウィンドウのオプション。</param>
+	/// <returns>終了ステータスコード。</returns>
+	public int Run<TScene>(WindowOptions opts) where TScene : Scene
+	{
 		Window.Start += OnStart<TScene>;
 		Window.Update += OnUpdate;
-		Window.Run();
+		Window.Run(opts);
 		return statusCode;
 	}
+
+
 
 	/// <summary>
 	/// 指定したステータスコードで Promete アプリケーションを終了します。

@@ -172,27 +172,11 @@ namespace Promete.Windowing.GLDesktop
 		private TextureFactory? textureFactory;
 
 		private readonly PrometeApp app;
-		private readonly Silk.NET.Windowing.IWindow window;
+		private Silk.NET.Windowing.IWindow window;
 
 		public OpenGLDesktopWindow(PrometeApp app)
 		{
 			this.app = app;
-
-			var options = WindowOptions.Default;
- 			options.Size = new Vector2D<int>(640, 480);
- 			options.Title = "Promete Window";
-			options.WindowBorder = WindowBorder.Fixed;
-			options.FramesPerSecond = 60;
-			options.VSync = false;
-
-			window = Window.Create(options);
-			window.Load += OnLoad;
-			window.Resize += OnResize;
-			window.FileDrop += OnFileDrop;
-			window.Render += OnRenderFrame;
-			window.Update += OnUpdateFrame;
-			window.Closing += OnUnload;
-			window.FocusChanged += v => IsFocused = v;
 		}
 
 		public Texture2D TakeScreenshot()
@@ -206,8 +190,34 @@ namespace Promete.Windowing.GLDesktop
 			await img.SaveAsPngAsync(path, ct);
 		}
 
-		public void Run()
+		public void Run(WindowOptions opts)
 		{
+			var options = Silk.NET.Windowing.WindowOptions.Default;
+			options.Position = new Vector2D<int>(opts.Location.X, opts.Location.Y);
+			options.Size = new Vector2D<int>(opts.Size.X, opts.Size.Y) * opts.Scale;
+			options.Title = opts.Title;
+			options.WindowBorder = opts.Mode switch
+			{
+				WindowMode.Fixed => WindowBorder.Fixed,
+				WindowMode.NoFrame => WindowBorder.Hidden,
+				WindowMode.Resizable => WindowBorder.Resizable,
+				_ => throw new ArgumentException(null, nameof(opts.Mode)),
+			};
+			options.WindowState = opts.IsFullscreen ? WindowState.Fullscreen : WindowState.Normal;
+			options.FramesPerSecond = opts.TargetFps;
+			options.UpdatesPerSecond = opts.TargetUps;
+			options.VSync = opts.IsVsyncMode;
+
+			screenshotBuffer = new byte[options.Size.X * options.Size.Y * 4];
+
+			window = Window.Create(options);
+			window.Load += OnLoad;
+			window.Resize += OnResize;
+			window.FileDrop += OnFileDrop;
+			window.Render += OnRenderFrame;
+			window.Update += OnUpdateFrame;
+			window.Closing += OnUnload;
+			window.FocusChanged += v => IsFocused = v;
 			window.Run();
 		}
 

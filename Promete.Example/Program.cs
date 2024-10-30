@@ -4,8 +4,8 @@ using Promete.GLDesktop;
 using Promete.Input;
 
 using Promete.Example;
-using Promete.Example.examples;
 using Promete.ImGui;
+using Promete.Windowing;
 
 var app = PrometeApp.Create()
 	.Use<Keyboard>()
@@ -16,4 +16,7 @@ var app = PrometeApp.Create()
 	.Use<ImGuiPlugin>()
 	.BuildWithOpenGLDesktop();
 
-app.Run<MainScene>();
+app.Run<MainScene>(WindowOptions.Default with
+{
+	Title = "Promete Demo",
+});
