@@ -108,7 +108,7 @@ public class ConsoleLayer
 		var f = text.Font;
 		if (f.Size != FontSize || prevFont != FontPath)
 		{
-			text.Font = FontPath == null ? Font.GetDefault(FontSize) : new Font(FontPath, FontSize);
+			text.Font = FontPath == null ? Font.GetDefault(FontSize) : Font.FromFile(FontPath, FontSize);
 			maxLine = CalculateMaxLine();
 		}
 
@@ -127,7 +127,7 @@ public class ConsoleLayer
 		do
 		{
 			textToTest += "A\n";
-			bounds = GlyphRenderer.GetTextBounds(textToTest, text.Font);
+			bounds = text.Font.GetTextBounds(textToTest, new TextRenderingOptions());
 			l++;
 		} while (bounds.Height < window.Height);
 

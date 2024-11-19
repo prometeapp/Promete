@@ -16,136 +16,136 @@ public class Text : ElementBase
 
 	public VectorInt PreferredSize
 	{
-		get => options.Size;
+		get => _options.Size;
 		set
 		{
-			if (options.Size == value) return;
-			options.Size = value;
+			if (_options.Size == value) return;
+			_options.Size = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public string Content
 	{
-		get => content;
+		get => _content;
 		set
 		{
-			if (content == value) return;
-			content = value;
+			if (_content == value) return;
+			_content = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public Color Color
 	{
-		get => options.TextColor;
+		get => _options.TextColor;
 		set
 		{
-			if (options.TextColor == value) return;
-			options.TextColor = value;
+			if (_options.TextColor == value) return;
+			_options.TextColor = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public Color? BorderColor
 	{
-		get => options.BorderColor;
+		get => _options.BorderColor;
 		set
 		{
-			if (options.BorderColor == value) return;
-			options.BorderColor = value;
+			if (_options.BorderColor == value) return;
+			_options.BorderColor = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public int BorderThickness
 	{
-		get => options.BorderThickness;
+		get => _options.BorderThickness;
 		set
 		{
-			if (options.BorderThickness == value) return;
-			options.BorderThickness = value;
+			if (_options.BorderThickness == value) return;
+			_options.BorderThickness = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public Font Font
 	{
-		get => options.Font;
+		get => _font;
 		set
 		{
-			if (options.Font.Equals(value)) return;
-			options.Font = value;
+			if (_font.Equals(value)) return;
+			_font = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public float LineSpacing
 	{
-		get => options.LineSpacing;
+		get => _options.LineSpacing;
 		set
 		{
-			if (options.LineSpacing == value) return;
-			options.LineSpacing = value;
+			if (_options.LineSpacing.Equals(value)) return;
+			_options.LineSpacing = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public bool WordWrap
 	{
-		get => options.WordWrap;
+		get => _options.WordWrap;
 		set
 		{
-			if (options.WordWrap == value) return;
-			options.WordWrap = value;
+			if (_options.WordWrap == value) return;
+			_options.WordWrap = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public VerticalAlignment VerticalAlignment
 	{
-		get => options.VerticalAlignment;
+		get => _options.VerticalAlignment;
 		set
 		{
-			if (options.VerticalAlignment == value) return;
-			options.VerticalAlignment = value;
+			if (_options.VerticalAlignment == value) return;
+			_options.VerticalAlignment = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public HorizontalAlignment HorizontalAlignment
 	{
-		get => options.HorizontalAlignment;
+		get => _options.HorizontalAlignment;
 		set
 		{
-			if (options.HorizontalAlignment == value) return;
-			options.HorizontalAlignment = value;
+			if (_options.HorizontalAlignment == value) return;
+			_options.HorizontalAlignment = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public bool UseRichText
 	{
-		get => options.UseRichText;
+		get => _options.UseRichText;
 		set
 		{
-			if (options.UseRichText == value) return;
-			options.UseRichText = value;
+			if (_options.UseRichText == value) return;
+			_options.UseRichText = value;
 			_isUpdateRequested = true;
 		}
 	}
 
-	private string content;
-
+	private string _content;
+	private Font _font;
 	private bool _isUpdateRequested;
 
-	private readonly TextRenderingOptions options = new();
+	private readonly TextRenderingOptions _options = new();
 
 	public Text(string content, Font? font = default, Color? color = default)
 	{
-		this.content = content;
-		options.Font = font ?? Font.GetDefault();
-		options.TextColor = color ?? Color.White;
+		_content = content;
+		_font = font ?? Font.GetDefault();
+		_options.TextColor = color ?? Color.White;
 
 		RenderTexture();
 	}
@@ -165,7 +165,7 @@ public class Text : ElementBase
 	private void RenderTexture()
 	{
 		var oldTexture = RenderedTexture;
-		RenderedTexture = PrometeApp.Current.Window.TextureFactory.GenerateText(Content, options);
+		RenderedTexture = _font.GenerateTexture(PrometeApp.Current.Window.TextureFactory, Content, _options);
 		oldTexture?.Dispose();
 	}
 }

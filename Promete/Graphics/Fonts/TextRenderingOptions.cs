@@ -8,11 +8,6 @@ namespace Promete.Graphics.Fonts;
 public sealed class TextRenderingOptions
 {
 	/// <summary>
-	/// 描画用のフォントを取得または設定します。
-	/// </summary>
-	public Font Font { get; set; } = Font.GetDefault();
-
-	/// <summary>
 	/// テキストの色を取得または設定します。
 	/// </summary>
 	public Color TextColor { get; set; }
@@ -57,4 +52,9 @@ public sealed class TextRenderingOptions
 	/// PTML記法を用いたリッチテキストを有効化するかどうかを取得または設定します。
 	/// </summary>
 	public bool UseRichText { get; set; }
+
+	/// <summary>
+	/// アンチエイリアシングを有効化するかどうかを取得また設定します。
+	/// </summary>
+	public bool UseAntialiasing { get; set; } = true;
 }
