@@ -2,7 +2,7 @@ using System.Drawing;
 using System.Text;
 using Promete.Elements;
 using Promete.Example.Kernel;
-using Promete.Graphics;
+using Promete.Graphics.Fonts;
 using Promete.Input;
 using Promete.Markup;
 

@@ -5,7 +5,6 @@ using System.Numerics;
 using Promete.Graphics;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
-using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Promete.Elements.Renderer.GL.Helper

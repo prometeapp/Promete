@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using Promete.Elements.Renderer.GL.Helper;
 using Promete.Graphics;
 using Promete.Windowing;

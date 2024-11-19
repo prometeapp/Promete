@@ -2,6 +2,7 @@
 using Promete.Elements;
 using Promete.Example.Kernel;
 using Promete.Graphics;
+using Promete.Graphics.Fonts;
 using Promete.Input;
 
 namespace Promete.Example.examples.graphics;

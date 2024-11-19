@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Promete.Graphics;
+namespace Promete.Graphics.Fonts;
 
 /// <summary>
 /// Depresents font-family, size, and font style.
@@ -75,7 +74,7 @@ public class Font
 	/// <returns>Generated defualt font.</returns>
 	public static Font GetDefault(float size = 16, FontStyle style = FontStyle.Normal)
 	{
-		return new Font(defaultFont, "__PROMETE_SYSTEM_EMBEDDED_FONT_MPLUS__", size, style);
+		return new Font("sans-serif", size, style);
 	}
 
 	public override bool Equals(object? obj)

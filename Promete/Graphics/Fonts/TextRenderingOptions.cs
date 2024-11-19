@@ -1,6 +1,6 @@
 using System.Drawing;
 
-namespace Promete.Graphics;
+namespace Promete.Graphics.Fonts;
 
 /// <summary>
 /// テキストを描画する際のオプション。このクラスは継承できません。

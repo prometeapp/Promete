@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using Promete.Internal;
 using Promete.Markup;
-using Promete.Windowing;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
@@ -13,7 +12,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SDColor = System.Drawing.Color;
 
-namespace Promete.Graphics;
+namespace Promete.Graphics.Fonts;
 
 public static class GlyphRenderer
 {

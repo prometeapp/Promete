@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Promete.Elements;
-using Promete.Graphics;
+using Promete.Graphics.Fonts;
 using Promete.Windowing;
 
 namespace Promete;

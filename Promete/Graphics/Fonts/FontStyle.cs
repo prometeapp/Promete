@@ -1,4 +1,4 @@
-namespace Promete.Graphics;
+namespace Promete.Graphics.Fonts;
 
 public enum FontStyle
 {

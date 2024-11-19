@@ -8,7 +8,6 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Promete.Elements;
 using Promete.Elements.Renderer;
-using Promete.Graphics;
 using Promete.Internal;
 using Promete.Windowing;
 

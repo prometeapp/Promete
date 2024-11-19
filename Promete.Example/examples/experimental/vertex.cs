@@ -1,9 +1,7 @@
-using System.Diagnostics;
 using System.Drawing;
 using Promete.Elements;
 using Promete.Example.Kernel;
 using Promete.ImGui;
-using Silk.NET.Maths;
 using UI = ImGuiNET.ImGui;
 
 namespace Promete.Example.examples.experimental;
