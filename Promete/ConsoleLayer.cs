@@ -44,13 +44,11 @@ public class ConsoleLayer
 
 	private readonly Text text;
 	private readonly IWindow window;
-	private readonly GlyphRenderer glyphRenderer;
 	private readonly List<string> consoleBuffer = [];
 
-	public ConsoleLayer(PrometeApp app, IWindow window, GlyphRenderer glyphRenderer)
+	public ConsoleLayer(PrometeApp app, IWindow window)
 	{
 		this.window = window;
-		this.glyphRenderer = glyphRenderer;
 		FontSize = 16;
 		text = new Text("", Font.GetDefault(), Color.White);
 		maxLine = CalculateMaxLine();
@@ -129,7 +127,7 @@ public class ConsoleLayer
 		do
 		{
 			textToTest += "A\n";
-			bounds = glyphRenderer.GetTextBounds(textToTest, text.Font);
+			bounds = GlyphRenderer.GetTextBounds(textToTest, text.Font);
 			l++;
 		} while (bounds.Height < window.Height);
 

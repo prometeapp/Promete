@@ -63,7 +63,6 @@ public sealed class PrometeApp : IDisposable
 		this.services = services;
 		this.rendererTypes = rendererTypes;
 		RegisterAllScenes();
-		services.AddSingleton<GlyphRenderer>();
 		services.AddSingleton(this);
 
 		provider = services.BuildServiceProvider();

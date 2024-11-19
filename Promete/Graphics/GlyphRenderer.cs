@@ -15,20 +15,20 @@ using SDColor = System.Drawing.Color;
 
 namespace Promete.Graphics;
 
-public class GlyphRenderer(IWindow window)
+public static class GlyphRenderer
 {
-	private readonly Dictionary<object, FontFamily> fontCache = new();
-	private readonly FontCollection fontCollection = new();
+	private static readonly Dictionary<object, FontFamily> FontCache = new();
+	private static readonly FontCollection FontCollection = new();
 
 	private const char ZeroWidthSpace = '\u200B';
 
-	public Rect GetTextBounds(string text, Font font)
+	public static Rect GetTextBounds(string text, Font font)
 	{
 		var f = ResolveFont(font);
 		return GetTextBounds(text, f);
 	}
 
-	public Texture2D Generate(string text, TextRenderingOptions options)
+	public static Texture2D GenerateText(this TextureFactory factory, string text, TextRenderingOptions options)
 	{
 		var font = options.Font;
 		var imageSharpFont = ResolveFont(font);
@@ -79,37 +79,25 @@ public class GlyphRenderer(IWindow window)
 		}
 
 		img.Mutate(ctx => ctx.DrawText(drawingOptions, textOptions, text, brush, pen));
-		return window.TextureFactory.LoadFromImageSharpImage(img);
+		return factory.LoadFromImageSharpImage(img);
 	}
 
-	[Obsolete("Use Generate(string text, TextRenderingOptions options).")]
-	public Texture2D Generate(string text, Font font, SDColor? color, SDColor? borderColor, int borderThickness)
-	{
-		return Generate(text, new TextRenderingOptions
-		{
-			Font = font,
-			TextColor = color ?? SDColor.Black,
-			BorderColor = borderColor,
-			BorderThickness = borderThickness,
-		});
-	}
-
-	private Rect GetTextBounds(string text, SixLabors.Fonts.Font font)
+	private static Rect GetTextBounds(string text, SixLabors.Fonts.Font font)
 	{
 		var size = TextMeasurer.MeasureBounds(text, new TextOptions(font));
 		return new Rect(0, 0, (int)size.Right, (int)size.Bottom);
 	}
 
-	private SixLabors.Fonts.Font ResolveFont(Font f)
+	private static SixLabors.Fonts.Font ResolveFont(Font f)
 	{
 		FontFamily family;
-		if (fontCache.TryGetValue(f.Id, out var value))
+		if (FontCache.TryGetValue(f.Id, out var value))
 		{
 			family = value;
 		}
 		else if (f.Path != null && File.Exists(f.Path))
 		{
-			family = fontCollection.Add(f.Path);
+			family = FontCollection.Add(f.Path);
 		}
 		else if (f.Path != null)
 		{
@@ -118,18 +106,18 @@ public class GlyphRenderer(IWindow window)
 		else if (f.Stream != null)
 		{
 			f.Stream.Position = 0;
-			family = fontCollection.Add(f.Stream);
+			family = FontCollection.Add(f.Stream);
 		}
 		else
 		{
 			throw new ArgumentException("Font class must have either a path or a stream.");
 		}
 
-		fontCache[f.Id] = family;
+		FontCache[f.Id] = family;
 		return new SixLabors.Fonts.Font(family, f.Size, (SixLabors.Fonts.FontStyle)f.FontStyle);
 	}
 
-	private RichTextRun? CreateRunFromDecoration(PtmlDecoration decoration, Font baseFont)
+	private static RichTextRun? CreateRunFromDecoration(PtmlDecoration decoration, Font baseFont)
 	{
 		// Start == Endの場合は無視
 		if (decoration.Start == decoration.End) return null;
@@ -174,7 +162,7 @@ public class GlyphRenderer(IWindow window)
 		return run;
 	}
 
-	private Font With(Font baseFont, float? size = null, FontStyle? style = null, bool? isAntialiased = null)
+	private static Font With(Font baseFont, float? size = null, FontStyle? style = null, bool? isAntialiased = null)
 	{
 		if (baseFont.Path != null)
 		{

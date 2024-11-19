@@ -140,11 +140,9 @@ public class Text : ElementBase
 	private bool _isUpdateRequested;
 
 	private readonly TextRenderingOptions options = new();
-	private readonly GlyphRenderer glyphRenderer;
 
 	public Text(string content, Font? font = default, Color? color = default)
 	{
-		glyphRenderer = PrometeApp.Current.GetPlugin<GlyphRenderer>() ?? throw new InvalidOperationException("System is not initialized yet!");
 		this.content = content;
 		options.Font = font ?? Font.GetDefault();
 		options.TextColor = color ?? Color.White;
@@ -167,7 +165,7 @@ public class Text : ElementBase
 	private void RenderTexture()
 	{
 		var oldTexture = RenderedTexture;
-		RenderedTexture = glyphRenderer.Generate(Content, options);
+		RenderedTexture = PrometeApp.Current.Window.TextureFactory.GenerateText(Content, options);
 		oldTexture?.Dispose();
 	}
 }
