@@ -136,6 +136,8 @@ public class Text : ElementBase
 	}
 	public TextRenderingOptions Options { get; } = DefaultOptions.Clone();
 
+	public static TextRenderingOptions DefaultOptions { get; } = new();
+
 	private string _content;
 	private Font _font;
 	private bool _isUpdateRequested;
