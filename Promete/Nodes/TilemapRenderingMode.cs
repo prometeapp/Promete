@@ -1,4 +1,4 @@
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
 public enum TilemapRenderingMode
 {

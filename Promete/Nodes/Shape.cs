@@ -1,11 +1,11 @@
 using System.Drawing;
 
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
 /// <summary>
 /// Provide rendering primitive shapes.
 /// </summary>
-public class Shape : ElementBase
+public class Shape : Node
 {
 	public Color Color { get; }
 	public int LineWidth { get; }

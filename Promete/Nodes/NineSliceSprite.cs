@@ -1,9 +1,9 @@
 using System.Drawing;
 using Promete.Graphics;
 
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
-public class NineSliceSprite(Texture9Sliced texture, Color? tintColor = default) : ElementBase
+public class NineSliceSprite(Texture9Sliced texture, Color? tintColor = default) : Node
 {
 	/// <summary>
 	/// Get or set the texture.

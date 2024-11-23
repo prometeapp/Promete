@@ -3,7 +3,7 @@ namespace Promete.Exceptions;
 [System.Serializable]
 public class ObjectDestroyedException : System.Exception
 {
-	public ObjectDestroyedException() : base("You can not add the destroyed element or component.")
+	public ObjectDestroyedException() : base("You can not add the destroyed node or component.")
 	{
 	}
 

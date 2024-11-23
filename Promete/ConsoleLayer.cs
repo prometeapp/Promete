@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using Promete.Elements;
+using Promete.Nodes;
 using Promete.Graphics.Fonts;
 using Promete.Windowing;
 
@@ -60,7 +60,7 @@ public class ConsoleLayer
 
 		window.Render += () =>
 		{
-			app.RenderElement(_text);
+			app.RenderNode(_text);
 		};
 
 		app.SceneWillChange += Clear;

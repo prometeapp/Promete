@@ -1,5 +1,5 @@
 ﻿using System.Drawing;
-using Promete.Elements;
+using Promete.Nodes;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -7,7 +7,7 @@ using Promete.Input;
 
 namespace Promete.Example.examples.graphics;
 
-[Demo("/graphics/container.demo", "Elementをコンテナーにいくつか追加する例")]
+[Demo("/graphics/container.demo", "ノードをコンテナーにいくつか追加する例")]
 public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
 {
 	private Texture2D ichigo;

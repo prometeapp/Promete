@@ -3,30 +3,30 @@ using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Elements.Renderer.GL;
+namespace Promete.Nodes.Renderer.GL;
 
-public class GLContainbleElementRenderer(PrometeApp app, IWindow window) : ElementRendererBase
+public class GLContainbleNodeRenderer(PrometeApp app, IWindow window) : NodeRendererBase
 {
-	public override void Render(ElementBase element)
+	public override void Render(Node node)
 	{
-		var el = (ContainableElementBase)element;
+		var container = (ContainableNode)node;
 		var w = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
-		if (el.isTrimmable) TrimStart(el, w.GL);
-		var sorted = el.sortedChildren.AsSpan();
+		if (container.isTrimmable) TrimStart(container, w.GL);
+		var sorted = container.sortedChildren.AsSpan();
 		foreach (var t in sorted)
 		{
-			app.RenderElement(t);
+			app.RenderNode(t);
 		}
-		if (el.isTrimmable) TrimEnd(w.GL);
+		if (container.isTrimmable) TrimEnd(w.GL);
 	}
 
-	private void TrimStart(ContainableElementBase el, Silk.NET.OpenGL.GL gl)
+	private void TrimStart(ContainableNode node, Silk.NET.OpenGL.GL gl)
 	{
 		app.ThrowIfNotMainThread();
 		gl.Enable(GLEnum.ScissorTest);
-		var left = (VectorInt)el.AbsoluteLocation;
-		var size = (VectorInt)(el.Size * el.AbsoluteScale);
+		var left = (VectorInt)node.AbsoluteLocation;
+		var size = (VectorInt)(node.Size * node.AbsoluteScale);
 
 		if (left.X < 0) left.X = 0;
 		if (left.Y < 0) left.Y = 0;

@@ -1,16 +1,19 @@
 using System.Numerics;
 
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
-public abstract class ElementBase
+/// <summary>
+/// 全てのノードの基底クラスです。
+/// </summary>
+public abstract class Node
 {
 	/// <summary>
-	/// この要素の名前を取得または設定します。
+	/// このノードの名前を取得または設定します。
 	/// </summary>
 	public virtual string Name { get; set; } = "";
 
 	/// <summary>
-	/// この要素の位置を取得または設定します。
+	/// このノードの位置を取得または設定します。
 	/// </summary>
 	public Vector Location
 	{
@@ -24,7 +27,7 @@ public abstract class ElementBase
 	}
 
 	/// <summary>
-	/// この要素のスケールを取得または設定します。
+	/// このノードのスケールを取得または設定します。
 	/// </summary>
 	public Vector Scale
 	{
@@ -38,12 +41,12 @@ public abstract class ElementBase
 	}
 
 	/// <summary>
-	/// この要素のサイズを取得または設定します。
+	/// このノードのサイズを取得または設定します。
 	/// </summary>
 	public virtual VectorInt Size { get; set; }
 
 	/// <summary>
-	/// この要素の角度（0-360）を取得または設定します。
+	/// このノードの角度（0-360）を取得または設定します。
 	/// </summary>
 	public float Angle
 	{
@@ -57,7 +60,7 @@ public abstract class ElementBase
 	}
 
 	/// <summary>
-	/// この要素が破棄されたかどうかを取得します。
+	/// このノードが破棄されたかどうかを取得します。
 	/// </summary>
 	public bool IsDestroyed { get; private set; }
 
@@ -74,8 +77,8 @@ public abstract class ElementBase
 	}
 
 	/// <summary>
-	/// この要素の Z インデックスを取得または設定します。<br/>
-	/// 要素は Z インデックスの昇順に描画されます。よって、大きいほど手前に描画されます。
+	/// このノードの Z インデックスを取得または設定します。<br/>
+	/// ノードは Z インデックスの昇順に描画されます。よって、大きいほど手前に描画されます。
 	/// </summary>
 	public int ZIndex
 	{
@@ -91,7 +94,7 @@ public abstract class ElementBase
 	public Vector AbsoluteLocation => Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 	public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
 	public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
-	public ContainableElementBase? Parent { get; internal set; }
+	public ContainableNode? Parent { get; internal set; }
 
 	internal Matrix4x4 ModelMatrix { get; private set; } = Matrix4x4.Identity;
 

@@ -1,15 +1,15 @@
-﻿namespace Promete.Elements.Renderer;
+﻿namespace Promete.Nodes.Renderer;
 
 public static class RenderingHelper
 {
-	public static Vector Transform(Vector vertex, ElementBase el, Vector? additionalLocation = null)
+	public static Vector Transform(Vector vertex, Node node, Vector? additionalLocation = null)
 	{
 		vertex = vertex
 			.Translate(additionalLocation ?? (0, 0))
-			.Rotate(MathHelper.ToRadian(el.Angle))
-			.Scale(el.Scale)
-			.Translate(el.Location);
-		var parent = el.Parent;
+			.Rotate(MathHelper.ToRadian(node.Angle))
+			.Scale(node.Scale)
+			.Translate(node.Location);
+		var parent = node.Parent;
 		while (parent != null)
 		{
 			vertex = vertex

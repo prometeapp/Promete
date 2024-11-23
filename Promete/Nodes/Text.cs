@@ -2,9 +2,9 @@ using System.Drawing;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
 
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
-public class Text : ElementBase
+public class Text : Node
 {
 	public Texture2D? RenderedTexture { get; private set; }
 

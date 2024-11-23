@@ -6,8 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using Promete.Elements;
-using Promete.Elements.Renderer;
+using Promete.Nodes;
+using Promete.Nodes.Renderer;
 using Promete.Internal;
 using Promete.Windowing;
 
@@ -25,13 +25,13 @@ public sealed class PrometeApp : IDisposable
 
 	/// <summary>
 	/// シーンのルートコンテナよりも背面に描画されるコンテナを取得します。
-	/// このコンテナに登録されたElementは、シーンが切り替わっても破棄されません。
+	/// このコンテナに登録されたノードは、シーンが切り替わっても破棄されません。
 	/// </summary>
 	public Container GlobalBackground { get; } = [];
 
 	/// <summary>
 	/// シーンのルートコンテナよりも前面に描画されるコンテナを取得します。
-	/// このコンテナに登録されたElementは、シーンが切り替わっても破棄されません。
+	/// このコンテナに登録されたノードは、シーンが切り替わっても破棄されません。
 	/// </summary>
 	public Container GlobalForeground { get; } = [];
 
@@ -62,7 +62,7 @@ public sealed class PrometeApp : IDisposable
 	private readonly ServiceProvider _provider;
 	private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
 	private readonly Dictionary<Type, Type> _rendererTypes;
-	private readonly Dictionary<Type, ElementRendererBase?> _renderers = new();
+	private readonly Dictionary<Type, NodeRendererBase?> _renderers = new();
 	private readonly Thread _mainThread;
 
 	private static PrometeApp? _current;
@@ -184,23 +184,23 @@ public sealed class PrometeApp : IDisposable
 	}
 
 	/// <summary>
-	/// 指定した Element を描画します。
+	/// 指定した <see cref="Node"/> を描画します。
 	/// </summary>
-	/// <param name="element">描画対象の Element。</param>
-	public void RenderElement(ElementBase element)
+	/// <param name="node">描画対象のノード。</param>
+	public void RenderNode(Node node)
 	{
-		element.BeforeRender();
-		var renderer = ResolveRenderer(element);
-		renderer?.Render(element);
+		node.BeforeRender();
+		var renderer = ResolveRenderer(node);
+		renderer?.Render(node);
 	}
 
 	/// <summary>
-	/// 指定した Element を更新します。
+	/// 指定した <see cref="Node"/> を更新します。
 	/// </summary>
-	/// <param name="element">更新対象の Element。</param>
-	public void UpdateElement(ElementBase element)
+	/// <param name="node">更新対象のノード。</param>
+	public void UpdateNode(Node node)
 	{
-		element.Update();
+		node.Update();
 	}
 
 	/// <summary>
@@ -224,9 +224,9 @@ public sealed class PrometeApp : IDisposable
 
 	private void OnStart<TScene>() where TScene : Scene
 	{
-		foreach (var (elementType, rendererType) in _rendererTypes)
+		foreach (var (nodeType, rendererType) in _rendererTypes)
 		{
-			_renderers[elementType] = _provider.GetService(rendererType) as ElementRendererBase ?? throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
+			_renderers[nodeType] = _provider.GetService(rendererType) as NodeRendererBase ?? throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
 		}
 
 		LoadScene<TScene>();
@@ -234,9 +234,9 @@ public sealed class PrometeApp : IDisposable
 
 	private void OnUpdate()
 	{
-		UpdateElement(GlobalBackground);
-		if (Root != null) UpdateElement(Root);
-		UpdateElement(GlobalForeground);
+		UpdateNode(GlobalBackground);
+		if (Root != null) UpdateNode(Root);
+		UpdateNode(GlobalForeground);
 		_currentScene?.OnUpdate();
 
 		ProcessNextFrameQueue();
@@ -244,9 +244,9 @@ public sealed class PrometeApp : IDisposable
 
 	private void OnRender()
 	{
-		RenderElement(GlobalBackground);
-		if (Root != null) RenderElement(Root);
-		RenderElement(GlobalForeground);
+		RenderNode(GlobalBackground);
+		if (Root != null) RenderNode(Root);
+		RenderNode(GlobalForeground);
 	}
 
 	private void ProcessNextFrameQueue()
@@ -258,22 +258,22 @@ public sealed class PrometeApp : IDisposable
 		}
 	}
 
-	private ElementRendererBase? ResolveRenderer(ElementBase el)
+	private NodeRendererBase? ResolveRenderer(Node node)
 	{
-		var elType = el.GetType();
-		if (_renderers.TryGetValue(elType, out var renderer)) return renderer;
+		var nodeType = node.GetType();
+		if (_renderers.TryGetValue(nodeType, out var renderer)) return renderer;
 
-		// el の型が登録されていない場合、el の型の親クラスの型が登録されているかを確認する
-		var alternativeRendererType = _renderers.Keys.FirstOrDefault(k => elType.IsSubclassOf(k));
+		// ノードの型が登録されていない場合、親クラスの型が登録されているかを確認する
+		var alternativeRendererType = _renderers.Keys.FirstOrDefault(k => nodeType.IsSubclassOf(k));
 		if (alternativeRendererType is null)
 		{
-			LogHelper.Warn($"The renderer for \"{elType}\" is not registered.");
-			_renderers[elType] = null;
+			LogHelper.Warn($"The renderer for \"{nodeType}\" is not registered.");
+			_renderers[nodeType] = null;
 			return null;
 		}
 
-		_renderers[elType] = _renderers[alternativeRendererType];
-		return _renderers[elType];
+		_renderers[nodeType] = _renderers[alternativeRendererType];
+		return _renderers[nodeType];
 	}
 
 	private void RegisterAllScenes()
@@ -313,11 +313,11 @@ public sealed class PrometeApp : IDisposable
 			return this;
 		}
 
-		public PrometeAppBuilder UseRenderer<TElement, TRenderer>()
-			where TRenderer : ElementRendererBase
-			where TElement : ElementBase
+		public PrometeAppBuilder UseRenderer<TNode, TRenderer>()
+			where TRenderer : NodeRendererBase
+			where TNode : Node
 		{
-			_rendererTypes[typeof(TElement)] = typeof(TRenderer);
+			_rendererTypes[typeof(TNode)] = typeof(TRenderer);
 			return Use<TRenderer>();
 		}
 

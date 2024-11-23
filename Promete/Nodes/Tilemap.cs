@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using Promete.Graphics;
 
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
-public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto) : ElementBase
+public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto) : Node
 {
 	/// <summary>
 	/// Get or set size of grid.

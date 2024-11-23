@@ -5,7 +5,7 @@ using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Elements.Renderer.GL.Helper;
+namespace Promete.Nodes.Renderer.GL.Helper;
 
 public class GLPrimitiveRendererHelper
 {
@@ -53,7 +53,7 @@ public class GLPrimitiveRendererHelper
 		_ebo = gl.GenBuffer();
 	}
 
-	public unsafe void Draw(ElementBase el, Span<VectorInt> worldVertices, ShapeType type, Color color, int lineWidth = 0, Color? lineColor = null)
+	public unsafe void Draw(Node node, Span<VectorInt> worldVertices, ShapeType type, Color color, int lineWidth = 0, Color? lineColor = null)
 	{
 		PrometeApp.Current.ThrowIfNotMainThread();
 		if (worldVertices.Length == 0)
@@ -71,7 +71,7 @@ public class GLPrimitiveRendererHelper
 
 		for (var i = 0; i < worldVertices.Length; i++)
 		{
-			var vertex = RenderingHelper.Transform(worldVertices[i], el) * _window.PixelRatio;
+			var vertex = RenderingHelper.Transform(worldVertices[i], node) * _window.PixelRatio;
 
 			var (x, y) = vertex.ToViewportPoint(hw, hh);
 			vertices[i * 2 + 0] = x;
@@ -146,14 +146,14 @@ public class GLPrimitiveRendererHelper
 		};
 	}
 
-	private static Vector Transform(Vector vertex, ElementBase el, Vector? additionalLocation)
+	private static Vector Transform(Vector vertex, Node node, Vector? additionalLocation)
 	{
 		vertex = vertex
 			.Translate(additionalLocation ?? (0, 0))
-			.Rotate(MathHelper.ToRadian(el.Angle))
-			.Scale(el.Scale)
-			.Translate(el.Location);
-		var parent = el.Parent;
+			.Rotate(MathHelper.ToRadian(node.Angle))
+			.Scale(node.Scale)
+			.Translate(node.Location);
+		var parent = node.Parent;
 		while (parent != null)
 		{
 			vertex = vertex

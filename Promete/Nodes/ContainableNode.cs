@@ -3,24 +3,24 @@ using System.Collections.ObjectModel;
 using System.Linq;
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
 
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
-public abstract class ContainableElementBase : ElementBase
+public abstract class ContainableNode : Node
 {
 	private bool _isSortingRequested = true;
 	protected internal bool isTrimmable;
-	protected internal ElementBase[] sortedChildren = [];
+	protected internal Node[] sortedChildren = [];
 
 	[Obsolete("直接このフィールドは操作しないでください。代わりにAdd, Remove, Clear, Insertを使用してください。")]
-	protected readonly ObservableCollection<ElementBase> children = [];
+	protected readonly ObservableCollection<Node> children = [];
 
-	protected ContainableElementBase()
+	protected ContainableNode()
 	{
 		children.CollectionChanged += (sender, args) => RequestSorting();
 	}
 
 	/// <summary>
-	/// 要素のソートを要求します。要求された場合、次のUpdateフレームでソートが行われます。
+	/// ノードのソートを要求します。要求された場合、次のUpdateフレームでソートが行われます。
 	/// </summary>
 	public void RequestSorting()
 	{
@@ -36,7 +36,7 @@ public abstract class ContainableElementBase : ElementBase
 			children[i].Update();
 		}
 
-		// 破棄された子要素を削除
+		// 破棄された子ノードを削除
 		for (var i = children.Count - 1; i >= 0; i--)
 		{
 			if (!children[i].IsDestroyed) continue;
@@ -58,37 +58,37 @@ public abstract class ContainableElementBase : ElementBase
 		}
 	}
 
-	protected void Add(ElementBase el)
+	protected void Add(Node node)
 	{
-		el.Parent?.Remove(el);
+		node.Parent?.Remove(node);
 
-		el.Parent = this;
-		children.Add(el);
-		el.UpdateModelMatrix();
+		node.Parent = this;
+		children.Add(node);
+		node.UpdateModelMatrix();
 	}
 
-	protected bool Remove(ElementBase el)
+	protected bool Remove(Node node)
 	{
-		el.Parent = null;
-		return children.Remove(el);
+		node.Parent = null;
+		return children.Remove(node);
 	}
 
 	protected void Clear()
 	{
-		foreach (var el in children)
+		foreach (var child in children)
 		{
-			el.Parent = null;
+			child.Parent = null;
 		}
 		children.Clear();
 		sortedChildren = [];
 	}
 
-	protected void Insert(int index, ElementBase el)
+	protected void Insert(int index, Node node)
 	{
-		el.Parent?.Remove(this);
+		node.Parent?.Remove(this);
 
-		children.Insert(index, el);
-		el.Parent = this;
-		el.UpdateModelMatrix();
+		children.Insert(index, node);
+		node.Parent = this;
+		node.UpdateModelMatrix();
 	}
 }

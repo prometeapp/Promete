@@ -1,9 +1,9 @@
 ﻿using System.Drawing;
 using Promete.Graphics;
 
-namespace Promete.Elements;
+namespace Promete.Nodes;
 
-public class Sprite(Texture2D? texture = null, Color? tintColor = default) : ElementBase
+public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Node
 {
 	public Texture2D? Texture { get; set; } = texture;
 

@@ -7,7 +7,7 @@ using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Elements.Renderer.GL.Helper
+namespace Promete.Nodes.Renderer.GL.Helper
 {
 	/// <summary>
 	/// <see cref="Texture2D"/> オブジェクトをバッファ上に描画する機能を提供します。
@@ -85,17 +85,17 @@ namespace Promete.Elements.Renderer.GL.Helper
 			gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, indices, BufferUsageARB.StaticDraw);
 		}
 
-		public unsafe void Draw(Texture2D texture, ElementBase el, Color? color = null, Vector? pivot = null,
+		public unsafe void Draw(Texture2D texture, Node node, Color? color = null, Vector? pivot = null,
 			float? overriddenWidth = null, float? overriddenHeight = null)
 		{
 			PrometeApp.Current.ThrowIfNotMainThread();
 			var gl = _window.GL;
-			var finalWidth = overriddenWidth ?? el.Size.X;
-			var finalHeight = overriddenHeight ?? el.Size.Y;
+			var finalWidth = overriddenWidth ?? node.Size.X;
+			var finalHeight = overriddenHeight ?? node.Size.Y;
 			var modelMatrix =
 				Matrix4x4.CreateScale(new Vector3(finalWidth, finalHeight, 1))
 				* Matrix4x4.CreateTranslation(new Vector3((pivot ?? Vector.Zero).ToNumerics(), 0))
-				* el.ModelMatrix;
+				* node.ModelMatrix;
 			var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, _window.ActualWidth, _window.ActualHeight, 0, 0.1f, 100f);
 			var c = color ?? Color.White;
 

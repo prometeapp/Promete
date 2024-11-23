@@ -1,16 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
-using Promete.Elements.Renderer.GL.Helper;
 using Promete.Graphics;
+using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
 
-namespace Promete.Elements.Renderer.GL;
+namespace Promete.Nodes.Renderer.GL;
 
-public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) : ElementRendererBase
+public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) : NodeRendererBase
 {
-	public override void Render(ElementBase element)
+	public override void Render(Node node)
 	{
-		var tilemap = (Tilemap)element;
+		var tilemap = (Tilemap)node;
 		var mode = tilemap.RenderingMode == TilemapRenderingMode.Auto ? GetPrefferedMode(tilemap) : tilemap.RenderingMode;
 		if (mode == TilemapRenderingMode.Scan) ScanAndRender(tilemap);
 		else FullRender(tilemap);
