@@ -123,7 +123,6 @@ namespace Promete.Windowing.GLDesktop
 			set => _window.UpdatesPerSecond = value;
 		}
 
-		[Obsolete("Use TargetFps instead.")]
 		public int RefreshRate
 		{
 			get => (int)_window.FramesPerSecond;
@@ -259,12 +258,8 @@ namespace Promete.Windowing.GLDesktop
 			// 画面の初期化
 			_gl.ClearColor(app.BackgroundColor);
 			_gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-			if (app.Root != null) app.RenderElement(app.Root);
 			CalculateFps();
-
 			Render?.Invoke();
-
 			TotalTime += (float)delta;
 			TotalFrame++;
 		}
@@ -277,7 +272,6 @@ namespace Promete.Windowing.GLDesktop
 			CalculateUps();
 
 			PreUpdate?.Invoke();
-			if (app.Root != null) app.UpdateElement(app.Root);
 			Update?.Invoke();
 			PostUpdate?.Invoke();
 		}

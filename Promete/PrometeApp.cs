@@ -24,6 +24,18 @@ public sealed class PrometeApp : IDisposable
 	public Container? Root => _currentScene?.Root;
 
 	/// <summary>
+	/// シーンのルートコンテナよりも背面に描画されるコンテナを取得します。
+	/// このコンテナに登録されたElementは、シーンが切り替わっても破棄されません。
+	/// </summary>
+	public Container GlobalBackground { get; } = [];
+
+	/// <summary>
+	/// シーンのルートコンテナよりも前面に描画されるコンテナを取得します。
+	/// このコンテナに登録されたElementは、シーンが切り替わっても破棄されません。
+	/// </summary>
+	public Container GlobalForeground { get; } = [];
+
+	/// <summary>
 	/// 現在の背景色を取得または設定します。
 	/// </summary>
 	public Color BackgroundColor { get; set; } = Color.Black;
@@ -59,8 +71,8 @@ public sealed class PrometeApp : IDisposable
 	{
 		_mainThread = Thread.CurrentThread;
 
-		this._services = services;
-		this._rendererTypes = rendererTypes;
+		_services = services;
+		_rendererTypes = rendererTypes;
 		RegisterAllScenes();
 		services.AddSingleton(this);
 
@@ -98,6 +110,7 @@ public sealed class PrometeApp : IDisposable
 	{
 		Window.Start += OnStart<TScene>;
 		Window.Update += OnUpdate;
+		Window.Render += OnRender;
 		Window.Run(opts);
 		return _statusCode;
 	}
@@ -223,9 +236,19 @@ public sealed class PrometeApp : IDisposable
 
 	private void OnUpdate()
 	{
+		UpdateElement(GlobalBackground);
+		if (Root != null) UpdateElement(Root);
+		UpdateElement(GlobalForeground);
 		_currentScene?.OnUpdate();
 
 		ProcessNextFrameQueue();
+	}
+
+	private void OnRender()
+	{
+		RenderElement(GlobalBackground);
+		if (Root != null) RenderElement(Root);
+		RenderElement(GlobalForeground);
 	}
 
 	private void ProcessNextFrameQueue()
@@ -277,7 +300,7 @@ public sealed class PrometeApp : IDisposable
 
 		internal PrometeAppBuilder()
 		{
-			_services = new ServiceCollection();
+			_services = [];
 		}
 
 		public PrometeAppBuilder Use<T>() where T : class
