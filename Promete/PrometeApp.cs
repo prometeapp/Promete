@@ -115,8 +115,6 @@ public sealed class PrometeApp : IDisposable
 		return _statusCode;
 	}
 
-
-
 	/// <summary>
 	/// 指定したステータスコードで Promete アプリケーションを終了します。
 	/// </summary>
