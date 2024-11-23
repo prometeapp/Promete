@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 
 namespace Promete.Graphics.Fonts;
@@ -5,7 +6,7 @@ namespace Promete.Graphics.Fonts;
 /// <summary>
 /// テキストを描画する際のオプション。このクラスは継承できません。
 /// </summary>
-public sealed class TextRenderingOptions
+public sealed class TextRenderingOptions : ICloneable
 {
 	/// <summary>
 	/// テキストの色を取得または設定します。
@@ -57,4 +58,23 @@ public sealed class TextRenderingOptions
 	/// アンチエイリアシングを有効化するかどうかを取得また設定します。
 	/// </summary>
 	public bool UseAntialiasing { get; set; } = true;
+
+	public TextRenderingOptions Clone()
+	{
+		return new TextRenderingOptions
+		{
+			TextColor = TextColor,
+			BorderColor = BorderColor,
+			BorderThickness = BorderThickness,
+			LineSpacing = LineSpacing,
+			WordWrap = WordWrap,
+			VerticalAlignment = VerticalAlignment,
+			HorizontalAlignment = HorizontalAlignment,
+			Size = Size,
+			UseRichText = UseRichText,
+			UseAntialiasing = UseAntialiasing,
+		};
+	}
+
+	object ICloneable.Clone() => Clone();
 }

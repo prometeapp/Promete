@@ -37,10 +37,6 @@ public class Font : IFont
 
 	private static readonly Lazy<FontFamily> DefaultFontFamily = new(() =>
 	{
-		// Span<string> window = ["BIZ UDGothic", "Yu Gothic", "Meiryo", "MS Gothic", "Arial"];
-		// Span<string> mac = ["BIZ UDGothic", "Hiragino Sans", "Helvetica", "Arial"];
-		// Span<string> linux = ["Noto Sans CJK JP Regular", "Noto Sans CJK JP", "Droid Sans Fallback", "DejaVu Sans", "Liberation Sans", "Arial"];
-
 		if (!SystemFonts.Families.Any())
 		{
 			throw new NotSupportedException("No font families found.");

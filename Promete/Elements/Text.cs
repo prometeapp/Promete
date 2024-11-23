@@ -134,6 +134,18 @@ public class Text : ElementBase
 			_isUpdateRequested = true;
 		}
 	}
+
+	public bool UseAntialiasing
+	{
+		get => Options.UseAntialiasing;
+		set
+		{
+			if (Options.UseAntialiasing == value) return;
+			Options.UseAntialiasing = value;
+			_isUpdateRequested = true;
+		}
+	}
+
 	public TextRenderingOptions Options { get; } = DefaultOptions.Clone();
 
 	public static TextRenderingOptions DefaultOptions { get; } = new();
@@ -164,10 +176,10 @@ public class Text : ElementBase
 		RenderedTexture?.Dispose();
 	}
 
-	private void RenderTexture()
+	public void RenderTexture()
 	{
 		var oldTexture = RenderedTexture;
-		RenderedTexture = _font.GenerateTexture(PrometeApp.Current.Window.TextureFactory, Content, _options);
+		RenderedTexture = _font.GenerateTexture(PrometeApp.Current.Window.TextureFactory, Content, Options);
 		oldTexture?.Dispose();
 	}
 }
