@@ -53,6 +53,14 @@ namespace Promete
 		public static Vector Lerp(float time, Vector start, Vector end) => (Lerp(time, start.X, end.X), Lerp(time, start.Y, end.Y));
 
 		/// <summary>
+		/// 加減速移動を計算します。
+		/// </summary>
+		/// <param name="time">Time.</param>
+		/// <param name="start">Start.</param>
+		/// <param name="end">End.</param>
+		public static Vector EaseInOut(float time, Vector start, Vector end) => (EaseInOut(time, start.X, end.X), EaseInOut(time, start.Y, end.Y));
+
+		/// <summary>
 		/// 減速移動を計算します。
 		/// </summary>
 		/// <returns>The out.</returns>
