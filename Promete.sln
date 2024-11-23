@@ -1,15 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete", "Promete\Promete.csproj", "{2ACE8212-D057-459D-A088-21F734BC7A3F}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35431.28
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Promete", "Promete\Promete.csproj", "{2ACE8212-D057-459D-A088-21F734BC7A3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete.Example", "Promete.Example\Promete.Example.csproj", "{9B06C032-4FAC-4A39-B5A5-B8AB9D967C53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Promete.Example", "Promete.Example\Promete.Example.csproj", "{9B06C032-4FAC-4A39-B5A5-B8AB9D967C53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete.ImGui", "Promete.ImGui\Promete.ImGui.csproj", "{14FD4403-27F0-4F35-8F74-33C0295BACDB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Promete.ImGui", "Promete.ImGui\Promete.ImGui.csproj", "{14FD4403-27F0-4F35-8F74-33C0295BACDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete.MeltySynth", "Promete.MeltySynth\Promete.MeltySynth.csproj", "{EDAC2C42-658C-44B7-9130-34043D729717}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Promete.MeltySynth", "Promete.MeltySynth\Promete.MeltySynth.csproj", "{EDAC2C42-658C-44B7-9130-34043D729717}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Promete.HeadlessTest", "Promete.HeadlessTest\Promete.HeadlessTest.csproj", "{1F738BE8-66A9-4FEA-8D6E-676A2955B9B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Promete.HeadlessTest", "Promete.HeadlessTest\Promete.HeadlessTest.csproj", "{1F738BE8-66A9-4FEA-8D6E-676A2955B9B2}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "Promete.Docs", "Promete.Docs\Promete.Docs.esproj", "{97F485D6-C6E7-4A60-9FFA-132FD92DD3F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,6 +41,18 @@ Global
 		{1F738BE8-66A9-4FEA-8D6E-676A2955B9B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F738BE8-66A9-4FEA-8D6E-676A2955B9B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F738BE8-66A9-4FEA-8D6E-676A2955B9B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97F485D6-C6E7-4A60-9FFA-132FD92DD3F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97F485D6-C6E7-4A60-9FFA-132FD92DD3F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97F485D6-C6E7-4A60-9FFA-132FD92DD3F6}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{97F485D6-C6E7-4A60-9FFA-132FD92DD3F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97F485D6-C6E7-4A60-9FFA-132FD92DD3F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97F485D6-C6E7-4A60-9FFA-132FD92DD3F6}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6E66B701-89F1-4FED-8E4D-8ED132D3A97B}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		version = 0.7.0
