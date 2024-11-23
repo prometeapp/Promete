@@ -16,11 +16,11 @@ public class Text : ElementBase
 
 	public VectorInt PreferredSize
 	{
-		get => _options.Size;
+		get => Options.Size;
 		set
 		{
-			if (_options.Size == value) return;
-			_options.Size = value;
+			if (Options.Size == value) return;
+			Options.Size = value;
 			_isUpdateRequested = true;
 		}
 	}
@@ -38,33 +38,33 @@ public class Text : ElementBase
 
 	public Color Color
 	{
-		get => _options.TextColor;
+		get => Options.TextColor;
 		set
 		{
-			if (_options.TextColor == value) return;
-			_options.TextColor = value;
+			if (Options.TextColor == value) return;
+			Options.TextColor = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public Color? BorderColor
 	{
-		get => _options.BorderColor;
+		get => Options.BorderColor;
 		set
 		{
-			if (_options.BorderColor == value) return;
-			_options.BorderColor = value;
+			if (Options.BorderColor == value) return;
+			Options.BorderColor = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public int BorderThickness
 	{
-		get => _options.BorderThickness;
+		get => Options.BorderThickness;
 		set
 		{
-			if (_options.BorderThickness == value) return;
-			_options.BorderThickness = value;
+			if (Options.BorderThickness == value) return;
+			Options.BorderThickness = value;
 			_isUpdateRequested = true;
 		}
 	}
@@ -82,70 +82,70 @@ public class Text : ElementBase
 
 	public float LineSpacing
 	{
-		get => _options.LineSpacing;
+		get => Options.LineSpacing;
 		set
 		{
-			if (_options.LineSpacing.Equals(value)) return;
-			_options.LineSpacing = value;
+			if (Options.LineSpacing.Equals(value)) return;
+			Options.LineSpacing = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public bool WordWrap
 	{
-		get => _options.WordWrap;
+		get => Options.WordWrap;
 		set
 		{
-			if (_options.WordWrap == value) return;
-			_options.WordWrap = value;
+			if (Options.WordWrap == value) return;
+			Options.WordWrap = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public VerticalAlignment VerticalAlignment
 	{
-		get => _options.VerticalAlignment;
+		get => Options.VerticalAlignment;
 		set
 		{
-			if (_options.VerticalAlignment == value) return;
-			_options.VerticalAlignment = value;
+			if (Options.VerticalAlignment == value) return;
+			Options.VerticalAlignment = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public HorizontalAlignment HorizontalAlignment
 	{
-		get => _options.HorizontalAlignment;
+		get => Options.HorizontalAlignment;
 		set
 		{
-			if (_options.HorizontalAlignment == value) return;
-			_options.HorizontalAlignment = value;
+			if (Options.HorizontalAlignment == value) return;
+			Options.HorizontalAlignment = value;
 			_isUpdateRequested = true;
 		}
 	}
 
 	public bool UseRichText
 	{
-		get => _options.UseRichText;
+		get => Options.UseRichText;
 		set
 		{
-			if (_options.UseRichText == value) return;
-			_options.UseRichText = value;
+			if (Options.UseRichText == value) return;
+			Options.UseRichText = value;
 			_isUpdateRequested = true;
 		}
 	}
+	public TextRenderingOptions Options { get; } = DefaultOptions.Clone();
 
 	private string _content;
 	private Font _font;
 	private bool _isUpdateRequested;
 
-	private readonly TextRenderingOptions _options = new();
 
 	public Text(string content, Font? font = default, Color? color = default)
 	{
 		_content = content;
 		_font = font ?? Font.GetDefault();
-		_options.TextColor = color ?? Color.White;
+		Options.TextColor = color ?? Color.White;
 
 		RenderTexture();
 	}
