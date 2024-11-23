@@ -26,23 +26,23 @@ public sealed class Mouse
 	/// 指定したボタンの情報を取得します。
 	/// </summary>
 	/// <param name="index">ボタン番号。</param>
-	public MouseButton this[int index] => buttons[index];
+	public MouseButton this[int index] => _buttons[index];
 
 	/// <summary>
 	/// 指定したボタンの情報を取得します。
 	/// </summary>
 	/// <param name="type">ボタンタイプ。</param>
-	public MouseButton this[MouseButtonType type] => buttons[(int)type];
+	public MouseButton this[MouseButtonType type] => _buttons[(int)type];
 
-	private bool isMouseOnWindow = false;
-	private IMouse? mouse;
+	private bool _isMouseOnWindow = false;
+	private IMouse? _mouse;
 
-	private readonly IWindow window;
-	private readonly MouseButton[] buttons;
+	private readonly IWindow _window;
+	private readonly MouseButton[] _buttons;
 
 	public Mouse(IWindow window)
 	{
-		this.window = window;
+		_window = window;
 
 		var input = window._RawInputContext ?? throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
 
@@ -55,33 +55,33 @@ public sealed class Mouse
 		window.PostUpdate += OnPostUpdate;
 		window.Destroy += OnDestroy;
 
-		buttons = new MouseButton[12];
-		for (var i = 0; i < buttons.Length; i++)
+		_buttons = new MouseButton[12];
+		for (var i = 0; i < _buttons.Length; i++)
 		{
-			buttons[i] = new MouseButton();
+			_buttons[i] = new MouseButton();
 		}
 	}
 
 	private void OnPreUpdate()
 	{
 		UpdateMouseDevice();
-		if (mouse == null) return;
-		var wheel = mouse.ScrollWheels[0];
+		if (_mouse == null) return;
+		var wheel = _mouse.ScrollWheels[0];
 		Scroll = (wheel.X, wheel.Y);
-		Position = VectorInt.From(mouse.Position / window.Scale);
+		Position = VectorInt.From(_mouse.Position / _window.Scale);
 
-		for (var i = 0; i < buttons.Length; i++)
+		for (var i = 0; i < _buttons.Length; i++)
 		{
-			var isPressed = mouse.IsButtonPressed((SilkMouseButton)i);
-			buttons[i].IsPressed = isPressed;
-			buttons[i].ElapsedFrameCount = isPressed ? buttons[i].ElapsedFrameCount + 1 : 0;
-			buttons[i].ElapsedTime = isPressed ? buttons[i].ElapsedTime + window.DeltaTime : 0;
+			var isPressed = _mouse.IsButtonPressed((SilkMouseButton)i);
+			_buttons[i].IsPressed = isPressed;
+			_buttons[i].ElapsedFrameCount = isPressed ? _buttons[i].ElapsedFrameCount + 1 : 0;
+			_buttons[i].ElapsedTime = isPressed ? _buttons[i].ElapsedTime + _window.DeltaTime : 0;
 		}
 	}
 
 	private void OnPostUpdate()
 	{
-		foreach (var t in buttons)
+		foreach (var t in _buttons)
 		{
 			t.IsButtonDown = false;
 			t.IsButtonUp = false;
@@ -90,31 +90,31 @@ public sealed class Mouse
 
 	private void OnDestroy()
 	{
-		window.PreUpdate -= OnPreUpdate;
-		window.PostUpdate -= OnPostUpdate;
-		window.Destroy -= OnDestroy;
+		_window.PreUpdate -= OnPreUpdate;
+		_window.PostUpdate -= OnPostUpdate;
+		_window.Destroy -= OnDestroy;
 
-		if (mouse == null) return;
-		mouse.Click -= OnMouseClick;
-		mouse.MouseDown -= OnMouseDown;
-		mouse.MouseUp -= OnMouseUp;
-		mouse.MouseMove -= OnMouseMove;
+		if (_mouse == null) return;
+		_mouse.Click -= OnMouseClick;
+		_mouse.MouseDown -= OnMouseDown;
+		_mouse.MouseUp -= OnMouseUp;
+		_mouse.MouseMove -= OnMouseMove;
 	}
 
 	private void UpdateMouseDevice()
 	{
 		// 現在使用中のマウスが切断された場合、イベントを解除する
-		if (mouse is { IsConnected: false })
+		if (_mouse is { IsConnected: false })
 		{
-			mouse.Click -= OnMouseClick;
-			mouse.MouseDown -= OnMouseDown;
-			mouse.MouseUp -= OnMouseUp;
-			mouse.MouseMove -= OnMouseMove;
-			mouse = null;
+			_mouse.Click -= OnMouseClick;
+			_mouse.MouseDown -= OnMouseDown;
+			_mouse.MouseUp -= OnMouseUp;
+			_mouse.MouseMove -= OnMouseMove;
+			_mouse = null;
 		}
 
 		// マウスが存在しない場合、取得を試みる
-		if (mouse == null)
+		if (_mouse == null)
 		{
 			TryFindMouse();
 		}
@@ -122,59 +122,59 @@ public sealed class Mouse
 
 	private void TryFindMouse()
 	{
-		var input = window._RawInputContext ?? throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
+		var input = _window._RawInputContext ?? throw new InvalidOperationException($"{nameof(_window._RawInputContext)} is null.");
 		if (input.Mice.Count == 0) return;
 
-		mouse = input.Mice[0];
-		mouse.Click += OnMouseClick;
-		mouse.MouseDown += OnMouseDown;
-		mouse.MouseUp += OnMouseUp;
-		mouse.MouseMove += OnMouseMove;
+		_mouse = input.Mice[0];
+		_mouse.Click += OnMouseClick;
+		_mouse.MouseDown += OnMouseDown;
+		_mouse.MouseUp += OnMouseUp;
+		_mouse.MouseMove += OnMouseMove;
 	}
 
 	private void OnMouseClick(IMouse mouse, SilkMouseButton btn, Vector2 pos)
 	{
 		var id = (int)btn;
-		if (id < 0 || buttons.Length <= id) return;
+		if (id < 0 || _buttons.Length <= id) return;
 
-		Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos / window.Scale)));
+		Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos / _window.Scale)));
 	}
 
 	private void OnMouseDown(IMouse mouse, SilkMouseButton btn)
 	{
 		var id = (int)btn;
-		if (id < 0 || buttons.Length <= id) return;
+		if (id < 0 || _buttons.Length <= id) return;
 
-		buttons[id].IsButtonDown = true;
-		ButtonDown?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / window.Scale)));
+		_buttons[id].IsButtonDown = true;
+		ButtonDown?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / _window.Scale)));
 	}
 
 	private void OnMouseUp(IMouse mouse, SilkMouseButton btn)
 	{
 		var id = (int)btn;
-		if (id < 0 || buttons.Length <= id) return;
+		if (id < 0 || _buttons.Length <= id) return;
 
-		buttons[id].IsButtonUp = true;
-		ButtonUp?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / window.Scale)));
+		_buttons[id].IsButtonUp = true;
+		ButtonUp?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / _window.Scale)));
 	}
 
 	private void OnMouseMove(IMouse mouse, Vector2 pos)
 	{
-		pos /= window.Scale;
+		pos /= _window.Scale;
 		Move?.Invoke(new MouseEventArgs((VectorInt)Vector.From(pos)));
 
 		// マウスが画面に出入りしたときのイベント発火条件をチェックする
-		if (0 <= pos.X && 0 <= pos.Y && pos.X <= window.Width && pos.Y <= window.Height)
+		if (0 <= pos.X && 0 <= pos.Y && pos.X <= _window.Width && pos.Y <= _window.Height)
 		{
 			// 画面内
-			if (!isMouseOnWindow) Enter?.Invoke();
-			isMouseOnWindow = true;
+			if (!_isMouseOnWindow) Enter?.Invoke();
+			_isMouseOnWindow = true;
 		}
 		else
 		{
 			// 画面外
-			if (isMouseOnWindow) Leave?.Invoke();
-			isMouseOnWindow = false;
+			if (_isMouseOnWindow) Leave?.Invoke();
+			_isMouseOnWindow = false;
 		}
 	}
 

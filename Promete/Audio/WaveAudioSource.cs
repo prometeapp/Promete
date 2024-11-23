@@ -12,29 +12,29 @@ public class WaveAudioSource : IAudioSource
 	/// <summary>
 	/// Get the total number of samples.
 	/// </summary>
-	public int? Samples => store.Length;
+	public int? Samples => _store.Length;
 
 	/// <summary>
 	/// Get channels.
 	/// </summary>
-	public int Channels => channels;
+	public int Channels => _channels;
 
 	/// <summary>
 	/// Get sampling bits.
 	/// </summary>
-	public int Bits => bits;
+	public int Bits => _bits;
 
 	/// <summary>
 	/// Get sampling rate.
 	/// </summary>
-	public int SampleRate => sampleRate;
+	public int SampleRate => _sampleRate;
 
-	public int? Length => store.Length;
+	public int? Length => _store.Length;
 
-	private readonly short[] store;
-	private readonly int channels;
-	private readonly int bits;
-	private readonly int sampleRate;
+	private readonly short[] _store;
+	private readonly int _channels;
+	private readonly int _bits;
+	private readonly int _sampleRate;
 
 	public WaveAudioSource(string path)
 		: this(File.OpenRead(path))
@@ -44,13 +44,13 @@ public class WaveAudioSource : IAudioSource
 
 	public WaveAudioSource(Stream stream)
 	{
-		store = LoadWave(stream, out channels, out bits, out sampleRate);
+		_store = LoadWave(stream, out _channels, out _bits, out _sampleRate);
 	}
 
 	public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
 	{
-		var actualReadSize = Math.Min(buffer.Length, store.Length - offset);
-		Buffer.BlockCopy(store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
+		var actualReadSize = Math.Min(buffer.Length, _store.Length - offset);
+		Buffer.BlockCopy(_store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
 		return (actualReadSize, actualReadSize < buffer.Length);
 	}
 

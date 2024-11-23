@@ -30,8 +30,8 @@ public class ConsoleLayer
 
 	public Font Font
 	{
-		get => text.Font;
-		set => text.Font = value;
+		get => _text.Font;
+		set => _text.Font = value;
 	}
 
 	/// <summary>
@@ -39,28 +39,28 @@ public class ConsoleLayer
 	/// </summary>
 	public Color TextColor { get; set; } = Color.White;
 
-	private string? prevFont;
-	private int maxLine;
+	private string? _prevFont;
+	private int _maxLine;
 
-	private readonly Text text;
-	private readonly IWindow window;
-	private readonly List<string> consoleBuffer = [];
+	private readonly Text _text;
+	private readonly IWindow _window;
+	private readonly List<string> _consoleBuffer = [];
 
 	public ConsoleLayer(PrometeApp app, IWindow window)
 	{
-		this.window = window;
+		_window = window;
 		FontSize = 16;
-		text = new Text("", Font.GetDefault(), Color.White);
-		maxLine = CalculateMaxLine();
+		_text = new Text("", Font.GetDefault(), Color.White);
+		_maxLine = CalculateMaxLine();
 
 		window.Update += () =>
 		{
-			text.Update();
+			_text.Update();
 		};
 
 		window.Render += () =>
 		{
-			app.RenderElement(text);
+			app.RenderElement(_text);
 		};
 
 		app.SceneWillChange += Clear;
@@ -73,7 +73,7 @@ public class ConsoleLayer
 	/// </summary>
 	public void Clear()
 	{
-		consoleBuffer.Clear();
+		_consoleBuffer.Clear();
 		FontSize = 16;
 		Cursor = VectorInt.Zero;
 	}
@@ -88,16 +88,16 @@ public class ConsoleLayer
 		var (x, y) = Cursor;
 		x = Math.Max(0, x);
 		y = Math.Max(0, y);
-		if (y < consoleBuffer.Count)
+		if (y < _consoleBuffer.Count)
 		{
 			// 置換
-			consoleBuffer[y] = consoleBuffer[y].ReplaceAt(x, line);
+			_consoleBuffer[y] = _consoleBuffer[y].ReplaceAt(x, line);
 		}
 		else
 		{
 			// 挿入
-			consoleBuffer.AddRange(Enumerable.Repeat("", y - consoleBuffer.Count));
-			consoleBuffer.Add(new string(' ', x) + line);
+			_consoleBuffer.AddRange(Enumerable.Repeat("", y - _consoleBuffer.Count));
+			_consoleBuffer.Add(new string(' ', x) + line);
 		}
 
 		Cursor = new VectorInt(0, y + 1);
@@ -105,18 +105,18 @@ public class ConsoleLayer
 
 	private void UpdateConsole()
 	{
-		var f = text.Font;
-		if (f.Size != FontSize || prevFont != FontPath)
+		var f = _text.Font;
+		if (f.Size != FontSize || _prevFont != FontPath)
 		{
-			text.Font = FontPath == null ? Font.GetDefault(FontSize) : Font.FromFile(FontPath, FontSize);
-			maxLine = CalculateMaxLine();
+			_text.Font = FontPath == null ? Font.GetDefault(FontSize) : Font.FromFile(FontPath, FontSize);
+			_maxLine = CalculateMaxLine();
 		}
 
-		var buf = consoleBuffer.Count > maxLine ? consoleBuffer.Skip(consoleBuffer.Count - maxLine) : consoleBuffer;
+		var buf = _consoleBuffer.Count > _maxLine ? _consoleBuffer.Skip(_consoleBuffer.Count - _maxLine) : _consoleBuffer;
 
-		text.Color = TextColor;
-		text.Content = string.Join('\n', buf);
-		prevFont = FontPath;
+		_text.Color = TextColor;
+		_text.Content = string.Join('\n', buf);
+		_prevFont = FontPath;
 	}
 
 	private int CalculateMaxLine()
@@ -127,9 +127,9 @@ public class ConsoleLayer
 		do
 		{
 			textToTest += "A\n";
-			bounds = text.Font.GetTextBounds(textToTest, new TextRenderingOptions());
+			bounds = _text.Font.GetTextBounds(textToTest, new TextRenderingOptions());
 			l++;
-		} while (bounds.Height < window.Height);
+		} while (bounds.Height < _window.Height);
 
 		return l - 1;
 	}

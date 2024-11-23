@@ -9,15 +9,15 @@ public class WaitForSeconds(float time) : YieldInstruction
 {
 	private IWindow Window => PrometeApp.Current.Window;
 
+	private double? _startTime;
+	private readonly double _targetTime = time;
+
 	public override bool KeepWaiting
 	{
 		get
 		{
-			startTime ??= Window.TotalTime;
-			return Window.TotalTime - startTime.Value < targetTime;
+			_startTime ??= Window.TotalTime;
+			return Window.TotalTime - _startTime.Value < _targetTime;
 		}
 	}
-
-	private double? startTime;
-	private readonly double targetTime = time;
 }

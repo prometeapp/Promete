@@ -15,12 +15,12 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 	/// Get the total number of samples.
 	/// </summary>
 	/// <returns></returns>
-	public int? Samples => (int)reader.TotalSamples * reader.Channels;
+	public int? Samples => (int)_reader.TotalSamples * _reader.Channels;
 
 	/// <summary>
 	/// Get channels.
 	/// </summary>
-	public int Channels => reader.Channels;
+	public int Channels => _reader.Channels;
 
 	/// <summary>
 	/// Get sample bits.
@@ -30,23 +30,23 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 	/// <summary>
 	/// Get sample rate.
 	/// </summary>
-	public int SampleRate => reader.SampleRate;
+	public int SampleRate => _reader.SampleRate;
 
 	/// <summary>
 	/// 読み込まれているサンプルのサイズを取得します。
 	/// </summary>
-	public int LoadedSize => loadedSize;
+	public int LoadedSize => _loadedSize;
 
 	/// <summary>
 	/// 全てのサンプルが読み込まれているかどうかを取得します。
 	/// </summary>
 	public bool IsLoadingFinished => LoadedSize == Samples;
 
-	private int loadedSize;
+	private int _loadedSize;
 
-	private readonly short[] store;
+	private readonly short[] _store;
 	private readonly CancellationTokenSource _cts = new();
-	private readonly VorbisReader reader;
+	private readonly VorbisReader _reader;
 
 	public VorbisAudioSource(string path)
 		: this(File.OpenRead(path))
@@ -55,10 +55,10 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 
 	public VorbisAudioSource(Stream stream)
 	{
-		reader = new VorbisReader(stream);
+		_reader = new VorbisReader(stream);
 
 		var temp = new float[10000];
-		store = new short[Samples ?? 0];
+		_store = new short[Samples ?? 0];
 
 		// 別スレッドで非同期にデータを読み込む
 		Task.Run(async () =>
@@ -68,7 +68,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 				while (true)
 				{
 					// 10000サンプルずつ読み込む
-					var readSamples = reader.ReadSamples(temp, 0, temp.Length);
+					var readSamples = _reader.ReadSamples(temp, 0, temp.Length);
 					if (readSamples == 0) break;
 
 					// 各サンプルを16bit shortに変換
@@ -76,7 +76,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 					{
 						if (_cts.Token.IsCancellationRequested) return;
 
-						store[loadedSize++] = (short)(temp[i] * short.MaxValue);
+						_store[_loadedSize++] = (short)(temp[i] * short.MaxValue);
 					}
 					await Task.Delay(1, _cts.Token);
 				}
@@ -87,7 +87,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 	public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
 	{
 		var actualReadSize = Math.Min(buffer.Length, LoadedSize - offset);
-		Buffer.BlockCopy(store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
+		Buffer.BlockCopy(_store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
 		return (actualReadSize, IsLoadingFinished && actualReadSize < buffer.Length);
 	}
 
@@ -96,7 +96,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 	/// </summary>
 	public void Dispose()
 	{
-		reader.Dispose();
+		_reader.Dispose();
 		_cts.Cancel();
 		GC.SuppressFinalize(this);
 	}

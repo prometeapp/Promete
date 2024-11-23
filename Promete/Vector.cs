@@ -99,7 +99,7 @@ namespace Promete
 		/// </summary>
 		public bool Equals(Vector other)
 		{
-			return X == other.X && Y == other.Y;
+			return X.Equals(other.X) && Y.Equals(other.Y);
 		}
 
 		/// <summary>

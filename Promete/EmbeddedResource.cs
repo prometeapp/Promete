@@ -9,7 +9,7 @@ namespace Promete;
 /// </summary>
 public static class EmbeddedResource
 {
-	private static readonly Assembly currentAssembly = typeof(EmbeddedResource).Assembly;
+	private static readonly Assembly CurrentAssembly = typeof(EmbeddedResource).Assembly;
 
 	public static string GetResourceAsString(string name)
 	{
@@ -26,7 +26,7 @@ public static class EmbeddedResource
 
 	public static Stream GetResourceAsStream(string name)
 	{
-		var stream = currentAssembly.GetManifestResourceStream(name);
+		var stream = CurrentAssembly.GetManifestResourceStream(name);
 		if (stream == null)
 			throw new InvalidOperationException($"Resource {name} not found");
 		return stream;

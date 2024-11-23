@@ -24,7 +24,11 @@ public class Tile : ITile
 	/// </summary>
 	public double Interval { get; private set; }
 
-	private readonly bool textureIsInternal;
+	private int _animationState;
+	private double _timer;
+	private long _prevFrameCount = -1;
+
+	private readonly bool _textureIsInternal;
 
 	/// <summary>
 	/// テクスチャを指定して、<see cref="Tile"/> クラスの新しいインスタンスを初期化します。
@@ -41,7 +45,7 @@ public class Tile : ITile
 	protected Tile(Texture2D texture, bool b1)
 		: this(new[] { texture }, 0)
 	{
-		textureIsInternal = b1;
+		_textureIsInternal = b1;
 	}
 
 	/// <summary>
@@ -62,20 +66,20 @@ public class Tile : ITile
 
 	public Texture2D GetTexture(Tilemap map, VectorInt tileLocation, IWindow window)
 	{
-		if (prevFrameCount != window.TotalFrame)
+		if (_prevFrameCount != window.TotalFrame)
 		{
-			if (timer > Interval)
+			if (_timer > Interval)
 			{
-				animationState++;
-				if (animationState >= Animations.Length)
-					animationState = 0;
-				timer = 0;
+				_animationState++;
+				if (_animationState >= Animations.Length)
+					_animationState = 0;
+				_timer = 0;
 			}
 
-			Texture = Animations[animationState];
-			timer += window.DeltaTime;
+			Texture = Animations[_animationState];
+			_timer += window.DeltaTime;
 		}
-		prevFrameCount = window.TotalFrame;
+		_prevFrameCount = window.TotalFrame;
 		return Texture;
 	}
 
@@ -84,11 +88,7 @@ public class Tile : ITile
 	/// </summary>
 	public void Destroy()
 	{
-		if (textureIsInternal)
+		if (_textureIsInternal)
 			Texture.Dispose();
 	}
-
-	private int animationState;
-	private double timer;
-	private long prevFrameCount = -1;
 }

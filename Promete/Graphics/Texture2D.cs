@@ -17,11 +17,11 @@ public readonly struct Texture2D : IDisposable
 	/// </summary>
 	public VectorInt Size { get; }
 
-	private readonly Silk.NET.OpenGL.GL? gl;
+	private readonly Silk.NET.OpenGL.GL? _gl;
 
 	internal Texture2D(int handle, VectorInt size, Silk.NET.OpenGL.GL gl)
 	{
-		this.gl = gl;
+		_gl = gl;
 		Handle = handle;
 		Size = size;
 	}
@@ -31,6 +31,6 @@ public readonly struct Texture2D : IDisposable
 	/// </summary>
 	public void Dispose()
 	{
-		gl?.DeleteTexture((uint)Handle);
+		_gl?.DeleteTexture((uint)Handle);
 	}
 }

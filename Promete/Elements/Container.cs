@@ -8,10 +8,11 @@ namespace Promete.Elements;
 /// </summary>
 public class Container : ContainableElementBase, IEnumerable<ElementBase>
 {
+#pragma warning disable CS0618 // 型またはメンバーが旧型式です
 	public int Count => children.Count;
 
 	public ElementBase this[int index] => children[index];
-
+#pragma warning restore CS0618 // 型またはメンバーが旧型式です
 	public bool IsTrimmable
 	{
 		get => isTrimmable;

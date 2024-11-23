@@ -9,17 +9,19 @@ namespace Promete.Elements.Renderer.GL.Helper;
 
 public class GLPrimitiveRendererHelper
 {
-	private uint shader;
-	private uint vao, vbo, ebo;
+	private readonly uint _shader;
+	private readonly uint _vao;
+	private readonly uint _vbo;
+	private readonly uint _ebo;
 
-	private readonly OpenGLDesktopWindow window;
+	private readonly OpenGLDesktopWindow _window;
 
 	public GLPrimitiveRendererHelper(IWindow window)
 	{
-		this.window = window as OpenGLDesktopWindow ??
+		_window = window as OpenGLDesktopWindow ??
 		              throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
-		var gl = this.window.GL;
+		var gl = _window.GL;
 		// --- 頂点シェーダー ---
 		var vsh = gl.CreateShader(GLEnum.VertexShader);
 		gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.vert"));
@@ -31,24 +33,24 @@ public class GLPrimitiveRendererHelper
 		gl.CompileShader(fsh);
 
 		// --- シェーダーを紐付ける ---
-		shader = gl.CreateProgram();
-		gl.AttachShader(shader, vsh);
-		gl.AttachShader(shader, fsh);
-		gl.LinkProgram(shader);
-		gl.DetachShader(shader, vsh);
-		gl.DetachShader(shader, fsh);
+		_shader = gl.CreateProgram();
+		gl.AttachShader(_shader, vsh);
+		gl.AttachShader(_shader, fsh);
+		gl.LinkProgram(_shader);
+		gl.DetachShader(_shader, vsh);
+		gl.DetachShader(_shader, fsh);
 
 		gl.DeleteShader(vsh);
 		gl.DeleteShader(fsh);
 
 		// --- VAO ---
-		vao = gl.GenVertexArray();
+		_vao = gl.GenVertexArray();
 
 		// --- VBO ---
-		vbo = gl.GenBuffer();
+		_vbo = gl.GenBuffer();
 
 		// --- EBO ---
-		ebo = gl.GenBuffer();
+		_ebo = gl.GenBuffer();
 	}
 
 	public unsafe void Draw(ElementBase el, Span<VectorInt> worldVertices, ShapeType type, Color color, int lineWidth = 0, Color? lineColor = null)
@@ -57,10 +59,10 @@ public class GLPrimitiveRendererHelper
 		if (worldVertices.Length == 0)
 			return;
 
-		var gl = window.GL;
+		var gl = _window.GL;
 
-		var hw = window.ActualWidth / 2;
-		var hh = window.ActualHeight / 2;
+		var hw = _window.ActualWidth / 2;
+		var hh = _window.ActualHeight / 2;
 
 		gl.Enable(EnableCap.Blend);
 		gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
@@ -69,7 +71,7 @@ public class GLPrimitiveRendererHelper
 
 		for (var i = 0; i < worldVertices.Length; i++)
 		{
-			var vertex = RenderingHelper.Transform(worldVertices[i], el) * window.PixelRatio;
+			var vertex = RenderingHelper.Transform(worldVertices[i], el) * _window.PixelRatio;
 
 			var (x, y) = vertex.ToViewportPoint(hw, hh);
 			vertices[i * 2 + 0] = x;
@@ -79,22 +81,22 @@ public class GLPrimitiveRendererHelper
 		if (color.A > 0)
 		{
 			if (type == ShapeType.Line) gl.LineWidth(lineWidth);
-			gl.BindVertexArray(vao);
-			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+			gl.BindVertexArray(_vao);
+			gl.BindBuffer(GLEnum.ArrayBuffer, _vbo);
 
 			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
-			gl.UseProgram(shader);
+			gl.UseProgram(_shader);
 
 			gl.VertexAttribPointer(0, 2, GLEnum.Float, false, 2 * sizeof(float), (void*)(0 * sizeof(float)));
 			gl.EnableVertexAttribArray(0);
-			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
+			var uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
 			gl.Uniform4(uTintColor, new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
 
 			if (type == ShapeType.Rect)
 			{
-				gl.BindBuffer(GLEnum.ElementArrayBuffer, ebo);
+				gl.BindBuffer(GLEnum.ElementArrayBuffer, _ebo);
 				Span<uint> indices = stackalloc uint[]
 				{
 					0, 1, 2,
@@ -113,16 +115,16 @@ public class GLPrimitiveRendererHelper
 		{
 			gl.LineWidth(lineWidth);
 
-			gl.BindVertexArray(vao);
-			gl.BindBuffer(GLEnum.ArrayBuffer, vbo);
+			gl.BindVertexArray(_vao);
+			gl.BindBuffer(GLEnum.ArrayBuffer, _vbo);
 			gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
 			// --- レンダリング ---
-			gl.UseProgram(shader);
+			gl.UseProgram(_shader);
 
 			gl.VertexAttribPointer(0, 2, GLEnum.Float, false, 2 * sizeof(float), (void*)(0 * sizeof(float)));
 			gl.EnableVertexAttribArray(0);
-			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
+			var uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
 			gl.Uniform4(uTintColor, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
 
 			gl.DrawArrays(PrimitiveType.LineLoop, 0, (uint)worldVertices.Length);

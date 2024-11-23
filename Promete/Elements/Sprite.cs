@@ -9,16 +9,17 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Ele
 
 	public Color TintColor { get; set; } = tintColor ?? Color.White;
 
+	private VectorInt? _size;
+
 	public override VectorInt Size
 	{
-		get => size ?? Texture?.Size ?? (0, 0);
-		set => size = value;
+		get => _size ?? Texture?.Size ?? (0, 0);
+		set => _size = value;
 	}
 
 	public void ResetSize()
 	{
-		size = null;
+		_size = null;
 	}
 
-	private VectorInt? size;
 }

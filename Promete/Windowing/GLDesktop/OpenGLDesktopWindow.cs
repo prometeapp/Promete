@@ -15,25 +15,25 @@ namespace Promete.Windowing.GLDesktop
 	/// <summary>
 	/// A implementation of <see cref="IWindow"/> for the desktop environment.
 	/// </summary>
-	public sealed class OpenGLDesktopWindow : IWindow
+	public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
 	{
 		public VectorInt Location
 		{
-			get => (window.Position.X, window.Position.Y);
-			set => window.Position = new Vector2D<int>(value.X, value.Y);
+			get => (_window.Position.X, _window.Position.Y);
+			set => _window.Position = new Vector2D<int>(value.X, value.Y);
 		}
 
 		public VectorInt Size
 		{
-			get => size;
+			get => _size;
 			set
 			{
-				size = value;
+				_size = value;
 				UpdateWindowSize();
 			}
 		}
 
-		public VectorInt ActualSize => new VectorInt(window.FramebufferSize.X, window.FramebufferSize.Y) / Scale;
+		public VectorInt ActualSize => new VectorInt(_window.FramebufferSize.X, _window.FramebufferSize.Y) / Scale;
 
 		public int X
 		{
@@ -61,14 +61,14 @@ namespace Promete.Windowing.GLDesktop
 
 		public int Scale
 		{
-			get => scale;
+			get => _scale;
 			set
 			{
 				if (value is not 1 and not 2 and not 4 and not 8)
 				{
 					throw new ArgumentOutOfRangeException(nameof(value), "Scale must be 1, 2, 4, or 8.");
 				}
-				scale = value;
+				_scale = value;
 				UpdateWindowSize();
 			}
 		}
@@ -79,25 +79,25 @@ namespace Promete.Windowing.GLDesktop
 
 		public bool IsVisible
 		{
-			get => window.IsVisible;
-			set => window.IsVisible = value;
+			get => _window.IsVisible;
+			set => _window.IsVisible = value;
 		}
 
 		public bool IsFocused { get; private set; }
 
 		public bool IsFullScreen
 		{
-			get => window.WindowState == WindowState.Fullscreen;
-			set => window.WindowState = value ? WindowState.Fullscreen : WindowState.Normal;
+			get => _window.WindowState == WindowState.Fullscreen;
+			set => _window.WindowState = value ? WindowState.Fullscreen : WindowState.Normal;
 		}
 
 		public string Title
 		{
-			get => window.Title;
+			get => _window.Title;
 			set
 			{
-				if (window.Title == value) return;
-				window.Title = value;
+				if (_window.Title == value) return;
+				_window.Title = value;
 			}
 		}
 
@@ -113,41 +113,41 @@ namespace Promete.Windowing.GLDesktop
 
 		public int TargetFps
 		{
-			get => (int)window.FramesPerSecond;
-			set => window.FramesPerSecond = value;
+			get => (int)_window.FramesPerSecond;
+			set => _window.FramesPerSecond = value;
 		}
 
 		public int TargetUps
 		{
-			get => (int)window.UpdatesPerSecond;
-			set => window.UpdatesPerSecond = value;
+			get => (int)_window.UpdatesPerSecond;
+			set => _window.UpdatesPerSecond = value;
 		}
 
 		[Obsolete("Use TargetFps instead.")]
 		public int RefreshRate
 		{
-			get => (int)window.FramesPerSecond;
-			set => window.FramesPerSecond = value;
+			get => (int)_window.FramesPerSecond;
+			set => _window.FramesPerSecond = value;
 		}
 
 		public bool IsVsyncMode
 		{
-			get => window.VSync;
-			set => window.VSync = value;
+			get => _window.VSync;
+			set => _window.VSync = value;
 		}
 
-		public float PixelRatio => window.Size.X == 0 ? 1 : window.FramebufferSize.X / window.Size.X;
+		public float PixelRatio => _window.Size.X == 0 ? 1 : _window.FramebufferSize.X / _window.Size.X;
 
 		public WindowMode Mode
 		{
-			get => window.WindowBorder switch
+			get => _window.WindowBorder switch
 			{
 				WindowBorder.Fixed => WindowMode.Fixed,
 				WindowBorder.Hidden => WindowMode.NoFrame,
 				WindowBorder.Resizable => WindowMode.Resizable,
 				_ => throw new InvalidOperationException("unexpected window state"),
 			};
-			set => window.WindowBorder = value switch
+			set => _window.WindowBorder = value switch
 			{
 				WindowMode.Fixed => WindowBorder.Fixed,
 				WindowMode.NoFrame => WindowBorder.Hidden,
@@ -157,27 +157,21 @@ namespace Promete.Windowing.GLDesktop
 		}
 		public IInputContext? _RawInputContext { get; private set; }
 
-		public TextureFactory TextureFactory => textureFactory ?? throw new InvalidOperationException("window is not loaded");
+		public TextureFactory TextureFactory => _textureFactory ?? throw new InvalidOperationException("window is not loaded");
 
-		public GL GL => gl ?? throw new InvalidOperationException("window is not loaded");
+		public GL GL => _gl ?? throw new InvalidOperationException("window is not loaded");
 
-		private int scale = 1;
-		private int frameCount;
-		private int updateCount;
-		private int prevSecondUps;
-		private int prevSecondFps;
-		private byte[] screenshotBuffer = [];
-		private VectorInt size = (640, 480);
-		private GL? gl;
-		private TextureFactory? textureFactory;
+		private int _scale = 1;
+		private int _frameCount;
+		private int _updateCount;
+		private int _prevSecondUps;
+		private int _prevSecondFps;
+		private byte[] _screenshotBuffer = [];
+		private VectorInt _size = (640, 480);
+		private GL? _gl;
+		private TextureFactory? _textureFactory;
 
-		private readonly PrometeApp app;
-		private Silk.NET.Windowing.IWindow window;
-
-		public OpenGLDesktopWindow(PrometeApp app)
-		{
-			this.app = app;
-		}
+		private Silk.NET.Windowing.IWindow _window;
 
 		public Texture2D TakeScreenshot()
 		{
@@ -208,40 +202,40 @@ namespace Promete.Windowing.GLDesktop
 			options.UpdatesPerSecond = opts.TargetUps;
 			options.VSync = opts.IsVsyncMode;
 
-			screenshotBuffer = new byte[options.Size.X * options.Size.Y * 4];
+			_screenshotBuffer = new byte[options.Size.X * options.Size.Y * 4];
 
-			window = Window.Create(options);
-			window.Load += OnLoad;
-			window.Resize += OnResize;
-			window.FileDrop += OnFileDrop;
-			window.Render += OnRenderFrame;
-			window.Update += OnUpdateFrame;
-			window.Closing += OnUnload;
-			window.FocusChanged += v => IsFocused = v;
-			window.Run();
+			_window = Window.Create(options);
+			_window.Load += OnLoad;
+			_window.Resize += OnResize;
+			_window.FileDrop += OnFileDrop;
+			_window.Render += OnRenderFrame;
+			_window.Update += OnUpdateFrame;
+			_window.Closing += OnUnload;
+			_window.FocusChanged += v => IsFocused = v;
+			_window.Run();
 		}
 
 		public void Exit()
 		{
-			window.Close();
+			_window.Close();
 		}
 
 		private unsafe Image TakeScreenshotAsImage()
 		{
-			fixed (byte* buffer = screenshotBuffer)
+			fixed (byte* buffer = _screenshotBuffer)
 			{
-				gl?.ReadPixels(0, 0, (uint)(ActualWidth * scale), (uint)(ActualHeight * scale), PixelFormat.Rgba, PixelType.UnsignedByte, buffer);
+				_gl?.ReadPixels(0, 0, (uint)(ActualWidth * _scale), (uint)(ActualHeight * _scale), PixelFormat.Rgba, PixelType.UnsignedByte, buffer);
 			}
-			var img = Image.LoadPixelData<Rgba32>(screenshotBuffer, ActualWidth * scale, ActualHeight * scale);
+			var img = Image.LoadPixelData<Rgba32>(_screenshotBuffer, ActualWidth * _scale, ActualHeight * _scale);
 			img.Mutate(i => i.Flip(FlipMode.Vertical));
 			return img;
 		}
 
 		private void OnLoad()
 		{
-			gl = window.CreateOpenGL();
-			_RawInputContext = window.CreateInput();
-			textureFactory = new OpenGLTextureFactory(gl, app);
+			_gl = _window.CreateOpenGL();
+			_RawInputContext = _window.CreateInput();
+			_textureFactory = new OpenGLTextureFactory(_gl, app);
 			UpdateWindowSize();
 
 			Start?.Invoke();
@@ -249,7 +243,7 @@ namespace Promete.Windowing.GLDesktop
 
 		private void OnResize(Vector2D<int> vec)
 		{
-			gl?.Viewport(window.FramebufferSize);
+			_gl?.Viewport(_window.FramebufferSize);
 			Size = ActualSize;
 			Resize?.Invoke();
 		}
@@ -261,10 +255,10 @@ namespace Promete.Windowing.GLDesktop
 
 		private void OnRenderFrame(double delta)
 		{
-			if (gl == null) return;
+			if (_gl == null) return;
 			// 画面の初期化
-			gl.ClearColor(app.BackgroundColor);
-			gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+			_gl.ClearColor(app.BackgroundColor);
+			_gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
 			if (app.Root != null) app.RenderElement(app.Root);
 			CalculateFps();
@@ -295,28 +289,28 @@ namespace Promete.Windowing.GLDesktop
 
 		private void CalculateUps()
 		{
-			updateCount++;
-			if (Environment.TickCount - prevSecondUps <= 1000) return;
+			_updateCount++;
+			if (Environment.TickCount - _prevSecondUps <= 1000) return;
 
-			UpdatePerSeconds = updateCount;
-			updateCount = 0;
-			prevSecondUps = Environment.TickCount;
+			UpdatePerSeconds = _updateCount;
+			_updateCount = 0;
+			_prevSecondUps = Environment.TickCount;
 		}
 
 		private void CalculateFps()
 		{
-			frameCount++;
-			if (Environment.TickCount - prevSecondFps <= 1000) return;
+			_frameCount++;
+			if (Environment.TickCount - _prevSecondFps <= 1000) return;
 
-			FramePerSeconds = frameCount;
-			frameCount = 0;
-			prevSecondFps = Environment.TickCount;
+			FramePerSeconds = _frameCount;
+			_frameCount = 0;
+			_prevSecondFps = Environment.TickCount;
 		}
 
 		private void UpdateWindowSize()
 		{
-			window.Size = new Vector2D<int>(Size.X, Size.Y) * scale;
-			screenshotBuffer = new byte[window.FramebufferSize.X * window.FramebufferSize.Y * scale * 4];
+			_window.Size = new Vector2D<int>(Size.X, Size.Y) * _scale;
+			_screenshotBuffer = new byte[_window.FramebufferSize.X * _window.FramebufferSize.Y * _scale * 4];
 		}
 
 		public event Action? Start;

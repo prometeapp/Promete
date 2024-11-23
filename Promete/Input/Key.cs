@@ -5,10 +5,6 @@ namespace Promete.Input;
 /// </summary>
 public class Key
 {
-	internal Key()
-	{
-	}
-
 	/// <summary>
 	/// キーが現在押されているかどうかを取得します。
 	/// </summary>
@@ -35,6 +31,10 @@ public class Key
 	/// </summary>
 	/// <value></value>
 	public float ElapsedTime { get; internal set; }
+
+	internal Key()
+	{
+	}
 
 	public static implicit operator bool(Key key) => key.IsPressed;
 }

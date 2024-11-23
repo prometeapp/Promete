@@ -14,19 +14,19 @@ namespace Promete.Elements.Renderer.GL.Helper
 	/// </summary>
 	public class GLTextureRendererHelper
 	{
-		private readonly uint shader;
+		private readonly uint _shader;
 
 		private readonly uint _vbo, _vao, _ebo;
 
 		private readonly Matrix4x4 _view = Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, -1.0f));
 
-		private readonly OpenGLDesktopWindow window;
+		private readonly OpenGLDesktopWindow _window;
 
 		public GLTextureRendererHelper(IWindow window)
 		{
-			this.window = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+			_window = window as OpenGLDesktopWindow ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
-			var gl = this.window.GL;
+			var gl = _window.GL;
 
 			// --- 頂点シェーダー ---
 			var vsh = gl.CreateShader(GLEnum.VertexShader);
@@ -39,12 +39,12 @@ namespace Promete.Elements.Renderer.GL.Helper
 			gl.CompileShader(fsh);
 
 			// --- シェーダーを紐付ける ---
-			shader = gl.CreateProgram();
-			gl.AttachShader(shader, vsh);
-			gl.AttachShader(shader, fsh);
-			gl.LinkProgram(shader);
-			gl.DetachShader(shader, vsh);
-			gl.DetachShader(shader, fsh);
+			_shader = gl.CreateProgram();
+			gl.AttachShader(_shader, vsh);
+			gl.AttachShader(_shader, fsh);
+			gl.LinkProgram(_shader);
+			gl.DetachShader(_shader, vsh);
+			gl.DetachShader(_shader, fsh);
 
 			gl.DeleteShader(vsh);
 			gl.DeleteShader(fsh);
@@ -89,27 +89,27 @@ namespace Promete.Elements.Renderer.GL.Helper
 			float? overriddenWidth = null, float? overriddenHeight = null)
 		{
 			PrometeApp.Current.ThrowIfNotMainThread();
-			var gl = window.GL;
+			var gl = _window.GL;
 			var finalWidth = overriddenWidth ?? el.Size.X;
 			var finalHeight = overriddenHeight ?? el.Size.Y;
 			var modelMatrix =
 				Matrix4x4.CreateScale(new Vector3(finalWidth, finalHeight, 1))
 				* Matrix4x4.CreateTranslation(new Vector3((pivot ?? Vector.Zero).ToNumerics(), 0))
 				* el.ModelMatrix;
-			var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, window.ActualWidth, window.ActualHeight, 0, 0.1f, 100f);
+			var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, _window.ActualWidth, _window.ActualHeight, 0, 0.1f, 100f);
 			var c = color ?? Color.White;
 
 			gl.Enable(GLEnum.Blend);
 			gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
 
-			gl.UseProgram(shader);
+			gl.UseProgram(_shader);
 			gl.ActiveTexture(TextureUnit.Texture0);
 			gl.BindTexture(TextureTarget.Texture2D, (uint)texture.Handle);
 
-			var uModel = gl.GetUniformLocation(shader, "uModel");
-			var uProjection = gl.GetUniformLocation(shader, "uProjection");
-			var uTexture0 = gl.GetUniformLocation(shader, "uTexture0");
-			var uTintColor = gl.GetUniformLocation(shader, "uTintColor");
+			var uModel = gl.GetUniformLocation(_shader, "uModel");
+			var uProjection = gl.GetUniformLocation(_shader, "uProjection");
+			var uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
+			var uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
 
 			gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
 			gl.UniformMatrix4(uProjection, 1, false, (float*)&projectionMatrix);

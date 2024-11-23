@@ -14,7 +14,7 @@ namespace Promete.Coroutines
 	{
 		private readonly IWindow _window;
 
-		private readonly Dictionary<Coroutine, YieldInstruction?> coroutines = new();
+		private readonly Dictionary<Coroutine, YieldInstruction?> _coroutines = new();
 
 		public CoroutineManager(PrometeApp app, IWindow window)
 		{
@@ -31,7 +31,7 @@ namespace Promete.Coroutines
 		{
 			var c = new Coroutine(coroutine);
 
-			coroutines[c] = null;
+			_coroutines[c] = null;
 			c.Start();
 			return c;
 		}
@@ -41,7 +41,7 @@ namespace Promete.Coroutines
 		/// </summary>
 		public void Stop(Coroutine coroutine)
 		{
-			coroutines.Remove(coroutine);
+			_coroutines.Remove(coroutine);
 			coroutine.Stop();
 		}
 
@@ -51,12 +51,12 @@ namespace Promete.Coroutines
 		public void Clear()
 		{
 			// Stop
-			coroutines.Keys.ToList().ForEach(Stop);
+			_coroutines.Keys.ToList().ForEach(Stop);
 		}
 
 		private void Update()
 		{
-			foreach (var (coroutine, instruction) in coroutines.Select(c => (c.Key, c.Value)).ToArray())
+			foreach (var (coroutine, instruction) in _coroutines.Select(c => (c.Key, c.Value)).ToArray())
 			{
 				if (instruction is { KeepWaiting: true }) continue;
 
@@ -64,7 +64,7 @@ namespace Promete.Coroutines
 				{
 					if (coroutine.MoveNext())
 					{
-						coroutines[coroutine] = ToYieldInstruction(coroutine.Current, coroutine.IsKeepAlive);
+						_coroutines[coroutine] = ToYieldInstruction(coroutine.Current, coroutine.IsKeepAlive);
 					}
 					else
 					{
@@ -98,7 +98,7 @@ namespace Promete.Coroutines
 
 		private void ClearAllNonKeepAliveCoroutines()
 		{
-			var nonKeepAliveCoroutines = coroutines.Keys.Where(c => !c.IsKeepAlive).ToList();
+			var nonKeepAliveCoroutines = _coroutines.Keys.Where(c => !c.IsKeepAlive).ToList();
 			nonKeepAliveCoroutines.ForEach(Stop);
 		}
 	}

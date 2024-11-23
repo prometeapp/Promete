@@ -9,20 +9,20 @@ namespace Promete.Input;
 /// </summary>
 public sealed class Gamepads
 {
-	private IInputContext input;
-	private List<Gamepad> pads = [];
+	private readonly IInputContext _input;
+	private readonly List<Gamepad> _pads = [];
 
-	private readonly IWindow window;
+	private readonly IWindow _window;
 
-	public Gamepad? this[int index] => index < pads.Count ? pads[index] : null;
+	public Gamepad? this[int index] => index < _pads.Count ? _pads[index] : null;
 
 	public Gamepads(IWindow window)
 	{
-		this.window = window;
-		input = window._RawInputContext!;
+		_window = window;
+		_input = window._RawInputContext!;
 		UpdateGamepads();
 
-		input.ConnectionChanged += OnConnectionChanged;
+		_input.ConnectionChanged += OnConnectionChanged;
 	}
 
 	private void OnConnectionChanged(IInputDevice device, bool isConnected)
@@ -32,11 +32,11 @@ public sealed class Gamepads
 
 	private void UpdateGamepads()
 	{
-		pads.ForEach(p => p.Dispose());
-		pads.Clear();
-		foreach (var silkGamepad in input.Gamepads)
+		_pads.ForEach(p => p.Dispose());
+		_pads.Clear();
+		foreach (var silkGamepad in _input.Gamepads)
 		{
-			pads.Add(new Gamepad(silkGamepad, window));
+			_pads.Add(new Gamepad(silkGamepad, _window));
 		}
 	}
 }

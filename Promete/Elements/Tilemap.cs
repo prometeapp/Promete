@@ -19,9 +19,9 @@ public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapR
 
 	public TilemapRenderingMode RenderingMode { get; set; } = renderingMode;
 
-	public IReadOnlyDictionary<VectorInt, (ITile tile, Color? color)> Tiles => tiles.AsReadOnly();
+	public IReadOnlyDictionary<VectorInt, (ITile tile, Color? color)> Tiles => _tiles.AsReadOnly();
 
-	private readonly Dictionary<VectorInt, (ITile tile, Color? color)> tiles = new();
+	private readonly Dictionary<VectorInt, (ITile tile, Color? color)> _tiles = new();
 
 	/// <summary>
 	/// Get or set the tile at the specified position.
@@ -49,7 +49,7 @@ public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapR
 	/// <summary>
 	///  Get the tile at the specified position.
 	/// </summary>
-	public ITile? GetTileAt(VectorInt point) => tiles.ContainsKey(point) ? tiles[point].tile : default;
+	public ITile? GetTileAt(VectorInt point) => _tiles.ContainsKey(point) ? _tiles[point].tile : default;
 
 	/// <summary>
 	///  Get the tile at the specified position.
@@ -59,7 +59,7 @@ public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapR
 	/// <summary>
 	/// Get color of the tile at the specified position.
 	/// </summary>
-	public Color? GetTileColorAt(VectorInt point) => tiles.ContainsKey(point) ? tiles[point].color : default;
+	public Color? GetTileColorAt(VectorInt point) => _tiles.ContainsKey(point) ? _tiles[point].color : default;
 
 	/// <summary>
 	/// Get color of the tile at the specified position.
@@ -72,9 +72,9 @@ public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapR
 	public void SetTile(VectorInt point, ITile? tile, Color? color = null)
 	{
 		if (tile == null)
-			tiles.Remove(point);
+			_tiles.Remove(point);
 		else
-			tiles[point] = (tile, color ?? DefaultColor);
+			_tiles[point] = (tile, color ?? DefaultColor);
 	}
 
 	/// <summary>
@@ -87,7 +87,7 @@ public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapR
 	/// </summary>
 	public void Clear()
 	{
-		tiles.Clear();
+		_tiles.Clear();
 	}
 
 	/// <summary>
@@ -159,7 +159,7 @@ public class Tilemap(VectorInt tileSize, Color? defaultColor = default, TilemapR
 
 	public IEnumerator<(VectorInt loc, ITile tile, Color? color)> GetEnumerator()
 	{
-		foreach (var t in tiles)
+		foreach (var t in _tiles)
 			yield return (t.Key, t.Value.tile, t.Value.color);
 	}
 }

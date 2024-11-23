@@ -21,7 +21,7 @@ public sealed class PrometeApp : IDisposable
 	/// <summary>
 	/// 現在読み込まれているシーンのルートコンテナを取得します。
 	/// </summary>
-	public Container? Root => currentScene?.Root;
+	public Container? Root => _currentScene?.Root;
 
 	/// <summary>
 	/// 現在の背景色を取得または設定します。
@@ -43,31 +43,31 @@ public sealed class PrometeApp : IDisposable
 		private set => _current = value;
 	}
 
-	private Scene? currentScene;
-	private int statusCode = 0;
+	private Scene? _currentScene;
+	private int _statusCode = 0;
 
-	private readonly ServiceCollection services;
-	private readonly ServiceProvider provider;
-	private readonly ConcurrentQueue<Action> nextFrameQueue = new();
-	private readonly Dictionary<Type, Type> rendererTypes;
-	private readonly Dictionary<Type, ElementRendererBase?> renderers = new();
-	private readonly Thread mainThread;
+	private readonly ServiceCollection _services;
+	private readonly ServiceProvider _provider;
+	private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
+	private readonly Dictionary<Type, Type> _rendererTypes;
+	private readonly Dictionary<Type, ElementRendererBase?> _renderers = new();
+	private readonly Thread _mainThread;
 
 	private static PrometeApp? _current;
 
 	private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
 	{
-		mainThread = Thread.CurrentThread;
+		_mainThread = Thread.CurrentThread;
 
-		this.services = services;
-		this.rendererTypes = rendererTypes;
+		this._services = services;
+		this._rendererTypes = rendererTypes;
 		RegisterAllScenes();
 		services.AddSingleton(this);
 
-		provider = services.BuildServiceProvider();
+		_provider = services.BuildServiceProvider();
 
 		Current = this;
-		Window = provider.GetService<IWindow>() ?? throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
+		Window = _provider.GetService<IWindow>() ?? throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
 	}
 
 	/// <summary>
@@ -99,7 +99,7 @@ public sealed class PrometeApp : IDisposable
 		Window.Start += OnStart<TScene>;
 		Window.Update += OnUpdate;
 		Window.Run(opts);
-		return statusCode;
+		return _statusCode;
 	}
 
 
@@ -110,7 +110,7 @@ public sealed class PrometeApp : IDisposable
 	/// <param name="status">ステータスコード。</param>
 	public void Exit(int status = 0)
 	{
-		statusCode = status;
+		_statusCode = status;
 		Window.Exit();
 	}
 
@@ -120,7 +120,7 @@ public sealed class PrometeApp : IDisposable
 	/// <param name="action">次のフレームに実行する処理。</param>
 	public void NextFrame(Action action)
 	{
-		nextFrameQueue.Enqueue(action);
+		_nextFrameQueue.Enqueue(action);
 	}
 
 	/// <summary>
@@ -130,7 +130,7 @@ public sealed class PrometeApp : IDisposable
 	/// <returns>プラグインが見つかった場合はそのインスタンス。見つからなかった場合は <see langword="null"/>。</returns>
 	public T? GetPlugin<T>() where T : class
 	{
-		return provider.GetService<T>();
+		return _provider.GetService<T>();
 	}
 
 	/// <summary>
@@ -140,12 +140,12 @@ public sealed class PrometeApp : IDisposable
 	/// <returns>プラグインが見つかった場合はそのインスタンス。見つからなかった場合は <see langword="null"/>。</returns>
 	public object? GetPlugin(Type type)
 	{
-		return provider.GetService(type);
+		return _provider.GetService(type);
 	}
 
 	public void Dispose()
 	{
-		provider.Dispose();
+		_provider.Dispose();
 	}
 
 	/// <summary>
@@ -165,11 +165,11 @@ public sealed class PrometeApp : IDisposable
 	/// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
 	public void LoadScene(Type typeScene)
 	{
-		currentScene?.OnDestroy();
+		_currentScene?.OnDestroy();
 
-		currentScene = provider.GetService(typeScene) as Scene ?? throw new ArgumentException($"The scene \"{typeScene}\" is not registered.");
+		_currentScene = _provider.GetService(typeScene) as Scene ?? throw new ArgumentException($"The scene \"{typeScene}\" is not registered.");
 		SceneWillChange?.Invoke();
-		currentScene.OnStart();
+		_currentScene.OnStart();
 	}
 
 	/// <summary>
@@ -198,7 +198,7 @@ public sealed class PrometeApp : IDisposable
 	/// <returns></returns>
 	public bool IsMainThread()
 	{
-		return Thread.CurrentThread == mainThread;
+		return Thread.CurrentThread == _mainThread;
 	}
 
 	/// <summary>
@@ -213,9 +213,9 @@ public sealed class PrometeApp : IDisposable
 
 	private void OnStart<TScene>() where TScene : Scene
 	{
-		foreach (var (elementType, rendererType) in rendererTypes)
+		foreach (var (elementType, rendererType) in _rendererTypes)
 		{
-			renderers[elementType] = provider.GetService(rendererType) as ElementRendererBase ?? throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
+			_renderers[elementType] = _provider.GetService(rendererType) as ElementRendererBase ?? throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
 		}
 
 		LoadScene<TScene>();
@@ -223,16 +223,16 @@ public sealed class PrometeApp : IDisposable
 
 	private void OnUpdate()
 	{
-		currentScene?.OnUpdate();
+		_currentScene?.OnUpdate();
 
 		ProcessNextFrameQueue();
 	}
 
 	private void ProcessNextFrameQueue()
 	{
-		while (!nextFrameQueue.IsEmpty)
+		while (!_nextFrameQueue.IsEmpty)
 		{
-			if (!nextFrameQueue.TryDequeue(out var task)) return;
+			if (!_nextFrameQueue.TryDequeue(out var task)) return;
 			task();
 		}
 	}
@@ -240,19 +240,19 @@ public sealed class PrometeApp : IDisposable
 	private ElementRendererBase? ResolveRenderer(ElementBase el)
 	{
 		var elType = el.GetType();
-		if (renderers.TryGetValue(elType, out var renderer)) return renderer;
+		if (_renderers.TryGetValue(elType, out var renderer)) return renderer;
 
 		// el の型が登録されていない場合、el の型の親クラスの型が登録されているかを確認する
-		var alternativeRendererType = renderers.Keys.FirstOrDefault(k => elType.IsSubclassOf(k));
+		var alternativeRendererType = _renderers.Keys.FirstOrDefault(k => elType.IsSubclassOf(k));
 		if (alternativeRendererType is null)
 		{
 			LogHelper.Warn($"The renderer for \"{elType}\" is not registered.");
-			renderers[elType] = null;
+			_renderers[elType] = null;
 			return null;
 		}
 
-		renderers[elType] = renderers[alternativeRendererType];
-		return renderers[elType];
+		_renderers[elType] = _renderers[alternativeRendererType];
+		return _renderers[elType];
 	}
 
 	private void RegisterAllScenes()
@@ -266,29 +266,29 @@ public sealed class PrometeApp : IDisposable
 			if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null) continue;
 
 			// Scene 派生クラスを登録する
-			services.AddTransient(type);
+			_services.AddTransient(type);
 		}
 	}
 
 	public sealed class PrometeAppBuilder
 	{
-		private readonly ServiceCollection services;
-		private readonly Dictionary<Type, Type> rendererTypes = new();
+		private readonly ServiceCollection _services;
+		private readonly Dictionary<Type, Type> _rendererTypes = new();
 
 		internal PrometeAppBuilder()
 		{
-			services = new ServiceCollection();
+			_services = new ServiceCollection();
 		}
 
 		public PrometeAppBuilder Use<T>() where T : class
 		{
-			services.AddSingleton<T>();
+			_services.AddSingleton<T>();
 			return this;
 		}
 
 		public PrometeAppBuilder Use<TPlugin, TImpl>() where TPlugin : class where TImpl : class, TPlugin
 		{
-			services.AddSingleton<TPlugin, TImpl>();
+			_services.AddSingleton<TPlugin, TImpl>();
 			return this;
 		}
 
@@ -296,14 +296,14 @@ public sealed class PrometeApp : IDisposable
 			where TRenderer : ElementRendererBase
 			where TElement : ElementBase
 		{
-			rendererTypes[typeof(TElement)] = typeof(TRenderer);
+			_rendererTypes[typeof(TElement)] = typeof(TRenderer);
 			return Use<TRenderer>();
 		}
 
 		public PrometeApp Build<TWindow>() where TWindow : IWindow
 		{
-			services.AddSingleton(typeof(IWindow), typeof(TWindow));
-			return new PrometeApp(services, rendererTypes);
+			_services.AddSingleton(typeof(IWindow), typeof(TWindow));
+			return new PrometeApp(_services, _rendererTypes);
 		}
 	}
 

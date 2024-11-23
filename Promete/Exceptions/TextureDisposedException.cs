@@ -2,7 +2,7 @@
 
 namespace Promete.Exceptions;
 
-public class TextureDisposedException : System.Exception
+public class TextureDisposedException : Exception
 {
 	public TextureDisposedException() : base("You can not use the disposed texture.")
 	{

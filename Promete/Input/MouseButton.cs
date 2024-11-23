@@ -5,8 +5,6 @@
 /// </summary>
 public class MouseButton
 {
-	internal MouseButton() { }
-
 	/// <summary>
 	/// このボタンが押されているかどうかを取得します。
 	/// </summary>
@@ -33,6 +31,8 @@ public class MouseButton
 	/// このボタンがこのフレームで離されたかどうかを取得します。
 	/// </summary>
 	public bool IsButtonUp { get; internal set; }
+
+	internal MouseButton() { }
 
 	public static implicit operator bool(MouseButton button) => button.IsPressed;
 }
