@@ -2,4 +2,12 @@
   <PropertyGroup>
     <StartupCommand>pnpm run dev</StartupCommand>
   </PropertyGroup>
+  <ItemGroup>
+    <Script Include="src\content\config.ts" />
+    <Script Include="tsconfig.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="src\content\docs\guide\advanced\" />
+    <Folder Include="src\content\docs\guide\utilities\" />
+  </ItemGroup>
 </Project>
