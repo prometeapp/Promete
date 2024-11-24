@@ -29,17 +29,19 @@ var app = PrometeApp.Create()
 
 app.Run<MainScene>();
 
-public class MainScene(Keyboard keyboard)
+public class MainScene
 {
-    private ITexture texture1;
-    private ITexture texture2;
+	private readonly Keyboard _keyboard;
+    private readonly ITexture _texture1;
+    private readonly ITexture _texture2;
 
-    public override Container Setup()
+    public MainScene(Keyboard keyboard)
     {
+		_keyboard = keyboard;
         texture1 = window.TextureFactory.Load("./texture1.png");
         texture2 = window.TextureFactory.Load("./texture2.png");
 
-        return new Container
+        Root = new Container
         {
             new Sprite(texture1, location: (16, 16)),
             new Sprite(texture2, location: (16, 32)),
@@ -48,7 +50,7 @@ public class MainScene(Keyboard keyboard)
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyDown)
+        if (_keyboard.Escape.IsKeyDown)
         {
             Window.Close();
         }
@@ -66,9 +68,9 @@ Windows だけでなく、macOSやLinuxでも動作します。 また、将来�
 
 ピクセルパーフェクトな2Dグラフィックを気軽に実現できるゲームエンジンはそう多くありません。 Prometeは、2Dグラフィックに特化したグラフィックシステムを提供します。
 
-Prometeでは、Elementという描画単位を用いた階層構造で画面を構成します。
+Prometeでは、ノードという描画単位を用いた階層構造で画面を構成します。
 
-Elementの一覧:
+ノードの一覧:
 
 - スプライト - 画面上へのテクスチャ表示
 - タイルマップ - テクスチャを敷き詰めたマップ表示
@@ -77,13 +79,13 @@ Elementの一覧:
 - テキスト - 文字列を描画できるオブジェクト
 - 9スライススプライト - テクスチャを9分割して、矩形状のテクスチャ−をスムーズに引き伸ばせる特殊なスプライト
 
-各種Elementを描画する上で、エンジンに登録された `ElementRenderer` が用いられます。このレンダラーは特に何もしなくとも標準のものが用いられますが、拡張することも可能です。
+各種ノードを描画する上で、エンジンに登録された `NodeRenderer` が用いられます。このレンダラーは特に何もしなくとも標準のものが用いられますが、拡張することも可能です。
 
 ### 拡張性
 
 Prometeは、拡張性を重視して設計されています。
 
-標準の描画機能だけでは足りない場合、独自の `ElementRenderer` を実装することで、OpenGLを直接用いた独自のレンダリング機能をPrometeと統合できます。
+標準の描画機能だけでは足りない場合、独自の `NodeRenderer` を実装することで、OpenGLを直接用いた独自のレンダリング機能をPrometeと統合できます。
 
 また、オーディオ機能も同様に、定期的にバッファ配列にデータを書き込む `IAudioSource` の実装を作成することで、標準では足りないオーディオ形式をサポートできます。
 
@@ -109,19 +111,19 @@ Prometeは、DIコンテナを用いたプラグインシステムを採用し�
 
 ## サポート プラットフォーム
 
-| プラットフォーム | サポート状況                             |
-|----------|------------------------------------|
-| Windows  | テスト済み。開発者自身がWindows 11で動作を確認しています。 |
-| macOS    | 動作可能。未テスト                          |
-| Linux    | 動作可能。未テスト                          |
-| Android  | まだ対応していません。                        |
-| iOS      | まだ対応していません。                        |
-| Web      | まだ対応していません。                        |
+| プラットフォーム | サポート状況                                |
+|----------|---------------------------------------|
+| Windows  | テスト済み。開発者自身がWindows 11で動作を確認しています。    |
+| macOS    | テスト済み。開発者自身がmacOS Sequoiaで動作を確認しています。 |
+| Linux    | 動作可能。未テスト                             |
+| Android  | まだ対応していません。                           |
+| iOS      | まだ対応していません。                           |
+| Web      | まだ対応していません。                           |
 
 ## ビルドの仕方
 
 ```shell
-git clone https://github.com/EbiseLutica/Promete
+git clone https://github.com/prometeapp/Promete
 cd Promete
 dotnet build
 ```
