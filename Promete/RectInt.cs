@@ -1,22 +1,22 @@
 namespace Promete;
 
 /// <summary>
-///     位置とサイズからなる矩形を表します。構成する数値が整数なバージョン。
+/// 位置とサイズからなる矩形を表します。構成する数値が整数なバージョン。
 /// </summary>
 public struct RectInt
 {
     /// <summary>
-    ///     この矩形の位置を取得または設定します。
+    /// この矩形の位置を取得または設定します。
     /// </summary>
     public VectorInt Location { get; set; }
 
     /// <summary>
-    ///     この矩形のサイズを取得または設定します。
+    /// この矩形のサイズを取得または設定します。
     /// </summary>
     public VectorInt Size { get; set; }
 
     /// <summary>
-    ///     この矩形の左端の位置を取得または設定します。
+    /// この矩形の左端の位置を取得または設定します。
     /// </summary>
     public int Left
     {
@@ -25,7 +25,7 @@ public struct RectInt
     }
 
     /// <summary>
-    ///     この矩形の上端の位置を取得または設定します。
+    /// この矩形の上端の位置を取得または設定します。
     /// </summary>
     public int Top
     {
@@ -34,7 +34,7 @@ public struct RectInt
     }
 
     /// <summary>
-    ///     この矩形の右端の位置を取得または設定します。
+    /// この矩形の右端の位置を取得または設定します。
     /// </summary>
     public int Right
     {
@@ -43,7 +43,7 @@ public struct RectInt
     }
 
     /// <summary>
-    ///     この矩形の下端の位置を取得または設定します。
+    /// この矩形の下端の位置を取得または設定します。
     /// </summary>
     public int Bottom
     {
@@ -52,7 +52,7 @@ public struct RectInt
     }
 
     /// <summary>
-    ///     この矩形の幅を取得または設定します。
+    /// この矩形の幅を取得または設定します。
     /// </summary>
     public int Width
     {
@@ -61,7 +61,7 @@ public struct RectInt
     }
 
     /// <summary>
-    ///     この矩形の高さを取得または設定します。
+    /// この矩形の高さを取得または設定します。
     /// </summary>
     public int Height
     {
@@ -70,7 +70,7 @@ public struct RectInt
     }
 
     /// <summary>
-    ///     <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="location"></param>
     /// <param name="size"></param>
@@ -81,7 +81,7 @@ public struct RectInt
     }
 
     /// <summary>
-    ///     <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="left"></param>
     /// <param name="top"></param>
@@ -94,7 +94,7 @@ public struct RectInt
 
 
     /// <summary>
-    ///     この矩形と指定された矩形が重なっているかどうかを判定します。
+    /// この矩形と指定された矩形が重なっているかどうかを判定します。
     /// </summary>
     /// <param name="rect">判定する矩形。</param>
     /// <returns>重なっている場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>

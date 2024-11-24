@@ -8,7 +8,7 @@ using Silk.NET.OpenAL;
 namespace Promete.Audio;
 
 /// <summary>
-///     オーディオデータを再生するためのクラスです。
+/// オーディオデータを再生するためのクラスです。
 /// </summary>
 public class AudioPlayer : IDisposable
 {

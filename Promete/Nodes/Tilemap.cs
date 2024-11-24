@@ -13,12 +13,12 @@ public class Tilemap(
     private readonly Dictionary<VectorInt, (ITile tile, Color? color)> _tiles = new();
 
     /// <summary>
-    ///     Get or set size of grid.
+    /// Get or set size of grid.
     /// </summary>
     public VectorInt TileSize { get; set; } = tileSize;
 
     /// <summary>
-    ///     Get or set default tint color of tiles.
+    /// Get or set default tint color of tiles.
     /// </summary>
     public Color? DefaultColor { get; set; } = defaultColor;
 
@@ -27,7 +27,7 @@ public class Tilemap(
     public IReadOnlyDictionary<VectorInt, (ITile tile, Color? color)> Tiles => _tiles.AsReadOnly();
 
     /// <summary>
-    ///     Get or set the tile at the specified position.
+    /// Get or set the tile at the specified position.
     /// </summary>
     public ITile? this[int x, int y]
     {
@@ -36,7 +36,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Get or set the tile at the specified position.
+    /// Get or set the tile at the specified position.
     /// </summary>
     public ITile? this[VectorInt point]
     {
@@ -50,7 +50,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Get the tile at the specified position.
+    /// Get the tile at the specified position.
     /// </summary>
     public ITile? GetTileAt(VectorInt point)
     {
@@ -58,7 +58,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Get the tile at the specified position.
+    /// Get the tile at the specified position.
     /// </summary>
     public ITile? GetTileAt(int x, int y)
     {
@@ -66,7 +66,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Get color of the tile at the specified position.
+    /// Get color of the tile at the specified position.
     /// </summary>
     public Color? GetTileColorAt(VectorInt point)
     {
@@ -74,7 +74,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Get color of the tile at the specified position.
+    /// Get color of the tile at the specified position.
     /// </summary>
     public Color? GetTileColorAt(int x, int y)
     {
@@ -82,7 +82,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Set the tile at the specified position.
+    /// Set the tile at the specified position.
     /// </summary>
     public void SetTile(VectorInt point, ITile? tile, Color? color = null)
     {
@@ -93,7 +93,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Set the tile at the specified position.
+    /// Set the tile at the specified position.
     /// </summary>
     public void SetTile(int x, int y, ITile? tile, Color? color = null)
     {
@@ -101,7 +101,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Remove all tiles.
+    /// Remove all tiles.
     /// </summary>
     public void Clear()
     {
@@ -109,7 +109,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Draw a line with specified tile.
+    /// Draw a line with specified tile.
     /// </summary>
     public void Line(int x1, int y1, int x2, int y2, ITile tile)
     {
@@ -154,7 +154,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Fill the specified rectangle with the specified tile.
+    /// Fill the specified rectangle with the specified tile.
     /// </summary>
     public void Fill(int x1, int y1, int width, int height, ITile tile)
     {
@@ -164,7 +164,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Draw a line with specified tile.
+    /// Draw a line with specified tile.
     /// </summary>
     public void Line(VectorInt start, VectorInt end, ITile tile)
     {
@@ -172,7 +172,7 @@ public class Tilemap(
     }
 
     /// <summary>
-    ///     Fill the specified rectangle with the specified tile.
+    /// Fill the specified rectangle with the specified tile.
     /// </summary>
     public void Fill(VectorInt position, VectorInt size, ITile tile)
     {

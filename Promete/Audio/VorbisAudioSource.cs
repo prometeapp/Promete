@@ -7,7 +7,7 @@ using NVorbis;
 namespace Promete.Audio;
 
 /// <summary>
-///     An audio source that represents data in Ogg Vorbis format.
+/// An audio source that represents data in Ogg Vorbis format.
 /// </summary>
 public class VorbisAudioSource : IAudioSource, IDisposable
 {
@@ -54,33 +54,33 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     }
 
     /// <summary>
-    ///     読み込まれているサンプルのサイズを取得します。
+    /// 読み込まれているサンプルのサイズを取得します。
     /// </summary>
     public int LoadedSize { get; private set; }
 
     /// <summary>
-    ///     全てのサンプルが読み込まれているかどうかを取得します。
+    /// 全てのサンプルが読み込まれているかどうかを取得します。
     /// </summary>
     public bool IsLoadingFinished => LoadedSize == Samples;
 
     /// <summary>
-    ///     Get the total number of samples.
+    /// Get the total number of samples.
     /// </summary>
     /// <returns></returns>
     public int? Samples => (int)_reader.TotalSamples * _reader.Channels;
 
     /// <summary>
-    ///     Get channels.
+    /// Get channels.
     /// </summary>
     public int Channels => _reader.Channels;
 
     /// <summary>
-    ///     Get sample bits.
+    /// Get sample bits.
     /// </summary>
     public int Bits => 16;
 
     /// <summary>
-    ///     Get sample rate.
+    /// Get sample rate.
     /// </summary>
     public int SampleRate => _reader.SampleRate;
 
@@ -92,7 +92,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     }
 
     /// <summary>
-    ///     Dispose this object.
+    /// Dispose this object.
     /// </summary>
     public void Dispose()
     {

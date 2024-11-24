@@ -4,17 +4,17 @@ using Silk.NET.OpenGL;
 namespace Promete.Graphics;
 
 /// <summary>
-///     Wrap a handle of 2D texture.
+/// Wrap a handle of 2D texture.
 /// </summary>
 public readonly struct Texture2D : IDisposable
 {
     /// <summary>
-    ///     Get a OpenGL handle of this texture.
+    /// Get a OpenGL handle of this texture.
     /// </summary>
     public int Handle { get; }
 
     /// <summary>
-    ///     Get size of this texture.
+    /// Get size of this texture.
     /// </summary>
     public VectorInt Size { get; }
 
@@ -28,7 +28,7 @@ public readonly struct Texture2D : IDisposable
     }
 
     /// <summary>
-    ///     この <see cref="Texture2D" /> を破棄します。
+    /// この <see cref="Texture2D" /> を破棄します。
     /// </summary>
     public void Dispose()
     {

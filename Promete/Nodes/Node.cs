@@ -3,7 +3,7 @@ using System.Numerics;
 namespace Promete.Nodes;
 
 /// <summary>
-///     全てのノードの基底クラスです。
+/// 全てのノードの基底クラスです。
 /// </summary>
 public abstract class Node
 {
@@ -17,12 +17,12 @@ public abstract class Node
     private int zIndex;
 
     /// <summary>
-    ///     このノードの名前を取得または設定します。
+    /// このノードの名前を取得または設定します。
     /// </summary>
     public virtual string Name { get; set; } = "";
 
     /// <summary>
-    ///     このノードの位置を取得または設定します。
+    /// このノードの位置を取得または設定します。
     /// </summary>
     public Vector Location
     {
@@ -36,7 +36,7 @@ public abstract class Node
     }
 
     /// <summary>
-    ///     このノードのスケールを取得または設定します。
+    /// このノードのスケールを取得または設定します。
     /// </summary>
     public Vector Scale
     {
@@ -50,12 +50,12 @@ public abstract class Node
     }
 
     /// <summary>
-    ///     このノードのサイズを取得または設定します。
+    /// このノードのサイズを取得または設定します。
     /// </summary>
     public virtual VectorInt Size { get; set; }
 
     /// <summary>
-    ///     このノードの角度（0-360）を取得または設定します。
+    /// このノードの角度（0-360）を取得または設定します。
     /// </summary>
     public float Angle
     {
@@ -69,7 +69,7 @@ public abstract class Node
     }
 
     /// <summary>
-    ///     このノードが破棄されたかどうかを取得します。
+    /// このノードが破棄されたかどうかを取得します。
     /// </summary>
     public bool IsDestroyed { get; private set; }
 
@@ -86,8 +86,8 @@ public abstract class Node
     }
 
     /// <summary>
-    ///     このノードの Z インデックスを取得または設定します。<br />
-    ///     ノードは Z インデックスの昇順に描画されます。よって、大きいほど手前に描画されます。
+    /// このノードの Z インデックスを取得または設定します。<br />
+    /// ノードは Z インデックスの昇順に描画されます。よって、大きいほど手前に描画されます。
     /// </summary>
     public int ZIndex
     {

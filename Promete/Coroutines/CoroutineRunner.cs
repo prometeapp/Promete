@@ -8,7 +8,7 @@ using Promete.Windowing;
 namespace Promete.Coroutines;
 
 /// <summary>
-///     A coroutine manager class.
+/// A coroutine manager class.
 /// </summary>
 public class CoroutineManager
 {
@@ -24,7 +24,7 @@ public class CoroutineManager
     }
 
     /// <summary>
-    ///     Start the specified coroutine.
+    /// Start the specified coroutine.
     /// </summary>
     public Coroutine Start(IEnumerator coroutine)
     {
@@ -36,7 +36,7 @@ public class CoroutineManager
     }
 
     /// <summary>
-    ///     Stop the specified coroutine.
+    /// Stop the specified coroutine.
     /// </summary>
     public void Stop(Coroutine coroutine)
     {
@@ -45,7 +45,7 @@ public class CoroutineManager
     }
 
     /// <summary>
-    ///     Stop all running coroutines.
+    /// Stop all running coroutines.
     /// </summary>
     public void Clear()
     {

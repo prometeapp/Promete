@@ -9,7 +9,7 @@ using Promete.Windowing;
 namespace Promete;
 
 /// <summary>
-///     画面上に簡易な文字出力を行うレイヤーを提供する Promete プラグインです。
+/// 画面上に簡易な文字出力を行うレイヤーを提供する Promete プラグインです。
 /// </summary>
 public class ConsoleLayer
 {

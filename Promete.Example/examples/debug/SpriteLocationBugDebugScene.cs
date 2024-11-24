@@ -6,7 +6,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples.debug;
 
 /// <summary>
-///     スプライト等が0, 0に描画されるバグのデバッグシーンです。
+/// スプライト等が0, 0に描画されるバグのデバッグシーンです。
 /// </summary>
 [Demo("debug/SpriteLocationBugDebugScene.demo", "スプライト等が0, 0に描画されるバグのデバッグシーン")]
 public class SpriteLocationBugDebugScene(Keyboard keyboard) : Scene

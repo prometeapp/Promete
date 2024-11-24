@@ -13,7 +13,7 @@ using SixLabors.ImageSharp.Processing;
 namespace Promete.Windowing.GLDesktop;
 
 /// <summary>
-///     A implementation of <see cref="IWindow" /> for the desktop environment.
+/// A implementation of <see cref="IWindow" /> for the desktop environment.
 /// </summary>
 public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
 {

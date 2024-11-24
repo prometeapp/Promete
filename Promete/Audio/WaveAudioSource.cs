@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace Promete.Audio;
 
 /// <summary>
-///     An audio source that represents the Wave file format.
+/// An audio source that represents the Wave file format.
 /// </summary>
 public class WaveAudioSource : IAudioSource
 {
@@ -28,22 +28,22 @@ public class WaveAudioSource : IAudioSource
     public int? Length => _store.Length;
 
     /// <summary>
-    ///     Get the total number of samples.
+    /// Get the total number of samples.
     /// </summary>
     public int? Samples => _store.Length;
 
     /// <summary>
-    ///     Get channels.
+    /// Get channels.
     /// </summary>
     public int Channels => _channels;
 
     /// <summary>
-    ///     Get sampling bits.
+    /// Get sampling bits.
     /// </summary>
     public int Bits => _bits;
 
     /// <summary>
-    ///     Get sampling rate.
+    /// Get sampling rate.
     /// </summary>
     public int SampleRate => _sampleRate;
 

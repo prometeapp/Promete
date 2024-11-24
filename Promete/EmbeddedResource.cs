@@ -5,7 +5,7 @@ using System.Reflection;
 namespace Promete;
 
 /// <summary>
-///     埋め込みリソースを取得するためのヘルパー
+/// 埋め込みリソースを取得するためのヘルパー
 /// </summary>
 public static class EmbeddedResource
 {

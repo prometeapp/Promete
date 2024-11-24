@@ -3,7 +3,7 @@ using System;
 namespace Promete.Graphics;
 
 /// <summary>
-///     Wrap a handles of 9-sliced textures.
+/// Wrap a handles of 9-sliced textures.
 /// </summary>
 public readonly struct Texture9Sliced : IDisposable
 {
@@ -34,7 +34,7 @@ public readonly struct Texture9Sliced : IDisposable
     }
 
     /// <summary>
-    ///     Destroy this <see cref="Texture9Sliced" />.
+    /// Destroy this <see cref="Texture9Sliced" />.
     /// </summary>
     public void Dispose()
     {

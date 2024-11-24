@@ -5,13 +5,13 @@ using System.Runtime.Serialization;
 namespace Promete.Internal;
 
 /// <summary>
-///     リフレクションを用いつつも高速に、動的にインスタンスを生成します。
-///     Code from https://codeday.me/jp/qa/20190123/149543.html
+/// リフレクションを用いつつも高速に、動的にインスタンスを生成します。
+/// Code from https://codeday.me/jp/qa/20190123/149543.html
 /// </summary>
 internal static class New<T>
 {
     /// <summary>
-    ///     インスタンスを生成します。
+    /// インスタンスを生成します。
     /// </summary>
     /// <returns></returns>
     internal static readonly Func<T> Instance = Creator();

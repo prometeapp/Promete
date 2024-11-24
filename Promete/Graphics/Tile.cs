@@ -5,7 +5,7 @@ using Promete.Windowing;
 namespace Promete.Graphics;
 
 /// <summary>
-///     画像ファイルを表示するタイルです。
+/// 画像ファイルを表示するタイルです。
 /// </summary>
 public class Tile : ITile
 {
@@ -16,7 +16,7 @@ public class Tile : ITile
     private double _timer;
 
     /// <summary>
-    ///     テクスチャを指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
+    /// テクスチャを指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="texture">タイルとして描画されるテクスチャ。</param>
     public Tile(Texture2D texture)
@@ -25,7 +25,7 @@ public class Tile : ITile
     }
 
     /// <summary>
-    ///     <see cref="Tile" /> クラスの新しいインスタンスを初期化します。
+    /// <see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     protected Tile(Texture2D texture, bool b1)
         : this(new[] { texture }, 0)
@@ -34,7 +34,7 @@ public class Tile : ITile
     }
 
     /// <summary>
-    ///     テクスチャの配列とアニメーション時間を指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
+    /// テクスチャの配列とアニメーション時間を指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="animations">アニメーション描画されるテクスチャの配列。</param>
     /// <param name="interval">アニメーションの時間。</param>
@@ -50,17 +50,17 @@ public class Tile : ITile
     }
 
     /// <summary>
-    ///     描画されるテクスチャを取得します。
+    /// 描画されるテクスチャを取得します。
     /// </summary>
     public Texture2D Texture { get; private set; }
 
     /// <summary>
-    ///     アニメーションに使われるテクスチャの配列を取得します。
+    /// アニメーションに使われるテクスチャの配列を取得します。
     /// </summary>
     public Texture2D[] Animations { get; }
 
     /// <summary>
-    ///     アニメーションにおけるテクスチャ1枚あたりの描画時間を取得します。
+    /// アニメーションにおけるテクスチャ1枚あたりの描画時間を取得します。
     /// </summary>
     public double Interval { get; }
 
@@ -85,7 +85,7 @@ public class Tile : ITile
     }
 
     /// <summary>
-    ///     この <see cref="Tile" /> を削除します。
+    /// この <see cref="Tile" /> を削除します。
     /// </summary>
     public void Destroy()
     {

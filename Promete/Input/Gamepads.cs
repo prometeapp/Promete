@@ -5,7 +5,7 @@ using Silk.NET.Input;
 namespace Promete.Input;
 
 /// <summary>
-///     接続されたゲームパッドの入力を取得する Promete プラグインです。このクラスは継承できません。
+/// 接続されたゲームパッドの入力を取得する Promete プラグインです。このクラスは継承できません。
 /// </summary>
 public sealed class Gamepads
 {

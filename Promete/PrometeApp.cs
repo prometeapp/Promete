@@ -14,7 +14,7 @@ using Promete.Windowing;
 namespace Promete;
 
 /// <summary>
-///     Promete のアプリケーションを表します。
+/// Promete のアプリケーションを表します。
 /// </summary>
 public sealed class PrometeApp : IDisposable
 {
@@ -47,35 +47,35 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     現在読み込まれているシーンのルートコンテナを取得します。
+    /// 現在読み込まれているシーンのルートコンテナを取得します。
     /// </summary>
     public Container? Root => _currentScene?.Root;
 
     /// <summary>
-    ///     シーンのルートコンテナよりも背面に描画されるコンテナを取得します。
-    ///     このコンテナに登録されたノードは、シーンが切り替わっても破棄されません。
+    /// シーンのルートコンテナよりも背面に描画されるコンテナを取得します。
+    /// このコンテナに登録されたノードは、シーンが切り替わっても破棄されません。
     /// </summary>
     public Container GlobalBackground { get; } = [];
 
     /// <summary>
-    ///     シーンのルートコンテナよりも前面に描画されるコンテナを取得します。
-    ///     このコンテナに登録されたノードは、シーンが切り替わっても破棄されません。
+    /// シーンのルートコンテナよりも前面に描画されるコンテナを取得します。
+    /// このコンテナに登録されたノードは、シーンが切り替わっても破棄されません。
     /// </summary>
     public Container GlobalForeground { get; } = [];
 
     /// <summary>
-    ///     現在の背景色を取得または設定します。
+    /// 現在の背景色を取得または設定します。
     /// </summary>
     public Color BackgroundColor { get; set; } = Color.Black;
 
     /// <summary>
-    ///     実行中のPromete ウィンドウを取得します。
+    /// 実行中のPromete ウィンドウを取得します。
     /// </summary>
     public IWindow Window { get; }
 
     /// <summary>
-    ///     実行中の <see cref="PrometeApp" /> を取得します。
-    ///     <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
+    /// 実行中の <see cref="PrometeApp" /> を取得します。
+    /// <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
     /// </summary>
     public static PrometeApp Current
     {
@@ -89,7 +89,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     Promete アプリケーションを作成します。
+    /// Promete アプリケーションを作成します。
     /// </summary>
     public static PrometeAppBuilder Create()
     {
@@ -97,7 +97,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     Promete アプリケーションを実行します。
+    /// Promete アプリケーションを実行します。
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <returns>終了ステータスコード。</returns>
@@ -107,7 +107,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     Promete アプリケーションを実行します。
+    /// Promete アプリケーションを実行します。
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <param name="opts">ウィンドウのオプション。</param>
@@ -122,7 +122,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     指定したステータスコードで Promete アプリケーションを終了します。
+    /// 指定したステータスコードで Promete アプリケーションを終了します。
     /// </summary>
     /// <param name="status">ステータスコード。</param>
     public void Exit(int status = 0)
@@ -132,7 +132,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     次のフレームに、指定した処理を実行するように予約します。
+    /// 次のフレームに、指定した処理を実行するように予約します。
     /// </summary>
     /// <param name="action">次のフレームに実行する処理。</param>
     public void NextFrame(Action action)
@@ -141,7 +141,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     指定した型のプラグインを取得します。
+    /// 指定した型のプラグインを取得します。
     /// </summary>
     /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
     /// <returns>プラグインが見つかった場合はそのインスタンス。見つからなかった場合は <see langword="null" />。</returns>
@@ -151,7 +151,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     指定した型のプラグインを取得します。
+    /// 指定した型のプラグインを取得します。
     /// </summary>
     /// <param name="type">指定対象のプラグインを表す型。</param>
     /// <returns>プラグインが見つかった場合はそのインスタンス。見つからなかった場合は <see langword="null" />。</returns>
@@ -161,7 +161,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     シーンを読み込みます。現在読み込まれているシーンがある場合、そのシーンは破棄されます。
+    /// シーンを読み込みます。現在読み込まれているシーンがある場合、そのシーンは破棄されます。
     /// </summary>
     /// <typeparam name="TScene">読み込むシーン。</typeparam>
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
@@ -171,7 +171,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     シーンを読み込みます。現在読み込まれているシーンがある場合、そのシーンは破棄されます。
+    /// シーンを読み込みます。現在読み込まれているシーンがある場合、そのシーンは破棄されます。
     /// </summary>
     /// <param name="typeScene">読み込むシーン。</param>
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
@@ -186,7 +186,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     指定した <see cref="Node" /> を描画します。
+    /// 指定した <see cref="Node" /> を描画します。
     /// </summary>
     /// <param name="node">描画対象のノード。</param>
     public void RenderNode(Node node)
@@ -197,7 +197,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     指定した <see cref="Node" /> を更新します。
+    /// 指定した <see cref="Node" /> を更新します。
     /// </summary>
     /// <param name="node">更新対象のノード。</param>
     public void UpdateNode(Node node)
@@ -206,7 +206,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     このメソッドが呼び出されたスレッドがメインスレッドであるかどうかを取得します。
+    /// このメソッドが呼び出されたスレッドがメインスレッドであるかどうかを取得します。
     /// </summary>
     /// <returns></returns>
     public bool IsMainThread()
@@ -215,7 +215,7 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    ///     このメソッドが呼び出されたスレッドがメインスレッドでない場合、<see cref="InvalidOperationException" /> をスローします。
+    /// このメソッドが呼び出されたスレッドがメインスレッドでない場合、<see cref="InvalidOperationException" /> をスローします。
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
     public void ThrowIfNotMainThread()

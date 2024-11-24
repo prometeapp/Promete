@@ -1,12 +1,12 @@
 namespace Promete.Nodes.Renderer;
 
 /// <summary>
-///     座標系変換の為のメソッドを提供します。
+/// 座標系変換の為のメソッドを提供します。
 /// </summary>
 public static class CoordinateExtension
 {
     /// <summary>
-    ///     スクリーン座標をViewport座標に変換します。
+    /// スクリーン座標をViewport座標に変換します。
     /// </summary>
     public static Vector ToViewportPoint(this Vector dp, float halfWidth, float halfHeight)
     {
@@ -14,7 +14,7 @@ public static class CoordinateExtension
     }
 
     /// <summary>
-    ///     スクリーン座標をViewport座標に変換します。
+    /// スクリーン座標をViewport座標に変換します。
     /// </summary>
     public static (float, float) ToViewportPoint(this (float, float) dp, float halfWidth, float halfHeight)
     {

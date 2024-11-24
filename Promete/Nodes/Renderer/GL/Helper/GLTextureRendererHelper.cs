@@ -10,7 +10,7 @@ using Silk.NET.OpenGL;
 namespace Promete.Nodes.Renderer.GL.Helper;
 
 /// <summary>
-///     <see cref="Texture2D" /> オブジェクトをバッファ上に描画する機能を提供します。
+/// <see cref="Texture2D" /> オブジェクトをバッファ上に描画する機能を提供します。
 /// </summary>
 public class GLTextureRendererHelper
 {

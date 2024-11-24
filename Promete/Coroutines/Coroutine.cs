@@ -4,7 +4,7 @@ using System.Collections;
 namespace Promete.Coroutines;
 
 /// <summary>
-///     Coroutine class.
+/// Coroutine class.
 /// </summary>
 public class Coroutine : YieldInstruction
 {
@@ -18,19 +18,19 @@ public class Coroutine : YieldInstruction
     }
 
     /// <summary>
-    ///     Get whether the coroutine is running.
+    /// Get whether the coroutine is running.
     /// </summary>
     public bool IsRunning { get; private set; }
 
     public override bool KeepWaiting => IsRunning;
 
     /// <summary>
-    ///     Get the callback to execute after exiting.
+    /// Get the callback to execute after exiting.
     /// </summary>
     public Action? ThenAction { get; private set; }
 
     /// <summary>
-    ///     Get the callback that executes when an unhandled exception occurs.
+    /// Get the callback that executes when an unhandled exception occurs.
     /// </summary>
     public Action<Exception>? ErrorAction { get; private set; }
 
@@ -50,7 +50,7 @@ public class Coroutine : YieldInstruction
     }
 
     /// <summary>
-    ///     Set the callback after the coroutine ends.
+    /// Set the callback after the coroutine ends.
     /// </summary>
     /// <param name="callback">Callback.</param>
     /// <returns></returns>
@@ -62,7 +62,7 @@ public class Coroutine : YieldInstruction
 
 
     /// <summary>
-    ///     Set the callback when the coroutine throws an exception
+    /// Set the callback when the coroutine throws an exception
     /// </summary>
     /// <param name="callback">Callback.</param>
     /// <returns></returns>
@@ -73,7 +73,7 @@ public class Coroutine : YieldInstruction
     }
 
     /// <summary>
-    ///     シーンが切り替わっても、コルーチンを破棄せず継続するよう設定します。
+    /// シーンが切り替わっても、コルーチンを破棄せず継続するよう設定します。
     /// </summary>
     public Coroutine KeepAlive(bool keepAlive = true)
     {

@@ -3,7 +3,7 @@ using System.Drawing;
 namespace Promete.Nodes;
 
 /// <summary>
-///     Provide rendering primitive shapes.
+/// Provide rendering primitive shapes.
 /// </summary>
 public class Shape : Node
 {

@@ -55,17 +55,17 @@ public sealed class Gamepad : IDisposable
     public IEnumerable<GamepadButton> AllButtons => _buttons.AsEnumerable();
 
     /// <summary>
-    ///     現在押されている全てのボタンを列挙します。
+    /// 現在押されている全てのボタンを列挙します。
     /// </summary>
     public IEnumerable<GamepadButton> AllPressedButtons => _buttons.Where(c => c.IsPressed);
 
     /// <summary>
-    ///     このフレームで押された全てのボタンを列挙します。
+    /// このフレームで押された全てのボタンを列挙します。
     /// </summary>
     public IEnumerable<GamepadButton> AllDownButtons => _buttons.Where(c => c.IsButtonDown);
 
     /// <summary>
-    ///     このフレームで離された全てのボタンを列挙します。
+    /// このフレームで離された全てのボタンを列挙します。
     /// </summary>
     public IEnumerable<GamepadButton> AllUpButtons => _buttons.Where(c => c.IsButtonUp);
 

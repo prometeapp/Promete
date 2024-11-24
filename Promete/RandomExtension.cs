@@ -4,12 +4,12 @@ using System.Drawing;
 namespace Promete;
 
 /// <summary>
-///     乱数に関する拡張メソッドを提供します。
+/// 乱数に関する拡張メソッドを提供します。
 /// </summary>
 public static class RandomExtension
 {
     /// <summary>
-    ///     ランダムな色を生成します。
+    /// ランダムな色を生成します。
     /// </summary>
     public static Color NextColor(this Random r, int max = 256)
     {
@@ -17,7 +17,7 @@ public static class RandomExtension
     }
 
     /// <summary>
-    ///     ランダムな <see cref="Vector" /> を生成します。
+    /// ランダムな <see cref="Vector" /> を生成します。
     /// </summary>
     /// <param name="r">この <see cref="Random" /> オブジェクト。</param>
     /// <param name="xMax">X 座標の最大値。</param>
@@ -29,7 +29,7 @@ public static class RandomExtension
     }
 
     /// <summary>
-    ///     ランダムな <see cref="VectorInt" /> を生成します。
+    /// ランダムな <see cref="VectorInt" /> を生成します。
     /// </summary>
     /// <param name="r">この <see cref="Random" /> オブジェクト。</param>
     /// <param name="xMax">X 座標の最大値。</param>
@@ -41,7 +41,7 @@ public static class RandomExtension
     }
 
     /// <summary>
-    ///     ランダムな <see cref="Vector" /> を生成します。<see cref="NextVector" /> と異なり、小数部分もランダムに生成されます。
+    /// ランダムな <see cref="Vector" /> を生成します。<see cref="NextVector" /> と異なり、小数部分もランダムに生成されます。
     /// </summary>
     /// <param name="r">この <see cref="Random" /> オブジェクト。</param>
     /// <param name="xMax">X 座標の最大値。</param>

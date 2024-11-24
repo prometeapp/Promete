@@ -3,7 +3,7 @@
 namespace Promete.Nodes;
 
 /// <summary>
-///     Setup API向けの <see cref="Node" /> の拡張
+/// Setup API向けの <see cref="Node" /> の拡張
 /// </summary>
 public static class SetupApiExtension
 {

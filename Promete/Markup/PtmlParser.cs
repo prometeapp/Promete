@@ -5,12 +5,12 @@ using System.Text;
 namespace Promete.Markup;
 
 /// <summary>
-///     文字列をPTMLとして解析します。
+/// 文字列をPTMLとして解析します。
 /// </summary>
 public static class PtmlParser
 {
     /// <summary>
-    ///     PTMLを解析します。
+    /// PTMLを解析します。
     /// </summary>
     /// <param name="ptml">PTML文字列。</param>
     /// <param name="throwsIfError">エラーがあったときに例外をスローするかどうか。</param>

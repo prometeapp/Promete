@@ -1,12 +1,12 @@
 ﻿namespace Promete.Graphics.Fonts;
 
 /// <summary>
-///     Prometeで利用できるフォントを表すインターフェイス。
+/// Prometeで利用できるフォントを表すインターフェイス。
 /// </summary>
 public interface IFont
 {
     /// <summary>
-    ///     テキストを含む矩形のサイズを取得します。
+    /// テキストを含む矩形のサイズを取得します。
     /// </summary>
     /// <param name="text">テキスト。</param>
     /// <param name="options">テキストの描画オプション。</param>
@@ -14,7 +14,7 @@ public interface IFont
     public Rect GetTextBounds(string text, TextRenderingOptions options);
 
     /// <summary>
-    ///     指定した文字列を描画したテクスチャを生成します。
+    /// 指定した文字列を描画したテクスチャを生成します。
     /// </summary>
     /// <param name="factory">テクスチャの生成に使用するファクトリ。</param>
     /// <param name="text">描画するテキスト。</param>

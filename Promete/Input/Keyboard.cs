@@ -10,7 +10,7 @@ using Silk.NET.Input;
 namespace Promete.Input;
 
 /// <summary>
-///     キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
+/// キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
 /// </summary>
 public sealed partial class Keyboard
 {
@@ -32,28 +32,28 @@ public sealed partial class Keyboard
     }
 
     /// <summary>
-    ///     存在する全てのキーコードを列挙します。
+    /// 存在する全てのキーコードを列挙します。
     /// </summary>
     public IEnumerable<KeyCode> AllKeyCodes => _allCodes;
 
     /// <summary>
-    ///     現在押されている全てのキーを列挙します。
+    /// 現在押されている全てのキーを列挙します。
     /// </summary>
     public IEnumerable<KeyCode> AllPressedKeys => _allCodes.Where(c => KeyOf(c).IsPressed);
 
     /// <summary>
-    ///     このフレームで押された全てのキーを列挙します。
+    /// このフレームで押された全てのキーを列挙します。
     /// </summary>
     public IEnumerable<KeyCode> AllDownKeys => _allCodes.Where(c => KeyOf(c).IsKeyDown);
 
     /// <summary>
-    ///     このフレームで離された全てのキーを列挙します。
+    /// このフレームで離された全てのキーを列挙します。
     /// </summary>
     public IEnumerable<KeyCode> AllUpKeys => _allCodes.Where(c => KeyOf(c).IsKeyUp);
 
     /// <summary>
-    ///     キーボードバッファに蓄積されている、入力された文字列を取得します。
-    ///     呼び出した時点でバッファはクリアされます。
+    /// キーボードバッファに蓄積されている、入力された文字列を取得します。
+    /// 呼び出した時点でバッファはクリアされます。
     /// </summary>
     public string GetString()
     {
@@ -66,8 +66,8 @@ public sealed partial class Keyboard
     }
 
     /// <summary>
-    ///     キーボードバッファに蓄積されている、入力された文字を取得します。
-    ///     呼び出した時点でその文字はバッファから削除されます。
+    /// キーボードバッファに蓄積されている、入力された文字を取得します。
+    /// 呼び出した時点でその文字はバッファから削除されます。
     /// </summary>
     public char GetChar()
     {
@@ -75,7 +75,7 @@ public sealed partial class Keyboard
     }
 
     /// <summary>
-    ///     キーボードバッファにデータが存在するかどうかを取得します。
+    /// キーボードバッファにデータが存在するかどうかを取得します。
     /// </summary>
     /// <returns></returns>
     public bool HasChar()
@@ -84,7 +84,7 @@ public sealed partial class Keyboard
     }
 
     /// <summary>
-    ///     モバイル デバイス等で仮想キーボードを開きます。
+    /// モバイル デバイス等で仮想キーボードを開きます。
     /// </summary>
     public void OpenVirtualKeyboard()
     {
@@ -92,7 +92,7 @@ public sealed partial class Keyboard
     }
 
     /// <summary>
-    ///     モバイル デバイス等で仮想キーボードを閉じます。
+    /// モバイル デバイス等で仮想キーボードを閉じます。
     /// </summary>
     public void CloseVirtualKeyboard()
     {

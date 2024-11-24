@@ -9,52 +9,52 @@ using Color = System.Drawing.Color;
 namespace Promete.Graphics;
 
 /// <summary>
-///     テクスチャを生成するファクトリです。
+/// テクスチャを生成するファクトリです。
 /// </summary>
 public abstract class TextureFactory
 {
     /// <summary>
-    ///     指定したパスからテクスチャを読み込みます。
+    /// 指定したパスからテクスチャを読み込みます。
     /// </summary>
     public abstract Texture2D Load(string path);
 
     /// <summary>
-    ///     指定したストリームからテクスチャを読み込みます。
+    /// 指定したストリームからテクスチャを読み込みます。
     /// </summary>
     public abstract Texture2D Load(Stream stream);
 
     /// <summary>
-    ///     指定したパスからテクスチャを読み込み、切り抜きます。
+    /// 指定したパスからテクスチャを読み込み、切り抜きます。
     /// </summary>
     public abstract Texture2D[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size);
 
     /// <summary>
-    ///     指定したストリームからテクスチャを読み込み、切り抜きます。
+    /// 指定したストリームからテクスチャを読み込み、切り抜きます。
     /// </summary>
     public abstract Texture2D[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size);
 
     /// <summary>
-    ///     ビットマップのデータからテクスチャを生成します。
+    /// ビットマップのデータからテクスチャを生成します。
     /// </summary>
     public abstract Texture2D Create(byte[] bitmap, VectorInt size);
 
     /// <summary>
-    ///     ビットマップのデータからテクスチャを生成します。
+    /// ビットマップのデータからテクスチャを生成します。
     /// </summary>
     public abstract Texture2D Create(byte[,,] bitmap);
 
     /// <summary>
-    ///     指定した色の単色テクスチャを生成します。
+    /// 指定した色の単色テクスチャを生成します。
     /// </summary>
     public abstract Texture2D CreateSolid(Color color, VectorInt size);
 
     /// <summary>
-    ///     [内部的に使用。] ImageSharp の Image からテクスチャを生成します。
+    /// [内部的に使用。] ImageSharp の Image からテクスチャを生成します。
     /// </summary>
     internal abstract Texture2D LoadFromImageSharpImage(Image image);
 
     /// <summary>
-    ///     指定したパスから 9 スライステクスチャを読み込みます。
+    /// 指定したパスから 9 スライステクスチャを読み込みます。
     /// </summary>
     public virtual Texture9Sliced Load9Sliced(string path, int left, int top, int right, int bottom)
     {
@@ -62,7 +62,7 @@ public abstract class TextureFactory
     }
 
     /// <summary>
-    ///     指定したストリームから 9 スライステクスチャを読み込みます。
+    /// 指定したストリームから 9 スライステクスチャを読み込みます。
     /// </summary>
     public virtual Texture9Sliced Load9Sliced(Stream stream, int left, int top, int right, int bottom)
     {

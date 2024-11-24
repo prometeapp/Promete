@@ -1,7 +1,7 @@
 namespace Promete.Input;
 
 /// <summary>
-///     キーコードを表します。
+/// キーコードを表します。
 /// </summary>
 public enum KeyCode
 {

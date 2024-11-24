@@ -138,7 +138,7 @@ public partial class Keyboard
     public Key LastKey { get; } = new();
 
     /// <summary>
-    ///     Get a specific key by <see cref="KeyCode" />.
+    /// Get a specific key by <see cref="KeyCode" />.
     /// </summary>
     public Key KeyOf(KeyCode code)
     {

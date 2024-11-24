@@ -4,32 +4,32 @@ using System.Numerics;
 namespace Promete;
 
 /// <summary>
-///     Two-dimensional vector.
+/// Two-dimensional vector.
 /// </summary>
 public struct Vector : IEquatable<Vector>
 {
     /// <summary>
-    ///     Get or set X coordinate of this vector.
+    /// Get or set X coordinate of this vector.
     /// </summary>
     public float X { get; set; }
 
     /// <summary>
-    ///     Get or set Y coordinate of this vector.
+    /// Get or set Y coordinate of this vector.
     /// </summary>
     public float Y { get; set; }
 
     /// <summary>
-    ///     Get length of this vector.
+    /// Get length of this vector.
     /// </summary>
     public float Magnitude => MathF.Sqrt(X * X + Y * Y);
 
     /// <summary>
-    ///     Get a unit vector with the same orientation as this vector.
+    /// Get a unit vector with the same orientation as this vector.
     /// </summary>
     public Vector Normalized => (X / Magnitude, Y / Magnitude);
 
     /// <summary>
-    ///     Initialize a new instance of <see cref="Vector" /> class.
+    /// Initialize a new instance of <see cref="Vector" /> class.
     /// </summary>
     /// <param name="x"></param>
     /// <param name="y"></param>
@@ -99,7 +99,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Get angle between 2 vectors.
+    /// Get angle between 2 vectors.
     /// </summary>
     /// <returns>Radian angle between 2 vectors.</returns>
     public static float Angle(Vector from, Vector to)
@@ -109,7 +109,7 @@ public struct Vector : IEquatable<Vector>
 
 
     /// <summary>
-    ///     Get the distance between 2 vectors.
+    /// Get the distance between 2 vectors.
     /// </summary>
     public static float Distance(Vector from, Vector to)
     {
@@ -119,7 +119,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Calculate a dot product.
+    /// Calculate a dot product.
     /// </summary>
     public static float Dot(Vector v1, Vector v2)
     {
@@ -127,7 +127,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Calculate a dot product.
+    /// Calculate a dot product.
     /// </summary>
     public float Dot(Vector v)
     {
@@ -135,7 +135,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Compare this object.
+    /// Compare this object.
     /// </summary>
     public override bool Equals(object? obj)
     {
@@ -143,7 +143,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Compare this object.
+    /// Compare this object.
     /// </summary>
     public bool Equals(Vector other)
     {
@@ -151,7 +151,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Get the hash value of this object.
+    /// Get the hash value of this object.
     /// </summary>
     public override int GetHashCode()
     {
@@ -159,7 +159,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Get angle of this vector.
+    /// Get angle of this vector.
     /// </summary>
     public float Angle()
     {
@@ -168,7 +168,7 @@ public struct Vector : IEquatable<Vector>
 
 
     /// <summary>
-    ///     Get the direction of the specified vector relative to this vector.
+    /// Get the direction of the specified vector relative to this vector.
     /// </summary>
     public float Angle(Vector to)
     {
@@ -176,7 +176,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Get the distance between two vectors.
+    /// Get the distance between two vectors.
     /// </summary>
     public float Distance(Vector to)
     {
@@ -184,7 +184,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Check if this vector is in the specified range.
+    /// Check if this vector is in the specified range.
     /// </summary>
     public bool In(Rect rect)
     {
@@ -192,7 +192,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Check if this vector is in the specified range.
+    /// Check if this vector is in the specified range.
     /// </summary>
     public bool In(Vector location, Vector size)
     {
@@ -202,7 +202,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Deconstructs x and y.
+    /// Deconstructs x and y.
     /// </summary>
     public void Deconstruct(out float x, out float y)
     {
@@ -210,7 +210,7 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Get formatted string of this vector.
+    /// Get formatted string of this vector.
     /// </summary>
     public override string ToString()
     {
@@ -218,32 +218,32 @@ public struct Vector : IEquatable<Vector>
     }
 
     /// <summary>
-    ///     Get <c>new Vector(0, 0)</c> .
+    /// Get <c>new Vector(0, 0)</c> .
     /// </summary>
     public static readonly Vector Zero = (0, 0);
 
     /// <summary>
-    ///     Get <c>new Vector(1, 1)</c> .
+    /// Get <c>new Vector(1, 1)</c> .
     /// </summary>
     public static readonly Vector One = (1, 1);
 
     /// <summary>
-    ///     Get <c>new Vector(-1, 0)</c> .
+    /// Get <c>new Vector(-1, 0)</c> .
     /// </summary>
     public static readonly Vector Left = (-1, 0);
 
     /// <summary>
-    ///     Get <c>new Vector(0, -1)</c> .
+    /// Get <c>new Vector(0, -1)</c> .
     /// </summary>
     public static readonly Vector Up = (0, -1);
 
     /// <summary>
-    ///     Get <c>new Vector(1, 0)</c> .
+    /// Get <c>new Vector(1, 0)</c> .
     /// </summary>
     public static readonly Vector Right = (1, 0);
 
     /// <summary>
-    ///     Get <c>new Vector(0, 1)</c> .
+    /// Get <c>new Vector(0, 1)</c> .
     /// </summary>
     public static readonly Vector Down = (0, 1);
 

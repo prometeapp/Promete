@@ -18,7 +18,7 @@ public class ImGuiPlugin
     private readonly IWindow _window;
 
     /// <summary>
-    ///     ImGuiPlugin の新しいインスタンスを初期化します。
+    /// ImGuiPlugin の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="app"></param>
     /// <param name="window"></param>

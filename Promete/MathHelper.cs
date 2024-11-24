@@ -3,12 +3,12 @@ using System;
 namespace Promete;
 
 /// <summary>
-///     便利な数学系メソッドを提供します。
+/// 便利な数学系メソッドを提供します。
 /// </summary>
 public static class MathHelper
 {
     /// <summary>
-    ///     線形補間移動を計算します。
+    /// 線形補間移動を計算します。
     /// </summary>
     /// <param name="time">Time.</param>
     /// <param name="start">Start.</param>
@@ -19,7 +19,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     加減速移動を計算します。
+    /// 加減速移動を計算します。
     /// </summary>
     /// <param name="time">Time.</param>
     /// <param name="start">Start.</param>
@@ -32,7 +32,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     加速移動を計算します。
+    /// 加速移動を計算します。
     /// </summary>
     /// <returns>The in.</returns>
     /// <param name="time">Time.</param>
@@ -44,7 +44,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     減速移動を計算します。
+    /// 減速移動を計算します。
     /// </summary>
     /// <returns>The out.</returns>
     /// <param name="time">Time.</param>
@@ -56,7 +56,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     線形補間移動を計算します。
+    /// 線形補間移動を計算します。
     /// </summary>
     /// <param name="time">Time.</param>
     /// <param name="start">Start.</param>
@@ -67,7 +67,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     加減速移動を計算します。
+    /// 加減速移動を計算します。
     /// </summary>
     /// <param name="time">Time.</param>
     /// <param name="start">Start.</param>
@@ -78,7 +78,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     減速移動を計算します。
+    /// 減速移動を計算します。
     /// </summary>
     /// <returns>The out.</returns>
     /// <param name="time">Time.</param>
@@ -90,7 +90,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     加速移動を計算します。
+    /// 加速移動を計算します。
     /// </summary>
     /// <returns>The out.</returns>
     /// <param name="time">Time.</param>
@@ -102,7 +102,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     角度を弧度に変換します。
+    /// 角度を弧度に変換します。
     /// </summary>
     /// <returns>The radian.</returns>
     /// <param name="degree">Degree.</param>
@@ -112,7 +112,7 @@ public static class MathHelper
     }
 
     /// <summary>
-    ///     弧度を角度に変換します。
+    /// 弧度を角度に変換します。
     /// </summary>
     /// <returns>The degree.</returns>
     /// <param name="radian">Radian.</param>

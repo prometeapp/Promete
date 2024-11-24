@@ -21,7 +21,7 @@ public abstract class ContainableNode : Node
     }
 
     /// <summary>
-    ///     ノードのソートを要求します。要求された場合、次のUpdateフレームでソートが行われます。
+    /// ノードのソートを要求します。要求された場合、次のUpdateフレームでソートが行われます。
     /// </summary>
     public void RequestSorting()
     {

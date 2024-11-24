@@ -5,12 +5,12 @@ using Promete.Windowing;
 namespace Promete;
 
 /// <summary>
-///     シーンを表す抽象クラスです。
+/// シーンを表す抽象クラスです。
 /// </summary>
 public abstract class Scene
 {
     /// <summary>
-    ///     このシーンのルートコンテナを取得します。
+    /// このシーンのルートコンテナを取得します。
     /// </summary>
     public Container Root { get; protected init; } = new Container().Name("Root");
 
@@ -20,21 +20,21 @@ public abstract class Scene
     protected IWindow Window => App.Window ?? throw new InvalidOperationException("Window is not initialized.");
 
     /// <summary>
-    ///     Called when the scene starts.
+    /// Called when the scene starts.
     /// </summary>
     public virtual void OnStart()
     {
     }
 
     /// <summary>
-    ///     Called when updating frame of the scene.
+    /// Called when updating frame of the scene.
     /// </summary>
     public virtual void OnUpdate()
     {
     }
 
     /// <summary>
-    ///     Called when the scene is disposed.
+    /// Called when the scene is disposed.
     /// </summary>
     public virtual void OnDestroy()
     {

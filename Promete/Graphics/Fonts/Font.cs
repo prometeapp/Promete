@@ -16,10 +16,25 @@ using Color = System.Drawing.Color;
 namespace Promete.Graphics.Fonts;
 
 /// <summary>
-///     ファイルおよびストリームから生成可能なベクターフォントを表します。
+/// ファイルおよびストリームから生成可能なベクターフォントを表します。
 /// </summary>
 public class Font : IFont
 {
+    /// <summary>
+    /// フォントサイズを取得します。
+    /// </summary>
+    public float Size { get; }
+
+    /// <summary>
+    /// フォントスタイルを取得します。
+    /// </summary>
+    public FontStyle Style { get; }
+
+    /// <summary>
+    /// アンチエイリアスが有効かどうかを取得します。
+    /// </summary>
+    public bool IsAntialiased { get; }
+
     private const char ZeroWidthSpace = '\u200B';
 
     private static readonly Dictionary<object, FontFamily> FontCache = new();
@@ -58,16 +73,6 @@ public class Font : IFont
         Size = size;
         Style = style;
     }
-
-    /// <summary>
-    ///     フォントサイズを取得します。
-    /// </summary>
-    public float Size { get; }
-
-    /// <summary>
-    ///     フォントスタイルを取得します。
-    /// </summary>
-    public FontStyle Style { get; }
 
     /// <inheritdoc />
     public Rect GetTextBounds(string text, TextRenderingOptions options)
@@ -111,7 +116,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     フォントサイズを変更した新しいフォントを生成します。
+    /// フォントサイズを変更した新しいフォントを生成します。
     /// </summary>
     /// <param name="size">新しいフォントサイズ。</param>
     /// <returns>生成されたフォント。</returns>
@@ -121,7 +126,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     フォントスタイルを変更した新しいフォントを生成します。
+    /// フォントスタイルを変更した新しいフォントを生成します。
     /// </summary>
     /// <param name="style">新しいフォントスタイル。</param>
     /// <returns>生成されたフォント。</returns>
@@ -131,7 +136,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     フォントサイズおよびスタイルを変更した新しいフォントを生成します。
+    /// フォントサイズおよびスタイルを変更した新しいフォントを生成します。
     /// </summary>
     /// <param name="size">新しいフォントサイズ。</param>
     /// <param name="style">新しいフォントスタイル。</param>
@@ -142,7 +147,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     ファイルパスを指定し、フォントを生成します。
+    /// ファイルパスを指定し、フォントを生成します。
     /// </summary>
     /// <param name="path">フォントファイルのパス。</param>
     /// <param name="size">フォントサイズ。</param>
@@ -161,7 +166,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     ストリームを指定し、フォントを生成します。
+    /// ストリームを指定し、フォントを生成します。
     /// </summary>
     /// <param name="stream">フォントファイルのストリーム。</param>
     /// <param name="size">フォントサイズ。</param>
@@ -177,7 +182,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     システムフォントを指定し、フォントを生成します。
+    /// システムフォントを指定し、フォントを生成します。
     /// </summary>
     /// <param name="fontFamily">指定するフォントファミリー。指定可能な文字列は環境によって異なります。</param>
     /// <param name="size">フォントサイズ。</param>
@@ -189,7 +194,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     システムフォントを指定し、フォントを生成します。
+    /// システムフォントを指定し、フォントを生成します。
     /// </summary>
     /// <param name="fontFamily">指定するフォントファミリー。指定可能な文字列は環境によって異なります。</param>
     /// <param name="culture">カルチャ情報。</param>
@@ -207,7 +212,7 @@ public class Font : IFont
     }
 
     /// <summary>
-    ///     デフォルトのフォントを生成します。
+    /// デフォルトのフォントを生成します。
     /// </summary>
     /// <param name="size">フォントサイズ。</param>
     /// <param name="style">フォントスタイル。</param>

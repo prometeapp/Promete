@@ -1,12 +1,12 @@
 ﻿namespace Promete.Markup;
 
 /// <summary>
-///     PTMLに関するユーティリティクラス。
+/// PTMLに関するユーティリティクラス。
 /// </summary>
 public static class PtmlUtility
 {
     /// <summary>
-    ///     PTMLタグをエスケープします。
+    /// PTMLタグをエスケープします。
     /// </summary>
     /// <param name="ptml">PTML文字列。</param>
     /// <returns>エスケープされたPTMl文字列。</returns>
@@ -19,7 +19,7 @@ public static class PtmlUtility
     }
 
     /// <summary>
-    ///     エスケープされたPTMLタグをデコードします。
+    /// エスケープされたPTMLタグをデコードします。
     /// </summary>
     /// <param name="ptml">エスケープされたPTML文字列。</param>
     /// <returns>デコードされたPTML文字列。</returns>

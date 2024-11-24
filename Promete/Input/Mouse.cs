@@ -7,7 +7,7 @@ using SilkMouseButton = Silk.NET.Input.MouseButton;
 namespace Promete.Input;
 
 /// <summary>
-///     マウスカーソルの位置や、ボタン入力、ホイールスクロールの情報を取得する Promete プラグインです。このクラスは継承できません。
+/// マウスカーソルの位置や、ボタン入力、ホイールスクロールの情報を取得する Promete プラグインです。このクラスは継承できません。
 /// </summary>
 public sealed class Mouse
 {
@@ -36,23 +36,23 @@ public sealed class Mouse
     }
 
     /// <summary>
-    ///     マウスカーソルの位置を取得します。
+    /// マウスカーソルの位置を取得します。
     /// </summary>
     public VectorInt Position { get; private set; }
 
     /// <summary>
-    ///     マウスホイールのスクロール量を取得します。
+    /// マウスホイールのスクロール量を取得します。
     /// </summary>
     public Vector Scroll { get; private set; }
 
     /// <summary>
-    ///     指定したボタンの情報を取得します。
+    /// 指定したボタンの情報を取得します。
     /// </summary>
     /// <param name="index">ボタン番号。</param>
     public MouseButton this[int index] => _buttons[index];
 
     /// <summary>
-    ///     指定したボタンの情報を取得します。
+    /// 指定したボタンの情報を取得します。
     /// </summary>
     /// <param name="type">ボタンタイプ。</param>
     public MouseButton this[MouseButtonType type] => _buttons[(int)type];

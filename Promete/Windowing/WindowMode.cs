@@ -1,7 +1,7 @@
 namespace Promete.Windowing;
 
 /// <summary>
-///     Enumerates modes of the Promete Window.
+/// Enumerates modes of the Promete Window.
 /// </summary>
 public enum WindowMode
 {

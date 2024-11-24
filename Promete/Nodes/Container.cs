@@ -6,12 +6,12 @@ using System.Collections.Generic;
 namespace Promete.Nodes;
 
 /// <summary>
-///     全ての <see cref="Node" /> を入れ子にできる <see cref="Node" /> です。
+/// 全ての <see cref="Node" /> を入れ子にできる <see cref="Node" /> です。
 /// </summary>
 public class Container : ContainableNode, IEnumerable<Node>
 {
     /// <summary>
-    ///     Container の新しいインスタンスを初期化します。
+    /// Container の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
     public Container(bool isTrimmable = false)

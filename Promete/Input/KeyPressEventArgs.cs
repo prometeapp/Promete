@@ -1,7 +1,7 @@
 namespace Promete.Input;
 
 /// <summary>
-///     Keyboard pressed event argument.
+/// Keyboard pressed event argument.
 /// </summary>
 public struct KeyPressEventArgs
 {
