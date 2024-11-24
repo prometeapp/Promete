@@ -67,11 +67,12 @@ public class Font : IFont
 
     private readonly SixLabors.Fonts.Font _internalFont;
 
-    protected Font(SixLabors.Fonts.Font internalFont, float size, FontStyle style)
+    protected Font(SixLabors.Fonts.Font internalFont, float size, FontStyle style, bool isAntialiased)
     {
         _internalFont = internalFont;
         Size = size;
         Style = style;
+        IsAntialiased = isAntialiased;
     }
 
     /// <inheritdoc />
@@ -106,13 +107,13 @@ public class Font : IFont
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        return obj is Font f && f._internalFont == _internalFont && f.Size.Equals(Size) && f.Style == Style;
+        return obj is Font f && f._internalFont == _internalFont && f.Size.Equals(Size) && f.Style == Style && f.IsAntialiased == IsAntialiased;
     }
 
     /// <inheritdoc />
     public override int GetHashCode()
     {
-        return HashCode.Combine(_internalFont, Size, Style);
+        return HashCode.Combine(_internalFont, Size, Style, IsAntialiased);
     }
 
     /// <summary>
@@ -122,7 +123,7 @@ public class Font : IFont
     /// <returns>生成されたフォント。</returns>
     public Font With(float size)
     {
-        return new Font(_internalFont, size, Style);
+        return new Font(_internalFont, size, Style, IsAntialiased);
     }
 
     /// <summary>
@@ -132,7 +133,7 @@ public class Font : IFont
     /// <returns>生成されたフォント。</returns>
     public Font With(FontStyle style)
     {
-        return new Font(_internalFont, Size, style);
+        return new Font(_internalFont, Size, style, IsAntialiased);
     }
 
     /// <summary>
@@ -143,7 +144,19 @@ public class Font : IFont
     /// <returns>生成されたフォント。</returns>
     public Font With(float size, FontStyle style)
     {
-        return new Font(_internalFont, size, style);
+        return new Font(_internalFont, size, style, IsAntialiased);
+    }
+
+    /// <summary>
+    /// フォントサイズおよびスタイル、アンチエイリアスの有効/無効を変更した新しいフォントを生成します。
+    /// </summary>
+    /// <param name="size">新しいフォントサイズ。</param>
+    /// <param name="style">新しいフォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
+    /// <returns>生成されたフォント。</returns>
+    public Font With(float size, FontStyle style, bool isAntialiased)
+    {
+        return new Font(_internalFont, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -152,17 +165,18 @@ public class Font : IFont
     /// <param name="path">フォントファイルのパス。</param>
     /// <param name="size">フォントサイズ。</param>
     /// <param name="style">フォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
     /// <exception cref="FileNotFoundException">フォントファイルが見つからない場合。</exception>
-    public static Font FromFile(string path, float size = 16, FontStyle style = FontStyle.Normal)
+    public static Font FromFile(string path, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
     {
-        if (FontCache.TryGetValue(path, out var f)) return FromFontFamily(f, size, style);
+        if (FontCache.TryGetValue(path, out var f)) return FromFontFamily(f, size, style, isAntialiased);
 
         if (!File.Exists(path)) throw new FileNotFoundException("Font file not found.", path);
         var family = FontCollection.Add(path);
         FontCache[path] = family;
 
-        return FromFontFamily(family, size, style);
+        return FromFontFamily(family, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -171,14 +185,15 @@ public class Font : IFont
     /// <param name="stream">フォントファイルのストリーム。</param>
     /// <param name="size">フォントサイズ。</param>
     /// <param name="style">フォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
-    public static Font FromFile(Stream stream, float size = 16, FontStyle style = FontStyle.Normal)
+    public static Font FromFile(Stream stream, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
     {
-        if (FontCache.TryGetValue(stream, out var f)) return FromFontFamily(f, size, style);
+        if (FontCache.TryGetValue(stream, out var f)) return FromFontFamily(f, size, style, isAntialiased);
         stream.Position = 0;
         var family = FontCollection.Add(stream);
         FontCache[stream] = family;
-        return FromFontFamily(family, size, style);
+        return FromFontFamily(family, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -187,10 +202,11 @@ public class Font : IFont
     /// <param name="fontFamily">指定するフォントファミリー。指定可能な文字列は環境によって異なります。</param>
     /// <param name="size">フォントサイズ。</param>
     /// <param name="style">フォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
-    public static Font FromSystem(string fontFamily, float size = 16, FontStyle style = FontStyle.Normal)
+    public static Font FromSystem(string fontFamily, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
     {
-        return FromSystem(fontFamily, CultureInfo.CurrentCulture, size, style);
+        return FromSystem(fontFamily, CultureInfo.CurrentCulture, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -200,15 +216,16 @@ public class Font : IFont
     /// <param name="culture">カルチャ情報。</param>
     /// <param name="size">フォントサイズ。</param>
     /// <param name="style">フォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
     public static Font FromSystem(string fontFamily, CultureInfo culture, float size = 16,
-        FontStyle style = FontStyle.Normal)
+        FontStyle style = FontStyle.Normal, bool isAntialiased = true)
     {
-        if (FontCache.TryGetValue(fontFamily, out var f)) return FromFontFamily(f, size, style);
+        if (FontCache.TryGetValue(fontFamily, out var f)) return FromFontFamily(f, size, style, isAntialiased);
 
         var family = SystemFonts.Get(fontFamily, culture);
         FontCache[fontFamily] = family;
-        return FromFontFamily(family, size, style);
+        return FromFontFamily(family, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -216,16 +233,17 @@ public class Font : IFont
     /// </summary>
     /// <param name="size">フォントサイズ。</param>
     /// <param name="style">フォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
-    public static Font GetDefault(float size = 16, FontStyle style = FontStyle.Normal)
+    public static Font GetDefault(float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
     {
-        return FromFontFamily(DefaultFontFamily.Value, size, style);
+        return FromFontFamily(DefaultFontFamily.Value, size, style, isAntialiased);
     }
 
-    private static Font FromFontFamily(FontFamily family, float size, FontStyle style)
+    private static Font FromFontFamily(FontFamily family, float size, FontStyle style, bool isAntialiased)
     {
         var internalFont = new SixLabors.Fonts.Font(family, size, (SixLabors.Fonts.FontStyle)style);
-        return new Font(internalFont, size, style);
+        return new Font(internalFont, size, style, isAntialiased);
     }
 
     private (string plainText, RichTextOptions options) CreateTextOptions(TextRenderingOptions options, string text)
@@ -236,8 +254,8 @@ public class Font : IFont
             VerticalAlignment = options.VerticalAlignment.ToSixLabors(),
             HorizontalAlignment = options.HorizontalAlignment.ToSixLabors(),
             LineSpacing = options.LineSpacing,
-            KerningMode = options.UseAntialiasing ? default : KerningMode.None,
-            TextAlignment = options.UseAntialiasing ? default : TextAlignment.Start
+            KerningMode = IsAntialiased ? default : KerningMode.None,
+            TextAlignment = IsAntialiased ? default : TextAlignment.Start
         };
         if (!options.UseRichText) return (text, textOptions);
 
@@ -261,9 +279,13 @@ public class Font : IFont
 
     private DrawingOptions CreateDrawingOptions(TextRenderingOptions options)
     {
-        var drawingOptions = new DrawingOptions();
-        if (!options.UseAntialiasing) drawingOptions.GraphicsOptions.Antialias = false;
-        return drawingOptions;
+        return new DrawingOptions
+        {
+            GraphicsOptions =
+            {
+                Antialias = IsAntialiased
+            }
+        };
     }
 
     private RichTextRun? CreateRunFromDecoration(PtmlDecoration decoration)

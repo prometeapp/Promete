@@ -54,11 +54,6 @@ public sealed class TextRenderingOptions : ICloneable
     /// </summary>
     public bool UseRichText { get; set; }
 
-    /// <summary>
-    /// アンチエイリアシングを有効化するかどうかを取得また設定します。
-    /// </summary>
-    public bool UseAntialiasing { get; set; } = true;
-
     object ICloneable.Clone()
     {
         return Clone();
@@ -77,7 +72,6 @@ public sealed class TextRenderingOptions : ICloneable
             HorizontalAlignment = HorizontalAlignment,
             Size = Size,
             UseRichText = UseRichText,
-            UseAntialiasing = UseAntialiasing
         };
     }
 }

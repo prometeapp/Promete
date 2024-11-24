@@ -149,17 +149,6 @@ public class Text : Node
         }
     }
 
-    public bool UseAntialiasing
-    {
-        get => Options.UseAntialiasing;
-        set
-        {
-            if (Options.UseAntialiasing == value) return;
-            Options.UseAntialiasing = value;
-            _isUpdateRequested = true;
-        }
-    }
-
     public TextRenderingOptions Options { get; } = DefaultOptions.Clone();
 
     public static TextRenderingOptions DefaultOptions { get; } = new();
