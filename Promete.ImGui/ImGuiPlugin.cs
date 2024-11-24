@@ -49,25 +49,6 @@ public sealed class ImGuiPlugin
     {
         var io = ImGuiNET.ImGui.GetIO();
         io.NativePtr->IniFilename = null;
-
-        var config = new ImFontConfigPtr(ImGuiNative.ImFontConfig_ImFontConfig())
-        {
-            GlyphRanges = io.Fonts.GetGlyphRangesJapanese(),
-            OversampleH = 2,
-            OversampleV = 1,
-            RasterizerMultiply = 1.2f,
-            PixelSnapH = true,
-            FontDataOwnedByAtlas = false
-        };
-
-        using var fontStream = typeof(PrometeApp).Assembly.GetManifestResourceStream("Promete.Resources.font.ttf") ??
-                               throw new InvalidOperationException("Failed to load font.");
-        using var memoryStream = new MemoryStream();
-        fontStream.CopyTo(memoryStream);
-        var bytes = memoryStream.ToArray();
-        fontData = Marshal.AllocCoTaskMem(bytes.Length);
-        Marshal.Copy(bytes, 0, fontData, bytes.Length);
-        font = io.Fonts.AddFontFromMemoryTTF(fontData, bytes.Length, 18, config);
     }
 
     private void OnWindowRender()
