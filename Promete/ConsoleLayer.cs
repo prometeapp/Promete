@@ -33,7 +33,7 @@ public class ConsoleLayer
     }
 
     /// <summary>
-    ///     現在のコンソール上のカーソル位置を取得または設定します。
+    /// 現在のコンソール上のカーソル位置を取得または設定します。
     /// </summary>
     public VectorInt Cursor { get; set; }
 
@@ -49,12 +49,12 @@ public class ConsoleLayer
     }
 
     /// <summary>
-    ///     現在の文字色を取得または設定します。
+    /// 現在の文字色を取得または設定します。
     /// </summary>
     public Color TextColor { get; set; } = Color.White;
 
     /// <summary>
-    ///     コンソール上の文字列を完全に消去します。
+    /// コンソール上の文字列を完全に消去します。
     /// </summary>
     public void Clear()
     {
@@ -63,7 +63,7 @@ public class ConsoleLayer
     }
 
     /// <summary>
-    ///     コンソール上に、指定したオブジェクトを出力します。
+    /// コンソール上に、指定したオブジェクトを出力します。
     /// </summary>
     /// <param name="obj">表示するデータ。</param>
     public void Print(object? obj)
