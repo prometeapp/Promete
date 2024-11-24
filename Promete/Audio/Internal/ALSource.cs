@@ -5,10 +5,10 @@ namespace Promete.Audio.Internal;
 
 internal struct ALSource(AL al) : IDisposable
 {
-	public uint Handle { get; } = al.GenSource();
+    public uint Handle { get; } = al.GenSource();
 
-	public void Dispose()
-	{
-		al.DeleteSource(Handle);
-	}
+    public void Dispose()
+    {
+        al.DeleteSource(Handle);
+    }
 }

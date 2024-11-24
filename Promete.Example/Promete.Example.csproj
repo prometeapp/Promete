@@ -9,39 +9,39 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Promete.ImGui\Promete.ImGui.csproj" />
-      <ProjectReference Include="..\Promete\Promete.csproj" />
+        <ProjectReference Include="..\Promete.ImGui\Promete.ImGui.csproj"/>
+        <ProjectReference Include="..\Promete\Promete.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="assets\kagerou.ogg">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\lineclear.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\icons.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\ichigo.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\rect.png">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\JfDotShinonome14.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\Koruri.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\MisakiGothic.ttf">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="assets\kagerou.ogg">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\lineclear.wav">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\icons.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\ichigo.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\rect.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\JfDotShinonome14.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\Koruri.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\MisakiGothic.ttf">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Attributes\" />
+        <Folder Include="Attributes\"/>
     </ItemGroup>
 
 </Project>

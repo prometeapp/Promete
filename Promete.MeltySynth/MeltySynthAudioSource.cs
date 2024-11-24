@@ -5,58 +5,59 @@ namespace Promete.MeltySynth;
 
 public class MeltySynthAudioSource : IAudioSource
 {
-	public int? Samples => null;
-	public int Channels => 2;
-	public int Bits => 16;
-	public int SampleRate => 44100;
+    private readonly short[] _bufferLeft;
+    private readonly short[] _bufferRight;
 
-	private Synthesizer _synthesizer;
-	private readonly MidiFileSequencer _sequencer;
+    private readonly object _mutex;
+    private readonly MidiFileSequencer _sequencer;
 
-	private short[] _bufferLeft;
-	private short[] _bufferRight;
+    private readonly Synthesizer _synthesizer;
 
-	private object _mutex;
+    public MeltySynthAudioSource(string soundFontPath)
+    {
+        _synthesizer = new Synthesizer(soundFontPath, SampleRate);
+        _sequencer = new MidiFileSequencer(_synthesizer);
 
-	public MeltySynthAudioSource(string soundFontPath)
-	{
-		_synthesizer = new Synthesizer(soundFontPath, SampleRate);
-		_sequencer = new MidiFileSequencer(_synthesizer);
+        _bufferLeft = new short[2000];
+        _bufferRight = new short[2000];
 
-		_bufferLeft = new short[2000];
-		_bufferRight = new short[2000];
+        _mutex = new object();
+    }
 
-		_mutex = new object();
-	}
-	public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
-	{
-		lock (_mutex)
-		{
-			_sequencer.RenderInt16(_bufferLeft, _bufferRight);
-		}
+    public int? Samples => null;
+    public int Channels => 2;
+    public int Bits => 16;
+    public int SampleRate => 44100;
 
-		for (var t = 0; t < _bufferLeft.AsSpan().Length; t++)
-		{
-			buffer[t * 2] = _bufferLeft[t];
-			buffer[t * 2 + 1] = _bufferRight[t];
-		}
+    public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
+    {
+        lock (_mutex)
+        {
+            _sequencer.RenderInt16(_bufferLeft, _bufferRight);
+        }
 
-		return (_bufferLeft.Length, false);
-	}
+        for (var t = 0; t < _bufferLeft.AsSpan().Length; t++)
+        {
+            buffer[t * 2] = _bufferLeft[t];
+            buffer[t * 2 + 1] = _bufferRight[t];
+        }
 
-	public void Play(MidiFile midiFile, bool loop)
-	{
-		lock (_mutex)
-		{
-			_sequencer.Play(midiFile, loop);
-		}
-	}
+        return (_bufferLeft.Length, false);
+    }
 
-	public void Stop()
-	{
-		lock (_mutex)
-		{
-			_sequencer.Stop();
-		}
-	}
+    public void Play(MidiFile midiFile, bool loop)
+    {
+        lock (_mutex)
+        {
+            _sequencer.Play(midiFile, loop);
+        }
+    }
+
+    public void Stop()
+    {
+        lock (_mutex)
+        {
+            _sequencer.Stop();
+        }
+    }
 }

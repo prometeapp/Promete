@@ -1,39 +1,39 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<Nullable>Enable</Nullable>
-		<LangVersion>12</LangVersion>
-		<NoWarn>CS1591</NoWarn>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Nullable>Enable</Nullable>
+        <LangVersion>12</LangVersion>
+        <NoWarn>CS1591</NoWarn>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-	<PropertyGroup>
-		<PackageId>Promete</PackageId>
-		<Version>0.23.1</Version>
-		<PackageTags>Game Engine;2D;gamedev;games;gaming;windowing;OpenGL</PackageTags>
-		<Description>A lightweight, extensible and easy game engine.
-		</Description>
-		<Authors>Ebise Lutica</Authors>
-		<Copyright>(C)2024 Promete Developers</Copyright>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://github.com/prometeapp/Promete</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-	</PropertyGroup>
+    <PropertyGroup>
+        <PackageId>Promete</PackageId>
+        <Version>0.23.1</Version>
+        <PackageTags>Game Engine;2D;gamedev;games;gaming;windowing;OpenGL</PackageTags>
+        <Description>A lightweight, extensible and easy game engine.
+        </Description>
+        <Authors>Ebise Lutica</Authors>
+        <Copyright>(C)2024 Promete Developers</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/prometeapp/Promete</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<EmbeddedResource Include="Resources\shaders\texture.vert" />
-		<EmbeddedResource Include="Resources\shaders\texture.frag" />
-		<EmbeddedResource Include="Resources\shaders\primitive.vert" />
-		<EmbeddedResource Include="Resources\shaders\primitive.frag" />
-	</ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\shaders\texture.vert"/>
+        <EmbeddedResource Include="Resources\shaders\texture.frag"/>
+        <EmbeddedResource Include="Resources\shaders\primitive.vert"/>
+        <EmbeddedResource Include="Resources\shaders\primitive.frag"/>
+    </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-		<PackageReference Include="NVorbis" Version="0.10.5" />
-		<PackageReference Include="Silk.NET" Version="2.22.0" />
-		<PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
-		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1"/>
+        <PackageReference Include="NVorbis" Version="0.10.5"/>
+        <PackageReference Include="Silk.NET" Version="2.22.0"/>
+        <PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1"/>
+        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4"/>
+    </ItemGroup>
 </Project>

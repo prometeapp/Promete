@@ -8,20 +8,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Promete\Promete.csproj" />
+        <ProjectReference Include="..\Promete\Promete.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MeltySynth" Version="2.4.1" />
+        <PackageReference Include="MeltySynth" Version="2.4.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="SGM-V2.01.sf2">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
-      <None Update="231117.mid">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="SGM-V2.01.sf2">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="231117.mid">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

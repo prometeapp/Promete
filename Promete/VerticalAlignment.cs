@@ -2,7 +2,7 @@ namespace Promete;
 
 public enum VerticalAlignment
 {
-	Top,
-	Bottom,
-	Center,
+    Top,
+    Bottom,
+    Center
 }

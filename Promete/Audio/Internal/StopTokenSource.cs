@@ -4,15 +4,15 @@ namespace Promete.Audio.Internal;
 
 internal class StopTokenSource : IDisposable
 {
-	public bool IsStopRequested { get; private set; }
+    public bool IsStopRequested { get; private set; }
 
-	public void Stop()
-	{
-		IsStopRequested = true;
-	}
+    public void Dispose()
+    {
+        IsStopRequested = true;
+    }
 
-	public void Dispose()
-	{
-		IsStopRequested = true;
-	}
+    public void Stop()
+    {
+        IsStopRequested = true;
+    }
 }

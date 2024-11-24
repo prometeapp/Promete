@@ -1,7 +1,7 @@
 ﻿namespace Promete.Markup;
 
 /// <summary>
-/// PTMLの装飾情報を表すレコード。
+///     PTMLの装飾情報を表すレコード。
 /// </summary>
 /// <param name="Start">この装飾を開始する文字を含む、開始インデックス。</param>
 /// <param name="End">この装飾を終了する文字を含まない、終了インデックス。</param>

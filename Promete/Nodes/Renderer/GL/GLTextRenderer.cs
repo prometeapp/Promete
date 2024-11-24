@@ -4,11 +4,11 @@ namespace Promete.Nodes.Renderer.GL;
 
 public class GLTextRenderer(GLTextureRendererHelper helper) : NodeRendererBase
 {
-	public override void Render(Node node)
-	{
-		var text = (Text)node;
-		var texture = text.RenderedTexture;
-		if (texture == null) return;
-		helper.Draw(texture.Value, text);
-	}
+    public override void Render(Node node)
+    {
+        var text = (Text)node;
+        var texture = text.RenderedTexture;
+        if (texture == null) return;
+        helper.Draw(texture.Value, text);
+    }
 }

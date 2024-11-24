@@ -1,7 +1,10 @@
-namespace Promete.Nodes
+namespace Promete.Nodes;
+
+public enum ShapeType
 {
-	public enum ShapeType
-	{
-		Pixel, Line, Rect, Triangle, Polygon
-	}
+    Pixel,
+    Line,
+    Rect,
+    Triangle,
+    Polygon
 }

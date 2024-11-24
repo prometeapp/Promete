@@ -6,17 +6,17 @@ namespace Promete.Windowing.Headless;
 
 public class DummyInputContext : IInputContext
 {
-	public IntPtr Handle => IntPtr.Zero;
-	public IReadOnlyList<IGamepad> Gamepads { get; } = [];
-	public IReadOnlyList<IJoystick> Joysticks { get; } = [];
-	public IReadOnlyList<IKeyboard> Keyboards { get; } = [];
-	public IReadOnlyList<IMouse> Mice { get; } = [];
-	public IReadOnlyList<IInputDevice> OtherDevices { get; } = [];
+    public IntPtr Handle => IntPtr.Zero;
+    public IReadOnlyList<IGamepad> Gamepads { get; } = [];
+    public IReadOnlyList<IJoystick> Joysticks { get; } = [];
+    public IReadOnlyList<IKeyboard> Keyboards { get; } = [];
+    public IReadOnlyList<IMouse> Mice { get; } = [];
+    public IReadOnlyList<IInputDevice> OtherDevices { get; } = [];
 
-	public void Dispose()
-	{
-		GC.SuppressFinalize(this);
-	}
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
 
-	public event Action<IInputDevice, bool>? ConnectionChanged;
+    public event Action<IInputDevice, bool>? ConnectionChanged;
 }

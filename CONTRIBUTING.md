@@ -22,7 +22,7 @@ Promete では、 GitHub Actions を用いてデプロイの自動化を行っ�
 
 基本的には [C# のコーディング規則(公式)](https://docs.microsoft.com/ja-jp/dotnet/csharp/programming-guide/inside-a-program/coding-conventions) に従います。その上で、次の規約に従うこと
 
-- インデントは4文字タブ(ハードタブ)にすること。
+- インデントは4文字の空白文字を用いる。
 - フィールドを `public` にしないこと。
 - アクセス修飾子は必ず省略しないこと。
 - クラスや構造体のメンバーは次の順番で定義すること。

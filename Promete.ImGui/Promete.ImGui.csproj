@@ -8,25 +8,25 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.22.0" />
+        <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.22.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Promete\Promete.csproj" />
+        <ProjectReference Include="..\Promete\Promete.csproj"/>
     </ItemGroup>
 
-	<PropertyGroup>
-		<PackageId>Promete.ImGui</PackageId>
-		<Version>0.23.1</Version>
-		<PackageTags>Game Engine;2D;gamedev;games;gaming;ui;gui;imgui</PackageTags>
-		<Description>ImGui support for Promete
-		</Description>
-		<Authors>Ebise Lutica</Authors>
-		<Copyright>(C)2024 Promete Developers</Copyright>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageProjectUrl>https://github.com/prometeapp/Promete</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-	</PropertyGroup>
+    <PropertyGroup>
+        <PackageId>Promete.ImGui</PackageId>
+        <Version>0.23.1</Version>
+        <PackageTags>Game Engine;2D;gamedev;games;gaming;ui;gui;imgui</PackageTags>
+        <Description>ImGui support for Promete
+        </Description>
+        <Authors>Ebise Lutica</Authors>
+        <Copyright>(C)2024 Promete Developers</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/prometeapp/Promete</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    </PropertyGroup>
 
 </Project>

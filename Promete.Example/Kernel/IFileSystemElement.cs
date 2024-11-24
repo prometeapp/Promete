@@ -2,6 +2,6 @@
 
 public interface IFileSystemElement
 {
-	string Name { get; }
-	Folder? Parent { get; }
+    public string Name { get; }
+    public Folder? Parent { get; }
 }

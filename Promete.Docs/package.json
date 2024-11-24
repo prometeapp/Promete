@@ -1,20 +1,20 @@
 {
-  "name": "promete-docs",
-  "version": "1.0.0",
-  "description": "",
-  "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
-  "packageManager": "pnpm@8.15.1",
-  "dependencies": {
-    "@astrojs/starlight": "^0.29.2",
-    "astro": "^4.16.14",
-    "sass-embedded": "^1.81.0"
-  }
+    "name": "promete-docs",
+    "version": "1.0.0",
+    "description": "",
+    "scripts": {
+        "dev": "astro dev",
+        "start": "astro dev",
+        "build": "astro build",
+        "preview": "astro preview"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "MIT",
+    "packageManager": "pnpm@8.15.1",
+    "dependencies": {
+        "@astrojs/starlight": "^0.29.2",
+        "astro": "^4.16.14",
+        "sass-embedded": "^1.81.0"
+    }
 }

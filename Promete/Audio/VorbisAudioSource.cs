@@ -7,97 +7,97 @@ using NVorbis;
 namespace Promete.Audio;
 
 /// <summary>
-/// An audio source that represents data in Ogg Vorbis format.
+///     An audio source that represents data in Ogg Vorbis format.
 /// </summary>
 public class VorbisAudioSource : IAudioSource, IDisposable
 {
-	/// <summary>
-	/// Get the total number of samples.
-	/// </summary>
-	/// <returns></returns>
-	public int? Samples => (int)_reader.TotalSamples * _reader.Channels;
+    private readonly CancellationTokenSource _cts = new();
+    private readonly VorbisReader _reader;
 
-	/// <summary>
-	/// Get channels.
-	/// </summary>
-	public int Channels => _reader.Channels;
+    private readonly short[] _store;
 
-	/// <summary>
-	/// Get sample bits.
-	/// </summary>
-	public int Bits => 16;
+    public VorbisAudioSource(string path)
+        : this(File.OpenRead(path))
+    {
+    }
 
-	/// <summary>
-	/// Get sample rate.
-	/// </summary>
-	public int SampleRate => _reader.SampleRate;
+    public VorbisAudioSource(Stream stream)
+    {
+        _reader = new VorbisReader(stream);
 
-	/// <summary>
-	/// 読み込まれているサンプルのサイズを取得します。
-	/// </summary>
-	public int LoadedSize => _loadedSize;
+        var temp = new float[10000];
+        _store = new short[Samples ?? 0];
 
-	/// <summary>
-	/// 全てのサンプルが読み込まれているかどうかを取得します。
-	/// </summary>
-	public bool IsLoadingFinished => LoadedSize == Samples;
+        // 別スレッドで非同期にデータを読み込む
+        Task.Run(async () =>
+        {
+            unchecked
+            {
+                while (true)
+                {
+                    // 10000サンプルずつ読み込む
+                    var readSamples = _reader.ReadSamples(temp, 0, temp.Length);
+                    if (readSamples == 0) break;
 
-	private int _loadedSize;
+                    // 各サンプルを16bit shortに変換
+                    for (var i = 0; i < readSamples; i++)
+                    {
+                        if (_cts.Token.IsCancellationRequested) return;
 
-	private readonly short[] _store;
-	private readonly CancellationTokenSource _cts = new();
-	private readonly VorbisReader _reader;
+                        _store[LoadedSize++] = (short)(temp[i] * short.MaxValue);
+                    }
 
-	public VorbisAudioSource(string path)
-		: this(File.OpenRead(path))
-	{
-	}
+                    await Task.Delay(1, _cts.Token);
+                }
+            }
+        });
+    }
 
-	public VorbisAudioSource(Stream stream)
-	{
-		_reader = new VorbisReader(stream);
+    /// <summary>
+    ///     読み込まれているサンプルのサイズを取得します。
+    /// </summary>
+    public int LoadedSize { get; private set; }
 
-		var temp = new float[10000];
-		_store = new short[Samples ?? 0];
+    /// <summary>
+    ///     全てのサンプルが読み込まれているかどうかを取得します。
+    /// </summary>
+    public bool IsLoadingFinished => LoadedSize == Samples;
 
-		// 別スレッドで非同期にデータを読み込む
-		Task.Run(async () =>
-		{
-			unchecked
-			{
-				while (true)
-				{
-					// 10000サンプルずつ読み込む
-					var readSamples = _reader.ReadSamples(temp, 0, temp.Length);
-					if (readSamples == 0) break;
+    /// <summary>
+    ///     Get the total number of samples.
+    /// </summary>
+    /// <returns></returns>
+    public int? Samples => (int)_reader.TotalSamples * _reader.Channels;
 
-					// 各サンプルを16bit shortに変換
-					for (var i = 0; i < readSamples; i++)
-					{
-						if (_cts.Token.IsCancellationRequested) return;
+    /// <summary>
+    ///     Get channels.
+    /// </summary>
+    public int Channels => _reader.Channels;
 
-						_store[_loadedSize++] = (short)(temp[i] * short.MaxValue);
-					}
-					await Task.Delay(1, _cts.Token);
-				}
-			}
-		});
-	}
+    /// <summary>
+    ///     Get sample bits.
+    /// </summary>
+    public int Bits => 16;
 
-	public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
-	{
-		var actualReadSize = Math.Min(buffer.Length, LoadedSize - offset);
-		Buffer.BlockCopy(_store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
-		return (actualReadSize, IsLoadingFinished && actualReadSize < buffer.Length);
-	}
+    /// <summary>
+    ///     Get sample rate.
+    /// </summary>
+    public int SampleRate => _reader.SampleRate;
 
-	/// <summary>
-	/// Dispose this object.
-	/// </summary>
-	public void Dispose()
-	{
-		_reader.Dispose();
-		_cts.Cancel();
-		GC.SuppressFinalize(this);
-	}
+    public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
+    {
+        var actualReadSize = Math.Min(buffer.Length, LoadedSize - offset);
+        Buffer.BlockCopy(_store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
+        return (actualReadSize, IsLoadingFinished && actualReadSize < buffer.Length);
+    }
+
+    /// <summary>
+    ///     Dispose this object.
+    /// </summary>
+    public void Dispose()
+    {
+        _reader.Dispose();
+        _cts.Cancel();
+        GC.SuppressFinalize(this);
+    }
 }

@@ -22,39 +22,39 @@ Promete は、.NET 8以降を対象とするゲーム開発フレームワーク
 
 ```csharp
 var app = PrometeApp.Create()
-    .Use<Keyboard>()
-    .Use<Mouse>()
-    .Use<ConsoleLayer>()
-    .BuildWithOpenGLDesktop();
+	.Use<Keyboard>()
+	.Use<Mouse>()
+	.Use<ConsoleLayer>()
+	.BuildWithOpenGLDesktop();
 
 app.Run<MainScene>();
 
 public class MainScene
 {
 	private readonly Keyboard _keyboard;
-    private readonly ITexture _texture1;
-    private readonly ITexture _texture2;
+	private readonly ITexture _texture1;
+	private readonly ITexture _texture2;
 
-    public MainScene(Keyboard keyboard)
-    {
+	public MainScene(Keyboard keyboard)
+	{
 		_keyboard = keyboard;
-        texture1 = window.TextureFactory.Load("./texture1.png");
-        texture2 = window.TextureFactory.Load("./texture2.png");
+		texture1 = window.TextureFactory.Load("./texture1.png");
+	texture2 = window.TextureFactory.Load("./texture2.png");
 
-        Root = new Container
-        {
-            new Sprite(texture1, location: (16, 16)),
-            new Sprite(texture2, location: (16, 32)),
-        };
-    }
+		Root = new Container
+		{
+			new Sprite(texture1, location: (16, 16)),
+			new Sprite(texture2, location: (16, 32)),
+		};
+	}
 
-    public override void OnUpdate()
-    {
-        if (_keyboard.Escape.IsKeyDown)
-        {
-            Window.Close();
-        }
-    }
+	public override void OnUpdate()
+	{
+		if (_keyboard.Escape.IsKeyDown)
+		{
+			Window.Close();
+		}
+	}
 }
 ```
 
@@ -111,14 +111,14 @@ Prometeは、DIコンテナを用いたプラグインシステムを採用し�
 
 ## サポート プラットフォーム
 
-| プラットフォーム | サポート状況                                |
+| プラットフォーム | サポート状況								|
 |----------|---------------------------------------|
-| Windows  | テスト済み。開発者自身がWindows 11で動作を確認しています。    |
-| macOS    | テスト済み。開発者自身がmacOS Sequoiaで動作を確認しています。 |
-| Linux    | 動作可能。未テスト                             |
-| Android  | まだ対応していません。                           |
-| iOS      | まだ対応していません。                           |
-| Web      | まだ対応していません。                           |
+| Windows  | テスト済み。開発者自身がWindows 11で動作を確認しています。	|
+| macOS	| テスト済み。開発者自身がmacOS Sequoiaで動作を確認しています。 |
+| Linux	| 動作可能。未テスト							 |
+| Android  | まだ対応していません。						   |
+| iOS	  | まだ対応していません。						   |
+| Web	  | まだ対応していません。						   |
 
 ## ビルドの仕方
 

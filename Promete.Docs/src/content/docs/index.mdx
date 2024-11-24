@@ -2,32 +2,32 @@
 title: Promete
 template: splash
 hero:
-  title: "Promete"
-  tagline: 古典的な2Dゲームをつくるための、シンプルなAPI、あって嬉しい機能、高い拡張性を持ったゲームエンジン。.NET 8をサポート。
-  actions:
-    - text: 今すぐはじめる！
-      link: /guide/intro/start
-    - text: GitHub で見る
-      variant: secondary
-      icon: github
-      link: https://github.com/prometeapp/promete
-      attrs:
-        iconPlacement: start
+title: "Promete"
+tagline: 古典的な2Dゲームをつくるための、シンプルなAPI、あって嬉しい機能、高い拡張性を持ったゲームエンジン。.NET 8をサポート。
+actions:
+- text: 今すぐはじめる！
+link: /guide/intro/start
+- text: GitHub で見る
+variant: secondary
+icon: github
+link: https://github.com/prometeapp/promete
+attrs:
+iconPlacement: start
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import {Card, CardGrid} from '@astrojs/starlight/components';
 
 <CardGrid>
-	<Card title="シンプルなAPI" icon="moon">
-		簡潔なエントリポイントからはじめる、シンプルなAPIを提供します。学習コストはそう高くないでしょう。
-	</Card>
-	<Card title="2D グラフィックに特化" icon="pencil">
-		3Dゲーム向けのエンジンが多い中、Prometeはピクセルパーフェクトな2Dグラフィックに特化します。
-	</Card>
-	<Card title="クロスプラットフォーム" icon="laptop">
-		Windows、macOS、Linuxでの動作を保証。将来的にはAndroidやiOS、WebAssemblyをサポートする予定。
-	</Card>
-	<Card title="拡張性" icon="puzzle">
-		DIコンテナを用いたプラグインシステムを採用しています。必要な機能のみをゲームに追加することができ、プロダクトの要件に合わせてエンジンをカスタマイズできます。
-	</Card>
+  <Card title="シンプルなAPI" icon="moon">
+    簡潔なエントリポイントからはじめる、シンプルなAPIを提供します。学習コストはそう高くないでしょう。
+  </Card>
+  <Card title="2D グラフィックに特化" icon="pencil">
+    3Dゲーム向けのエンジンが多い中、Prometeはピクセルパーフェクトな2Dグラフィックに特化します。
+  </Card>
+  <Card title="クロスプラットフォーム" icon="laptop">
+    Windows、macOS、Linuxでの動作を保証。将来的にはAndroidやiOS、WebAssemblyをサポートする予定。
+  </Card>
+  <Card title="拡張性" icon="puzzle">
+    DIコンテナを用いたプラグインシステムを採用しています。必要な機能のみをゲームに追加することができ、プロダクトの要件に合わせてエンジンをカスタマイズできます。
+  </Card>
 </CardGrid>

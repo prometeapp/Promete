@@ -4,7 +4,7 @@ using Promete.Headless;
 using Promete.HeadlessTest;
 
 var app = PrometeApp.Create()
-	.Use<CoroutineManager>()
-	.BuildWithHeadless();
+    .Use<CoroutineManager>()
+    .BuildWithHeadless();
 
 return app.Run<MainScene>();

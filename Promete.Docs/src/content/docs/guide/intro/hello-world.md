@@ -38,10 +38,12 @@ using Promete;
 }
 ```
 
-[プライマリコンストラクタ](https://ufcpp.net/study/csharp/oo_construct.html#primary-constructor) を、 `ConsoleLayer` を受け取るように書き換えます。
+[プライマリコンストラクタ](https://ufcpp.net/study/csharp/oo_construct.html#primary-constructor) を、 `ConsoleLayer`
+を受け取るように書き換えます。
 
 :::tip
-Prometeでは、このように登録したプラグインのインスタンスを、シーンのコンストラクタで受け取ることができます。[プラグインシステム](/guide/advanced/plugin-system) のページで詳しく解説します。
+Prometeでは、このように登録したプラグインのインスタンスを、シーンのコンストラクタで受け取ることができます。[プラグインシステム](/guide/advanced/plugin-system)
+のページで詳しく解説します。
 :::
 
 シーンの `OnStart` メソッドをオーバーライドすると、シーンが開始されたときに呼ばれる処理を記述できます。この例では、シーンが開始されたときにコンソールに文字列を表示しています。

@@ -6,7 +6,7 @@ Promete.ImGuiは、ImGUIを利用可能にするPromete プラグインです。
 
 * .NET 8
 * 最新版のPromete
-  * OpenGL Desktop バックエンドのみサポートしています。
+    * OpenGL Desktop バックエンドのみサポートしています。
 
 ## サンプル
 

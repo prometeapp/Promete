@@ -2,5 +2,5 @@
 
 public abstract class NodeRendererBase
 {
-	public abstract void Render(Node node);
+    public abstract void Render(Node node);
 }

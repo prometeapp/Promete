@@ -9,142 +9,132 @@ namespace Promete.Input;
 
 public sealed class Gamepad : IDisposable
 {
-	public bool IsConnected => _pad.IsConnected;
+    private const int TriggerCount = 2;
+    private readonly Dictionary<GamepadButtonType, GamepadButton> _buttonMap = new();
 
-	public string Name => _pad.Name;
-	public bool IsVibrationSupported => _pad.VibrationMotors.Any();
+    private readonly GamepadButton[] _buttons;
+    private readonly IGamepad _pad;
+    private readonly IWindow _window;
 
-	public Vector LeftStick => _pad.Thumbsticks.Count >= 1 ? (_pad.Thumbsticks[0].X, _pad.Thumbsticks[0].Y) : (0, 0);
+    public Gamepad(IGamepad pad, IWindow window)
+    {
+        _pad = pad;
+        _window = window;
+        _buttons = new GamepadButton[pad.Buttons.Count + TriggerCount];
+        for (var i = 0; i < pad.Buttons.Count; i++)
+        {
+            _buttons[i] = new GamepadButton(pad.Buttons[i].Name.ToPromete());
+            _buttonMap[_buttons[i].Type] = _buttons[i];
+        }
 
-	public Vector RightStick => _pad.Thumbsticks.Count >= 2 ? (_pad.Thumbsticks[1].X, _pad.Thumbsticks[1].Y) : (0, 0);
+        // Note: XInputの仕様に従い、Prometeでは最大2つのトリガーをL2, R2として解釈する
+        _buttonMap[GamepadButtonType.L2] = _buttons[pad.Buttons.Count + 0] = new GamepadButton(GamepadButtonType.L2);
+        _buttonMap[GamepadButtonType.R2] = _buttons[pad.Buttons.Count + 1] = new GamepadButton(GamepadButtonType.R2);
 
-	public GamepadButton this[int index] => _buttons[index];
+        pad.ButtonDown += OnButtonDown;
+        pad.ButtonUp += OnButtonUp;
+        pad.TriggerMoved += OnTriggerMove;
 
-	public GamepadButton this[GamepadButtonType type] => _buttonMap[type];
+        window.PreUpdate += OnPreUpdate;
+        window.PostUpdate += OnPostUpdate;
+    }
 
-	public IEnumerable<GamepadButton> AllButtons => _buttons.AsEnumerable();
+    public bool IsConnected => _pad.IsConnected;
 
-	/// <summary>
-	/// 現在押されている全てのボタンを列挙します。
-	/// </summary>
-	public IEnumerable<GamepadButton> AllPressedButtons => _buttons.Where(c => c.IsPressed);
+    public string Name => _pad.Name;
+    public bool IsVibrationSupported => _pad.VibrationMotors.Any();
 
-	/// <summary>
-	/// このフレームで押された全てのボタンを列挙します。
-	/// </summary>
-	public IEnumerable<GamepadButton> AllDownButtons => _buttons.Where(c => c.IsButtonDown);
+    public Vector LeftStick => _pad.Thumbsticks.Count >= 1 ? (_pad.Thumbsticks[0].X, _pad.Thumbsticks[0].Y) : (0, 0);
 
-	/// <summary>
-	/// このフレームで離された全てのボタンを列挙します。
-	/// </summary>
-	public IEnumerable<GamepadButton> AllUpButtons => _buttons.Where(c => c.IsButtonUp);
+    public Vector RightStick => _pad.Thumbsticks.Count >= 2 ? (_pad.Thumbsticks[1].X, _pad.Thumbsticks[1].Y) : (0, 0);
 
-	private readonly GamepadButton[] _buttons;
-	private readonly Dictionary<GamepadButtonType, GamepadButton> _buttonMap = new();
-	private readonly IWindow _window;
-	private readonly IGamepad _pad;
+    public GamepadButton this[int index] => _buttons[index];
 
-	private const int TriggerCount = 2;
+    public GamepadButton this[GamepadButtonType type] => _buttonMap[type];
 
-	public Gamepad(IGamepad pad, IWindow window)
-	{
-		_pad = pad;
-		_window = window;
-		_buttons = new GamepadButton[pad.Buttons.Count + TriggerCount];
-		for (var i = 0; i < pad.Buttons.Count; i++)
-		{
-			_buttons[i] = new GamepadButton(pad.Buttons[i].Name.ToPromete());
-			_buttonMap[_buttons[i].Type] = _buttons[i];
-		}
+    public IEnumerable<GamepadButton> AllButtons => _buttons.AsEnumerable();
 
-		// Note: XInputの仕様に従い、Prometeでは最大2つのトリガーをL2, R2として解釈する
-		_buttonMap[GamepadButtonType.L2] = _buttons[pad.Buttons.Count + 0] = new GamepadButton(GamepadButtonType.L2);
-		_buttonMap[GamepadButtonType.R2] = _buttons[pad.Buttons.Count + 1] = new GamepadButton(GamepadButtonType.R2);
+    /// <summary>
+    ///     現在押されている全てのボタンを列挙します。
+    /// </summary>
+    public IEnumerable<GamepadButton> AllPressedButtons => _buttons.Where(c => c.IsPressed);
 
-		pad.ButtonDown += OnButtonDown;
-		pad.ButtonUp += OnButtonUp;
-		pad.TriggerMoved += OnTriggerMove;
+    /// <summary>
+    ///     このフレームで押された全てのボタンを列挙します。
+    /// </summary>
+    public IEnumerable<GamepadButton> AllDownButtons => _buttons.Where(c => c.IsButtonDown);
 
-		window.PreUpdate += OnPreUpdate;
-		window.PostUpdate += OnPostUpdate;
-	}
+    /// <summary>
+    ///     このフレームで離された全てのボタンを列挙します。
+    /// </summary>
+    public IEnumerable<GamepadButton> AllUpButtons => _buttons.Where(c => c.IsButtonUp);
 
-	public void Vibrate(float value)
-	{
-		if (!IsVibrationSupported) return;
+    public void Dispose()
+    {
+        ReleaseUnmanagedResources();
+        GC.SuppressFinalize(this);
+    }
 
-		foreach (var motor in _pad.VibrationMotors)
-		{
-			motor.Speed = value;
-		}
-	}
+    public void Vibrate(float value)
+    {
+        if (!IsVibrationSupported) return;
 
-	public void Dispose()
-	{
-		ReleaseUnmanagedResources();
-		GC.SuppressFinalize(this);
-	}
+        foreach (var motor in _pad.VibrationMotors) motor.Speed = value;
+    }
 
-	private void OnPreUpdate()
-	{
-		for (var i = 0; i < _buttons.Length; i++)
-		{
-			var isPressed = i < _buttons.Length - 2
-				? _pad.Buttons[i].Pressed
-				: _pad.Triggers[i - _buttons.Length + 2].Position >= 1;
-			_buttons[i].IsPressed = isPressed;
-			_buttons[i].ElapsedFrameCount = isPressed ? _buttons[i].ElapsedFrameCount + 1 : 0;
-			_buttons[i].ElapsedTime = isPressed ? _buttons[i].ElapsedTime + _window.DeltaTime : 0;
-		}
-	}
+    private void OnPreUpdate()
+    {
+        for (var i = 0; i < _buttons.Length; i++)
+        {
+            var isPressed = i < _buttons.Length - 2
+                ? _pad.Buttons[i].Pressed
+                : _pad.Triggers[i - _buttons.Length + 2].Position >= 1;
+            _buttons[i].IsPressed = isPressed;
+            _buttons[i].ElapsedFrameCount = isPressed ? _buttons[i].ElapsedFrameCount + 1 : 0;
+            _buttons[i].ElapsedTime = isPressed ? _buttons[i].ElapsedTime + _window.DeltaTime : 0;
+        }
+    }
 
-	private void OnPostUpdate()
-	{
-		foreach (var t in _buttons)
-		{
-			t.IsButtonDown = false;
-			t.IsButtonUp = false;
-		}
-	}
+    private void OnPostUpdate()
+    {
+        foreach (var t in _buttons)
+        {
+            t.IsButtonDown = false;
+            t.IsButtonUp = false;
+        }
+    }
 
-	private void OnButtonDown(IGamepad pad, Button button)
-	{
-		_buttons[button.Index].IsButtonDown = true;
-	}
+    private void OnButtonDown(IGamepad pad, Button button)
+    {
+        _buttons[button.Index].IsButtonDown = true;
+    }
 
-	private void OnButtonUp(IGamepad pad, Button button)
-	{
-		_buttons[button.Index].IsButtonUp = true;
-	}
+    private void OnButtonUp(IGamepad pad, Button button)
+    {
+        _buttons[button.Index].IsButtonUp = true;
+    }
 
-	private void OnTriggerMove(IGamepad pad, Trigger trigger)
-	{
-		var button = _buttons[_buttons.Length - 2 + trigger.Index];
-		if (trigger.Position >= 1)
-		{
-			button.IsButtonDown = true;
-		}
-		else
-		{
-			button.IsButtonUp = true;
-		}
-	}
+    private void OnTriggerMove(IGamepad pad, Trigger trigger)
+    {
+        var button = _buttons[_buttons.Length - 2 + trigger.Index];
+        if (trigger.Position >= 1)
+            button.IsButtonDown = true;
+        else
+            button.IsButtonUp = true;
+    }
 
-	private void ReleaseUnmanagedResources()
-	{
-		foreach (var motor in _pad.VibrationMotors)
-		{
-			motor.Speed = 0;
-		}
-		_pad.ButtonDown -= OnButtonDown;
-		_pad.ButtonUp -= OnButtonUp;
-		_pad.TriggerMoved -= OnTriggerMove;
-		_window.PreUpdate -= OnPreUpdate;
-		_window.PostUpdate -= OnPostUpdate;
-	}
+    private void ReleaseUnmanagedResources()
+    {
+        foreach (var motor in _pad.VibrationMotors) motor.Speed = 0;
+        _pad.ButtonDown -= OnButtonDown;
+        _pad.ButtonUp -= OnButtonUp;
+        _pad.TriggerMoved -= OnTriggerMove;
+        _window.PreUpdate -= OnPreUpdate;
+        _window.PostUpdate -= OnPostUpdate;
+    }
 
-	~Gamepad()
-	{
-		ReleaseUnmanagedResources();
-	}
+    ~Gamepad()
+    {
+        ReleaseUnmanagedResources();
+    }
 }

@@ -2,8 +2,8 @@
 
 public class SceneFile(string name, string description, Type scene, Folder? parent = null) : IFileSystemElement
 {
-	public string Name { get; } = name;
-	public string Description { get; } = description;
-	public Type Scene { get; } = scene;
-	public Folder? Parent { get; } = parent;
+    public string Description { get; } = description;
+    public Type Scene { get; } = scene;
+    public string Name { get; } = name;
+    public Folder? Parent { get; } = parent;
 }
