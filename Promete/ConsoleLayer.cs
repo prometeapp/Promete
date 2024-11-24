@@ -19,21 +19,16 @@ public class ConsoleLayer
     private readonly IWindow _window;
     private int _maxLine;
 
-    private string? _prevFont;
-
     public ConsoleLayer(PrometeApp app, IWindow window)
     {
         _window = window;
-        FontSize = 16;
         _text = new Text("", Font.GetDefault(), Color.White);
         _maxLine = CalculateMaxLine();
 
-        window.Update += () => { _text.Update(); };
-
-        window.Render += () => { app.RenderNode(_text); };
-
         app.SceneWillChange += Clear;
-
+        window.Update += () => { _text.Update(); };
+        window.Render += () => { app.RenderNode(_text); };
+        window.Resize += () => { _maxLine = CalculateMaxLine(); };
         window.PostUpdate += UpdateConsole;
     }
 
@@ -42,20 +37,15 @@ public class ConsoleLayer
     /// </summary>
     public VectorInt Cursor { get; set; }
 
-    /// <summary>
-    ///     現在のフォントサイズを取得または設定します。
-    /// </summary>
-    public int FontSize { get; set; }
-
-    /// <summary>
-    ///     現在使用しているフォントのパスを取得または設定します。
-    /// </summary>
-    public string? FontPath { get; set; }
-
     public Font Font
     {
         get => _text.Font;
-        set => _text.Font = value;
+        set
+        {
+            _text.Font = value;
+
+            _maxLine = CalculateMaxLine();
+        }
     }
 
     /// <summary>
@@ -69,7 +59,6 @@ public class ConsoleLayer
     public void Clear()
     {
         _consoleBuffer.Clear();
-        FontSize = 16;
         Cursor = VectorInt.Zero;
     }
 
@@ -100,20 +89,12 @@ public class ConsoleLayer
 
     private void UpdateConsole()
     {
-        var f = _text.Font;
-        if (f.Size != FontSize || _prevFont != FontPath)
-        {
-            _text.Font = FontPath == null ? Font.GetDefault(FontSize) : Font.FromFile(FontPath, FontSize);
-            _maxLine = CalculateMaxLine();
-        }
-
         var buf = _consoleBuffer.Count > _maxLine
             ? _consoleBuffer.Skip(_consoleBuffer.Count - _maxLine)
             : _consoleBuffer;
 
         _text.Color = TextColor;
         _text.Content = string.Join('\n', buf);
-        _prevFont = FontPath;
     }
 
     private int CalculateMaxLine()
@@ -124,7 +105,7 @@ public class ConsoleLayer
         do
         {
             textToTest += "A\n";
-            bounds = _text.Font.GetTextBounds(textToTest, new TextRenderingOptions());
+            bounds = _text.Font.GetTextBounds(textToTest, _text.Options);
             l++;
         } while (bounds.Height < _window.Height);
 
