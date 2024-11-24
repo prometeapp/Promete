@@ -19,8 +19,8 @@ namespace Promete.Windowing.GLDesktop
 	{
 		public VectorInt Location
 		{
-			get => (_window.Position.X, _window.Position.Y);
-			set => _window.Position = new Vector2D<int>(value.X, value.Y);
+			get => (NativeWindow.Position.X, NativeWindow.Position.Y);
+			set => NativeWindow.Position = new Vector2D<int>(value.X, value.Y);
 		}
 
 		public VectorInt Size
@@ -33,7 +33,7 @@ namespace Promete.Windowing.GLDesktop
 			}
 		}
 
-		public VectorInt ActualSize => new VectorInt(_window.FramebufferSize.X, _window.FramebufferSize.Y) / Scale;
+		public VectorInt ActualSize => new VectorInt(NativeWindow.FramebufferSize.X, NativeWindow.FramebufferSize.Y) / Scale;
 
 		public int X
 		{
@@ -79,25 +79,25 @@ namespace Promete.Windowing.GLDesktop
 
 		public bool IsVisible
 		{
-			get => _window.IsVisible;
-			set => _window.IsVisible = value;
+			get => NativeWindow.IsVisible;
+			set => NativeWindow.IsVisible = value;
 		}
 
 		public bool IsFocused { get; private set; }
 
 		public bool IsFullScreen
 		{
-			get => _window.WindowState == WindowState.Fullscreen;
-			set => _window.WindowState = value ? WindowState.Fullscreen : WindowState.Normal;
+			get => NativeWindow.WindowState == WindowState.Fullscreen;
+			set => NativeWindow.WindowState = value ? WindowState.Fullscreen : WindowState.Normal;
 		}
 
 		public string Title
 		{
-			get => _window.Title;
+			get => NativeWindow.Title;
 			set
 			{
-				if (_window.Title == value) return;
-				_window.Title = value;
+				if (NativeWindow.Title == value) return;
+				NativeWindow.Title = value;
 			}
 		}
 
@@ -113,40 +113,40 @@ namespace Promete.Windowing.GLDesktop
 
 		public int TargetFps
 		{
-			get => (int)_window.FramesPerSecond;
-			set => _window.FramesPerSecond = value;
+			get => (int)NativeWindow.FramesPerSecond;
+			set => NativeWindow.FramesPerSecond = value;
 		}
 
 		public int TargetUps
 		{
-			get => (int)_window.UpdatesPerSecond;
-			set => _window.UpdatesPerSecond = value;
+			get => (int)NativeWindow.UpdatesPerSecond;
+			set => NativeWindow.UpdatesPerSecond = value;
 		}
 
 		public int RefreshRate
 		{
-			get => (int)_window.FramesPerSecond;
-			set => _window.FramesPerSecond = value;
+			get => (int)NativeWindow.FramesPerSecond;
+			set => NativeWindow.FramesPerSecond = value;
 		}
 
 		public bool IsVsyncMode
 		{
-			get => _window.VSync;
-			set => _window.VSync = value;
+			get => NativeWindow.VSync;
+			set => NativeWindow.VSync = value;
 		}
 
-		public float PixelRatio => _window.Size.X == 0 ? 1 : _window.FramebufferSize.X / _window.Size.X;
+		public float PixelRatio => NativeWindow.Size.X == 0 ? 1 : NativeWindow.FramebufferSize.X / NativeWindow.Size.X;
 
 		public WindowMode Mode
 		{
-			get => _window.WindowBorder switch
+			get => NativeWindow.WindowBorder switch
 			{
 				WindowBorder.Fixed => WindowMode.Fixed,
 				WindowBorder.Hidden => WindowMode.NoFrame,
 				WindowBorder.Resizable => WindowMode.Resizable,
 				_ => throw new InvalidOperationException("unexpected window state"),
 			};
-			set => _window.WindowBorder = value switch
+			set => NativeWindow.WindowBorder = value switch
 			{
 				WindowMode.Fixed => WindowBorder.Fixed,
 				WindowMode.NoFrame => WindowBorder.Hidden,
@@ -160,6 +160,8 @@ namespace Promete.Windowing.GLDesktop
 
 		public GL GL => _gl ?? throw new InvalidOperationException("window is not loaded");
 
+		public Silk.NET.Windowing.IWindow NativeWindow { get; private set; }
+
 		private int _scale = 1;
 		private int _frameCount;
 		private int _updateCount;
@@ -169,8 +171,6 @@ namespace Promete.Windowing.GLDesktop
 		private VectorInt _size = (640, 480);
 		private GL? _gl;
 		private TextureFactory? _textureFactory;
-
-		private Silk.NET.Windowing.IWindow _window;
 
 		public Texture2D TakeScreenshot()
 		{
@@ -203,20 +203,20 @@ namespace Promete.Windowing.GLDesktop
 
 			_screenshotBuffer = new byte[options.Size.X * options.Size.Y * 4];
 
-			_window = Window.Create(options);
-			_window.Load += OnLoad;
-			_window.Resize += OnResize;
-			_window.FileDrop += OnFileDrop;
-			_window.Render += OnRenderFrame;
-			_window.Update += OnUpdateFrame;
-			_window.Closing += OnUnload;
-			_window.FocusChanged += v => IsFocused = v;
-			_window.Run();
+			NativeWindow = Window.Create(options);
+			NativeWindow.Load += OnLoad;
+			NativeWindow.Resize += OnResize;
+			NativeWindow.FileDrop += OnFileDrop;
+			NativeWindow.Render += OnRenderFrame;
+			NativeWindow.Update += OnUpdateFrame;
+			NativeWindow.Closing += OnUnload;
+			NativeWindow.FocusChanged += v => IsFocused = v;
+			NativeWindow.Run();
 		}
 
 		public void Exit()
 		{
-			_window.Close();
+			NativeWindow.Close();
 		}
 
 		private unsafe Image TakeScreenshotAsImage()
@@ -232,8 +232,8 @@ namespace Promete.Windowing.GLDesktop
 
 		private void OnLoad()
 		{
-			_gl = _window.CreateOpenGL();
-			_RawInputContext = _window.CreateInput();
+			_gl = NativeWindow.CreateOpenGL();
+			_RawInputContext = NativeWindow.CreateInput();
 			_textureFactory = new OpenGLTextureFactory(_gl, app);
 			UpdateWindowSize();
 
@@ -242,7 +242,7 @@ namespace Promete.Windowing.GLDesktop
 
 		private void OnResize(Vector2D<int> vec)
 		{
-			_gl?.Viewport(_window.FramebufferSize);
+			_gl?.Viewport(NativeWindow.FramebufferSize);
 			Size = ActualSize;
 			Resize?.Invoke();
 		}
@@ -303,8 +303,8 @@ namespace Promete.Windowing.GLDesktop
 
 		private void UpdateWindowSize()
 		{
-			_window.Size = new Vector2D<int>(Size.X, Size.Y) * _scale;
-			_screenshotBuffer = new byte[_window.FramebufferSize.X * _window.FramebufferSize.Y * _scale * 4];
+			NativeWindow.Size = new Vector2D<int>(Size.X, Size.Y) * _scale;
+			_screenshotBuffer = new byte[NativeWindow.FramebufferSize.X * NativeWindow.FramebufferSize.Y * _scale * 4];
 		}
 
 		public event Action? Start;

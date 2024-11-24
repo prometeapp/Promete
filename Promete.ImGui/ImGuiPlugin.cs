@@ -41,18 +41,10 @@ public sealed class ImGuiPlugin
 			throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
 		}
 
-		var nativeWindow = GetNativeWindow();
-		controller = new ImGuiController(glWindow.GL, nativeWindow, window._RawInputContext, ConfigureImGui);
+		controller = new ImGuiController(glWindow.GL, glWindow.NativeWindow, window._RawInputContext, ConfigureImGui);
 
 		this.window.Destroy += OnWindowDestroy;
 		this.window.Render += OnWindowRender;
-	}
-
-	private Silk.NET.Windowing.IWindow GetNativeWindow()
-	{
-		var field = typeof(OpenGLDesktopWindow).GetField("window", BindingFlags.Instance | BindingFlags.NonPublic);
-		return field?.GetValue(window as OpenGLDesktopWindow) as Silk.NET.Windowing.IWindow ??
-		       throw new InvalidOperationException("BUG: Failed to get native window.");
 	}
 
 	private unsafe void ConfigureImGui()
