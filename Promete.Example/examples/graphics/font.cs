@@ -7,7 +7,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/font.demo", "フォントの描画例")]
-public class font(Keyboard keyboard) : Scene
+public class font(Keyboard keyboard, ConsoleLayer console) : Scene
 {
     private readonly (string name, string path, int size, bool antialias)[] _fontDefinitions =
     [
@@ -37,9 +37,8 @@ public class font(Keyboard keyboard) : Scene
         var i = 0;
         foreach (var (name, path, size, antialias) in _fontDefinitions)
         {
-            var text = new Text(name, Font.FromFile(path, size), Color.White)
+            var text = new Text(name, Font.FromFile(path, size, isAntialiased: antialias), Color.White)
                 .Location(16, 24 + i * 24);
-            text.UseAntialiasing = antialias;
 
             _menuItems.Add(text);
             i++;
@@ -76,9 +75,10 @@ public class font(Keyboard keyboard) : Scene
             _menuItems.ForEach(x => x.Color = _isDarkMode ? Color.White : Color.Black);
             App.BackgroundColor = _isDarkMode ? Color.Black : Color.White;
         }
-        else if (keyboard.A.IsKeyDown)
+        else if (keyboard.Enter.IsKeyDown)
         {
-            _preview.UseAntialiasing ^= true;
+            console.Font = _menuItems[_index].Font;
+            console.Print($"Set console font to {_fontDefinitions[_index].name}.");
         }
     }
 
