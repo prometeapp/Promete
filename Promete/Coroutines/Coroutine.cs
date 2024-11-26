@@ -12,11 +12,6 @@ public class Coroutine : YieldInstruction
 
     internal bool IsKeepAlive;
 
-    internal Coroutine(IEnumerator runningAction)
-    {
-        _runningAction = runningAction;
-    }
-
     /// <summary>
     /// Get whether the coroutine is running.
     /// </summary>
@@ -36,8 +31,14 @@ public class Coroutine : YieldInstruction
 
     internal object? Current => _runningAction.Current;
 
+    internal Coroutine(IEnumerator runningAction)
+    {
+        _runningAction = runningAction;
+    }
+
     internal void Start()
     {
+
         IsRunning = true;
     }
 

@@ -58,7 +58,6 @@ public class CoroutineManager
         foreach (var (coroutine, instruction) in _coroutines.Select(c => (c.Key, c.Value)).ToArray())
         {
             if (instruction is { KeepWaiting: true }) continue;
-
             try
             {
                 if (coroutine.MoveNext())
