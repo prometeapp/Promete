@@ -22,6 +22,9 @@ export default defineConfig({
     head: [
       {tag: 'link', attrs: {rel: 'stylesheet', href: 'https://koruri.chillout.chat/koruri.css'}},
     ],
+    components: {
+      Head: '@/components/Head.astro',
+    },
     sidebar: [
       {
         label: '入門編',
