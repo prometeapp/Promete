@@ -210,8 +210,9 @@ public class AudioPlayer : IDisposable
     ///     Play specified <see cref="IAudioSource" /> instantly.
     /// </summary>
     /// <param name="source"><see cref="IAudioSource" /> to play.</param>
-    /// <param name="_gain">再生する音量。</param>
+    /// <param name="gain">再生する音量。</param>
     /// <param name="pitch">再生時のピッチ。</param>
+    /// <param name="pan">再生時のパン。</param>
     /// <returns></returns>
     public async ValueTask PlayOneShotAsync(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0)
     {
