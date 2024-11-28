@@ -15,7 +15,7 @@ var app = PrometeApp.Create()
     .Use<ImGuiPlugin>()
     .BuildWithOpenGLDesktop();
 
-app.Run<MainScene>(WindowOptions.Default with
+return app.Run<MainScene>(WindowOptions.Default with
 {
-    Title = "Promete Demo"
+    Title = "Promete Demo",
 });
