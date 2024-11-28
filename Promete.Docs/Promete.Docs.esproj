@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="dist\guide\basic\input-keyboard\" />
     <Folder Include="dist\guide\basic\manage-scenes\" />
-    <Folder Include="src\content\docs\guide\advanced\" />
     <Folder Include="src\content\docs\guide\utilities\" />
   </ItemGroup>
 </Project>
