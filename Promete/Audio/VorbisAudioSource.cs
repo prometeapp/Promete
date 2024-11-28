@@ -26,7 +26,8 @@ public class VorbisAudioSource : IAudioSource, IDisposable
         _reader = new VorbisReader(stream);
 
         var temp = new float[10000];
-        _store = new short[Samples ?? 0];
+        _store = new short[_reader.TotalSamples * _reader.Channels];
+        var loadedSize = 0;
 
         // 別スレッドで非同期にデータを読み込む
         Task.Run(async () =>
@@ -43,8 +44,10 @@ public class VorbisAudioSource : IAudioSource, IDisposable
                     for (var i = 0; i < readSamples; i++)
                     {
                         if (_cts.Token.IsCancellationRequested) return;
+                        if (loadedSize >= _store.Length) break;
 
-                        _store[LoadedSize++] = (short)(temp[i] * short.MaxValue);
+                        _store[loadedSize++] = (short)(temp[i] * short.MaxValue);
+                        LoadedSize = loadedSize;
                     }
 
                     await Task.Delay(1, _cts.Token);
