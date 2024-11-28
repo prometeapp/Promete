@@ -14,9 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="assets\kagerou.ogg">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="assets\lineclear.wav">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
@@ -37,6 +34,9 @@
         </None>
         <None Update="assets\MisakiGothic.ttf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\GB-Action-C02-2.ogg">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 
