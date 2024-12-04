@@ -18,4 +18,5 @@ var app = PrometeApp.Create()
 return app.Run<MainScene>(WindowOptions.Default with
 {
     Title = "Promete Demo",
+    Mode = WindowMode.Resizable,
 });

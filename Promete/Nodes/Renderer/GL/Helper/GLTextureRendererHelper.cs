@@ -98,7 +98,7 @@ public class GLTextureRendererHelper
             * Matrix4x4.CreateTranslation(new Vector3((pivot ?? Vector.Zero).ToNumerics(), 0))
             * node.ModelMatrix;
         var projectionMatrix =
-            Matrix4x4.CreateOrthographicOffCenter(0, _window.ActualWidth, _window.ActualHeight, 0, 0.1f, 100f);
+            Matrix4x4.CreateOrthographicOffCenter(0, _window.ActualWidth / _window.PixelRatio, _window.ActualHeight / _window.PixelRatio, 0, 0.1f, 100f);
         var c = color ?? Color.White;
 
         gl.Enable(GLEnum.Blend);

@@ -43,6 +43,7 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
         get => _size;
         set
         {
+            if (_size == value) return;
             _size = value;
             UpdateWindowSize();
         }
@@ -256,7 +257,7 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
     private void OnResize(Vector2D<int> vec)
     {
         _gl?.Viewport(NativeWindow.FramebufferSize);
-        Size = ActualSize;
+        Size = (VectorInt)((Vector)ActualSize / PixelRatio);
         Resize?.Invoke();
     }
 
