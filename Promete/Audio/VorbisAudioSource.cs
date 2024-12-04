@@ -52,6 +52,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 
                     await Task.Delay(1, _cts.Token);
                 }
+                _reader.Dispose();
             }
         });
     }
