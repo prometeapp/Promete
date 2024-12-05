@@ -18,33 +18,6 @@ namespace Promete;
 /// </summary>
 public sealed class PrometeApp : IDisposable
 {
-    private static PrometeApp? _current;
-    private readonly Thread _mainThread;
-    private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
-    private readonly ServiceProvider _provider;
-    private readonly Dictionary<Type, NodeRendererBase?> _renderers = new();
-    private readonly Dictionary<Type, Type> _rendererTypes;
-
-    private readonly ServiceCollection _services;
-
-    private Scene? _currentScene;
-    private int _statusCode;
-
-    private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
-    {
-        _mainThread = Thread.CurrentThread;
-
-        _services = services;
-        _rendererTypes = rendererTypes;
-        RegisterAllScenes();
-        services.AddSingleton(this);
-
-        _provider = services.BuildServiceProvider();
-
-        Current = this;
-        Window = _provider.GetService<IWindow>() ??
-                 throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
-    }
 
     /// <summary>
     /// 現在読み込まれているシーンのルートコンテナを取得します。
@@ -72,6 +45,36 @@ public sealed class PrometeApp : IDisposable
     /// 実行中のPromete ウィンドウを取得します。
     /// </summary>
     public IWindow Window { get; }
+
+    private Scene? _currentScene;
+    private int _statusCode;
+
+    private static PrometeApp? _current;
+
+    private readonly Thread _mainThread;
+    private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
+    private readonly Stack<Scene> _sceneStack = new();
+
+    private readonly ServiceProvider _provider;
+    private readonly ServiceCollection _services;
+    private readonly Dictionary<Type, NodeRendererBase?> _renderers = new();
+    private readonly Dictionary<Type, Type> _rendererTypes;
+
+    private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
+    {
+        _mainThread = Thread.CurrentThread;
+
+        _services = services;
+        _rendererTypes = rendererTypes;
+        RegisterAllScenes();
+        services.AddSingleton(this);
+
+        _provider = services.BuildServiceProvider();
+
+        Current = this;
+        Window = _provider.GetService<IWindow>() ??
+                 throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
+    }
 
     /// <summary>
     /// 実行中の <see cref="PrometeApp" /> を取得します。
@@ -117,6 +120,7 @@ public sealed class PrometeApp : IDisposable
         Window.Start += OnStart<TScene>;
         Window.Update += OnUpdate;
         Window.Render += OnRender;
+        Window.Destroy += OnDestroy;
         Window.Run(opts);
         return _statusCode;
     }
@@ -178,11 +182,60 @@ public sealed class PrometeApp : IDisposable
     public void LoadScene(Type typeScene)
     {
         _currentScene?.OnDestroy();
-
-        _currentScene = _provider.GetService(typeScene) as Scene ??
-                        throw new ArgumentException($"The scene \"{typeScene}\" is not registered.");
+        _currentScene = GetScene(typeScene);
         SceneWillChange?.Invoke();
         _currentScene.OnStart();
+    }
+
+    /// <summary>
+    /// 現在のシーンをプッシュし、新たなシーンを読み込みます。
+    /// </summary>
+    /// <typeparam name="TScene">読み込むシーン。</typeparam>
+    public void PushScene<TScene>()
+    {
+        PushScene(typeof(TScene));
+    }
+
+    /// <summary>
+    /// 現在のシーンをプッシュし、新たなシーンを読み込みます。
+    /// </summary>
+    /// <param name="typeScene">読み込むシーン。</param>
+    public void PushScene(Type typeScene)
+    {
+        if (_currentScene != null)
+        {
+            _sceneStack.Push(_currentScene);
+            _currentScene.OnPause();
+        }
+        _currentScene = GetScene(typeScene);
+        SceneWillChange?.Invoke();
+        _currentScene.OnStart();
+    }
+
+    /// <summary>
+    /// 現在のシーンを破棄し、スタックからシーンを1つポップし、復帰させます。
+    /// </summary>
+    /// <returns>スタックからシーンをポップできた場合は <see langword="true" />。それ以外の場合は <see langword="false" />。</returns>
+    public bool PopScene()
+    {
+        if (_sceneStack.Count == 0) return false;
+
+        _currentScene?.OnDestroy();
+        _currentScene = _sceneStack.Pop();
+        SceneWillChange?.Invoke();
+        _currentScene.OnResume();
+        return true;
+    }
+
+    /// <summary>
+    /// スタックにある全てのシーンを破棄します。
+    /// </summary>
+    public void ClearSceneStack()
+    {
+        while (_sceneStack.TryPop(out var scene))
+        {
+            scene.OnDestroy();
+        }
     }
 
     /// <summary>
@@ -250,6 +303,12 @@ public sealed class PrometeApp : IDisposable
         RenderNode(GlobalForeground);
     }
 
+    private void OnDestroy()
+    {
+        _currentScene?.OnDestroy();
+        ClearSceneStack();
+    }
+
     private void ProcessNextFrameQueue()
     {
         while (!_nextFrameQueue.IsEmpty)
@@ -290,6 +349,12 @@ public sealed class PrometeApp : IDisposable
             // Scene 派生クラスを登録する
             _services.AddTransient(type);
         }
+    }
+
+    private Scene GetScene(Type scene)
+    {
+        return _provider.GetService(scene) as Scene ??
+               throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
     }
 
     public event Action? SceneWillChange;

@@ -198,7 +198,7 @@ public class AudioPlayer : IDisposable
     ///     指定した音源をその場で再生します。
     /// </summary>
     /// <param name="source"></param>
-    /// <param name="_gain"></param>
+    /// <param name="gain"></param>
     /// <param name="pitch"></param>
     /// <param name="pan"></param>
     public async void PlayOneShot(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0)

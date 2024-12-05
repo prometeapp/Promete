@@ -1,5 +1,7 @@
 import {defineConfig} from 'astro/config';
 import starlight from '@astrojs/starlight';
+import rehypeMermaid from 'rehype-mermaid';
+
 // https://astro.build/config
 export default defineConfig({
   integrations: [starlight({
@@ -56,6 +58,9 @@ export default defineConfig({
       },
     ],
   })],
+  markdown: {
+    rehypePlugins: [rehypeMermaid],
+  },
   vite: {
     resolve: {
       alias: {

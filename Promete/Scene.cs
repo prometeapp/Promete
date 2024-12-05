@@ -20,23 +20,37 @@ public abstract class Scene
     protected IWindow Window => App.Window ?? throw new InvalidOperationException("Window is not initialized.");
 
     /// <summary>
-    /// Called when the scene starts.
+    /// シーンが開始したときに呼び出されます。
     /// </summary>
     public virtual void OnStart()
     {
     }
 
     /// <summary>
-    /// Called when updating frame of the scene.
+    /// アプリケーションのゲームループ毎に呼び出されます。
     /// </summary>
     public virtual void OnUpdate()
     {
     }
 
     /// <summary>
-    /// Called when the scene is disposed.
+    /// シーンが破棄されるときに呼び出されます。
     /// </summary>
     public virtual void OnDestroy()
+    {
+    }
+
+    /// <summary>
+    /// シーンが一時停止したときに呼び出されます。
+    /// </summary>
+    public virtual void OnPause()
+    {
+    }
+
+    /// <summary>
+    /// シーンが再開したときに呼び出されます。
+    /// </summary>
+    public virtual void OnResume()
     {
     }
 }
