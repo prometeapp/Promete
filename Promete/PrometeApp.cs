@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
@@ -148,20 +149,34 @@ public sealed class PrometeApp : IDisposable
     /// 指定した型のプラグインを取得します。
     /// </summary>
     /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
-    /// <returns>プラグインが見つかった場合はそのインスタンス。見つからなかった場合は <see langword="null" />。</returns>
-    public T? GetPlugin<T>() where T : class
+    /// <returns>プラグインのインスタンス。</returns>
+    /// <exception cref="ArgumentException">指定したプラグインが登録されていない。</exception>
+    public T GetPlugin<T>() where T : class
     {
-        return _provider.GetService<T>();
+        return _provider.GetService<T>() ?? throw new ArgumentException($"The plugin \"{typeof(T)}\" is not registered.");
     }
 
     /// <summary>
     /// 指定した型のプラグインを取得します。
     /// </summary>
     /// <param name="type">指定対象のプラグインを表す型。</param>
-    /// <returns>プラグインが見つかった場合はそのインスタンス。見つからなかった場合は <see langword="null" />。</returns>
-    public object? GetPlugin(Type type)
+    /// <returns>プラグインのインスタンス。</returns>
+    /// <exception cref="ArgumentException">指定したプラグインが登録されていない。</exception>
+    public object GetPlugin(Type type)
     {
-        return _provider.GetService(type);
+        return TryGetPlugin(type, out var plugin) ? plugin : throw new ArgumentException($"The plugin \"{type}\" is not registered.");
+    }
+
+    public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin) where T : class
+    {
+        plugin = _provider.GetService<T>();
+        return plugin is not null;
+    }
+
+    public bool TryGetPlugin(Type type, [NotNullWhen(true)] out object? plugin)
+    {
+        plugin = _provider.GetService(type);
+        return plugin is not null;
     }
 
     /// <summary>
