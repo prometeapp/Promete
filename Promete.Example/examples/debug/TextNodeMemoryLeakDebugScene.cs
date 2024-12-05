@@ -12,8 +12,6 @@ public class TextNodeMemoryLeakDebugScene : Scene
     private readonly Process _process;
     private readonly Text _textNode;
 
-    private HashSet<int> _hash = [];
-
     public TextNodeMemoryLeakDebugScene(Keyboard keyboard)
     {
         Root =

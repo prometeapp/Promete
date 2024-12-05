@@ -4,7 +4,7 @@ using static Promete.Example.Kernel.DemoKernel;
 
 namespace Promete.Example;
 
-public class MainScene(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : Scene
+public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
     public override void OnStart()
     {

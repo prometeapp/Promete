@@ -16,8 +16,6 @@ public class GLNineSliceSpriteRenderer(GLTextureRendererHelper helper) : NodeRen
 
         var xSpan = sprite.Width - left - right;
         var ySpan = sprite.Height - top - bottom;
-        var loc = sprite.AbsoluteLocation;
-        var scale = sprite.AbsoluteScale;
 
         void Draw(Texture2D tex, Vector location, float? width = null, float? height = null)
         {

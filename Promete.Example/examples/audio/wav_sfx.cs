@@ -7,8 +7,8 @@ namespace Promete.Example.examples.audio;
 [Demo("/audio/wav sfx.demo", "短い効果音をいくつか再生します")]
 public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
-    private readonly AudioPlayer player = new();
-    private readonly WaveAudioSource sfx = new("assets/lineclear.wav");
+    private readonly AudioPlayer _player = new();
+    private readonly WaveAudioSource _sfx = new("assets/lineclear.wav");
 
     public override void OnStart()
     {
@@ -24,19 +24,19 @@ public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
     public override void OnUpdate()
     {
         if (keyboard.Space.IsKeyUp)
-            player.PlayOneShotAsync(sfx);
+            _player.PlayOneShot(_sfx);
 
         if (keyboard.F1.IsKeyUp)
-            player.PlayOneShotAsync(sfx, pitch: 2);
+            _player.PlayOneShot(_sfx, pitch: 2);
 
         if (keyboard.F2.IsKeyUp)
-            player.PlayOneShotAsync(sfx, pitch: 0.5f);
+            _player.PlayOneShot(_sfx, pitch: 0.5f);
 
         if (keyboard.F3.IsKeyUp)
-            player.PlayOneShotAsync(sfx, gain: 0.5f);
+            _player.PlayOneShot(_sfx, gain: 0.5f);
 
         if (keyboard.F4.IsKeyUp)
-            player.PlayOneShotAsync(sfx, gain: 0);
+            _player.PlayOneShot(_sfx, gain: 0);
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
@@ -44,6 +44,6 @@ public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 
     public override void OnDestroy()
     {
-        player.Dispose();
+        _player.Dispose();
     }
 }

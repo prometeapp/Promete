@@ -14,7 +14,7 @@ public abstract class Node
     private Vector _location;
     private Vector _scale = (1, 1);
 
-    private int zIndex;
+    private int _zIndex;
 
     /// <summary>
     /// このノードの名前を取得または設定します。
@@ -91,11 +91,11 @@ public abstract class Node
     /// </summary>
     public int ZIndex
     {
-        get => zIndex;
+        get => _zIndex;
         set
         {
-            if (zIndex == value) return;
-            zIndex = value;
+            if (_zIndex == value) return;
+            _zIndex = value;
             Parent?.RequestSorting();
         }
     }

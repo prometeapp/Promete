@@ -139,6 +139,7 @@ public interface IWindow
     /// <summary>
     /// INTERNAL API (使用しないでください)
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     public IInputContext? _RawInputContext { get; }
 
     /// <summary>

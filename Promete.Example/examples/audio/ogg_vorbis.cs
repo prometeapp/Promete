@@ -7,8 +7,8 @@ namespace Promete.Example.examples.audio;
 [Demo("/audio/ogg vorbis.demo", "BGM を再生します")]
 public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
-    private readonly AudioPlayer audio = new();
-    private VorbisAudioSource bgm = new("./assets/GB-Action-C02-2.ogg");
+    private readonly AudioPlayer _audio = new();
+    private VorbisAudioSource _bgm = new("./assets/GB-Action-C02-2.ogg");
 
     public override void OnStart()
     {
@@ -22,11 +22,11 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
     {
         console.Clear();
         console.Print($"""
-                       Location: {audio.Time / 1000f:0.000} / {audio.Length / 1000f:0.000}
-                       Location in Samples: {audio.TimeInSamples} / {audio.LengthInSamples}
-                       Loaded: {bgm.LoadedSize} / {bgm.Samples}
-                       Is Playing: {audio.IsPlaying}
-                       Is Pausing: {audio.IsPausing}
+                       Location: {_audio.Time / 1000f:0.000} / {_audio.Length / 1000f:0.000}
+                       Location in Samples: {_audio.TimeInSamples} / {_audio.LengthInSamples}
+                       Loaded: {_bgm.LoadedSize} / {_bgm.Samples}
+                       Is Playing: {_audio.IsPlaying}
+                       Is Pausing: {_audio.IsPausing}
                        [↑] Volume Up
                        [↓] Volume Down
                        [←] Pitch Down
@@ -38,33 +38,33 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
             App.LoadScene<MainScene>();
 
         if (keyboard.Up.IsKeyDown)
-            audio.Gain += 0.1f;
+            _audio.Gain += 0.1f;
 
         if (keyboard.Down.IsKeyDown)
-            audio.Gain -= 0.1f;
+            _audio.Gain -= 0.1f;
 
         if (keyboard.Left.IsKeyDown)
-            audio.Pitch -= 0.1f;
+            _audio.Pitch -= 0.1f;
 
         if (keyboard.Right.IsKeyDown)
-            audio.Pitch += 0.1f;
+            _audio.Pitch += 0.1f;
 
         if (keyboard.Space.IsKeyDown)
         {
-            if (audio is { IsPlaying: true, IsPausing: false })
-                audio.Pause();
-            else if (audio.IsPausing)
-                audio.Resume();
+            if (_audio is { IsPlaying: true, IsPausing: false })
+                _audio.Pause();
+            else if (_audio.IsPausing)
+                _audio.Resume();
             else
-                audio.Play(bgm, 0);
+                _audio.Play(_bgm, 0);
         }
     }
 
     public override void OnDestroy()
     {
-        audio.Stop();
-        audio.Dispose();
-        bgm.Dispose();
+        _audio.Stop();
+        _audio.Dispose();
+        _bgm.Dispose();
         Window.FileDropped -= WindowOnFileDropped;
     }
 
@@ -73,8 +73,8 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
         var path = e.Path;
         if (!path.EndsWith(".ogg")) return;
 
-        audio.Stop();
-        bgm = new VorbisAudioSource(path);
-        audio.Play(bgm, 0);
+        _audio.Stop();
+        _bgm = new VorbisAudioSource(path);
+        _audio.Play(_bgm, 0);
     }
 }
