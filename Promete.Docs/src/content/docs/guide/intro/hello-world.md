@@ -26,7 +26,6 @@ app.Run<MainScene>();
 
 ```diff lang="cs" title="MainScene.cs"
 using Promete;
-+ using Promete.Windowing;
 
 -public class MainScene : Scene
 +public class MainScene(ConsoleLayer console) : Scene

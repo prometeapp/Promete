@@ -41,4 +41,9 @@ public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
     }
+
+    public override void OnDestroy()
+    {
+        player.Dispose();
+    }
 }

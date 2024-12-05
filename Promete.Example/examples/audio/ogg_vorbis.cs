@@ -64,6 +64,7 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
     {
         audio.Stop();
         audio.Dispose();
+        bgm.Dispose();
         Window.FileDropped -= WindowOnFileDropped;
     }
 
