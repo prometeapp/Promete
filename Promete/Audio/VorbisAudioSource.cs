@@ -12,7 +12,6 @@ namespace Promete.Audio;
 public class VorbisAudioSource : IAudioSource, IDisposable
 {
     private readonly CancellationTokenSource _cts = new();
-    private readonly VorbisReader _reader;
 
     private readonly short[] _store;
 
@@ -23,10 +22,14 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 
     public VorbisAudioSource(Stream stream)
     {
-        _reader = new VorbisReader(stream);
+        var reader = new VorbisReader(stream);
+
+        Channels = reader.Channels;
+        SampleRate = reader.SampleRate;
+        Samples = (int)reader.TotalSamples * reader.Channels;
 
         var temp = new float[10000];
-        _store = new short[_reader.TotalSamples * _reader.Channels];
+        _store = new short[reader.TotalSamples * reader.Channels];
         var loadedSize = 0;
 
         // 別スレッドで非同期にデータを読み込む
@@ -36,14 +39,15 @@ public class VorbisAudioSource : IAudioSource, IDisposable
             {
                 while (true)
                 {
+                    if (_cts.Token.IsCancellationRequested) break;
                     // 10000サンプルずつ読み込む
-                    var readSamples = _reader.ReadSamples(temp, 0, temp.Length);
+                    var readSamples = reader.ReadSamples(temp.AsSpan());
                     if (readSamples == 0) break;
 
                     // 各サンプルを16bit shortに変換
                     for (var i = 0; i < readSamples; i++)
                     {
-                        if (_cts.Token.IsCancellationRequested) return;
+                        if (_cts.Token.IsCancellationRequested) break;
                         if (loadedSize >= _store.Length) break;
 
                         _store[loadedSize++] = (short)(temp[i] * short.MaxValue);
@@ -52,7 +56,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 
                     await Task.Delay(1, _cts.Token);
                 }
-                _reader.Dispose();
+                reader.Dispose();
             }
         });
     }
@@ -71,12 +75,12 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// Get the total number of samples.
     /// </summary>
     /// <returns></returns>
-    public int? Samples => (int)_reader.TotalSamples * _reader.Channels;
+    public int? Samples { get; init; }
 
     /// <summary>
     /// Get channels.
     /// </summary>
-    public int Channels => _reader.Channels;
+    public int Channels { get; init; }
 
     /// <summary>
     /// Get sample bits.
@@ -86,7 +90,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// <summary>
     /// Get sample rate.
     /// </summary>
-    public int SampleRate => _reader.SampleRate;
+    public int SampleRate { get; init; }
 
     public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
     {
@@ -100,7 +104,6 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// </summary>
     public void Dispose()
     {
-        _reader.Dispose();
         _cts.Cancel();
         GC.SuppressFinalize(this);
     }
