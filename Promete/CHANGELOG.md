@@ -1,4 +1,7 @@
-﻿## 0.25.0
+﻿## 0.25.1
+* **Enhance:** マウスボタン系イベントで、MouseButtonTypeを取得できるように改善
+
+## 0.25.0
 プラグイン取得メソッドの仕様を変更しました。
 また、[シーンスタックAPI](https://github.com/prometeapp/Promete/issues/37)を実装しました。
 
