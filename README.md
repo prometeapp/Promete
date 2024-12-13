@@ -2,9 +2,12 @@
 
 [![Nuget](https://img.shields.io/nuget/vpre/Promete.svg?style=for-the-badge)](https://www.nuget.org/packages/Promete/)
 
-**⚠ Prometeは現在、アルファ版です。APIや仕様に大きな変更が加えられる可能性があります。実際のゲーム開発にはまだ利用しないでください。**
-
----
+> [!WARNING]
+> Prometeは現在、ベータ版です。
+> 
+> プロダクション用途でもご利用いただけますが、意図しない不具合が起こる可能性があります。
+>
+> 実際のアプリケーション開発に利用する場合は、バグにご注意ください。
 
 Promete は、.NET 8以降を対象とするゲーム開発フレームワーク、ゲームエンジンです。
 
