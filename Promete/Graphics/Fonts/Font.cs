@@ -90,7 +90,7 @@ public class Font : IFont
         var drawingOptions = CreateDrawingOptions(options);
 
         var size = TextMeasurer.MeasureBounds(text, textOptions);
-        var imageSize = new VectorInt((int)size.Right, (int)size.Bottom);
+        var imageSize = new VectorInt((int)size.Right, (int)size.Bottom) + VectorInt.One;
         if (imageSize.X == 0 || imageSize.Y == 0) return default;
 
         using var img = new Image<Rgba32>(imageSize.X, imageSize.Y);
