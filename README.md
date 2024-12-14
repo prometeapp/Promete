@@ -40,7 +40,7 @@ public class MainScene
 	{
 		_keyboard = keyboard;
 		texture1 = window.TextureFactory.Load("./texture1.png");
-	texture2 = window.TextureFactory.Load("./texture2.png");
+    	texture2 = window.TextureFactory.Load("./texture2.png");
 
 		Root = new Container
 		{
@@ -127,7 +127,7 @@ https://promete.app (WIP)
 現在、精力的にドキュメントを作成中です。
 
 ## コントリビュート
-[コントリビュートの手引き](CONTRIBUTING-ja.md) をご確認ください。
+[コントリビューションの手引き](CONTRIBUTING.md) をご確認ください。
 
 [![GitHub issues](https://img.shields.io/github/issues/ebiselutica/promete.svg?style=for-the-badge)][issues]
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/ebiselutica/promete.svg?style=for-the-badge)][pulls]
