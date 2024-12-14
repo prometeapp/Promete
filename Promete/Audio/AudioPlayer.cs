@@ -26,17 +26,8 @@ public class AudioPlayer : IDisposable
     /// </summary>
     public unsafe AudioPlayer()
     {
-        try
-        {
-            _al = AL.GetApi();
-            _alc = ALContext.GetApi();
-        }
-        catch (FileNotFoundException)
-        {
-            // OpenALがOSに存在しない場合、OpenAL Softを使用する
-            _al = AL.GetApi(true);
-            _alc = ALContext.GetApi(true);
-        }
+        _al = AL.GetApi(true);
+        _alc = ALContext.GetApi(true);
 
         _al.DistanceModel(DistanceModel.None);
 
