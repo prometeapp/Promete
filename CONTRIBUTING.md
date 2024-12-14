@@ -7,9 +7,30 @@
 ## Issue
 新機能の要望やバグ報告などは [GitHub Issues](https://github.com/EbiseLutica/Promete/Issues) にてお願いします。 Issue を作成する前に、重複を避けるため既に存在している同じような Issue が存在しないかどうか検索をしてください。もし存在するならば、リアクションやコメントを用いて upvote してください。
 
+## 各プロジェクト
+本リポジトリは、MSBuildのソリューションを用いており、複数のプロジェクトを持ちます。
+* Promete
+  * Prometeのメインプロジェクトです
+  * ゲームエンジンとしての基本機能は全てこのプロジェクトにあります
+  * NuGetにデプロイする対象です
+* Promete.Example
+  * Prometeの機能を試せるデモ プロジェクトです。
+* Promete.ImGui
+  * PrometeでImGUIを利用できるプラグインのプロジェクトです
+  * NuGetにデプロイする対象です
+* Promete.MeltySynth
+  * Prometeで https://github.com/sinshu/meltysynth/ を利用するデモ
+* Promete.Docs
+  * ドキュメント
+
+これら以外のブランチは開発途上であり、ドキュメント化していません。気になる場合はコードを読んでください。 
+
 ## 文書化
-Prometeのドキュメンテーションは、Promete.Docs プロジェクトにて作業しています。
+Promete のドキュメントは、Promete.Docs プロジェクトにて作業しています。
+
 このプロジェクトは、Astroで作成されたドキュメントを含むnode.jsプロジェクトを、MSBuild向けに.esprojファイルを追加して管理しているものです。
+
+masterブランチへのpushをトリガーとして、https://promete.app にデプロイされます。
 
 ## 継続的インテグレーション
 Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは  `.github/workflow` にあります。
