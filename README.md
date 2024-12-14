@@ -3,11 +3,11 @@
 [![Nuget](https://img.shields.io/nuget/vpre/Promete.svg?style=for-the-badge)](https://www.nuget.org/packages/Promete/)
 
 > [!WARNING]
-> Prometeは現在、ベータ版です。
-> 
-> プロダクション用途でもご利用いただけますが、意図しない不具合が起こる可能性があります。
->
+> Prometeは現在、ベータ版です。<br/>
+> プロダクション用途でもご利用いただけますが、意図しない不具合が起こる可能性があります。<br/>
 > 実際のアプリケーション開発に利用する場合は、バグにご注意ください。
+>
+> 最新の[サポート ポリシー](SUPPORT-POLICY.md)もご確認ください。
 
 Promete は、.NET 8以降を対象とするゲーム開発フレームワーク、ゲームエンジンです。
 
@@ -18,9 +18,7 @@ Promete は、.NET 8以降を対象とするゲーム開発フレームワーク
 
 
 ## 特徴
-
 ### シンプルなAPI
-
 簡潔なエントリポイントからはじめる、シンプルなAPIを提供します。
 
 ```csharp
@@ -62,13 +60,11 @@ public class MainScene
 ```
 
 ### クロスプラットフォーム
-
 Windows だけでなく、macOSやLinuxでも動作します。 また、将来的にはAndroidやiOS、Webでも動作する予定です。
 
 デフォルトの描画バックエンドはOpenGLを使用していますが、将来的にはVulkanやMetalなどのAPIをサポートし、より高速な描画を実現する予定です。
 
 ### 2Dに特化したグラフィックシステム
-
 ピクセルパーフェクトな2Dグラフィックを気軽に実現できるゲームエンジンはそう多くありません。 Prometeは、2Dグラフィックに特化したグラフィックシステムを提供します。
 
 Prometeでは、ノードという描画単位を用いた階層構造で画面を構成します。
@@ -85,7 +81,6 @@ Prometeでは、ノードという描画単位を用いた階層構造で画面�
 各種ノードを描画する上で、エンジンに登録された `NodeRenderer` が用いられます。このレンダラーは特に何もしなくとも標準のものが用いられますが、拡張することも可能です。
 
 ### 拡張性
-
 Prometeは、拡張性を重視して設計されています。
 
 標準の描画機能だけでは足りない場合、独自の `NodeRenderer` を実装することで、OpenGLを直接用いた独自のレンダリング機能をPrometeと統合できます。
@@ -93,7 +88,6 @@ Prometeは、拡張性を重視して設計されています。
 また、オーディオ機能も同様に、定期的にバッファ配列にデータを書き込む `IAudioSource` の実装を作成することで、標準では足りないオーディオ形式をサポートできます。
 
 ### オーディオ機能
-
 BGMから効果音まで、ゲームに欠かせないオーディオ機能を提供します。
 
 BGMは特定のポイントを起点としたループ再生に対応しています（これがないエンジンも多い）
@@ -101,7 +95,6 @@ BGMは特定のポイントを起点としたループ再生に対応してい�
 デフォルトではogg vorbisおよびwav形式をサポートしています。オーディオファイルの読み込みはプラグインによって拡張可能です。
 
 ### プラグインシステム
-
 Prometeは、DIコンテナを用いたプラグインシステムを採用しています。
 
 アプリ初期化時に `Use<T>` メソッドでプラグインを登録することで、その機能が使えるようになります。
@@ -113,7 +106,6 @@ Prometeは、DIコンテナを用いたプラグインシステムを採用し�
 プラグインシステムには任意のクラスを登録することができるので、そういった管理クラスを登録し、シーンをまたいでアクセスする書き方もできます。
 
 ## サポート プラットフォーム
-
 | プラットフォーム | サポート状況								|
 |----------|---------------------------------------|
 | Windows  | テスト済み。開発者自身がWindows 11で動作を確認しています。	|
@@ -124,7 +116,6 @@ Prometeは、DIコンテナを用いたプラグインシステムを採用し�
 | Web	  | まだ対応していません。						   |
 
 ## ビルドの仕方
-
 ```shell
 git clone https://github.com/prometeapp/Promete
 cd Promete
@@ -132,18 +123,19 @@ dotnet build
 ```
 
 ## ドキュメント
-
-WIP
+https://promete.app (WIP)
+現在、精力的にドキュメントを作成中です。
 
 ## コントリビュート
-
 [コントリビュートの手引き](CONTRIBUTING-ja.md) をご確認ください。
 
 [![GitHub issues](https://img.shields.io/github/issues/ebiselutica/promete.svg?style=for-the-badge)][issues]
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/ebiselutica/promete.svg?style=for-the-badge)][pulls]
 
-## ライセンス
+## サポート ポリシー
+[サポート ポリシー](SUPPORT-POLICY.md) をご確認ください。        
 
+## ライセンス
 [![License](https://img.shields.io/github/license/ebiselutica/promete.svg?style=for-the-badge)](LICENSE)
 
 Promete はいくつかのサードパーティソフトウェアに依存しています。ライセンスをご確認ください [THIRD_PARTIES.md](THIRD_PARTIES.md)
