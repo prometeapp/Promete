@@ -33,7 +33,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
         var loadedSize = 0;
 
         // 別スレッドで非同期にデータを読み込む
-        Task.Run(async () =>
+        Task.Run(() =>
         {
             unchecked
             {
@@ -53,8 +53,6 @@ public class VorbisAudioSource : IAudioSource, IDisposable
                         _store[loadedSize++] = (short)(temp[i] * short.MaxValue);
                         LoadedSize = loadedSize;
                     }
-
-                    await Task.Delay(1, _cts.Token);
                 }
                 reader.Dispose();
             }

@@ -1,4 +1,9 @@
-﻿## 0.25.2
+﻿## Unreleased
+- **Fix(VorbisAudioSource):** VorbisAudioSourceのデータ読み込みを高速化
+- **Fix(AudioPlayer):** Pan設定が反映されない不具合を修正
+    - ただし、OpenALの仕様上、ステレオ音源のPan設定は無視されます
+
+## 0.25.2
 - **Fix(AudioPlayer):** macOSで、1024回を超える音声の再生ができない問題を修正
     - この問題を解決するため、一時的にOpenAL Softを強制的に使用しています
     - OpenAL Softによる問題が他のプラットフォームで確認された場合、追加の対応を検討します
