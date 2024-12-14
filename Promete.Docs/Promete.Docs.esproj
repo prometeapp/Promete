@@ -3,13 +3,14 @@
     <StartupCommand>pnpm run dev</StartupCommand>
   </PropertyGroup>
   <ItemGroup>
-    <Script Include="src\content\config.ts" />
-    <Script Include="tsconfig.json" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="dist\guide\basic\input-keyboard\" />
-    <Folder Include="dist\guide\basic\manage-scenes\" />
-    <Folder Include="public\" />
-    <Folder Include="src\content\docs\guide\utilities\" />
+    <Folder Include="src/**/*" />
+    <Folder Include="public/**/*" />
+    <Folder Include="assets/**/*" />
+    <Script Include="tsconfig.json" />
+    <Script Include="pnpm-lock.yaml" />
+    <Script Include="package.json" />
+    <Script Include="LICENSE" />
   </ItemGroup>
 </Project>
