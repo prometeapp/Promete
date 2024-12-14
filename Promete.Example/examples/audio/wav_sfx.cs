@@ -18,6 +18,11 @@ public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
         console.Print("[F2]: Replay with x0.5 pitch");
         console.Print("[F3]: Replay with x0.5 gain");
         console.Print("[F4]: Replay with x0 gain");
+        console.Print("[F5]: Replay with -1 pan");
+        console.Print("[F6]: Replay with -0.5 pan");
+        console.Print("[F7]: Replay with 0.5 pan");
+        console.Print("[F8]: Replay with 1 pan");
+
         console.Print("[ESC]: Quit");
     }
 
@@ -37,6 +42,18 @@ public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 
         if (keyboard.F4.IsKeyUp)
             _player.PlayOneShot(_sfx, gain: 0);
+
+        if (keyboard.F5.IsKeyUp)
+            _player.PlayOneShot(_sfx, pan: -1);
+
+        if (keyboard.F6.IsKeyUp)
+            _player.PlayOneShot(_sfx, pan: -0.5f);
+
+        if (keyboard.F7.IsKeyUp)
+            _player.PlayOneShot(_sfx, pan: 0.5f);
+
+        if (keyboard.F8.IsKeyUp)
+            _player.PlayOneShot(_sfx, pan: 1);
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

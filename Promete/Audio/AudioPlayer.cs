@@ -151,7 +151,6 @@ public class AudioPlayer : IDisposable
     {
         if (!IsPausing) return;
         IsPausing = false;
-        Console.WriteLine("set IsPausing to false");
     }
 
     /// <summary>
@@ -213,16 +212,20 @@ public class AudioPlayer : IDisposable
         source.FillSamples(buffer, 0);
         using var alSrc = new ALSource(_al);
         using var alBuf = new ALBuffer(_al);
-        _al.BufferData(alBuf.Handle, BufferFormat.Stereo16, buffer, source.SampleRate);
-        _al.SourceQueueBuffers(alSrc.Handle, [alBuf.Handle]);
+        var bufferFormat = GetBufferFormat(source);
 
-        _al.SourcePlay(alSrc.Handle);
+        _al.BufferData(alBuf.Handle, bufferFormat, buffer, source.SampleRate);
+        _al.SourceQueueBuffers(alSrc.Handle, [alBuf.Handle]);
         _al.SetSourceProperty(alSrc.Handle, SourceFloat.Gain, gain);
         _al.SetSourceProperty(alSrc.Handle, SourceFloat.Pitch, pitch);
-        _al.SetSourceProperty(alSrc.Handle, SourceVector3.Position, pan, 0, -MathF.Sqrt(1f - pan * pan));
+        var x = pan;
+        var z = MathF.Abs(_pan) < 1.0f ? -MathF.Sqrt(1.0f - _pan * _pan) : 0.0f;
+        _al.SetSourceProperty(alSrc.Handle, SourceVector3.Position, x, 0, z);
         _al.SetSourceProperty(alSrc.Handle, SourceBoolean.SourceRelative, true);
         _al.SetSourceProperty(alSrc.Handle, SourceFloat.MaxDistance, 1);
         _al.SetSourceProperty(alSrc.Handle, SourceFloat.ReferenceDistance, 0.5f);
+
+        _al.SourcePlay(alSrc.Handle);
 
         int buffersProcessed;
         do
@@ -246,6 +249,7 @@ public class AudioPlayer : IDisposable
         int bufferSampleIndex1 = 0, bufferSampleIndex2 = 0;
         var currentSample = 0;
         var nextBufferIndex = 0;
+        var bufferFormat = GetBufferFormat(source);
 
         uint[] singleArray = [0];
 
@@ -270,7 +274,9 @@ public class AudioPlayer : IDisposable
             // 現時点のステータスを取得
             _al.SetSourceProperty(alSource.Handle, SourceFloat.Pitch, Pitch);
             _al.SetSourceProperty(alSource.Handle, SourceFloat.Gain, Gain);
-            _al.SetSourceProperty(alSource.Handle, SourceVector3.Position, _pan, 0, 0);
+            var x = _pan;
+            var z = MathF.Abs(_pan) < 1.0f ? -MathF.Sqrt(1.0f - _pan * _pan) : 0.0f;
+            _al.SetSourceProperty(alSource.Handle, SourceVector3.Position, x, 0, z);
             _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out var processedCount);
 
             // ソースが現在再生しているバッファのサンプル位置を取得し、TimeInSamplesを更新
@@ -280,8 +286,10 @@ public class AudioPlayer : IDisposable
             TimeInSamples = (sampleOffset + offset) / source.Channels;
             Time = TimeInSamples * 1000 / source.SampleRate;
 
+            // このスレッドがCPUを占有しないように待ち時間を挟む
             await Task.Delay(1).ConfigureAwait(false);
 
+            // ポーズ中の場合、再生を一時停止する
             if (IsPausing)
             {
                 _al.SourcePause(alSource.Handle);
@@ -362,7 +370,7 @@ public class AudioPlayer : IDisposable
             }
             else
             {
-                _al.BufferData(nextBuffer.Handle, BufferFormat.Stereo16, samples, source.SampleRate);
+                _al.BufferData(nextBuffer.Handle, bufferFormat, samples, source.SampleRate);
             }
 
             EnqueueBuffer(nextBuffer);
@@ -374,10 +382,22 @@ public class AudioPlayer : IDisposable
             {
                 fixed (short* samplePtr = samples)
                 {
-                    _al.BufferData(nextBuffer.Handle, BufferFormat.Stereo16, samplePtr, sampleSize * sizeof(short),
+                    _al.BufferData(nextBuffer.Handle, bufferFormat, samplePtr, sampleSize * sizeof(short),
                         source.SampleRate);
                 }
             }
         }
+    }
+
+    private static BufferFormat GetBufferFormat(IAudioSource source)
+    {
+        return (source.Channels, source.Bits) switch
+        {
+            (1, 8) => BufferFormat.Mono8,
+            (1, 16) => BufferFormat.Mono16,
+            (2, 8) => BufferFormat.Stereo8,
+            (2, 16) => BufferFormat.Stereo16,
+            _ => throw new NotSupportedException("Unsupported format.")
+        };
     }
 }

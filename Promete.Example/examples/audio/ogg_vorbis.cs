@@ -25,12 +25,17 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
                        Location: {_audio.Time / 1000f:0.000} / {_audio.Length / 1000f:0.000}
                        Location in Samples: {_audio.TimeInSamples} / {_audio.LengthInSamples}
                        Loaded: {_bgm.LoadedSize} / {_bgm.Samples}
+                       Volume: {_audio.Gain}
+                       Pitch: {_audio.Pitch}
+                       Pan: {_audio.Pan}
                        Is Playing: {_audio.IsPlaying}
                        Is Pausing: {_audio.IsPausing}
                        [↑] Volume Up
                        [↓] Volume Down
                        [←] Pitch Down
                        [→] Pitch Up
+                       [A] Pan Left
+                       [D] Pan Right
                        PRESS ESC TO RETURN
                        """);
 
@@ -48,6 +53,12 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
         if (keyboard.Right.IsKeyDown)
             _audio.Pitch += 0.1f;
+
+        if (keyboard.A.IsKeyDown)
+            _audio.Pan = MathF.Max(-1, (int)((_audio.Pan - 0.1f) * 10) / 10f);
+
+        if (keyboard.D.IsKeyDown)
+            _audio.Pan = MathF.Min(1, (int)((_audio.Pan + 0.1f) * 10) / 10f);
 
         if (keyboard.Space.IsKeyDown)
         {
