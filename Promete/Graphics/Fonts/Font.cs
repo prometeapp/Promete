@@ -80,7 +80,7 @@ public class Font : IFont
     {
         (text, var textOptions) = CreateTextOptions(options, text);
         var size = TextMeasurer.MeasureBounds(text, textOptions);
-        return new Rect(0, 0, (int)size.Right, (int)size.Bottom);
+        return new Rect(0, 0, (int)size.Right + 1, (int)size.Bottom + 1);
     }
 
     /// <inheritdoc />
