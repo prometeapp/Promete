@@ -10,6 +10,5 @@ internal struct ALSource(AL al) : IDisposable
     public void Dispose()
     {
         al.DeleteSource(Handle);
-        Console.WriteLine("Deleted OpenAL source ID:" + Handle);
     }
 }

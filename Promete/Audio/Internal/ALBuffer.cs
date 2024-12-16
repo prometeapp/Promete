@@ -10,6 +10,5 @@ internal struct ALBuffer(AL al) : IDisposable
     public void Dispose()
     {
         al.DeleteBuffer(Handle);
-        Console.WriteLine("Deleted OpenAL buffer ID:" + Handle);
     }
 }
