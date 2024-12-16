@@ -97,6 +97,24 @@ public abstract class Node
         }
     }
 
+    /// <summary>
+    /// このノードの、描画時の中心点（ピボット）を取得または設定します。
+    /// </summary>
+    /// <remarks>
+    /// 単位は、このノードの幅・高さを 1 とした相対座標です。<br />
+    /// 幅・高さのいずれかが 0 の場合、中心点は無効化されます。
+    /// </remarks>
+    public Vector Pivot
+    {
+        get => _pivot;
+        set
+        {
+            if (_pivot == value) return;
+            _pivot = value;
+            _isModelMatrixDirty = true;
+        }
+    }
+
     public Vector AbsoluteLocation =>
         Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 
@@ -141,7 +159,8 @@ public abstract class Node
     internal virtual void UpdateModelMatrix()
     {
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
-        ModelMatrix = Matrix4x4.CreateScale(Scale.X, Scale.Y, 1) *
+        ModelMatrix = Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0) *
+                      Matrix4x4.CreateScale(Scale.X, Scale.Y, 1) *
                       Matrix4x4.CreateRotationZ(MathHelper.ToRadian(Angle)) *
                       Matrix4x4.CreateTranslation(Location.X, Location.Y, 0) *
                       parentMatrix;

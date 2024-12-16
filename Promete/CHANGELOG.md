@@ -1,4 +1,8 @@
 ﻿## Unreleased
+- **Feature(Node): ** Node.Pivot
+    - 移動・回転・拡大縮小操作の中心点を設定できるようになります。
+- **Enhance(Node): ** `ZIndex` をSetup APIに追加
+    - `node.ZIndex(0)` のように書けるようになります。
 - **Fix(VorbisAudioSource):** VorbisAudioSourceのデータ読み込みを高速化
 - **Fix(AudioPlayer):** Pan設定が反映されない不具合を修正
     - ただし、OpenALの仕様上、ステレオ音源のPan設定は無視されます

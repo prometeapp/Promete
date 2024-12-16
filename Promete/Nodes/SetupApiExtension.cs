@@ -72,4 +72,36 @@ public static class SetupApiExtension
         node.ZIndex = zIndex;
         return node;
     }
+
+    public static T Pivot<T>(this T node, Vector pivot) where T : Node
+    {
+        node.Pivot = pivot;
+        return node;
+    }
+
+    public static T Pivot<T>(this T node, float x, float y) where T : Node
+    {
+        node.Pivot = (x, y);
+        return node;
+    }
+
+    public static T Pivot<T>(this T node, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment) where T : Node
+    {
+        var x = horizontalAlignment switch
+        {
+            HorizontalAlignment.Left => 0,
+            HorizontalAlignment.Center => 0.5f,
+            HorizontalAlignment.Right => 1,
+            _ => 0
+        };
+        var y = verticalAlignment switch
+        {
+            VerticalAlignment.Top => 0,
+            VerticalAlignment.Center => 0.5f,
+            VerticalAlignment.Bottom => 1,
+            _ => 0
+        };
+        node.Pivot = (x, y);
+        return node;
+    }
 }
