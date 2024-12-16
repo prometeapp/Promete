@@ -62,6 +62,7 @@ public class HeadlessWindow : IWindow
     public bool IsFocused => true;
     public bool IsFullScreen { get; set; } = true;
     public float TotalTime { get; private set; }
+    public bool TopMost { get; set; }
     public float DeltaTime => 1f / FramePerSeconds;
     public long FramePerSeconds => TargetFps;
     public long UpdatePerSeconds => TargetUps;

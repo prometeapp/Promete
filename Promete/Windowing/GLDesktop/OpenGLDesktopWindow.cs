@@ -106,6 +106,12 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
         set => NativeWindow.WindowState = value ? WindowState.Fullscreen : WindowState.Normal;
     }
 
+    public bool TopMost
+    {
+        get => NativeWindow.TopMost;
+        set => NativeWindow.TopMost = value;
+    }
+
     public string Title
     {
         get => NativeWindow.Title;

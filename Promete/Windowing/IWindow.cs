@@ -80,6 +80,11 @@ public interface IWindow
     public bool IsFullScreen { get; set; }
 
     /// <summary>
+    /// ゲームウィンドウが常に最前面に表示されるかどうかを取得または設定します。
+    /// </summary>
+    public bool TopMost { get; set; }
+
+    /// <summary>
     /// ゲーム起動時からの経過時間を取得または設定します。
     /// </summary>
     public float TotalTime { get; }

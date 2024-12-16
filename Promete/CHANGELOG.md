@@ -1,8 +1,14 @@
 ﻿## Unreleased
+**BREAKING CHANGE**: `IWindow` インターフェイスに `TopMost` プロパティを追加しました。<br/>
+本リリースに更新する場合、`IWindow` インターフェイスを実装しているクラスに `TopMost` プロパティを追加する必要があります。
+未対応のバックエンドは利用できません。
+
 - **Feature(Node):** Node.Pivot
     - 移動・回転・拡大縮小操作の中心点を設定できるようになります。
 - **Feature(Node):** Node.IsVisible
     - 描画の表示・非表示を切り替えることができるようになります。
+- **Feature(Windowing):** TopMost プロパティを追加
+    - ウィンドウを常に最前面に表示できます。
 - **Enhance(Node):** `ZIndex` をSetup APIに追加
     - `node.ZIndex(0)` のように書けるようになります。
 - **Fix(VorbisAudioSource):** VorbisAudioSourceのデータ読み込みを高速化
