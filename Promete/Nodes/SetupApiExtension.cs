@@ -66,4 +66,10 @@ public static class SetupApiExtension
         node.AddRange(children);
         return node;
     }
+
+    public static T ZIndex<T>(this T node, int zIndex) where T : Node
+    {
+        node.ZIndex = zIndex;
+        return node;
+    }
 }

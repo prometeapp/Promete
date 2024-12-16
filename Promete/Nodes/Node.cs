@@ -7,15 +7,6 @@ namespace Promete.Nodes;
 /// </summary>
 public abstract class Node
 {
-    private float _angle;
-
-    private bool _isModelMatrixDirty = true;
-
-    private Vector _location;
-    private Vector _scale = (1, 1);
-
-    private int _zIndex;
-
     /// <summary>
     /// このノードの名前を取得または設定します。
     /// </summary>
@@ -55,7 +46,7 @@ public abstract class Node
     public virtual VectorInt Size { get; set; }
 
     /// <summary>
-    /// このノードの角度（0-360）を取得または設定します。
+    /// このノードの角度（0-360°）を取得または設定します。
     /// </summary>
     public float Angle
     {
@@ -73,12 +64,18 @@ public abstract class Node
     /// </summary>
     public bool IsDestroyed { get; private set; }
 
+    /// <summary>
+    /// このノードの幅を取得または設定します。
+    /// </summary>
     public int Width
     {
         get => Size.X;
         set => Size = (value, Height);
     }
 
+    /// <summary>
+    /// このノードの高さを取得または設定します。
+    /// </summary>
     public int Height
     {
         get => Size.Y;
@@ -105,9 +102,23 @@ public abstract class Node
 
     public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
     public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
+
+    /// <summary>
+    /// このノードの親ノードを取得します。
+    /// </summary>
     public ContainableNode? Parent { get; internal set; }
 
     internal Matrix4x4 ModelMatrix { get; private set; } = Matrix4x4.Identity;
+
+    private float _angle;
+
+    private bool _isModelMatrixDirty = true;
+
+    private Vector _location;
+    private Vector _scale = (1, 1);
+    private Vector _pivot = Vector.Zero;
+
+    private int _zIndex;
 
     public void Destroy()
     {
