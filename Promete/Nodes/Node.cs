@@ -115,6 +115,11 @@ public abstract class Node
         }
     }
 
+    /// <summary>
+    /// このノードを描画するかどうかを取得または設定します。
+    /// </summary>
+    public bool IsVisible { get; set; } = true;
+
     public Vector AbsoluteLocation =>
         Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 
