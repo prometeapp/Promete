@@ -6,7 +6,7 @@ using Promete.Nodes;
 using Promete.Windowing;
 using UI = ImGuiNET.ImGui;
 
-namespace Promete.Example.examples;
+namespace Promete.Example.examples.plugins;
 
 [Demo("/plugins/imgui.demo", "ImGui example")]
 public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene

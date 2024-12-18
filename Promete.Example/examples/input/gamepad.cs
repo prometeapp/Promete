@@ -1,7 +1,7 @@
 ﻿using Promete.Example.Kernel;
 using Promete.Input;
 
-namespace Promete.Example.examples.experimental;
+namespace Promete.Example.examples.input;
 
 [Demo("input/gamepad.demo", "ゲームパッドの入力確認")]
 public class GamepadExampleScene(ConsoleLayer console, Keyboard keyboard, Gamepads pads) : Scene

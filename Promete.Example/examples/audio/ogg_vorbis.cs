@@ -1,6 +1,7 @@
 ﻿using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
+using Promete.Windowing;
 
 namespace Promete.Example.examples.audio;
 

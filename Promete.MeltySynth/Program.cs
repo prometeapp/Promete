@@ -11,15 +11,18 @@ var app = PrometeApp.Create()
 
 return app.Run<MainScene>();
 
-public class MainScene : Scene
+namespace Promete.MeltySynth
 {
-    public override void OnStart()
+    public class MainScene : Scene
     {
-        var audioPlayer = new AudioPlayer();
-        var source = new MeltySynthAudioSource("./soundfont.sf2");
-        source.Play(new MidiFile("song.mid", MidiFileLoopType.RpgMaker), true);
+        public override void OnStart()
+        {
+            var audioPlayer = new AudioPlayer();
+            var source = new MeltySynthAudioSource("./soundfont.sf2");
+            source.Play(new MidiFile("song.mid", MidiFileLoopType.RpgMaker), true);
 
-        audioPlayer.BufferSize = 4000;
-        audioPlayer.Play(source);
+            audioPlayer.BufferSize = 4000;
+            audioPlayer.Play(source);
+        }
     }
 }
