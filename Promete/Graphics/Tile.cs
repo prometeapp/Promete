@@ -28,7 +28,7 @@ public class Tile : ITile
     /// <see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     protected Tile(Texture2D texture, bool b1)
-        : this(new[] { texture }, 0)
+        : this([texture], 0)
     {
         _textureIsInternal = b1;
     }

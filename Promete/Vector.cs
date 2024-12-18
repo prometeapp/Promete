@@ -4,39 +4,29 @@ using System.Numerics;
 namespace Promete;
 
 /// <summary>
-/// Two-dimensional vector.
+/// 2Dのベクトルを表します。
 /// </summary>
-public struct Vector : IEquatable<Vector>
+public struct Vector(float x, float y) : IEquatable<Vector>
 {
     /// <summary>
-    /// Get or set X coordinate of this vector.
+    /// このベクトルのX座標を取得または設定します。
     /// </summary>
-    public float X { get; set; }
+    public float X { get; set; } = x;
 
     /// <summary>
-    /// Get or set Y coordinate of this vector.
+    /// このベクトルのY座標を取得または設定します。
     /// </summary>
-    public float Y { get; set; }
+    public float Y { get; set; } = y;
 
     /// <summary>
-    /// Get length of this vector.
+    /// このベクトルの長さを取得します。
     /// </summary>
     public float Magnitude => MathF.Sqrt(X * X + Y * Y);
 
     /// <summary>
-    /// Get a unit vector with the same orientation as this vector.
+    /// このベクトルの単位ベクトルを取得します。
     /// </summary>
     public Vector Normalized => (X / Magnitude, Y / Magnitude);
-
-    /// <summary>
-    /// Initialize a new instance of <see cref="Vector" /> class.
-    /// </summary>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    public Vector(float x, float y)
-    {
-        (X, Y) = (x, y);
-    }
 
     public static Vector operator +(Vector v1, Vector v2)
     {

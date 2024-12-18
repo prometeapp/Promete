@@ -4,39 +4,29 @@ using System.Numerics;
 namespace Promete;
 
 /// <summary>
-/// Two dimensional vector.
+/// 2次元の整数ベクトルを表します。
 /// </summary>
-public struct VectorInt : IEquatable<VectorInt>
+public struct VectorInt(int x, int y) : IEquatable<VectorInt>
 {
     /// <summary>
-    ///     Get or set X coordinate of this vector.
+    /// このベクトルのX座標を取得または設定します。
     /// </summary>
-    public int X { get; set; }
+    public int X { get; set; } = x;
 
     /// <summary>
-    ///     Get or set Y coordinate of this vector.
+    /// このベクトルのY座標を取得または設定します。
     /// </summary>
-    public int Y { get; set; }
+    public int Y { get; set; } = y;
 
     /// <summary>
-    ///     Get length of this vector.
+    /// このベクトルの大きさを取得します。
     /// </summary>
     public float Magnitude => MathF.Sqrt(X * X + Y * Y);
 
     /// <summary>
-    ///     Get a unit vector with the same orientation as this vector.
+    /// このベクトルの単位ベクトルを取得します。
     /// </summary>
     public Vector Normalized => (X / Magnitude, Y / Magnitude);
-
-    /// <summary>
-    ///     Initialize a new instance of <see cref="Vector" /> class.
-    /// </summary>
-    /// <param name="x"></param>
-    /// <param name="y"></param>
-    public VectorInt(int x, int y)
-    {
-        (X, Y) = (x, y);
-    }
 
     public static VectorInt operator +(VectorInt v1, VectorInt v2)
     {
@@ -94,16 +84,21 @@ public struct VectorInt : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Get angle between 2 vectors.
+    /// 2つのベクトルがなす角を取得します。
     /// </summary>
-    /// <returns>Radian angle between 2 vectors.</returns>
+    /// <param name="from">始点。</param>
+    /// <param name="to">終点。</param>
+    /// <returns>ラジアン単位の角度。</returns>
     public static float Angle(VectorInt from, VectorInt to)
     {
         return MathF.Atan2(to.Y - from.Y, to.X - from.X);
     }
 
     /// <summary>
-    ///     Get the distance between 2 vectors.
+    /// 2つのベクトルのユークリッド距離を取得します。
+    /// <param name="from">始点。</param>
+    /// <param name="to">終点。</param>
+    /// <returns>距離。</returns>
     /// </summary>
     public static float Distance(VectorInt from, VectorInt to)
     {
@@ -113,7 +108,7 @@ public struct VectorInt : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Calculate a dot product.
+    /// 2つのベクトルの内積を計算します。
     /// </summary>
     public static int Dot(VectorInt v1, VectorInt v2)
     {
@@ -121,7 +116,7 @@ public struct VectorInt : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Calculate a dot product.
+    /// このベクトルと指定したベクトルの内積を計算します。
     /// </summary>
     public int Dot(VectorInt v)
     {
