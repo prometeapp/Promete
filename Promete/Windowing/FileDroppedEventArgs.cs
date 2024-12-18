@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace Promete;
+namespace Promete.Windowing;
 
 /// <summary>
 /// Arguments for file-dropped-event.
