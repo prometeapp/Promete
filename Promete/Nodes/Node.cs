@@ -161,7 +161,7 @@ public abstract class Node
         OnRender();
     }
 
-    internal virtual void UpdateModelMatrix()
+    protected internal virtual void UpdateModelMatrix()
     {
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
         ModelMatrix = Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0) *

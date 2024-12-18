@@ -50,7 +50,7 @@ public abstract class ContainableNode : Node
         _isSortingRequested = false;
     }
 
-    internal override void UpdateModelMatrix()
+    protected internal override void UpdateModelMatrix()
     {
         base.UpdateModelMatrix();
         foreach (var child in children) child.UpdateModelMatrix();
