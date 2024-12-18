@@ -38,8 +38,8 @@ public struct Rect
     /// </summary>
     public float Right
     {
-        get => Left + Width;
-        set => Left = value - Width;
+        get => Left + Width - 1;
+        set => Left = value - Width + 1;
     }
 
     /// <summary>
@@ -47,8 +47,8 @@ public struct Rect
     /// </summary>
     public float Bottom
     {
-        get => Top + Height;
-        set => Top = value - Height;
+        get => Top + Height - 1;
+        set => Top = value - Height + 1;
     }
 
     /// <summary>
@@ -113,6 +113,6 @@ public struct Rect
     /// <returns>重なっている場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
     public bool Intersect(Rect rect)
     {
-        return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
+        return Left < rect.Right && rect.Left < Right && Top < rect.Bottom && rect.Top < Bottom;
     }
 }

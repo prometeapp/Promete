@@ -38,8 +38,8 @@ public struct RectInt
     /// </summary>
     public int Right
     {
-        get => Left + Width;
-        set => Left = value - Width;
+        get => Left + Width - 1;
+        set => Left = value - Width + 1;
     }
 
     /// <summary>
@@ -47,8 +47,8 @@ public struct RectInt
     /// </summary>
     public int Bottom
     {
-        get => Top + Height;
-        set => Top = value - Height;
+        get => Top + Height - 1;
+        set => Top = value - Height + 1;
     }
 
     /// <summary>

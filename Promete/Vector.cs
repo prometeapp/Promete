@@ -188,7 +188,10 @@ public struct Vector : IEquatable<Vector>
     /// </summary>
     public bool In(Rect rect)
     {
-        return In(rect.Location, rect.Size);
+        var topLeft = rect.Location;
+        var bottomRight = rect.Location + rect.Size - One;
+        return X >= topLeft.X && X <= bottomRight.X &&
+               Y >= topLeft.Y && Y <= bottomRight.Y;
     }
 
     /// <summary>
@@ -196,9 +199,7 @@ public struct Vector : IEquatable<Vector>
     /// </summary>
     public bool In(Vector location, Vector size)
     {
-        var (rl, rt) = location;
-        var (rr, rb) = (rl + size.X, rt + size.Y);
-        return rl <= X && rt <= Y && X <= rr && Y <= rb;
+        return In(new Rect(location, size));
     }
 
     /// <summary>
