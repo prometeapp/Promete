@@ -153,7 +153,7 @@ public class Text : Node
 
     public static TextRenderingOptions DefaultOptions { get; } = new();
 
-    protected override void OnUpdate()
+    protected override void OnPreRender()
     {
         if (!_isUpdateRequested) return;
         RenderTexture();

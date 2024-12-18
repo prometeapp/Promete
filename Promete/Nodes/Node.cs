@@ -158,6 +158,7 @@ public abstract class Node
     internal void BeforeRender()
     {
         if (_isModelMatrixDirty) UpdateModelMatrix();
+        OnPreRender();
         OnRender();
     }
 
@@ -177,6 +178,10 @@ public abstract class Node
     }
 
     protected virtual void OnRender()
+    {
+    }
+
+    protected virtual void OnPreRender()
     {
     }
 
