@@ -169,6 +169,7 @@ public class Text : Node
     {
         var oldTexture = RenderedTexture;
         RenderedTexture = _font.GenerateTexture(PrometeApp.Current.Window.TextureFactory, Content, Options);
+        UpdateModelMatrix();
         oldTexture?.Dispose();
     }
 }
