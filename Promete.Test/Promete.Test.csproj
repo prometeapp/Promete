@@ -25,4 +25,10 @@
       <ProjectReference Include="..\Promete\Promete.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="assets\**\*">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
