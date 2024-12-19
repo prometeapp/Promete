@@ -7,6 +7,7 @@
   - **また、Vector.In メソッドの判定も1px変わっています。**
 - **Fix(AudioPlayer):** `Play` を2回呼び出すと、`IsPlaying == false` となる不具合を修正
 - **Fix(AudioPlayer):** `Pause` の後に `Stop` すると、`IsPausing == true` となる不具合を修正
+- **Fix(StringExtension)**: ReplaceAt で、文字列の長さを超えるインデックスを指定したときに例外が発生する不具合を修正
 
 ## 0.26.1
 - **Enhance(Node/Text):** 内部的なテクスチャ生成を、レンダリングの直前に行うよう改善
