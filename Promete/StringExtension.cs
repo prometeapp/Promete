@@ -16,7 +16,13 @@ public static class StringExtension
     /// <returns></returns>
     public static string ReplaceAt(this string str, int index, string replace)
     {
+        // indexが、strの長さよりも多い場合、文字列の長さがindex+replace.Lengthになるまで空白を追加する
+        if (index >= str.Length)
+        {
+            str = str.PadRight(index + replace.Length);
+        }
+
         return str.Remove(index, Math.Min(replace.Length, str.Length - index))
-            .Insert(index, replace);
+                  .Insert(index, replace);
     }
 }
