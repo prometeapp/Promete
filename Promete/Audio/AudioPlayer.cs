@@ -182,6 +182,8 @@ public class AudioPlayer : IDisposable
             });
 
         Time = TimeInSamples = 0;
+        IsPlaying = false;
+        IsPausing = false;
     }
 
     /// <summary>
@@ -300,7 +302,6 @@ public class AudioPlayer : IDisposable
             // 外部から再生停止が要求された場合、再生を終了する
             if (st.IsStopRequested)
             {
-                IsPlaying = false;
                 break;
             }
 
@@ -330,6 +331,7 @@ public class AudioPlayer : IDisposable
 
         if (!st.IsStopRequested)
         {
+            // 停止を要求されずにループを抜けた場合、バッファを全て処理し終えるまで待機
             int processed;
             do
             {
