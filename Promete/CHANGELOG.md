@@ -1,10 +1,12 @@
-﻿## Unreleased
-- BREAKING CHANGE: Rect, RectIntそれぞれのRight, Bottomプロパティの挙動が変わりました。
+﻿## 0.27.0
+- **BREAKING CHANGE**: Rect, RectIntそれぞれのRight, Bottomプロパティの挙動が変わりました。
   - 元々、座標にサイズを加算した値を返していましたが、これは矩形の外側を指しており、不正確でした。
   - **このバージョンから、座標にサイズを加算した値から、(1, 1)を引くようにし、内側の右と下を指すようになりました**
-  - つまり、以前の挙動よりも1ピクセル左上を指します。
+  - つまり、以前の挙動よりも1ピクセル左上を指すようになりました。
   - 既存のRect.Right, Rect.Bottomの挙動を維持するためには、Rect.Right + 1, Rect.Bottom + 1 としてください。
   - **また、Vector.In メソッドの判定も1px変わっています。**
+- **Fix(AudioPlayer):** `Play` を2回呼び出すと、`IsPlaying == false` となる不具合を修正
+- **Fix(AudioPlayer):** `Pause` の後に `Stop` すると、`IsPausing == true` となる不具合を修正
 
 ## 0.26.1
 - **Enhance(Node/Text):** 内部的なテクスチャ生成を、レンダリングの直前に行うよう改善
