@@ -65,15 +65,18 @@ public class AudioPlayerTests
     }
 
     [Fact]
-    public void IsPlayingShouldBeTrueWhenPlayTwice()
+    public async Task IsPlayingShouldBeTrueWhenPlayTwice()
     {
         using var audioPlayer = new AudioPlayer();
         using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
 
         audioPlayer.Play(audioSource);
+        audioPlayer.IsPlaying.Should().BeTrue();
+        await Task.Delay(2000);
         audioPlayer.Play(audioSource);
         audioPlayer.IsPlaying.Should().BeTrue();
 
+        await Task.Delay(2000);
         audioPlayer.Stop();
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Promete.Audio.Internal;
 using Silk.NET.OpenAL;
@@ -19,7 +20,7 @@ public class AudioPlayer : IDisposable
 
     private float _gain;
     private float _pan;
-    private StopTokenSource? _stopToken;
+    private CancellationTokenSource? _currentTokenSource;
 
     /// <summary>
     ///     この <see cref="AudioPlayer" /> の新しいインスタンスを初期化します。
@@ -115,11 +116,14 @@ public class AudioPlayer : IDisposable
     /// </summary>
     /// <param name="source">再生する音源。</param>
     /// <param name="loop">ループ開始位置（サンプル単位）。ループ再生を行わない場合は<c>null</c>を指定します。</param>
-    public async ValueTask PlayAsync(IAudioSource source, int? loop = default)
+    public async ValueTask PlayAsync(IAudioSource source, int? loop = null)
     {
-        _stopToken?.Stop();
-        _stopToken = new StopTokenSource();
-        await PlayAsync(source, loop, _stopToken);
+        if (_currentTokenSource is not null)
+        {
+            await _currentTokenSource.CancelAsync();
+        }
+        _currentTokenSource = new CancellationTokenSource();
+        await PlayAsync(source, loop, _currentTokenSource.Token);
     }
 
     /// <summary>
@@ -127,12 +131,12 @@ public class AudioPlayer : IDisposable
     /// </summary>
     /// <param name="source">再生する音源。</param>
     /// <param name="loop">ループ開始位置（サンプル単位）。ループ再生を行わない場合は<c>null</c>を指定します。</param>
-    public async void Play(IAudioSource source, int? loop = default)
+    public async void Play(IAudioSource source, int? loop = null)
     {
         if (IsPlaying) Stop();
 
-        _stopToken = new StopTokenSource();
-        await PlayAsync(source, loop, _stopToken);
+        _currentTokenSource = new CancellationTokenSource();
+        await PlayAsync(source, loop, _currentTokenSource.Token);
     }
 
     /// <summary>
@@ -160,7 +164,7 @@ public class AudioPlayer : IDisposable
     public void Stop(float time = 0)
     {
         if (time == 0)
-            _stopToken?.Stop();
+            _currentTokenSource?.Cancel();
         else
             Task.Run(async () =>
             {
@@ -174,7 +178,11 @@ public class AudioPlayer : IDisposable
                     await Task.Delay(1);
                 }
 
-                _stopToken?.Stop();
+                if (_currentTokenSource is not null)
+                {
+                    await _currentTokenSource.CancelAsync();
+                }
+
                 w.Stop();
                 while (IsPlaying)
                     await Task.Delay(10);
@@ -237,157 +245,159 @@ public class AudioPlayer : IDisposable
         } while (buffersProcessed < 1);
     }
 
-    private async ValueTask PlayAsync(IAudioSource source, int? loop, StopTokenSource st)
+    private async ValueTask PlayAsync(IAudioSource source, int? loop, CancellationToken token)
     {
-        var samples = new short[BufferSize];
-        TimeInSamples = Time = 0;
-
-        LengthInSamples = source.Samples / source.Channels ?? 0;
-        Length = (int)(LengthInSamples / (float)source.SampleRate * 1000);
-
-        using var alSource = new ALSource(_al);
-        using var buffer1 = new ALBuffer(_al);
-        using var buffer2 = new ALBuffer(_al);
-        int bufferSampleIndex1 = 0, bufferSampleIndex2 = 0;
-        var currentSample = 0;
-        var nextBufferIndex = 0;
-        var bufferFormat = GetBufferFormat(source);
-
-        uint[] singleArray = [0];
-
-        int sampleSize;
-        bool isFinished;
-
-        QueueData();
-        QueueData();
-
-        _al.SourcePlay(alSource.Handle);
-        IsPlaying = true;
-
-        _al.SetSourceProperty(alSource.Handle, SourceBoolean.SourceRelative, true);
-        _al.SetSourceProperty(alSource.Handle, SourceFloat.MaxDistance, 1);
-        _al.SetSourceProperty(alSource.Handle, SourceFloat.ReferenceDistance, 0.5f);
-
-        var prevOffset = 0;
-
-        // 再生ループ
-        while (true)
+        try
         {
-            // 現時点のステータスを取得
-            _al.SetSourceProperty(alSource.Handle, SourceFloat.Pitch, Pitch);
-            _al.SetSourceProperty(alSource.Handle, SourceFloat.Gain, Gain);
-            var x = _pan;
-            var z = MathF.Abs(_pan) < 1.0f ? -MathF.Sqrt(1.0f - _pan * _pan) : 0.0f;
-            _al.SetSourceProperty(alSource.Handle, SourceVector3.Position, x, 0, z);
-            _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out var processedCount);
+            var samples = new short[BufferSize];
+            TimeInSamples = Time = 0;
 
-            // ソースが現在再生しているバッファのサンプル位置を取得し、TimeInSamplesを更新
-            _al.GetSourceProperty(alSource.Handle, GetSourceInteger.Buffer, out var currentBuffer);
-            _al.GetSourceProperty(alSource.Handle, GetSourceInteger.SampleOffset, out var offset);
-            var sampleOffset = currentBuffer == buffer1.Handle ? bufferSampleIndex1 : bufferSampleIndex2;
-            TimeInSamples = (sampleOffset + offset) / source.Channels;
-            Time = TimeInSamples * 1000 / source.SampleRate;
+            LengthInSamples = source.Samples / source.Channels ?? 0;
+            Length = (int)(LengthInSamples / (float)source.SampleRate * 1000);
 
-            // このスレッドがCPUを占有しないように待ち時間を挟む
-            await Task.Delay(1).ConfigureAwait(false);
+            using var alSource = new ALSource(_al);
+            using var buffer1 = new ALBuffer(_al);
+            using var buffer2 = new ALBuffer(_al);
+            int bufferSampleIndex1 = 0, bufferSampleIndex2 = 0;
+            var currentSample = 0;
+            var nextBufferIndex = 0;
+            var bufferFormat = GetBufferFormat(source);
 
-            // ポーズ中の場合、再生を一時停止する
-            if (IsPausing)
-            {
-                _al.SourcePause(alSource.Handle);
-                while (IsPausing) await Task.Delay(1).ConfigureAwait(false);
-                _al.SourcePlay(alSource.Handle);
-            }
+            uint[] singleArray = [0];
 
-            // 外部から再生停止が要求された場合、再生を終了する
-            if (st.IsStopRequested)
-            {
-                break;
-            }
+            int sampleSize;
+            bool isFinished;
 
-            // バッファが全て処理されるまで待機
-            if (processedCount == 0) continue;
-
-            // 処理中のバッファがなくなった場合、キューへの詰め直しを行う
-            DequeueBuffer(nextBufferIndex == 0 ? buffer1 : buffer2);
+            QueueData();
             QueueData();
 
-            // ソースの再生状態が停止している場合、再生を再開する
-            _al.GetSourceProperty(alSource.Handle, GetSourceInteger.SourceState, out var state);
-            if (state != (int)SourceState.Playing)
-                _al.SourcePlay(alSource.Handle);
+            _al.SourcePlay(alSource.Handle);
+            IsPlaying = true;
 
-            // まだ再生が終了していない場合は処理を続行
-            if (!isFinished) continue;
+            _al.SetSourceProperty(alSource.Handle, SourceBoolean.SourceRelative, true);
+            _al.SetSourceProperty(alSource.Handle, SourceFloat.MaxDistance, 1);
+            _al.SetSourceProperty(alSource.Handle, SourceFloat.ReferenceDistance, 0.5f);
 
-            // ループ再生が無効の場合、再生を終了する
-            if (loop is not { } loopStartSample) break;
+            var prevOffset = 0;
 
-            // ループ再生の開始位置にシーク
-            currentSample = loopStartSample * source.Channels;
-            TimeInSamples = loopStartSample;
-            Time = TimeInSamples * 1000 / source.SampleRate;
-        }
-
-        if (!st.IsStopRequested)
-        {
-            // 停止を要求されずにループを抜けた場合、バッファを全て処理し終えるまで待機
-            int processed;
-            do
+            // 再生ループ
+            while (true)
             {
-                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out processed);
-                await Task.Yield();
-            } while (processed < 2);
-        }
+                // 現時点のステータスを取得
+                _al.SetSourceProperty(alSource.Handle, SourceFloat.Pitch, Pitch);
+                _al.SetSourceProperty(alSource.Handle, SourceFloat.Gain, Gain);
+                var x = _pan;
+                var z = MathF.Abs(_pan) < 1.0f ? -MathF.Sqrt(1.0f - _pan * _pan) : 0.0f;
+                _al.SetSourceProperty(alSource.Handle, SourceVector3.Position, x, 0, z);
+                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out var processedCount);
 
-        IsPlaying = false;
-        return;
+                // ソースが現在再生しているバッファのサンプル位置を取得し、TimeInSamplesを更新
+                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.Buffer, out var currentBuffer);
+                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.SampleOffset, out var offset);
+                var sampleOffset = currentBuffer == buffer1.Handle ? bufferSampleIndex1 : bufferSampleIndex2;
+                TimeInSamples = (sampleOffset + offset) / source.Channels;
+                Time = TimeInSamples * 1000 / source.SampleRate;
 
-        void EnqueueBuffer(ALBuffer alBuffer)
-        {
-            singleArray[0] = alBuffer.Handle;
-            _al.SourceQueueBuffers(alSource.Handle, singleArray);
-        }
+                // このスレッドがCPUを占有しないように待ち時間を挟む
+                await Task.Delay(1, token).ConfigureAwait(false);
 
-        void DequeueBuffer(ALBuffer alBuffer)
-        {
-            singleArray[0] = alBuffer.Handle;
-            _al.SourceUnqueueBuffers(alSource.Handle, singleArray);
-        }
+                // ポーズ中の場合、再生を一時停止する
+                if (IsPausing)
+                {
+                    _al.SourcePause(alSource.Handle);
+                    while (IsPausing) await Task.Delay(1, token).ConfigureAwait(false);
+                    _al.SourcePlay(alSource.Handle);
+                }
 
-        void QueueData()
-        {
-            (sampleSize, isFinished) = source.FillSamples(samples, currentSample);
-            if (nextBufferIndex == 0)
-                bufferSampleIndex1 = currentSample;
-            else
-                bufferSampleIndex2 = currentSample;
-            currentSample += sampleSize;
-            var nextBuffer = nextBufferIndex == 0 ? buffer1 : buffer2;
+                // バッファが全て処理されるまで待機
+                if (processedCount == 0) continue;
 
-            if (isFinished)
-            {
-                if (sampleSize == 0) return;
-                BufferExactSizeDataUnsafely();
+                // 処理中のバッファがなくなった場合、キューへの詰め直しを行う
+                DequeueBuffer(nextBufferIndex == 0 ? buffer1 : buffer2);
+                QueueData();
+
+                // ソースの再生状態が停止している場合、再生を再開する
+                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.SourceState, out var state);
+                if (state != (int)SourceState.Playing)
+                    _al.SourcePlay(alSource.Handle);
+
+                // まだ再生が終了していない場合は処理を続行
+                if (!isFinished) continue;
+
+                // ループ再生が無効の場合、再生を終了する
+                if (loop is not { } loopStartSample) break;
+
+                // ループ再生の開始位置にシーク
+                currentSample = loopStartSample * source.Channels;
+                TimeInSamples = loopStartSample;
+                Time = TimeInSamples * 1000 / source.SampleRate;
             }
-            else
+
+            if (!token.IsCancellationRequested)
             {
-                _al.BufferData(nextBuffer.Handle, bufferFormat, samples, source.SampleRate);
+                // 停止を要求されずにループを抜けた場合、バッファを全て処理し終えるまで待機
+                int processed;
+                do
+                {
+                    _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out processed);
+                    await Task.Yield();
+                } while (processed < 2);
             }
 
-            EnqueueBuffer(nextBuffer);
+            IsPlaying = false;
 
-            nextBufferIndex ^= 1;
             return;
 
-            unsafe void BufferExactSizeDataUnsafely()
+            void EnqueueBuffer(ALBuffer alBuffer)
             {
-                fixed (short* samplePtr = samples)
+                singleArray[0] = alBuffer.Handle;
+                _al.SourceQueueBuffers(alSource.Handle, singleArray);
+            }
+
+            void DequeueBuffer(ALBuffer alBuffer)
+            {
+                singleArray[0] = alBuffer.Handle;
+                _al.SourceUnqueueBuffers(alSource.Handle, singleArray);
+            }
+
+            void QueueData()
+            {
+                (sampleSize, isFinished) = source.FillSamples(samples, currentSample);
+                if (nextBufferIndex == 0)
+                    bufferSampleIndex1 = currentSample;
+                else
+                    bufferSampleIndex2 = currentSample;
+                currentSample += sampleSize;
+                var nextBuffer = nextBufferIndex == 0 ? buffer1 : buffer2;
+
+                if (isFinished)
                 {
-                    _al.BufferData(nextBuffer.Handle, bufferFormat, samplePtr, sampleSize * sizeof(short),
-                        source.SampleRate);
+                    if (sampleSize == 0) return;
+                    BufferExactSizeDataUnsafely();
+                }
+                else
+                {
+                    _al.BufferData(nextBuffer.Handle, bufferFormat, samples, source.SampleRate);
+                }
+
+                EnqueueBuffer(nextBuffer);
+
+                nextBufferIndex ^= 1;
+                return;
+
+                unsafe void BufferExactSizeDataUnsafely()
+                {
+                    fixed (short* samplePtr = samples)
+                    {
+                        _al.BufferData(nextBuffer.Handle, bufferFormat, samplePtr, sampleSize * sizeof(short),
+                            source.SampleRate);
+                    }
                 }
             }
+        }
+        catch (TaskCanceledException)
+        {
+            // 再生停止要求のため、このまま終了
         }
     }
 
