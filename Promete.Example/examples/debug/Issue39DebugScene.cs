@@ -4,6 +4,10 @@ using Promete.Input;
 
 namespace Promete.Example.examples.debug;
 
+/// <summary>
+/// macOSで突然音が鳴らなくなる
+/// https://github.com/prometeapp/Promete/issues/39
+/// </summary>
 [Demo("/debug/issue39", "Issue39: Debug Scene")]
 public class Issue39DebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
