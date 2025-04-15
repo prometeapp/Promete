@@ -36,7 +36,7 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
 
     public override Texture2D Create(byte[] bitmap, VectorInt size)
     {
-        return new Texture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, gl);
+        return new Texture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, DisposeTexture);
     }
 
     public override Texture2D Create(byte[,,] bitmap)
@@ -115,5 +115,11 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
             gl.TexImage2D(GLEnum.Texture2D, 0, (int)GLEnum.Rgba, width, height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, b);
             return (int)texture;
         }
+    }
+
+    private unsafe void DisposeTexture(Texture2D texture)
+    {
+        app.ThrowIfNotMainThread();
+        gl.DeleteTexture((uint)texture.Handle);
     }
 }

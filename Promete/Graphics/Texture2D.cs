@@ -18,13 +18,13 @@ public readonly struct Texture2D : IDisposable
     /// </summary>
     public VectorInt Size { get; }
 
-    private readonly GL? _gl;
+    private readonly Action<Texture2D> onDispose;
 
-    internal Texture2D(int handle, VectorInt size, GL gl)
+    internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose)
     {
-        _gl = gl;
         Handle = handle;
         Size = size;
+        this.onDispose = onDispose;
     }
 
     /// <summary>
@@ -32,6 +32,6 @@ public readonly struct Texture2D : IDisposable
     /// </summary>
     public void Dispose()
     {
-        _gl?.DeleteTexture((uint)Handle);
+        onDispose?.Invoke(this);
     }
 }
