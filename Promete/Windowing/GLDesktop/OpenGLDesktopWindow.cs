@@ -27,6 +27,7 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
     private VectorInt _size = (640, 480);
     private TextureFactory? _textureFactory;
     private int _updateCount;
+    private float _timeScale = 1f;
 
     public GL GL => _gl ?? throw new InvalidOperationException("window is not loaded");
 
@@ -126,6 +127,8 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
 
     public float TotalTime { get; private set; }
 
+    public float TotalTimeWithoutScale { get; private set; }
+
     public float DeltaTime { get; private set; }
 
     public long FramePerSeconds { get; private set; }
@@ -148,6 +151,12 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
     {
         get => (int)NativeWindow.FramesPerSecond;
         set => NativeWindow.FramesPerSecond = value;
+    }
+
+    public float TimeScale
+    {
+        get => _timeScale;
+        set => _timeScale = Math.Max(0, value);
     }
 
     public bool IsVsyncMode
@@ -280,14 +289,15 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         CalculateFps();
         Render?.Invoke();
-        TotalTime += (float)delta;
+        TotalTime += (float)delta * TimeScale;
+        TotalTimeWithoutScale += (float)delta;
         TotalFrame++;
     }
 
     private void OnUpdateFrame(double delta)
     {
         var deltaTime = (float)delta;
-        DeltaTime = deltaTime;
+        DeltaTime = deltaTime * TimeScale;
 
         CalculateUps();
 

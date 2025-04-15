@@ -127,6 +127,13 @@ public interface IWindow
     public int TargetUps { get; set; }
 
     /// <summary>
+    /// 時間が流れる速度（通常の速度を<c>1.0f</c>とした倍率）を取得または設定します。
+    /// </summary>
+    public float TimeScale { get; set; }
+
+    public float TotalTimeWithoutScale { get; }
+
+    /// <summary>
     /// ゲームウィンドウのピクセル比率を取得します。
     /// </summary>
     public float PixelRatio { get; }

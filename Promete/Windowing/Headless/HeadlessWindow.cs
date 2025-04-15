@@ -62,6 +62,7 @@ public class HeadlessWindow : IWindow
     public bool IsFocused => true;
     public bool IsFullScreen { get; set; } = true;
     public float TotalTime { get; private set; }
+    public float TotalTimeWithoutScale { get; private set; }
     public bool TopMost { get; set; }
     public float DeltaTime => 1f / FramePerSeconds;
     public long FramePerSeconds => TargetFps;
@@ -71,6 +72,7 @@ public class HeadlessWindow : IWindow
     public bool IsVsyncMode { get; set; }
     public int TargetFps { get; set; }
     public int TargetUps { get; set; }
+    public float TimeScale { get; set; } = 1;
     public float PixelRatio => 1;
     public string Title { get; set; }
     public WindowMode Mode { get; set; }
@@ -123,7 +125,8 @@ public class HeadlessWindow : IWindow
 
     private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
     {
-        TotalTime += 1f / TargetFps;
+        TotalTime += 1f / TargetFps * TimeScale;
+        TotalTimeWithoutScale += 1f / TargetFps;
         TotalFrame++;
         PreUpdate?.Invoke();
         Update?.Invoke();
