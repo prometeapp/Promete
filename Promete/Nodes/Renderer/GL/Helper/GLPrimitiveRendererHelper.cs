@@ -89,8 +89,8 @@ public class GLPrimitiveRendererHelper
 
         var gl = _window.GL;
 
-        // ウィンドウの半分のサイズ
-        var (hw, hh) = _window.ActualSize / 2;
+        // ビューポートの大きさを取得する
+        var viewport = RenderingHelper.GetViewport(gl);
 
         // 図形の頂点を、ワールド座標からビューポート座標に変換
         Span<float> vertices = stackalloc float[worldVertices.Length * 2];
@@ -98,14 +98,17 @@ public class GLPrimitiveRendererHelper
         {
             var vertex = RenderingHelper.Transform(worldVertices[i], node) * _window.PixelRatio;
 
-            var (x, y) = vertex.ToViewportPoint(hw, hh);
+            var (x, y) = vertex.ToViewportPoint(viewport.X / 2, viewport.Y / 2);
             vertices[i * 2 + 0] = x;
             vertices[i * 2 + 1] = y;
         }
 
         // 描画開始
-        gl.Enable(EnableCap.Blend);
-        gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        gl.Enable(GLEnum.Blend);
+        gl.BlendFuncSeparate(
+            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,  // RGB
+            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
+        );
 
         DrawFill(vertices, type, color, lineWidth);
         DrawStroke(vertices, lineWidth, lineColor);

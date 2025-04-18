@@ -1,4 +1,5 @@
-﻿using Promete.Nodes;
+﻿using Promete.Graphics;
+using Promete.Nodes;
 using Promete.Nodes.Renderer.GL;
 using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing.GLDesktop;
@@ -17,6 +18,7 @@ public static class OpenGLDesktopAppExtension
             .UseRenderer<Sprite, GLSpriteRenderer>()
             .UseRenderer<Text, GLTextRenderer>()
             .UseRenderer<Tilemap, GLTilemapRenderer>()
+            .Use<IFrameBufferProvider, GLFrameBufferProvider>()
             .Use<GLTextureRendererHelper>()
             .Use<GLPrimitiveRendererHelper>()
             .Build<OpenGLDesktopWindow>();

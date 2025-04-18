@@ -108,13 +108,21 @@ public class GLTextureRendererHelper
             * Matrix4x4.CreateTranslation(new Vector3((pivot ?? Vector.Zero).ToNumerics(), 0))
             * node.ModelMatrix;
 
+        // ビューポートの大きさを取得する
+        Span<int> viewport = stackalloc int[4];
+        gl.GetInteger(GLEnum.Viewport, viewport);
+        var (hw, hh) = new Vector(viewport[2], viewport[3]) / _window.Scale;
+
         // プロジェクション行列を計算
         var projectionMatrix =
-            Matrix4x4.CreateOrthographicOffCenter(0, _window.ActualWidth / _window.PixelRatio, _window.ActualHeight / _window.PixelRatio, 0, 0.1f, 100f);
+            Matrix4x4.CreateOrthographicOffCenter(0, hw, hh, 0, 0.1f, 100f);
 
         // 描画開始
         gl.Enable(GLEnum.Blend);
-        gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
+        gl.BlendFuncSeparate(
+            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,  // RGB
+            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
+        );
 
         // シェーダーおよびテクスチャを利用する
         gl.UseProgram(_shader);

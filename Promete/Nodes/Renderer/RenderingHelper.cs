@@ -1,4 +1,7 @@
-﻿namespace Promete.Nodes.Renderer;
+﻿using System;
+using Silk.NET.OpenGL;
+
+namespace Promete.Nodes.Renderer;
 
 public static class RenderingHelper
 {
@@ -20,5 +23,12 @@ public static class RenderingHelper
         }
 
         return vertex;
+    }
+
+    public static VectorInt GetViewport(Silk.NET.OpenGL.GL gl)
+    {
+        Span<int> viewport = stackalloc int[4];
+        gl.GetInteger(GetPName.Viewport, viewport);
+        return new VectorInt(viewport[2], viewport[3]);
     }
 }

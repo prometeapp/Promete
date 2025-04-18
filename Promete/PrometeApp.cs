@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Promete.Graphics;
 using Promete.Internal;
 using Promete.Nodes;
 using Promete.Nodes.Renderer;
@@ -47,6 +48,11 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public IWindow Window { get; }
 
+    /// <summary>
+    /// フレームバッファがサポートされているかどうかを取得します。
+    /// </summary>
+    public bool IsFrameBufferSupported => _provider.GetService<IFrameBufferProvider>() is not null;
+
     private Scene? _currentScene;
     private int _statusCode;
 
@@ -69,6 +75,7 @@ public sealed class PrometeApp : IDisposable
         _rendererTypes = rendererTypes;
         RegisterAllScenes();
         services.AddSingleton(this);
+        services.AddSingleton<FrameBufferManager>();
 
         _provider = services.BuildServiceProvider();
 
@@ -379,7 +386,7 @@ public sealed class PrometeApp : IDisposable
 
     public sealed class PrometeAppBuilder
     {
-        private readonly Dictionary<Type, Type> _rendererTypes = new();
+        private readonly Dictionary<Type, Type> _rendererTypes = [];
         private readonly ServiceCollection _services;
 
         internal PrometeAppBuilder()

@@ -86,4 +86,9 @@ public abstract class ContainableNode : Node
         node.Parent = this;
         node.UpdateModelMatrix();
     }
+
+    protected override void OnDestroy()
+    {
+        foreach (var child in children) child.Destroy();
+    }
 }
