@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Promete.Graphics;
+using Promete.Internal;
+using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
@@ -38,10 +40,25 @@ public class GLFrameBufferProvider : IFrameBufferProvider
         return new Texture2D((int)textureHandle, new VectorInt(frameBuffer.Width, frameBuffer.Height), HandleTextureDispose);
     }
 
+    public unsafe void Resize(FrameBuffer frameBuffer)
+    {
+        LogHelper.Info($"Resizing FrameBuffer: {frameBuffer.Width}x{frameBuffer.Height}");
+        _glWindow.GL.BindTexture(GLEnum.Texture2D, (uint)frameBuffer.Texture.Handle);
+        _glWindow.GL.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba, (uint)frameBuffer.Width, (uint)frameBuffer.Height, 0,
+            PixelFormat.Rgba, PixelType.UnsignedByte, null);
+        var err = _glWindow.GL.GetError();
+        if (err != GLEnum.NoError)
+        {
+            LogHelper.FixMe($"Error resizing FrameBuffer texture: {err}");
+        }
+        frameBuffer.Texture = new Texture2D(frameBuffer.Texture.Handle, new VectorInt(frameBuffer.Width, frameBuffer.Height), HandleTextureDispose);
+    }
+
 
     public void Render(FrameBuffer frameBuffer)
     {
         var gl = _glWindow.GL;
+        var previousViewport = GLHelper.GetViewport(gl);
 
         // FBOが存在しない場合は作成する
         if (!_fboCache.TryGetValue(frameBuffer, out var buffers))
@@ -70,7 +87,7 @@ public class GLFrameBufferProvider : IFrameBufferProvider
         gl.BindFramebuffer(GLEnum.Framebuffer, 0);
 
         // ビューポートを元に戻す
-        gl.Viewport(0, 0, (uint)_glWindow.ActualWidth, (uint)_glWindow.ActualHeight);
+        _glWindow.GL.Viewport(0, 0, (uint)previousViewport.X, (uint)previousViewport.Y);
     }
 
     private (uint framebuffer, uint renderbuffer, int textureHandle) GenerateNewBuffer(FrameBuffer frameBuffer, GL gl)

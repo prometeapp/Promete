@@ -109,13 +109,17 @@ public class GLTextureRendererHelper
             * node.ModelMatrix;
 
         // ビューポートの大きさを取得する
-        Span<int> viewport = stackalloc int[4];
-        gl.GetInteger(GLEnum.Viewport, viewport);
-        var (hw, hh) = new Vector(viewport[2], viewport[3]) / _window.Scale;
+        var viewport = GLHelper.GetViewport(gl);
+
+        // フレームバッファが0の場合は、ウィンドウのスケールを反映する
+        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
+        if (currentFrameBufferId == 0)
+        {
+            viewport /= _window.Scale;
+        }
 
         // プロジェクション行列を計算
-        var projectionMatrix =
-            Matrix4x4.CreateOrthographicOffCenter(0, hw, hh, 0, 0.1f, 100f);
+        var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
 
         // 描画開始
         gl.Enable(GLEnum.Blend);

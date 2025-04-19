@@ -16,7 +16,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// <summary>
     /// レンダリングされたテクスチャを取得します。
     /// </summary>
-    public Texture2D Texture { get; }
+    public Texture2D Texture { get; internal set; }
 
     /// <summary>
     /// フレームバッファの子ノードの数を取得します。
@@ -32,7 +32,18 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// <summary>
     /// このフレームバッファのサイズを取得します。
     /// </summary>
-    public VectorInt Size { get; }
+    public VectorInt Size
+    {
+        get => _size;
+        set
+        {
+            if (_size == value) return;
+
+            _size = value;
+            _frameBufferProvider.Resize(this);
+            _children.Location = (0, value.Y);
+        }
+    }
 
     public int Width => Size.X;
 
@@ -47,9 +58,13 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
 
     private bool _disposed;
 
+    private VectorInt _size;
+
     private readonly Container _children = [];
 
     private readonly FrameBufferManager _frameBufferManager;
+    private readonly IFrameBufferProvider _frameBufferProvider;
+
 
     /// <summary>
     /// 指定したサイズの <see cref="FrameBuffer"/> の新しいインスタンスを初期化します。
@@ -58,8 +73,8 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// <param name="height">フレームバッファの高さ。</param>
     public FrameBuffer(int width, int height)
     {
-        Size = (width, height);
-        var p = PrometeApp.Current.TryGetPlugin<IFrameBufferProvider>(out var provider)
+        _size = (width, height);
+        _frameBufferProvider = PrometeApp.Current.TryGetPlugin<IFrameBufferProvider>(out var provider)
             ? provider
             : throw new InvalidOperationException("Current backend does not support FrameBuffer.");
 
@@ -69,7 +84,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         _children.Location = (0, height);
         _children.Scale = (1, -1);
 
-        Texture = p.CreateTexture(this);
+        Texture = _frameBufferProvider.CreateTexture(this);
     }
 
     internal void BeforeRender()

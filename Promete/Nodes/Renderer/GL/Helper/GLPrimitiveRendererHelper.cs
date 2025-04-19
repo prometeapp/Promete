@@ -90,7 +90,14 @@ public class GLPrimitiveRendererHelper
         var gl = _window.GL;
 
         // ビューポートの大きさを取得する
-        var viewport = RenderingHelper.GetViewport(gl);
+        var viewport = GLHelper.GetViewport(gl);
+
+        // フレームバッファが0の場合は、ウィンドウのスケールを反映する
+        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
+        if (currentFrameBufferId == 0)
+        {
+            viewport /= _window.Scale;
+        }
 
         // 図形の頂点を、ワールド座標からビューポート座標に変換
         Span<float> vertices = stackalloc float[worldVertices.Length * 2];

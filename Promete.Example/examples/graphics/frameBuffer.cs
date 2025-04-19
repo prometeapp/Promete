@@ -11,6 +11,7 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
 {
     private FrameBuffer? _frameBuffer;
     private bool _isSupported;
+    private Texture2D _texture;
 
     private readonly Sprite _editorSprite = new();
 
@@ -31,12 +32,15 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
         }
 
         _frameBuffer = new FrameBuffer(128, 128);
-        _frameBuffer.BackgroundColor = Color.White;
         _editorSprite.Texture = _frameBuffer.Texture;
         _previewSprite.Texture = _frameBuffer.Texture;
-        _previewSprite.Scale *= 4;
+        _previewSprite.Scale *= 2;
+        _frameBuffer.BackgroundColor = Color.White;
+
+        _texture = Window.TextureFactory.Load("assets/ichigo.png");
 
         _frameBuffer.Add(new Text("Hello", null, Color.Black));
+        _frameBuffer.Add(new Sprite(_texture).Location(0, 32));
 
         Root.Add(_editorSprite);
         Root.Add(_previewSprite);
@@ -49,9 +53,15 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
             App.LoadScene<MainScene>();
             return;
         }
-
         if (!_isSupported) return;
+        if (_frameBuffer == null) return;
         _previewSprite.Angle = (_previewSprite.Angle + 45 * Window.DeltaTime) % 360;
+
+        if (keyboard.Enter.IsKeyDown)
+        {
+            _frameBuffer.Size = new VectorInt(300, 300);
+            _editorSprite.Texture = _previewSprite.Texture = _frameBuffer.Texture;
+        }
 
         // 左ボタンを推している間、_frameBufferに線を描画する
         if (mouse[MouseButtonType.Left])
@@ -74,5 +84,6 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
     public override void OnDestroy()
     {
         _frameBuffer?.Dispose();
+        _texture.Dispose();
     }
 }
