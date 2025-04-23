@@ -103,6 +103,7 @@ public class AudioPlayer : IDisposable
     /// </summary>
     public unsafe void Dispose()
     {
+        Stop();
         _alc.DestroyContext((Context*)_context);
         _alc.CloseDevice((Device*)_device);
         _al.Dispose();
