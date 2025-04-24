@@ -1,16 +1,16 @@
 namespace Promete.Windowing;
 
 /// <summary>
-/// Enumerates modes of the Promete Window.
+/// Prometeウィンドウのモードを列挙します。
 /// </summary>
 public enum WindowMode
 {
-    /// <summary>Resizable.</summary>
+    /// <summary>リサイズ可能なモード。</summary>
     Resizable,
 
-    /// <summary>Fixed size.</summary>
+    /// <summary>固定サイズのモード。</summary>
     Fixed,
 
-    /// <summary>No window frame.</summary>
+    /// <summary>ウィンドウ枠なしのモード。</summary>
     NoFrame
 }

@@ -3,7 +3,7 @@ using Promete.Windowing;
 namespace Promete.Coroutines;
 
 /// <summary>
-/// A yield instruction that waits for a specified number of seconds.
+/// 指定時間待機するイールド命令です。
 /// </summary>
 public class WaitForSeconds(float time) : YieldInstruction
 {

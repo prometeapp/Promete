@@ -68,16 +68,25 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
         return new Vector(v1.X, v1.Y);
     }
 
+    /// <summary>
+    /// 2つのベクトルが等しいかどうかを確認します。
+    /// </summary>
     public static bool operator ==(VectorInt v1, VectorInt v2)
     {
         return v1.X == v2.X && v1.Y == v2.Y;
     }
 
+    /// <summary>
+    /// 2つのベクトルが等しくないかどうかを確認します。
+    /// </summary>
     public static bool operator !=(VectorInt v1, VectorInt v2)
     {
         return v1.X != v2.X || v1.Y != v2.Y;
     }
 
+    /// <summary>
+    /// タプルからVectorIntに変換します。
+    /// </summary>
     public static implicit operator VectorInt((int x, int y) v1)
     {
         return new VectorInt(v1.x, v1.y);
@@ -124,7 +133,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Compare this object.
+    /// このオブジェクトを比較します。
     /// </summary>
     public override bool Equals(object? obj)
     {
@@ -132,7 +141,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Compare this object.
+    /// このオブジェクトを比較します。
     /// </summary>
     public bool Equals(VectorInt other)
     {
@@ -141,7 +150,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Get the hash value of this object.
+    /// このオブジェクトのハッシュ値を取得します。
     /// </summary>
     public override int GetHashCode()
     {
@@ -149,7 +158,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Get angle of this vector.
+    /// このベクトルの角度を取得します。
     /// </summary>
     public float Angle()
     {
@@ -157,7 +166,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Get the direction of the specified vector relative to this vector.
+    /// このベクトルに対する指定したベクトルの方向を取得します。
     /// </summary>
     public float Angle(VectorInt to)
     {
@@ -165,7 +174,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Get the distance between two vectors.
+    /// 2つのベクトル間の距離を取得します。
     /// </summary>
     public float Distance(VectorInt to)
     {
@@ -173,7 +182,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Check if this vector is in the specified range.
+    /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
     public bool In(Rect rect)
     {
@@ -184,7 +193,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Check if this vector is in the specified range.
+    /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
     public bool In(Vector location, Vector size)
     {
@@ -192,7 +201,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Deconstructs x and y.
+    /// xとyを分解します。
     /// </summary>
     public void Deconstruct(out int x, out int y)
     {
@@ -200,7 +209,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Get formatted string of this vector.
+    /// このベクトルのフォーマットされた文字列を取得します。
     /// </summary>
     public override string ToString()
     {
@@ -208,32 +217,32 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    ///     Get <c>new VectorInt(0, 0)</c>.
+    /// <c>new VectorInt(0, 0)</c>を取得します。
     /// </summary>
     public static readonly VectorInt Zero = (0, 0);
 
     /// <summary>
-    ///     Get <c>new VectorInt(1, 1)</c>.
+    /// <c>new VectorInt(1, 1)</c>を取得します。
     /// </summary>
     public static readonly VectorInt One = (1, 1);
 
     /// <summary>
-    ///     Get <c>new VectorInt(-1, 0)</c>.
+    /// <c>new VectorInt(-1, 0)</c>を取得します。
     /// </summary>
     public static readonly VectorInt Left = (-1, 0);
 
     /// <summary>
-    ///     Get <c>new VectorInt(0, -1)</c>.
+    /// <c>new VectorInt(0, -1)</c>を取得します。
     /// </summary>
     public static readonly VectorInt Up = (0, -1);
 
     /// <summary>
-    ///     Get <c>new VectorInt(1, 0)</c>.
+    /// <c>new VectorInt(1, 0)</c>を取得します。
     /// </summary>
     public static readonly VectorInt Right = (1, 0);
 
     /// <summary>
-    ///     Get <c>new VectorInt(0, 1)</c>.
+    /// <c>new VectorInt(0, 1)</c>を取得します。
     /// </summary>
     public static readonly VectorInt Down = (0, 1);
 

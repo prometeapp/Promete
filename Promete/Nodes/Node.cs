@@ -120,10 +120,20 @@ public abstract class Node
     /// </summary>
     public bool IsVisible { get; set; } = true;
 
+    /// <summary>
+    /// このノードの絶対位置（親ノードの位置を考慮した位置）を取得します。
+    /// </summary>
     public Vector AbsoluteLocation =>
         Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
 
+    /// <summary>
+    /// このノードの絶対スケール（親ノードのスケールを考慮したスケール）を取得します。
+    /// </summary>
     public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
+
+    /// <summary>
+    /// このノードの絶対角度（親ノードの角度を考慮した角度）を取得します。
+    /// </summary>
     public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
 
     /// <summary>
@@ -143,6 +153,9 @@ public abstract class Node
 
     private int _zIndex;
 
+    /// <summary>
+    /// このノードを破棄します。
+    /// </summary>
     public void Destroy()
     {
         if (IsDestroyed) return;

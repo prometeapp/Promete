@@ -13,7 +13,7 @@ using SixLabors.ImageSharp.Processing;
 namespace Promete.Windowing.GLDesktop;
 
 /// <summary>
-/// A implementation of <see cref="IWindow" /> for the desktop environment.
+/// デスクトップ環境用の<see cref="IWindow" />の実装。
 /// </summary>
 public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
 {
@@ -147,12 +147,6 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
         set => NativeWindow.UpdatesPerSecond = value;
     }
 
-    public int RefreshRate
-    {
-        get => (int)NativeWindow.FramesPerSecond;
-        set => NativeWindow.FramesPerSecond = value;
-    }
-
     public float TimeScale
     {
         get => _timeScale;
@@ -190,17 +184,30 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
     public TextureFactory TextureFactory =>
         _textureFactory ?? throw new InvalidOperationException("window is not loaded");
 
+    /// <summary>
+    /// スクリーンショットを撮り、それをテクスチャとして生成します。
+    /// </summary>
+    /// <returns>スクリーンショットのテクスチャ</returns>
     public Texture2D TakeScreenshot()
     {
         return TextureFactory.LoadFromImageSharpImage(TakeScreenshotAsImage());
     }
 
+    /// <summary>
+    /// 指定されたパスにスクリーンショットをPNG形式で保存します。
+    /// </summary>
+    /// <param name="path">保存先のパス</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     public async Task SaveScreenshotAsync(string path, CancellationToken ct = default)
     {
         var img = TakeScreenshotAsImage();
         await img.SaveAsPngAsync(path, ct);
     }
 
+    /// <summary>
+    /// このウィンドウを開き、指定されたオプションでゲームを開始します。
+    /// </summary>
+    /// <param name="opts">ウィンドウオプション</param>
     public void Run(WindowOptions opts)
     {
         var options = Silk.NET.Windowing.WindowOptions.Default;
@@ -232,6 +239,9 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
         NativeWindow.Run();
     }
 
+    /// <summary>
+    /// ゲームを終了します。
+    /// </summary>
     public void Exit()
     {
         NativeWindow.Close();

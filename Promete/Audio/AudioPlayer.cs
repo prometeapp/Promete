@@ -96,10 +96,13 @@ public class AudioPlayer : IDisposable
     /// </summary>
     public bool IsPausing { get; private set; }
 
+    /// <summary>
+    ///     オーディオバッファのサイズを取得または設定します。
+    /// </summary>
     public int BufferSize { get; set; } = 10000;
 
     /// <summary>
-    ///     Dispose.
+    ///     リソースを解放します。
     /// </summary>
     public unsafe void Dispose()
     {
@@ -198,23 +201,23 @@ public class AudioPlayer : IDisposable
     /// <summary>
     ///     指定した音源をその場で再生します。
     /// </summary>
-    /// <param name="source"></param>
-    /// <param name="gain"></param>
-    /// <param name="pitch"></param>
-    /// <param name="pan"></param>
+    /// <param name="source">再生する音源。</param>
+    /// <param name="gain">再生する音量。</param>
+    /// <param name="pitch">再生時のピッチ。</param>
+    /// <param name="pan">再生時のパン。</param>
     public async void PlayOneShot(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0)
     {
         await PlayOneShotAsync(source, gain, pitch, pan);
     }
 
     /// <summary>
-    ///     Play specified <see cref="IAudioSource" /> instantly.
+    ///     指定した音源をその場で再生します。
     /// </summary>
-    /// <param name="source"><see cref="IAudioSource" /> to play.</param>
+    /// <param name="source">再生する音源。</param>
     /// <param name="gain">再生する音量。</param>
     /// <param name="pitch">再生時のピッチ。</param>
     /// <param name="pan">再生時のパン。</param>
-    /// <returns></returns>
+    /// <returns>非同期操作を表すタスク。</returns>
     public async ValueTask PlayOneShotAsync(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0)
     {
         if (source.Samples is null)
@@ -226,7 +229,7 @@ public class AudioPlayer : IDisposable
         var bufferFormat = GetBufferFormat(source);
 
         _al.BufferData(alBuf.Handle, bufferFormat, buffer, source.SampleRate);
-        _al.SourceQueueBuffers(alSrc.Handle, [alBuf.Handle]);
+        _al.SourceQueueBuffers(alSrc.Handle, new uint[] { alBuf.Handle });
         _al.SetSourceProperty(alSrc.Handle, SourceFloat.Gain, gain);
         _al.SetSourceProperty(alSrc.Handle, SourceFloat.Pitch, pitch);
         var x = pan;
@@ -264,7 +267,7 @@ public class AudioPlayer : IDisposable
             var nextBufferIndex = 0;
             var bufferFormat = GetBufferFormat(source);
 
-            uint[] singleArray = [0];
+            uint[] singleArray = new uint[1];
 
             int sampleSize;
             bool isFinished;

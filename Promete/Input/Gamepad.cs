@@ -39,19 +39,46 @@ public sealed class Gamepad : IDisposable
         window.PostUpdate += OnPostUpdate;
     }
 
+    /// <summary>
+    /// ゲームパッドが接続されているかどうかを取得します。
+    /// </summary>
     public bool IsConnected => _pad.IsConnected;
 
+    /// <summary>
+    /// ゲームパッドの名前を取得します。
+    /// </summary>
     public string Name => _pad.Name;
+
+    /// <summary>
+    /// ゲームパッドが振動機能をサポートしているかどうかを取得します。
+    /// </summary>
     public bool IsVibrationSupported => _pad.VibrationMotors.Any();
 
+    /// <summary>
+    /// 左スティックの位置を取得します。
+    /// </summary>
     public Vector LeftStick => _pad.Thumbsticks.Count >= 1 ? (_pad.Thumbsticks[0].X, _pad.Thumbsticks[0].Y) : (0, 0);
 
+    /// <summary>
+    /// 右スティックの位置を取得します。
+    /// </summary>
     public Vector RightStick => _pad.Thumbsticks.Count >= 2 ? (_pad.Thumbsticks[1].X, _pad.Thumbsticks[1].Y) : (0, 0);
 
+    /// <summary>
+    /// インデックスを指定してボタンを取得します。
+    /// </summary>
+    /// <param name="index">ボタンのインデックス</param>
     public GamepadButton this[int index] => _buttons[index];
 
+    /// <summary>
+    /// ボタンの種類を指定してボタンを取得します。
+    /// </summary>
+    /// <param name="type">ボタンの種類</param>
     public GamepadButton this[GamepadButtonType type] => _buttonMap[type];
 
+    /// <summary>
+    /// 全てのボタンを取得します。
+    /// </summary>
     public IEnumerable<GamepadButton> AllButtons => _buttons.AsEnumerable();
 
     /// <summary>
@@ -69,12 +96,19 @@ public sealed class Gamepad : IDisposable
     /// </summary>
     public IEnumerable<GamepadButton> AllUpButtons => _buttons.Where(c => c.IsButtonUp);
 
+    /// <summary>
+    /// リソースを解放します。
+    /// </summary>
     public void Dispose()
     {
         ReleaseUnmanagedResources();
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// ゲームパッドを振動させます。
+    /// </summary>
+    /// <param name="value">振動の強さ (0.0～1.0)</param>
     public void Vibrate(float value)
     {
         if (!IsVibrationSupported) return;

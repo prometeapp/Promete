@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace Promete.Coroutines;
 
+/// <summary>
+/// 指定した<see cref="Task"/>、または<see cref="ValueTask"/> が完了するまで待機するイールド命令です。
+/// </summary>
 public class WaitForTask : YieldInstruction
 {
     private readonly Task? _task;

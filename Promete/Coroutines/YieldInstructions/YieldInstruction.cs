@@ -1,12 +1,12 @@
 namespace Promete.Coroutines;
 
 /// <summary>
-/// A base yield instructions class that control coroutine waits.
+/// コルーチンを待機するためのイールド命令の基底クラスです。
 /// </summary>
 public abstract class YieldInstruction
 {
     /// <summary>
-    /// Get whether it is waiting.
+    /// イールド命令が完了するまで待機するかどうかを示す値を取得します。
     /// </summary>
     public abstract bool KeepWaiting { get; }
 }

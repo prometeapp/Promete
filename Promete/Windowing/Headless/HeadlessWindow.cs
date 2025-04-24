@@ -68,7 +68,6 @@ public class HeadlessWindow : IWindow
     public long FramePerSeconds => TargetFps;
     public long UpdatePerSeconds => TargetUps;
     public long TotalFrame { get; private set; }
-    public int RefreshRate { get; set; }
     public bool IsVsyncMode { get; set; }
     public int TargetFps { get; set; }
     public int TargetUps { get; set; }
@@ -79,6 +78,10 @@ public class HeadlessWindow : IWindow
     public IInputContext? _RawInputContext { get; } = new DummyInputContext();
     public TextureFactory TextureFactory { get; } = new HeadlessTextureFactory();
 
+    /// <summary>
+    /// このウィンドウを開き、指定されたオプションでゲームを開始します。
+    /// </summary>
+    /// <param name="opts">ウィンドウオプション</param>
     public void Run(WindowOptions opts)
     {
         Location = opts.Location;
@@ -97,18 +100,30 @@ public class HeadlessWindow : IWindow
         while (!_isExitRequested) Thread.Sleep(1000);
     }
 
+    /// <summary>
+    /// ゲームを終了します。
+    /// </summary>
     public void Exit()
     {
         _isExitRequested = true;
         Destroy?.Invoke();
     }
 
+    /// <summary>
+    /// スクリーンショットを撮り、それをテクスチャとして生成します。
+    /// </summary>
+    /// <returns>スクリーンショットのテクスチャ</returns>
     public Texture2D TakeScreenshot()
     {
         // Do nothing
         return default;
     }
 
+    /// <summary>
+    /// 指定されたパスにスクリーンショットをPNG形式で保存します。
+    /// </summary>
+    /// <param name="path">保存先のパス</param>
+    /// <param name="ct">キャンセレーショントークン</param>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default)
     {
         return Task.Delay(0, ct);

@@ -8,14 +8,14 @@ using Promete.Windowing;
 namespace Promete.Coroutines;
 
 /// <summary>
-/// A coroutine manager class.
+/// コルーチンの実行を制御するクラスです。
 /// </summary>
 public class CoroutineManager
 {
     private readonly Dictionary<Coroutine, YieldInstruction?> _coroutines = new();
     private readonly IWindow _window;
 
-    public CoroutineManager(PrometeApp app, IWindow window)
+    internal CoroutineManager(PrometeApp app, IWindow window)
     {
         _window = window;
         _window.Update += Update;
@@ -24,7 +24,7 @@ public class CoroutineManager
     }
 
     /// <summary>
-    /// Start the specified coroutine.
+    /// 指定されたコルーチンを開始します。
     /// </summary>
     public Coroutine Start(IEnumerator coroutine)
     {
@@ -36,7 +36,7 @@ public class CoroutineManager
     }
 
     /// <summary>
-    /// Stop the specified coroutine.
+    /// 指定されたコルーチンを停止します。
     /// </summary>
     public void Stop(Coroutine coroutine)
     {
@@ -45,7 +45,7 @@ public class CoroutineManager
     }
 
     /// <summary>
-    /// Stop all running coroutines.
+    /// 実行中の全てのコルーチンを停止します。
     /// </summary>
     public void Clear()
     {

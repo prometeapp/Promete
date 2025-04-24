@@ -7,7 +7,7 @@ using NVorbis;
 namespace Promete.Audio;
 
 /// <summary>
-/// An audio source that represents data in Ogg Vorbis format.
+/// Ogg Vorbis形式のデータを表すオーディオソースです。
 /// </summary>
 public class VorbisAudioSource : IAudioSource, IDisposable
 {
@@ -15,11 +15,17 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 
     private readonly short[] _store;
 
+    /// <summary>
+    /// 指定されたパスからVorbisオーディオソースを初期化します。
+    /// </summary>
     public VorbisAudioSource(string path)
         : this(File.OpenRead(path))
     {
     }
 
+    /// <summary>
+    /// 指定されたストリームからVorbisオーディオソースを初期化します。
+    /// </summary>
     public VorbisAudioSource(Stream stream)
     {
         var reader = new VorbisReader(stream);
@@ -70,26 +76,28 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     public bool IsLoadingFinished => LoadedSize == Samples;
 
     /// <summary>
-    /// Get the total number of samples.
+    /// 合計サンプル数を取得します。
     /// </summary>
-    /// <returns></returns>
     public int? Samples { get; init; }
 
     /// <summary>
-    /// Get channels.
+    /// チャンネル数を取得します。
     /// </summary>
     public int Channels { get; init; }
 
     /// <summary>
-    /// Get sample bits.
+    /// サンプルビット数を取得します。
     /// </summary>
     public int Bits => 16;
 
     /// <summary>
-    /// Get sample rate.
+    /// サンプリングレートを取得します。
     /// </summary>
     public int SampleRate { get; init; }
 
+    /// <summary>
+    /// サンプルデータを指定されたバッファに読み込みます。
+    /// </summary>
     public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
     {
         var actualReadSize = Math.Min(buffer.Length, LoadedSize - offset);
@@ -98,7 +106,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     }
 
     /// <summary>
-    /// Dispose this object.
+    /// このオブジェクトのリソースを解放します。
     /// </summary>
     public void Dispose()
     {

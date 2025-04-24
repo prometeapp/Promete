@@ -23,7 +23,6 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// </summary>
     public int Count => _children.Count;
 
-
     /// <summary>
     /// このフレームバッファの子ノードを取得または設定します。
     /// </summary>
@@ -45,8 +44,14 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         }
     }
 
+    /// <summary>
+    /// フレームバッファの幅を取得します。
+    /// </summary>
     public int Width => Size.X;
 
+    /// <summary>
+    /// フレームバッファの高さを取得します。
+    /// </summary>
     public int Height => Size.Y;
 
     /// <summary>
@@ -54,6 +59,9 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// </summary>
     public Color BackgroundColor { get; set; } = Color.Transparent;
 
+    /// <summary>
+    /// ソート済みの子ノードのリストを取得します。
+    /// </summary>
     public IReadOnlyList<Node> SortedChildren => _children.sortedChildren;
 
     private bool _disposed;
@@ -64,7 +72,6 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
 
     private readonly FrameBufferManager _frameBufferManager;
     private readonly IFrameBufferProvider _frameBufferProvider;
-
 
     /// <summary>
     /// 指定したサイズの <see cref="FrameBuffer"/> の新しいインスタンスを初期化します。
@@ -100,47 +107,85 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     }
 
     #region IEnumerable<Node>
+    /// <summary>
+    /// 指定したインデックスの位置に子ノードを挿入します。
+    /// </summary>
+    /// <param name="index">子ノードを挿入する位置のインデックス。</param>
+    /// <param name="node">挿入するノード。</param>
     public void Insert(int index, Node node)
     {
         _children.Insert(index, node);
     }
 
+    /// <summary>
+    /// 指定したインデックスの位置にある子ノードを削除します。
+    /// </summary>
+    /// <param name="index">削除する子ノードのインデックス。</param>
     public void RemoveAt(int index)
     {
         Remove(this[index]);
     }
 
+    /// <summary>
+    /// フレームバッファに子ノードを追加します。
+    /// </summary>
+    /// <param name="node">追加するノード。</param>
     public void Add(Node node)
     {
         _children.Add(node);
     }
 
+    /// <summary>
+    /// 複数の子ノードをフレームバッファに追加します。
+    /// </summary>
+    /// <param name="nodes">追加するノードのコレクション。</param>
     public void AddRange(IEnumerable<Node> nodes)
     {
         foreach (var node in nodes)
             Add(node);
     }
 
+    /// <summary>
+    /// 複数の子ノードをフレームバッファに追加します。
+    /// </summary>
+    /// <param name="nodes">追加するノードの配列。</param>
     public void AddRange(params Node[] nodes)
     {
         AddRange((IEnumerable<Node>)nodes);
     }
 
+    /// <summary>
+    /// フレームバッファから全ての子ノードを削除します。
+    /// </summary>
     public void Clear()
     {
         _children.Clear();
     }
 
+    /// <summary>
+    /// 指定したノードがフレームバッファの子ノードとして含まれているかどうかを確認します。
+    /// </summary>
+    /// <param name="node">検索するノード。</param>
+    /// <returns>ノードが含まれている場合はtrue、それ以外はfalse。</returns>
     public bool Contains(Node node)
     {
         return _children.Contains(node);
     }
 
+    /// <summary>
+    /// 指定したノードをフレームバッファから削除します。
+    /// </summary>
+    /// <param name="node">削除するノード。</param>
+    /// <returns>ノードが正常に削除された場合はtrue、それ以外はfalse。</returns>
     public bool Remove(Node node)
     {
         return _children.Remove(node);
     }
 
+    /// <summary>
+    /// フレームバッファ内の子ノードを反復処理する列挙子を返します。
+    /// </summary>
+    /// <returns>フレームバッファの子ノードを反復処理するための列挙子。</returns>
     public IEnumerator<Node> GetEnumerator()
     {
         return _children.GetEnumerator();

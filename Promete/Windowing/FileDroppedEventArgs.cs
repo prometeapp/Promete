@@ -3,17 +3,17 @@ using System.Linq;
 namespace Promete.Windowing;
 
 /// <summary>
-/// Arguments for file-dropped-event.
+/// ファイルがドロップされた際のイベント引数を表します。
 /// </summary>
 public struct FileDroppedEventArgs(string[] pathes)
 {
     /// <summary>
-    /// Get pathes of dropped files.
+    /// ドロップされたファイルのパスを取得します。
     /// </summary>
     public string[] Pathes { get; set; } = pathes;
 
     /// <summary>
-    /// Get path of a dropped file.
+    /// ドロップされた最初のファイルのパスを取得します。
     /// </summary>
     public string Path => Pathes.First();
 }

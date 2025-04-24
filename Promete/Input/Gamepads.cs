@@ -14,6 +14,10 @@ public sealed class Gamepads
 
     private readonly IWindow _window;
 
+    /// <summary>
+    /// 指定されたウィンドウでゲームパッド入力を管理するインスタンスを初期化します。
+    /// </summary>
+    /// <param name="window">ゲームパッド入力を取得するウィンドウ</param>
     public Gamepads(IWindow window)
     {
         _window = window;
@@ -23,6 +27,11 @@ public sealed class Gamepads
         _input.ConnectionChanged += OnConnectionChanged;
     }
 
+    /// <summary>
+    /// 指定されたインデックスのゲームパッドを取得します。
+    /// </summary>
+    /// <param name="index">取得するゲームパッドのインデックス</param>
+    /// <returns>ゲームパッドのインスタンス。存在しない場合は null</returns>
     public Gamepad? this[int index] => index < _pads.Count ? _pads[index] : null;
 
     private void OnConnectionChanged(IInputDevice device, bool isConnected)

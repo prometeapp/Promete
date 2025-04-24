@@ -28,78 +28,113 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// </summary>
     public Vector Normalized => (X / Magnitude, Y / Magnitude);
 
+    /// <summary>
+    /// 2つのベクトルを加算します。
+    /// </summary>
     public static Vector operator +(Vector v1, Vector v2)
     {
         return (v1.X + v2.X, v1.Y + v2.Y);
     }
 
+    /// <summary>
+    /// 2つのベクトルを減算します。
+    /// </summary>
     public static Vector operator -(Vector v1, Vector v2)
     {
         return (v1.X - v2.X, v1.Y - v2.Y);
     }
 
+    /// <summary>
+    /// ベクトルをスカラーで乗算します。
+    /// </summary>
     public static Vector operator *(Vector v1, float v2)
     {
         return (v1.X * v2, v1.Y * v2);
     }
 
+    /// <summary>
+    /// 2つのベクトルを要素ごとに乗算します。
+    /// </summary>
     public static Vector operator *(Vector v1, Vector v2)
     {
         return (v1.X * v2.X, v1.Y * v2.Y);
     }
 
+    /// <summary>
+    /// ベクトルをスカラーで除算します。
+    /// </summary>
     public static Vector operator /(Vector v1, float v2)
     {
         return (v1.X / v2, v1.Y / v2);
     }
 
+    /// <summary>
+    /// 2つのベクトルを要素ごとに除算します。
+    /// </summary>
     public static Vector operator /(Vector v1, Vector v2)
     {
         return (v1.X / v2.X, v1.Y / v2.Y);
     }
 
+    /// <summary>
+    /// ベクトルを反転します。
+    /// </summary>
     public static Vector operator -(Vector v1)
     {
         return (-v1.X, -v1.Y);
     }
 
+    /// <summary>
+    /// 2つのベクトルが等しいかどうかを確認します。
+    /// </summary>
     public static bool operator ==(Vector v1, Vector v2)
     {
         return v1.X == v2.X && v1.Y == v2.Y;
     }
 
+    /// <summary>
+    /// 2つのベクトルが等しくないかどうかを確認します。
+    /// </summary>
     public static bool operator !=(Vector v1, Vector v2)
     {
         return v1.X != v2.X || v1.Y != v2.Y;
     }
 
+    /// <summary>
+    /// VectorをVectorIntに明示的に変換します。
+    /// </summary>
     public static explicit operator VectorInt(Vector v1)
     {
         return new VectorInt((int)v1.X, (int)v1.Y);
     }
 
+    /// <summary>
+    /// タプルからVectorに変換します。
+    /// </summary>
     public static implicit operator Vector((float x, float y) v1)
     {
         return new Vector(v1.x, v1.y);
     }
 
+    /// <summary>
+    /// VectorをVector2に明示的に変換します。
+    /// </summary>
     public static explicit operator Vector2(Vector v)
     {
         return new Vector2(v.X, v.Y);
     }
 
     /// <summary>
-    /// Get angle between 2 vectors.
+    /// 2つのベクトルがなす角を取得します。
     /// </summary>
-    /// <returns>Radian angle between 2 vectors.</returns>
+    /// <returns>ラジアン単位の角度。</returns>
     public static float Angle(Vector from, Vector to)
     {
         return MathF.Atan2(to.Y - from.Y, to.X - from.X);
     }
 
-
     /// <summary>
-    /// Get the distance between 2 vectors.
+    /// 2つのベクトル間の距離を取得します。
     /// </summary>
     public static float Distance(Vector from, Vector to)
     {
@@ -109,7 +144,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Calculate a dot product.
+    /// 内積を計算します。
     /// </summary>
     public static float Dot(Vector v1, Vector v2)
     {
@@ -117,7 +152,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Calculate a dot product.
+    /// 内積を計算します。
     /// </summary>
     public float Dot(Vector v)
     {
@@ -125,7 +160,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Compare this object.
+    /// このオブジェクトを比較します。
     /// </summary>
     public override bool Equals(object? obj)
     {
@@ -133,7 +168,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Compare this object.
+    /// このオブジェクトを比較します。
     /// </summary>
     public bool Equals(Vector other)
     {
@@ -141,7 +176,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Get the hash value of this object.
+    /// このオブジェクトのハッシュ値を取得します。
     /// </summary>
     public override int GetHashCode()
     {
@@ -149,16 +184,15 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Get angle of this vector.
+    /// このベクトルの角度を取得します。
     /// </summary>
     public float Angle()
     {
         return MathF.Atan2(Y, X);
     }
 
-
     /// <summary>
-    /// Get the direction of the specified vector relative to this vector.
+    /// このベクトルに対する指定したベクトルの方向を取得します。
     /// </summary>
     public float Angle(Vector to)
     {
@@ -166,7 +200,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Get the distance between two vectors.
+    /// 2つのベクトル間の距離を取得します。
     /// </summary>
     public float Distance(Vector to)
     {
@@ -174,7 +208,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Check if this vector is in the specified range.
+    /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
     public bool In(Rect rect)
     {
@@ -185,7 +219,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Check if this vector is in the specified range.
+    /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
     public bool In(Vector location, Vector size)
     {
@@ -193,7 +227,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Deconstructs x and y.
+    /// xとyを分解します。
     /// </summary>
     public void Deconstruct(out float x, out float y)
     {
@@ -201,7 +235,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Get formatted string of this vector.
+    /// このベクトルの文字列表現を取得します。
     /// </summary>
     public override string ToString()
     {
@@ -209,32 +243,32 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// Get <c>new Vector(0, 0)</c> .
+    /// <c>new Vector(0, 0)</c> を取得します。
     /// </summary>
     public static readonly Vector Zero = (0, 0);
 
     /// <summary>
-    /// Get <c>new Vector(1, 1)</c> .
+    /// <c>new Vector(1, 1)</c> を取得します。
     /// </summary>
     public static readonly Vector One = (1, 1);
 
     /// <summary>
-    /// Get <c>new Vector(-1, 0)</c> .
+    /// <c>new Vector(-1, 0)</c> を取得します。
     /// </summary>
     public static readonly Vector Left = (-1, 0);
 
     /// <summary>
-    /// Get <c>new Vector(0, -1)</c> .
+    /// <c>new Vector(0, -1)</c> を取得します。
     /// </summary>
     public static readonly Vector Up = (0, -1);
 
     /// <summary>
-    /// Get <c>new Vector(1, 0)</c> .
+    /// <c>new Vector(1, 0)</c> を取得します。
     /// </summary>
     public static readonly Vector Right = (1, 0);
 
     /// <summary>
-    /// Get <c>new Vector(0, 1)</c> .
+    /// <c>new Vector(0, 1)</c> を取得します。
     /// </summary>
     public static readonly Vector Down = (0, 1);
 

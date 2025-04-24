@@ -6,6 +6,9 @@ using System.Linq;
 
 namespace Promete.Nodes;
 
+/// <summary>
+/// 子ノードを含むことができる抽象ノードクラスです。
+/// </summary>
 public abstract class ContainableNode : Node
 {
     [Obsolete("直接このフィールドは操作しないでください。代わりにAdd, Remove, Clear, Insertを使用してください。")]

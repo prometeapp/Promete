@@ -94,6 +94,9 @@ public sealed class PrometeApp : IDisposable
         private set => _current = value;
     }
 
+    /// <summary>
+    /// アプリケーションのリソースを破棄します。
+    /// </summary>
     public void Dispose()
     {
         _provider.Dispose();
@@ -174,12 +177,24 @@ public sealed class PrometeApp : IDisposable
         return TryGetPlugin(type, out var plugin) ? plugin : throw new ArgumentException($"The plugin \"{type}\" is not registered.");
     }
 
+    /// <summary>
+    /// 指定した型のプラグインを取得を試みます。
+    /// </summary>
+    /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
+    /// <param name="plugin">取得したプラグインのインスタンス。</param>
+    /// <returns>プラグインが取得できた場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
     public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin) where T : class
     {
         plugin = _provider.GetService<T>();
         return plugin is not null;
     }
 
+    /// <summary>
+    /// 指定した型のプラグインを取得を試みます。
+    /// </summary>
+    /// <param name="type">指定対象のプラグインを表す型。</param>
+    /// <param name="plugin">取得したプラグインのインスタンス。</param>
+    /// <returns>プラグインが取得できた場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
     public bool TryGetPlugin(Type type, [NotNullWhen(true)] out object? plugin)
     {
         plugin = _provider.GetService(type);
@@ -286,7 +301,7 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// このメソッドが呼び出されたスレッドがメインスレッドであるかどうかを取得します。
     /// </summary>
-    /// <returns></returns>
+    /// <returns>メインスレッドの場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
     public bool IsMainThread()
     {
         return Thread.CurrentThread == _mainThread;
@@ -295,7 +310,7 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// このメソッドが呼び出されたスレッドがメインスレッドでない場合、<see cref="InvalidOperationException" /> をスローします。
     /// </summary>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <exception cref="InvalidOperationException">メインスレッド以外から呼び出された場合。</exception>
     public void ThrowIfNotMainThread()
     {
         if (IsMainThread()) return;
@@ -382,8 +397,14 @@ public sealed class PrometeApp : IDisposable
                throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
     }
 
+    /// <summary>
+    /// シーンが変更される直前に呼び出されるイベントです。
+    /// </summary>
     public event Action? SceneWillChange;
 
+    /// <summary>
+    /// Promete アプリケーションを構築するためのビルダークラスです。
+    /// </summary>
     public sealed class PrometeAppBuilder
     {
         private readonly Dictionary<Type, Type> _rendererTypes = [];
@@ -394,18 +415,35 @@ public sealed class PrometeApp : IDisposable
             _services = [];
         }
 
+        /// <summary>
+        /// 指定した型のプラグインを追加します。
+        /// </summary>
+        /// <typeparam name="T">追加するプラグインの型。</typeparam>
+        /// <returns>このビルダーインスタンス。</returns>
         public PrometeAppBuilder Use<T>() where T : class
         {
             _services.AddSingleton<T>();
             return this;
         }
 
+        /// <summary>
+        /// 指定したインターフェースと実装型のプラグインを追加します。
+        /// </summary>
+        /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
+        /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
+        /// <returns>このビルダーインスタンス。</returns>
         public PrometeAppBuilder Use<TPlugin, TImpl>() where TPlugin : class where TImpl : class, TPlugin
         {
             _services.AddSingleton<TPlugin, TImpl>();
             return this;
         }
 
+        /// <summary>
+        /// 指定したノード型とレンダラー型のレンダラーを追加します。
+        /// </summary>
+        /// <typeparam name="TNode">ノードの型。</typeparam>
+        /// <typeparam name="TRenderer">レンダラーの型。</typeparam>
+        /// <returns>このビルダーインスタンス。</returns>
         public PrometeAppBuilder UseRenderer<TNode, TRenderer>()
             where TRenderer : NodeRendererBase
             where TNode : Node
@@ -414,6 +452,11 @@ public sealed class PrometeApp : IDisposable
             return Use<TRenderer>();
         }
 
+        /// <summary>
+        /// Promete アプリケーションをビルドします。
+        /// </summary>
+        /// <typeparam name="TWindow">ウィンドウの型。</typeparam>
+        /// <returns>構築されたアプリケーション。</returns>
         public PrometeApp Build<TWindow>() where TWindow : IWindow
         {
             _services.AddSingleton(typeof(IWindow), typeof(TWindow));

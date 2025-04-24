@@ -109,8 +109,6 @@ public interface IWindow
     /// </summary>
     public long TotalFrame { get; }
 
-    [Obsolete("Use TargetFps instead.")] public int RefreshRate { get; set; }
-
     /// <summary>
     /// ゲームウィンドウがVsyncモードかどうかを取得または設定します。
     /// </summary>

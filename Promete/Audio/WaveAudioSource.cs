@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace Promete.Audio;
 
 /// <summary>
-/// An audio source that represents the Wave file format.
+/// Waveファイル形式を表すオーディオソースです。
 /// </summary>
 public class WaveAudioSource : IAudioSource
 {
@@ -15,38 +15,50 @@ public class WaveAudioSource : IAudioSource
 
     private readonly short[] _store;
 
+    /// <summary>
+    /// 指定されたパスからWaveオーディオソースを初期化します。
+    /// </summary>
     public WaveAudioSource(string path)
         : this(File.OpenRead(path))
     {
     }
 
+    /// <summary>
+    /// 指定されたストリームからWaveオーディオソースを初期化します。
+    /// </summary>
     public WaveAudioSource(Stream stream)
     {
         _store = LoadWave(stream, out _channels, out _bits, out _sampleRate);
     }
 
+    /// <summary>
+    /// データの長さを取得します。
+    /// </summary>
     public int? Length => _store.Length;
 
     /// <summary>
-    /// Get the total number of samples.
+    /// 合計サンプル数を取得します。
     /// </summary>
     public int? Samples => _store.Length;
 
     /// <summary>
-    /// Get channels.
+    /// チャンネル数を取得します。
     /// </summary>
     public int Channels => _channels;
 
     /// <summary>
-    /// Get sampling bits.
+    /// サンプリングビット数を取得します。
     /// </summary>
     public int Bits => _bits;
 
     /// <summary>
-    /// Get sampling rate.
+    /// サンプリングレートを取得します。
     /// </summary>
     public int SampleRate => _sampleRate;
 
+    /// <summary>
+    /// サンプルデータを指定されたバッファに読み込みます。
+    /// </summary>
     public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
     {
         var actualReadSize = Math.Min(buffer.Length, _store.Length - offset);

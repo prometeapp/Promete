@@ -3,17 +3,18 @@ using Promete.Graphics;
 
 namespace Promete.Nodes;
 
+/// <summary>
+/// 9スライス方式でテクスチャを描画するノードです。
+/// </summary>
 public class NineSliceSprite(Texture9Sliced texture, Color? tintColor = default) : Node
 {
     /// <summary>
-    /// Get or set the texture.
+    /// テクスチャを取得または設定します。
     /// </summary>
-    /// <value></value>
     public Texture9Sliced Texture { get; set; } = texture;
 
     /// <summary>
-    /// Get or set the tint color.
+    /// 色合いを取得または設定します。
     /// </summary>
-    /// <value></value>
     public Color TintColor { get; set; } = tintColor ?? Color.White;
 }

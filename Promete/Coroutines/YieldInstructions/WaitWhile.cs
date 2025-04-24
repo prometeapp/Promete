@@ -3,7 +3,7 @@ using System;
 namespace Promete.Coroutines;
 
 /// <summary>
-/// A yield instruction that keeps waiting while the specified condition is met.
+/// 指定した条件が <c>true</c> の間、待機するイールド命令です。
 /// </summary>
 public class WaitWhile(Func<bool> condition) : YieldInstruction
 {

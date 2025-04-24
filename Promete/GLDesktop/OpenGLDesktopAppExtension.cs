@@ -6,8 +6,16 @@ using Promete.Windowing.GLDesktop;
 
 namespace Promete.GLDesktop;
 
+/// <summary>
+/// OpenGLを使用したデスクトップアプリケーション用の拡張機能を提供するクラスです。
+/// </summary>
 public static class OpenGLDesktopAppExtension
 {
+    /// <summary>
+    /// PrometeAppをOpenGL デスクトップアプリケーションとして構築します。
+    /// </summary>
+    /// <param name="builder">PrometeAppのビルダー</param>
+    /// <returns>構築されたPrometeAppインスタンス</returns>
     public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder)
     {
         return builder

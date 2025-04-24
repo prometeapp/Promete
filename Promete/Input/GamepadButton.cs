@@ -17,13 +17,11 @@ public class GamepadButton
     /// <summary>
     /// このボタンが押されてからの経過フレーム数を取得します。
     /// </summary>
-    /// <value></value>
     public int ElapsedFrameCount { get; internal set; }
 
     /// <summary>
     /// このボタンが押されてからの経過時間を取得します。
     /// </summary>
-    /// <value></value>
     public float ElapsedTime { get; internal set; }
 
     /// <summary>

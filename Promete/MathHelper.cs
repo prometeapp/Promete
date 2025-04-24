@@ -8,11 +8,12 @@ namespace Promete;
 public static class MathHelper
 {
     /// <summary>
-    /// 線形補間移動を計算します。
+    /// 線形補間を計算します。
     /// </summary>
-    /// <param name="time">Time.</param>
-    /// <param name="start">Start.</param>
-    /// <param name="end">End.</param>
+    /// <param name="time">補間の進行度（0.0～1.0）。</param>
+    /// <param name="start">開始値。</param>
+    /// <param name="end">終了値。</param>
+    /// <returns>補間された値。</returns>
     public static float Lerp(float time, float start, float end)
     {
         return start + (end - start) * time;
@@ -104,8 +105,8 @@ public static class MathHelper
     /// <summary>
     /// 角度を弧度に変換します。
     /// </summary>
-    /// <returns>The radian.</returns>
-    /// <param name="degree">Degree.</param>
+    /// <param name="degree">角度（度）。</param>
+    /// <returns>弧度。</returns>
     public static float ToRadian(float degree)
     {
         return degree / 180f * (float)Math.PI;

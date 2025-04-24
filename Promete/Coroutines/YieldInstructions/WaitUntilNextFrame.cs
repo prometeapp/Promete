@@ -1,7 +1,8 @@
 namespace Promete.Coroutines;
 
 /// <summary>
-/// A yield instruction to wait until the next frame.
+/// 次のフレームまで待機するイールド命令です。
+/// <c>yield return null;</c> でも同じ動作をします。
 /// </summary>
 public class WaitUntilNextFrame : YieldInstruction
 {

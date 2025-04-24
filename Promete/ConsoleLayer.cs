@@ -37,6 +37,9 @@ public class ConsoleLayer
     /// </summary>
     public VectorInt Cursor { get; set; }
 
+    /// <summary>
+    /// コンソールで使用するフォントを取得または設定します。
+    /// </summary>
     public Font Font
     {
         get => _text.Font;
