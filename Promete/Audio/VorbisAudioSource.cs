@@ -34,7 +34,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
         SampleRate = reader.SampleRate;
         Samples = (int)reader.TotalSamples * reader.Channels;
 
-        var temp = new float[10000];
+        var temp = new float[1000];
         _store = new short[reader.TotalSamples * reader.Channels];
         var loadedSize = 0;
 
@@ -46,7 +46,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
                 while (true)
                 {
                     if (_cts.Token.IsCancellationRequested) break;
-                    // 10000サンプルずつ読み込む
+                    // 1000サンプルずつ読み込む
                     var readSamples = reader.ReadSamples(temp.AsSpan());
                     if (readSamples == 0) break;
 
@@ -61,6 +61,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
                     }
                 }
                 reader.Dispose();
+                IsLoadingFinished = true;
             }
         });
     }
@@ -73,7 +74,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// <summary>
     /// 全てのサンプルが読み込まれているかどうかを取得します。
     /// </summary>
-    public bool IsLoadingFinished => LoadedSize == Samples;
+    public bool IsLoadingFinished { get; private set; }
 
     /// <summary>
     /// 合計サンプル数を取得します。
