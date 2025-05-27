@@ -33,14 +33,13 @@ public class VorbisAudioSource : IAudioSource, IDisposable
         Channels = reader.Channels;
         SampleRate = reader.SampleRate;
         Samples = (int)reader.TotalSamples * reader.Channels;
-
-        var temp = new float[1000];
         _store = new short[reader.TotalSamples * reader.Channels];
-        var loadedSize = 0;
 
         // 別スレッドで非同期にデータを読み込む
-        Task.Run(() =>
+        Task.Factory.StartNew(() =>
         {
+            var temp = new float[1000];
+            var loadedSize = 0;
             unchecked
             {
                 while (true)
@@ -51,15 +50,18 @@ public class VorbisAudioSource : IAudioSource, IDisposable
                     if (readSamples == 0) break;
 
                     // 各サンプルを16bit shortに変換
-                    for (var i = 0; i < readSamples; i++)
+                    for (var i = 0; i < temp.Length; i++)
                     {
                         if (_cts.Token.IsCancellationRequested) break;
-                        if (loadedSize >= _store.Length) break;
+                        if (loadedSize >= _store.Length) goto exit;
 
                         _store[loadedSize++] = (short)(temp[i] * short.MaxValue);
                         LoadedSize = loadedSize;
                     }
                 }
+
+                exit: ;
+                Samples = LoadedSize;
                 reader.Dispose();
                 IsLoadingFinished = true;
             }
@@ -79,7 +81,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// <summary>
     /// 合計サンプル数を取得します。
     /// </summary>
-    public int? Samples { get; init; }
+    public int? Samples { get; private set; }
 
     /// <summary>
     /// チャンネル数を取得します。
