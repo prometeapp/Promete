@@ -15,7 +15,7 @@ public class CoroutineManager
     private readonly Dictionary<Coroutine, YieldInstruction?> _coroutines = new();
     private readonly IWindow _window;
 
-    internal CoroutineManager(PrometeApp app, IWindow window)
+    public CoroutineManager(PrometeApp app, IWindow window)
     {
         _window = window;
         _window.Update += Update;
