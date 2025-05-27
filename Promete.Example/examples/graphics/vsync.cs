@@ -11,7 +11,7 @@ public class VsyncTestScene(Keyboard keyboard, ConsoleLayer console) : Scene
         console.Clear();
         console.Print("VSync: " + Window.IsVsyncMode);
         console.Print("Fps: " + Window.FramePerSeconds);
-        console.Print("Target Refresh Rate: " + Window.RefreshRate);
+        console.Print("Target Refresh Rate: " + Window.TargetFps);
         console.Print("[ESC]: return");
         console.Print("[SPACE]: Toggle VSync Mode");
 
@@ -21,8 +21,8 @@ public class VsyncTestScene(Keyboard keyboard, ConsoleLayer console) : Scene
         if (keyboard.Space.IsKeyUp)
             Window.IsVsyncMode ^= true;
         if (keyboard.Left.IsKeyDown || keyboard.Left.ElapsedTime > 0.3)
-            Window.RefreshRate = Math.Max(0, Window.RefreshRate - 1);
+            Window.TargetFps = Math.Max(0, Window.TargetFps - 1);
         if (keyboard.Right.IsKeyDown || keyboard.Right.ElapsedTime > 0.3)
-            Window.RefreshRate = Math.Min(240, Window.RefreshRate + 1);
+            Window.TargetFps = Math.Min(240, Window.TargetFps + 1);
     }
 }

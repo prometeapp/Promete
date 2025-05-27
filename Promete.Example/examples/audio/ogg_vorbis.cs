@@ -63,6 +63,12 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
         if (keyboard.Space.IsKeyDown)
         {
+            if (keyboard.ShiftLeft.IsPressed)
+            {
+                _audio.Stop(0.5f);
+                return;
+            }
+
             if (_audio is { IsPlaying: true, IsPausing: false })
                 _audio.Pause();
             else if (_audio.IsPausing)

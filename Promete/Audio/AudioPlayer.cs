@@ -22,6 +22,8 @@ public class AudioPlayer : IDisposable
     private float _pan;
     private CancellationTokenSource? _currentTokenSource;
 
+    private readonly PrometeApp _app = PrometeApp.Current;
+
     /// <summary>
     ///     この <see cref="AudioPlayer" /> の新しいインスタンスを初期化します。
     /// </summary>
@@ -284,6 +286,8 @@ public class AudioPlayer : IDisposable
 
             var prevOffset = 0;
 
+            _app.NextFrame(() => StartPlaying?.Invoke(this, EventArgs.Empty));
+
             // 再生ループ
             while (true)
             {
@@ -335,6 +339,8 @@ public class AudioPlayer : IDisposable
                 currentSample = loopStartSample * source.Channels;
                 TimeInSamples = loopStartSample;
                 Time = TimeInSamples * 1000 / source.SampleRate;
+
+                _app.NextFrame(() => Loop?.Invoke(this, EventArgs.Empty));
             }
 
             if (!token.IsCancellationRequested)
@@ -346,10 +352,12 @@ public class AudioPlayer : IDisposable
                     _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out processed);
                     await Task.Yield();
                 } while (processed < 2);
+
+                // また、再生が終了したことを通知する
+                _app.NextFrame(() => FinishPlaying?.Invoke(this, EventArgs.Empty));
             }
 
             IsPlaying = false;
-
             return;
 
             void EnqueueBuffer(ALBuffer alBuffer)
@@ -402,6 +410,7 @@ public class AudioPlayer : IDisposable
         catch (TaskCanceledException)
         {
             // 再生停止要求のため、このまま終了
+            _app.NextFrame(() => StopPlaying?.Invoke(this, EventArgs.Empty));
         }
     }
 
@@ -416,4 +425,26 @@ public class AudioPlayer : IDisposable
             _ => throw new NotSupportedException("Unsupported format.")
         };
     }
+
+    /// <summary>
+    /// オーディオソースが終端に達したことにより、再生が終了したときに発生します。
+    /// <see cref="Stop"/> メソッド等を呼んでも、このイベントは発生しません。その場合は <see cref="StopPlaying"/> イベントを購読してください。
+    /// </summary>
+    public event EventHandler? FinishPlaying;
+
+    /// <summary>
+    /// オーディオの再生が開始したときに発生します。
+    /// </summary>
+    public event EventHandler? StartPlaying;
+
+    /// <summary>
+    /// オーディオの再生が停止したときに発生します。<see cref="Stop"/> メソッドを呼ばれた場合などに発生します。
+    /// ソースが終端に達した場合は、代わりに <see cref="FinishPlaying"/> イベントが発生します。
+    /// </summary>
+    public event EventHandler? StopPlaying;
+
+    /// <summary>
+    /// オーディオソースが終端に達し、ループ再生が行われた瞬間に発生します。
+    /// </summary>
+    public event EventHandler? Loop;
 }
