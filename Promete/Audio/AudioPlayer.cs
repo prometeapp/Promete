@@ -269,7 +269,7 @@ public class AudioPlayer : IDisposable
             var nextBufferIndex = 0;
             var bufferFormat = GetBufferFormat(source);
 
-            uint[] singleArray = new uint[1];
+            var singleArray = new uint[1];
 
             int sampleSize;
             bool isFinished;
@@ -283,8 +283,6 @@ public class AudioPlayer : IDisposable
             _al.SetSourceProperty(alSource.Handle, SourceBoolean.SourceRelative, true);
             _al.SetSourceProperty(alSource.Handle, SourceFloat.MaxDistance, 1);
             _al.SetSourceProperty(alSource.Handle, SourceFloat.ReferenceDistance, 0.5f);
-
-            var prevOffset = 0;
 
             _app.NextFrame(() => StartPlaying?.Invoke(this, EventArgs.Empty));
 
@@ -304,7 +302,7 @@ public class AudioPlayer : IDisposable
                 _al.GetSourceProperty(alSource.Handle, GetSourceInteger.SampleOffset, out var offset);
                 var sampleOffset = currentBuffer == buffer1.Handle ? bufferSampleIndex1 : bufferSampleIndex2;
                 TimeInSamples = (sampleOffset + offset) / source.Channels;
-                Time = TimeInSamples * 1000 / source.SampleRate;
+                Time = (int)(TimeInSamples * 1000L / source.SampleRate);
 
                 // このスレッドがCPUを占有しないように待ち時間を挟む
                 await Task.Delay(1, token).ConfigureAwait(false);
@@ -343,19 +341,16 @@ public class AudioPlayer : IDisposable
                 _app.NextFrame(() => Loop?.Invoke(this, EventArgs.Empty));
             }
 
-            if (!token.IsCancellationRequested)
+            // 停止を要求されずにループを抜けた場合、バッファを全て処理し終えるまで待機
+            int processed;
+            do
             {
-                // 停止を要求されずにループを抜けた場合、バッファを全て処理し終えるまで待機
-                int processed;
-                do
-                {
-                    _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out processed);
-                    await Task.Yield();
-                } while (processed < 2);
+                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out processed);
+                await Task.Yield();
+            } while (processed < 2);
 
-                // また、再生が終了したことを通知する
-                _app.NextFrame(() => FinishPlaying?.Invoke(this, EventArgs.Empty));
-            }
+            // また、再生が終了したことを通知する
+            _app.NextFrame(() => FinishPlaying?.Invoke(this, EventArgs.Empty));
 
             IsPlaying = false;
             return;
