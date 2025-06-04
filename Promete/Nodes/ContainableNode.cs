@@ -20,7 +20,7 @@ public abstract class ContainableNode : Node
 
     protected ContainableNode()
     {
-        children.CollectionChanged += (sender, args) => RequestSorting();
+        children.CollectionChanged += (_, _) => RequestSorting();
     }
 
     /// <summary>

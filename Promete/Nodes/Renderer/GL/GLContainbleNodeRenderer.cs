@@ -9,6 +9,7 @@ public class GLContainbleNodeRenderer(PrometeApp app, IWindow window) : NodeRend
 {
     public override void Render(Node node)
     {
+        if (node.IsDestroyed) return;
         var container = (ContainableNode)node;
         var w = window as OpenGLDesktopWindow ??
                 throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");

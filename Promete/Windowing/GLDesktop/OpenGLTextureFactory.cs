@@ -117,7 +117,7 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
         }
     }
 
-    private unsafe void DisposeTexture(Texture2D texture)
+    private void DisposeTexture(Texture2D texture)
     {
         app.ThrowIfNotMainThread();
         gl.DeleteTexture((uint)texture.Handle);

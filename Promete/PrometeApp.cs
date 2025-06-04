@@ -281,8 +281,8 @@ public sealed class PrometeApp : IDisposable
     /// <param name="node">描画対象のノード。</param>
     public void RenderNode(Node node)
     {
-        // ノードが非表示の場合は描画しない
-        if (!node.IsVisible) return;
+        // ノードが非表示あるいは破棄されている場合は描画しない
+        if (!node.IsVisible || node.IsDestroyed) return;
 
         node.BeforeRender();
         var renderer = ResolveRenderer(node);

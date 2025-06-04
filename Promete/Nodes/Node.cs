@@ -165,6 +165,7 @@ public abstract class Node
 
     internal virtual void Update()
     {
+        if (IsDestroyed) return;
         OnUpdate();
     }
 
