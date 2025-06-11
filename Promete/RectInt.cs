@@ -102,4 +102,14 @@ public struct RectInt
     {
         return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
     }
+
+    /// <summary>
+    /// この矩形を指定されたオフセットで平行移動します。
+    /// </summary>
+    /// <param name="offset">平行移動するオフセット。</param>
+    /// <returns>平行移動後の新しい <see cref="Rect" />。</returns>
+    public Rect Translate(Vector offset)
+    {
+        return new Rect(Location + offset, Size);
+    }
 }
