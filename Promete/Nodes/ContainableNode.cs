@@ -33,6 +33,7 @@ public abstract class ContainableNode : Node
 
     internal override void Update()
     {
+        SortChildrenIfNeeded();
         base.Update();
         for (var i = 0; i < sortedChildren.Length; i++)
         {
@@ -46,17 +47,25 @@ public abstract class ContainableNode : Node
             if (!children[i].IsDestroyed) continue;
             children.RemoveAt(i);
         }
+    }
 
-        // ソートが要求されている場合、ソートを行う
-        if (!_isSortingRequested) return;
-        sortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
-        _isSortingRequested = false;
+    protected override void OnPreRender()
+    {
+        SortChildrenIfNeeded();
     }
 
     protected internal override void UpdateModelMatrix()
     {
         base.UpdateModelMatrix();
         foreach (var child in children) child.UpdateModelMatrix();
+    }
+
+    protected void SortChildrenIfNeeded()
+    {
+        // ソートが要求されている場合、ソートを行う
+         if (!_isSortingRequested) return;
+         sortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
+         _isSortingRequested = false;
     }
 
     protected void Add(Node node)
