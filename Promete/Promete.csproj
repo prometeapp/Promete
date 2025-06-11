@@ -10,9 +10,9 @@
 
     <PropertyGroup>
         <PackageId>Promete</PackageId>
-        <Version>1.0.1-rc.5</Version>
+        <Version>1.0.1-rc.6</Version>
         <PackageTags>Game Engine;2D;gamedev;games;gaming;windowing;OpenGL</PackageTags>
-        <Description>A lightweight, extensible and easy game engine.
+        <Description>A 2D-specified, lightweight, extensible and easy-to-use game engine.
         </Description>
         <Authors>Ebise Lutica</Authors>
         <Copyright>(C)2024-2025 Promete Developers</Copyright>
