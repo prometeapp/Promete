@@ -125,4 +125,28 @@ public struct Rect
     {
         return new Rect(Location + offset, Size);
     }
+
+    /// <summary>
+    /// <see cref="Rect" /> を、明示的に <see cref="RectInt" /> に変換します。
+    /// </summary>
+    public static explicit operator RectInt(Rect rect)
+    {
+        return new RectInt((int)rect.Left, (int)rect.Top, (int)rect.Width, (int)rect.Height);
+    }
+
+    /// <summary>
+    /// タプルから <see cref="Rect" /> に変換します。
+    /// </summary>
+    public static implicit operator Rect((float left, float top, float width, float height) tuple)
+    {
+        return new Rect(tuple.left, tuple.top, tuple.width, tuple.height);
+    }
+
+    /// <summary>
+    /// タプルから <see cref="Rect" /> に変換します。
+    /// </summary>
+    public static implicit operator Rect((Vector location, Vector size) tuple)
+    {
+        return new Rect(tuple.location, tuple.size);
+    }
 }
