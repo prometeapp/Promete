@@ -93,9 +93,9 @@ public class GLTextureRendererHelper
         // Texture2DのUV座標を取得
         var uvStart = texture.UvStart;
         var uvEnd = texture.UvEnd;
-        // OpenGLのUV座標はY軸が反転しているため、調整
-        uvStart.Y = 1 - uvStart.Y;
-        uvEnd.Y = 1 - uvEnd.Y;
+
+        // UV座標のY軸を反転する（OpenGLではY軸が下向き）
+        (uvStart.Y, uvEnd.Y) = (uvEnd.Y, uvStart.Y);
 
         // 頂点データ（座標＋UV）を構築
         Span<float> vertices =
