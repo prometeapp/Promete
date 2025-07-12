@@ -1,4 +1,11 @@
-﻿## 1.0.1-rc.6
+﻿## 1.0.1-exp.1
+テクスチャにUV座標を設定できるようにする実験的なリリースです。
+
+- `Texture2D.UvStart` `Texture2D.UvEnd` プロパティを追加
+- `GLTextureRendererHelper` クラスにて、 `UvStart` と `UvEnd` を利用するように
+- `OpenGLTextureFactory.LoadSpriteSheet` メソッドにて生成されるテクスチャが、ハンドルを共有するように
+
+## 1.0.1-rc.6
 ### Promete v1 正式リリース！
 - AudioPlayerにいくつかの状態変化を起点に発生する、イベントハンドラーを追加しました。
     - StartPlaying - 音声が再生されたときに発生します。
