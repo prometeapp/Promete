@@ -49,28 +49,16 @@ public class GLTextureRendererHelper
         gl.DeleteShader(vsh);
         gl.DeleteShader(fsh);
 
-        // スプライトは基本のポリゴンが四角形に決まっているので、あらかじめ頂点情報を用意しておく
-        Span<float> vertices =
-        [
-            1.0f, 0.0f, 1.0f, 0.0f, // 右下
-            1.0f, 1.0f, 1.0f, 1.0f, // 右上
-            0.0f, 1.0f, 0.0f, 1.0f, // 左上
-            0.0f, 0.0f, 0.0f, 0.0f // 左下
-        ];
-
-        // バッファに頂点情報を書き込む
+        // VBO初期化（空データで確保）
         _vao = gl.GenVertexArray();
         gl.BindVertexArray(_vao);
         _vbo = gl.GenBuffer();
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
-        gl.BufferData<float>(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.StaticDraw);
+        gl.BufferData(BufferTargetARB.ArrayBuffer, 16 * sizeof(float), (nint)0, BufferUsageARB.DynamicDraw); // 4頂点×4float
 
-        // 4つのfloat値のうち、最初の2つを頂点の座標として登録する
+        // 頂点属性設定（座標・UV）
         gl.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
         gl.EnableVertexAttribArray(0);
-
-        // 4つのfloat値のうち、次の2つをテクスチャ座標として登録する
-        // テクスチャ座標属性
         gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
         gl.EnableVertexAttribArray(1);
 
@@ -101,6 +89,30 @@ public class GLTextureRendererHelper
         var c = color ?? Color.White;
         var finalWidth = overriddenWidth ?? node.Size.X;
         var finalHeight = overriddenHeight ?? node.Size.Y;
+
+        // Texture2DのUV座標を取得
+        var uvStart = texture.UvStart;
+        var uvEnd = texture.UvEnd;
+        // OpenGLのUV座標はY軸が反転しているため、調整
+        uvStart.Y = 1 - uvStart.Y;
+        uvEnd.Y = 1 - uvEnd.Y;
+
+        // 頂点データ（座標＋UV）を構築
+        Span<float> vertices =
+        [
+            // 右下
+            1.0f, 0.0f, uvEnd.X, uvEnd.Y,
+            // 右上
+            1.0f, 1.0f, uvEnd.X, uvStart.Y,
+            // 左上
+            0.0f, 1.0f, uvStart.X, uvStart.Y,
+            // 左下
+            0.0f, 0.0f, uvStart.X, uvEnd.Y
+        ];
+
+        // VBOへ頂点データを書き込み
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
+        gl.BufferSubData<float>(BufferTargetARB.ArrayBuffer, 0, vertices);
 
         // モデル行列を計算
         var modelMatrix =
