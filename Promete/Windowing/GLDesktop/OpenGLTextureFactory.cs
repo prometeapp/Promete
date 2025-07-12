@@ -79,9 +79,37 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
 
     private Texture2D[] LoadSpriteSheet(Image bmp, int horizontalCount, int verticalCount, VectorInt size)
     {
-        using (bmp)
-        using (var img = bmp.CloneAs<Rgba32>())
+        var width = (float)bmp.Width;
+        var height = (float)bmp.Height;
+        var handle = LoadFromImageSharpImage(bmp).Handle;
+
+        var textures = new Texture2D[verticalCount * horizontalCount];
+        for (var y = 0; y < verticalCount; y++)
         {
+            for (var x = 0; x < horizontalCount; x++)
+            {
+                var px = x * size.X;
+                var py = y * size.Y;
+
+                if (px + size.X > width) throw new ArgumentException(null, nameof(horizontalCount));
+                if (py + size.Y > height) throw new ArgumentException(null, nameof(verticalCount));
+
+                var uvStart = new Vector(px / width, py / height);
+                var uvEnd = new Vector((px + size.X - 1) / width, (py + size.Y - 1) / height);
+
+                textures[y * horizontalCount + x] = new Texture2D(handle, size, DisposeTexture, uvStart, uvEnd);
+            }
+        }
+
+        bmp.Dispose();
+        return textures;
+    }
+
+    private Texture2D[] LoadSpriteSheetLegacy(Image bmp, int horizontalCount, int verticalCount, VectorInt size)
+    {
+        using (bmp)
+        {
+            using var img = bmp.CloneAs<Rgba32>();
             var textures = new Texture2D[verticalCount * horizontalCount];
 
             for (var y = 0; y < verticalCount; y++)
