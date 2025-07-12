@@ -95,7 +95,7 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
                 if (py + size.Y > height) throw new ArgumentException(null, nameof(verticalCount));
 
                 var uvStart = new Vector(px / width, py / height);
-                var uvEnd = new Vector((px + size.X - 1) / width, (py + size.Y - 1) / height);
+                var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
 
                 textures[y * horizontalCount + x] = new Texture2D(handle, size, DisposeTexture, uvStart, uvEnd);
             }
