@@ -1,13 +1,6 @@
-# <img height="40" src="https://raw.githubusercontent.com/prometeapp/Promete/master/assets/logo.png" /> Promete
+# <img height="40" src="https://raw.githubusercontent.com/prometeapp/Promete/master/assets/logo.png" /> [Promete](https://promete.app)
 
 [![Nuget](https://img.shields.io/nuget/vpre/Promete.svg?style=for-the-badge)](https://www.nuget.org/packages/Promete/)
-
-> [!WARNING]
-> Prometeは現在、ベータ版です。<br/>
-> プロダクション用途でもご利用いただけますが、意図しない不具合が起こる可能性があります。<br/>
-> 実際のアプリケーション開発に利用する場合は、バグにご注意ください。
->
-> 最新の[サポート ポリシー](SUPPORT-POLICY.md)もご確認ください。
 
 Promete は、.NET 8以降を対象とするゲーム開発フレームワーク、ゲームエンジンです。
 
@@ -15,6 +8,8 @@ Promete は、.NET 8以降を対象とするゲーム開発フレームワーク
 
 その名は、ギリシャ神話に登場する神[「プロメテウス」](https://ja.wikipedia.org/wiki/%E3%83%97%E3%83%AD%E3%83%A1%E3%83%BC%E3%83%86%E3%82%A6%E3%82%B9)に由来します。プロメテウスは、土を捏ねて人間を産み出し、火を盗んで人間に与えたとされます。<br/>
 そうしたプロメテウスのように、クリエイターに力を与え、作品に命を吹き込む存在でありたいという願いが、このエンジンには込められています。
+
+ドキュメントは https://promete.app にて公開中です。
 
 
 ## 特徴
@@ -28,7 +23,7 @@ var app = PrometeApp.Create()
 	.Use<ConsoleLayer>()
 	.BuildWithOpenGLDesktop();
 
-app.Run<MainScene>();
+return app.Run<MainScene>();
 
 public class MainScene
 {
@@ -39,33 +34,36 @@ public class MainScene
 	public MainScene(Keyboard keyboard)
 	{
 		_keyboard = keyboard;
-		texture1 = window.TextureFactory.Load("./texture1.png");
-    	texture2 = window.TextureFactory.Load("./texture2.png");
+		_texture1 = Window.TextureFactory.Load("./texture1.png");
+    	_texture2 = Window.TextureFactory.Load("./texture2.png");
 
-		Root = new Container
-		{
-			new Sprite(texture1, location: (16, 16)),
-			new Sprite(texture2, location: (16, 32)),
-		};
+		Root = [
+			new Sprite(_texture1).Location(16, 16),
+			new Sprite(_texture2).Location(16, 32),
+        ];
 	}
 
 	public override void OnUpdate()
 	{
 		if (_keyboard.Escape.IsKeyDown)
 		{
-			Window.Close();
+			App.Exit(0);
 		}
 	}
+
+    public override void OnDestroy()
+    {
+        _texture1.Dispose();
+        _texture2.Dispose();
+    }
 }
 ```
 
 ### クロスプラットフォーム
-Windows だけでなく、macOSやLinuxでも動作します。 また、将来的にはAndroidやiOS、Webでも動作する予定です。
-
-デフォルトの描画バックエンドはOpenGLを使用していますが、将来的にはVulkanやMetalなどのAPIをサポートし、より高速な描画を実現する予定です。
+Windows だけでなく、macOSやLinuxでも動作します。
 
 ### 2Dに特化したグラフィックシステム
-ピクセルパーフェクトな2Dグラフィックを気軽に実現できるゲームエンジンはそう多くありません。 Prometeは、2Dグラフィックに特化したグラフィックシステムを提供します。
+3Dに対応したゲームエンジンは多いですが、ピクセルパーフェクトな2Dグラフィックを気軽に実現できるゲームエンジンはそう多くありません。Prometeは、2Dグラフィックに特化したグラフィックシステムを提供します。
 
 Prometeでは、ノードという描画単位を用いた階層構造で画面を構成します。
 
@@ -90,7 +88,7 @@ Prometeは、拡張性を重視して設計されています。
 ### オーディオ機能
 BGMから効果音まで、ゲームに欠かせないオーディオ機能を提供します。
 
-BGMは特定のポイントを起点としたループ再生に対応しています（これがないエンジンも多い）
+BGMは特定のポイントを起点としたイントロ付きループ再生に標準対応。
 
 デフォルトではogg vorbisおよびwav形式をサポートしています。オーディオファイルの読み込みはプラグインによって拡張可能です。
 
@@ -115,16 +113,12 @@ Prometeは、DIコンテナを用いたプラグインシステムを採用し�
 | iOS	  | まだ対応していません。						   |
 | Web	  | まだ対応していません。						   |
 
-## ビルドの仕方
+## ビルド方法
 ```shell
 git clone https://github.com/prometeapp/Promete
 cd Promete
 dotnet build
 ```
-
-## ドキュメント
-https://promete.app (WIP)
-現在、精力的にドキュメントを作成中です。
 
 ## コントリビュート
 [コントリビューションの手引き](CONTRIBUTING.md) をご確認ください。
@@ -132,8 +126,8 @@ https://promete.app (WIP)
 [![GitHub issues](https://img.shields.io/github/issues/ebiselutica/promete.svg?style=for-the-badge)][issues]
 [![GitHub pull requests](https://img.shields.io/github/issues-pr/ebiselutica/promete.svg?style=for-the-badge)][pulls]
 
-## サポート ポリシー
-[サポート ポリシー](SUPPORT-POLICY.md) をご確認ください。        
+## サポート中のバージョンとポリシー
+[サポート状況とポリシー](SUPPORT.md) をご確認ください。
 
 ## ライセンス
 [![License](https://img.shields.io/github/license/ebiselutica/promete.svg?style=for-the-badge)](LICENSE)
