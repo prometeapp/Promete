@@ -1,0 +1,50 @@
+# Prometeドキュメント構成
+
+- 入門編（導入方法と簡単な動かし方を中心にする）
+    - Prometeとは？ `/guide/intro/about`
+    - クイックスタート `/guide/intro/start`
+    - “Hello, World!” `/guide/intro/hello-world`
+- 機能編（より実践的な、各機能の説明・使用例を解説する）
+  - コア
+    - PrometeApp `/guide/manual/app`
+    - ウィンドウ `/guide/manual/window`
+    - プラグインシステム `/guide/manual/plugin-system`
+  - グラフィック
+    - シーン `/guide/graphics/scene`
+    - テクスチャ `/guide/graphics/textures`
+    - ノードとは？ `/guide/graphics/nodes`
+    - Sprite `/guide/graphics/sprite`
+    - Text `/guide/graphics/text`
+    - Tilemap `/guide/graphics/tilemap`
+    - Shape `/guide/graphics/shape`
+    - NineSliceSprite `/guide/graphics/nine-slice-sprite`
+    - Container `/guide/graphics/container`
+    - フレームバッファ `/guide/graphics/framebuffer`
+  - テキスト
+    - コンソールレイヤー `/guide/text/console-layer`
+    - フォント `/guide/text/font`
+    - リッチテキスト `/guide/text/ptml`
+  - 入力
+    - キーボード入力 `/guide/input/keyboard`
+    - マウス入力 `/guide/input/mouse`
+    - ゲームパッド入力 `/guide/input/gamepad`
+  - オーディオ
+    - オーディオプレイヤー `/guide/audio/playback`
+    - オーディオソース `/guide/audio/source`
+  - 数学
+    - VectorとRect `/guide/math/vector-rect`
+    - 数学ヘルパー `/guide/math/helper`
+  - その他
+    - コルーチン `/guide/other/coroutine`
+    - 便利な拡張メソッド `/guide/other/extensions`
+- 拡張
+  - カスタム ノード `/guide/extends/nodes`
+  - カスタム ノードレンダラー `/guide/extends/renderers`
+  - カスタム タイルの自作 `/guide/extends/tiles`
+  - カスタム オーディオソース `/guide/extends/audio-source`
+  - カスタム フォントプロバイダー `/guide/extends/font`
+  - カスタム バックエンド `/guide/extends/backend`
+- プラグイン
+  - ImGUI連携 `/guide/plugins/imgui`
+- 移行
+  - DotFeather v3からの移行 `/guide/migrate/from-dotfeather-v3`

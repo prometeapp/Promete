@@ -1,56 +1,60 @@
 ---
-title: '"Hello, world!"'
-description: ウィンドウに文字列を表示する方法を解説します。
+title: "Hello, World!"
+description: 初めてのPrometeアプリケーションで、ConsoleLayerを使って簡単にテキストを表示する方法
 sidebar:
-  order: 3
+  order: 2
 ---
 
-今回は、ウィンドウに簡単な文字列を表示させてみましょう。
+まずは、画面にテキストを表示してみましょう。以下のコードを実行します。
 
-Prometeには、簡単なテキスト表示機能「[コンソールレイヤー](/features/console)」があります。この機能を使って、ウィンドウに文字列を表示します。
-
-エントリーポイントの `Program.cs` を次のように書き換えてください。
-
-```diff lang=csharp title="Program.cs"
+```csharp title="Program.cs"
 using Promete;
-using Promete.GLDesktop;
+using Promete.Input;
+using Promete.Windowing;
 
 var app = PrometeApp.Create()
-+    .Use<ConsoleLayer>()
-	.BuildWithOpenGLDesktop();
+    .Use<Keyboard>()
+    .Use<ConsoleLayer>()  // ConsoleLayerプラグインを追加
+    .BuildWithOpenGLDesktop();
 
-app.Run<MainScene>();
-```
-
-次に、 `MainScene.cs` を次のように書き換えてください。
-
-```diff lang="cs" title="MainScene.cs"
-using Promete;
-
--public class MainScene : Scene
-+public class MainScene(ConsoleLayer console) : Scene
+return app.Run<HelloWorldScene>(WindowOptions.Default with
 {
-+    public override void OnStart()
-+    {
-+        console.Print("Hello, world!");
-+    }
+    Title = "Hello, World!",
+    Size = (800, 600),
+});
+
+public class HelloWorldScene(Keyboard keyboard, ConsoleLayer console) : Scene
+{
+    public override void OnStart()
+    {
+        // コンソールに「Hello, World!」を表示
+        console.Print("Hello, World!");
+        console.Print("ESCキーで終了");
+    }
+
+    public override void OnUpdate()
+    {
+        if (keyboard.Escape.IsKeyDown)
+        {
+            Window.Close();
+        }
+    }
 }
 ```
 
-[プライマリコンストラクタ](https://ufcpp.net/study/csharp/oo_construct.html#primary-constructor) を、 `ConsoleLayer`
-を受け取るように書き換えます。
+このコードを実行すると、黒いウィンドウの左上に白い文字で「Hello, World!」と表示されます。
 
-:::tip
-Prometeでは、このように登録したプラグインのインスタンスを、シーンのコンストラクタで受け取ることができます。[プラグインシステム](/guide/advanced/plugin-system)
-のページで詳しく解説します。
-:::
+## プラグインについて
 
-シーンの `OnStart` メソッドをオーバーライドすると、シーンが開始されたときに呼ばれる処理を記述できます。この例では、シーンが開始されたときにコンソールに文字列を表示しています。
+上記のコードでは、`Use<ConsoleLayer>()`と`Use<Keyboard>()`を使用しています。これらは**プラグイン**と呼ばれる機能で、必要な機能を後から追加できる仕組みです。
 
-これで、ビルドして実行してみましょう。
+- `ConsoleLayer`: 簡単なテキスト表示機能
+- `Keyboard`: キーボード入力機能
 
-![Hello, world!](/assets/hello-world.png)
+プラグインの詳細については、後のページで詳しく説明します。
 
-ウィンドウに文字が表示されましたね。おめでとうございます！
+## 実行結果
 
-より詳しい手順を学ぶため、以降のページもご覧ください。
+1. 800×600ピクセルのウィンドウが開きます
+2. 左上に「Hello, World!」と「ESCキーで終了」が表示されます
+3. Escapeキーを押すとアプリケーションが終了します

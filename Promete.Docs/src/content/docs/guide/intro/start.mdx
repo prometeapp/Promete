@@ -1,0 +1,175 @@
+---
+title: クイックスタート
+description: Prometeの導入方法とプロジェクトのセットアップ
+sidebar:
+  order: 1
+---
+import { FileTree } from '@astrojs/starlight/components';
+
+このページでは、Prometeを使ったゲーム開発を始めるための基本的なセットアップ方法を説明します。
+
+## 必要な環境
+
+- .NET 8 SDK以降
+- Visual Studio 2022、Visual Studio Code、Rider などの.NET開発環境
+
+## プロジェクトの作成
+
+### 1. 新しいコンソールアプリケーションプロジェクトを作成
+
+```bash
+dotnet new console -n MyPrometeGame
+cd MyPrometeGame
+```
+
+### 2. PrometeのNuGetパッケージをインストール
+
+```bash
+dotnet add package Promete
+```
+
+## 最小限のアプリケーション
+
+以下は最も基本的なPrometeアプリケーションの例です：
+
+```csharp
+using Promete;
+using Promete.Input;
+using Promete.Windowing;
+
+// アプリケーションを作成
+var app = PrometeApp.Create()
+    .Use<Keyboard>()         // キーボード入力
+    .BuildWithOpenGLDesktop(); // OpenGLデスクトップバックエンド
+
+// メインシーンで実行
+return app.Run<MainScene>(WindowOptions.Default with
+{
+    Title = "My Promete Game",
+    Size = (800, 600),
+});
+
+// メインシーンクラス
+public class MainScene : Scene
+{
+    private readonly Keyboard _keyboard;
+
+    public MainScene(Keyboard keyboard)
+    {
+        _keyboard = keyboard;
+    }
+
+    public override void OnStart()
+    {
+        // シーン開始時の処理
+        Console.WriteLine("ゲームが開始されました！");
+    }
+
+    public override void OnUpdate()
+    {
+        // フレーム毎の更新処理
+        if (_keyboard.Escape.IsKeyDown)
+        {
+            // Escapeキーでゲーム終了
+            Window.Close();
+        }
+    }
+}
+```
+
+## アプリケーションの実行
+
+プロジェクトを実行します：
+
+```bash
+dotnet run
+```
+
+正常に動作すると、800×600ピクセルの黒いウィンドウが表示され、Escapeキーで終了できます。
+
+## プロジェクト構造の推奨
+
+プロジェクトが大きくなる場合は、必要に応じてディレクトリを分割してください。
+
+例えば、以下のような構造が良いでしょう。
+
+<FileTree>
+- MyPrometeGame
+  - Program.cs
+  - MyPrometeGame.csproj
+  - Scenes/
+    - MainScene.cs
+    - GameScene.cs
+    - MenuScene.cs
+  - Assets/
+    - Textures/
+    - Audio/
+    - Fonts/
+  - Nodes/
+    - HealthBar.cs
+    - Player.cs
+    - Enemy.cs
+  - Managers/
+    - EnemyManager.cs
+    - AssetManager.cs
+  - Services/
+    - CombatService.cs
+</FileTree>
+
+## 代表的なプラグイン
+
+Prometeには用途別に様々なプラグインが用意されています。以下は代表的なプラグインの一覧です：
+
+| プラグイン名 | 説明 |
+|---------------|------|
+| `Keyboard` | キーボード入力を管理 |
+| `Mouse` | マウス入力を管理 |
+| `Gamepads` | ゲームパッド入力を管理 |
+| `ConsoleLayer` | デバッグ用のテキスト表示 |
+| `CoroutineManager` | コルーチン（非同期処理）を管理 |
+| `AudioPlayer` | オーディオ再生を管理 |
+
+
+これらを含む完全なセットアップ例：
+
+```csharp
+using Promete;
+using Promete.Input;
+using Promete.Windowing;
+using Promete.Audio;
+using Promete.Coroutines;
+
+var app = PrometeApp.Create()
+    .Use<Keyboard>()
+    .Use<Mouse>()
+    .Use<Gamepads>()
+    .Use<ConsoleLayer>()
+    .Use<CoroutineManager>()
+    .Use<AudioPlayer>()
+    .BuildWithOpenGLDesktop();
+
+return app.Run<MainScene>(WindowOptions.Default with
+{
+    Title = "My Promete Game",
+    Size = (800, 600),
+    Mode = WindowMode.Resizable,
+});
+
+public class MainScene : Scene;
+```
+
+## トラブルシューティング
+
+### よくある問題
+
+**OpenGLエラーが発生する場合**
+- グラフィックドライバーが最新であることを確認
+- Windows の場合、DirectX ランタイムがインストールされていることを確認
+
+**パッケージが見つからない場合**
+- NuGetパッケージマネージャーでプレリリース版を含めて検索
+- パッケージソースが正しく設定されていることを確認
+
+**実行時にクラッシュする場合**
+- .NET 8 SDKが正しくインストールされていることを確認
+- プロジェクトのターゲットフレームワークが`net8.0`以降に設定されていることを確認

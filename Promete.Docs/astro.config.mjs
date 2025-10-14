@@ -14,9 +14,12 @@ export default defineConfig({
         label: '日本語'
       }
     },
+    social: {
+      github: 'https://github.com/PrometeApp/Promete',
+    },
     logo: {
       src: './assets/logo.png',
-      alt: 'シュリンピア',
+      alt: 'Promete',
     },
     customCss: [
       '@/styles/global.scss',
@@ -33,24 +36,45 @@ export default defineConfig({
         autogenerate: {directory: 'guide/intro'},
       },
       {
-        label: '基本編',
-        autogenerate: {directory: 'guide/basic'},
-      },
-      {
-        label: 'ノード',
-        autogenerate: {directory: 'guide/nodes'},
-      },
-      {
-        label: 'ユーティリティ',
-        autogenerate: {directory: 'guide/utilities'},
-      },
-      {
-        label: '機能詳細',
-        autogenerate: {directory: 'guide/features'},
+        label: '機能編',
+        items: [
+          {
+            label: 'コア',
+            autogenerate: {directory: 'guide/manual'},
+          },
+          {
+            label: 'グラフィック',
+            autogenerate: {directory: 'guide/graphics'},
+          },
+          {
+            label: 'テキスト',
+            autogenerate: {directory: 'guide/text'},
+          },
+          {
+            label: '入力',
+            autogenerate: {directory: 'guide/input'},
+          },
+          {
+            label: 'オーディオ',
+            autogenerate: {directory: 'guide/audio'},
+          },
+          {
+            label: '数学',
+            autogenerate: {directory: 'guide/math'},
+          },
+          {
+            label: 'その他',
+            autogenerate: {directory: 'guide/other'},
+          },
+        ],
       },
       {
         label: 'エンジンを拡張する',
         autogenerate: {directory: 'guide/extends'},
+      },
+      {
+        label: 'プラグイン',
+        autogenerate: {directory: 'guide/plugins'},
       },
       {
         label: '旧バージョンからの移行',
