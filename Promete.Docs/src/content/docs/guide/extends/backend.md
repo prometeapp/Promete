@@ -42,7 +42,7 @@ var app = PrometeApp.Create()
     .Build<MyWindow>();
 ```
 
-## 注意点
+## ノート
 
 - カスタムバックエンドはIWindowの全メンバーを実装する必要があります
 - 標準のOpenGLDesktopWindowやHeadlessWindowを参考に実装すると便利です

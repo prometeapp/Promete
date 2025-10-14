@@ -48,11 +48,11 @@ frameBuffer.BackgroundColor = Color.Black;      // 黒背景
 frameBuffer.BackgroundColor = Color.Transparent; // 透明背景（デフォルト）
 ```
 
-## 注意点
+## ノート
 
 ### バックエンドサポート
 
-フレームバッファはすべてのバックエンドでサポートされているわけではありません：
+フレームバッファはすべてのバックエンドでサポートされているわけではありません。使用前に`PrometeApp.IsFrameBufferSupported`で確認してください。
 
 ```csharp title="サポート確認"
 public void CheckFrameBufferSupport()
@@ -72,7 +72,7 @@ public void CheckFrameBufferSupport()
 
 ### メモリ使用量
 
-フレームバッファはメモリを消費するため、適切に管理してください：
+フレームバッファはメモリを消費するため、適切に管理してください。
 
 ```csharp title="メモリ管理"
 public class FrameBufferManager : IDisposable

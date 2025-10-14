@@ -36,7 +36,7 @@ var tilemap = new Tilemap(10, 10);
 tilemap.SetTile(1, 1, new MyTile());
 ```
 
-## 注意点
+## ノート
 
 - カスタムタイルはTilemapの`SetTile`で自由に配置できます
 - 必要に応じて状態や見た目を動的に変更できます

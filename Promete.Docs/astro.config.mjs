@@ -69,16 +69,12 @@ export default defineConfig({
         ],
       },
       {
-        label: 'エンジンを拡張する',
-        autogenerate: {directory: 'guide/extends'},
-      },
-      {
         label: 'プラグイン',
         autogenerate: {directory: 'guide/plugins'},
       },
       {
-        label: '旧バージョンからの移行',
-        autogenerate: {directory: 'guide/migrate'},
+        label: 'エンジンを拡張する',
+        autogenerate: {directory: 'guide/extends'},
       },
     ],
   })],

@@ -46,5 +46,3 @@
   - カスタム バックエンド `/guide/extends/backend`
 - プラグイン
   - ImGUI連携 `/guide/plugins/imgui`
-- 移行
-  - DotFeather v3からの移行 `/guide/migrate/from-dotfeather-v3`

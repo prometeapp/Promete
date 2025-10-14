@@ -5,12 +5,24 @@ sidebar:
   order: 3
 ---
 
-Prometeは、独自のリッチテキスト記法「PTML（Promete Text Markup Language）」をサポートしています。
+Promete独自のリッチテキスト記法「PTML（Promete Text Markup Language）」を用いると、テキストに装飾を加えることができます。
 PTMLを使うことで、テキストの一部に色やサイズ、太字・斜体などの装飾を簡単に適用できます。
 
-## 基本の使い方
+PTMLで利用できるタグは、リッチテキストを描画するレンダラーに依存します。ここでは、`Font`クラスでサポートされているタグを紹介します。
 
-`Text`ノードや`ConsoleLayer`で、`UseRichText(true)`を設定し、`Content`にPTMLタグを含む文字列を指定します。
+## 記法
+PTMLは、HTMLのようなタグベースの記法を採用しています。開始タグ`<tag>`と終了タグ`</tag>`でテキストを囲むことで、そのテキストを装飾します。タグには `=` で属性を指定することもできます。
+
+```html
+<color=red>赤い文字</color>
+<size=24>大きな文字</size>
+<b>太字</b>
+<i>斜体</i>
+```
+
+## Textノードでの使い方
+
+`Text`ノードで`UseRichText(true)`を設定し、`Content`にPTMLタグを含む文字列を指定します。
 
 ```csharp
 var text = new Text("", Font.GetDefault(16))
@@ -24,6 +36,7 @@ text.Content = """
 ```
 
 ## サポートされるタグ
+`Font` クラスでサポートされているタグです。
 
 | タグ         | 属性例         | 効果                         |
 |--------------|---------------|------------------------------|
@@ -58,7 +71,7 @@ public override void OnUpdate()
 }
 ```
 
-## 注意点
+## ノート
 
 - タグの書式ミスや未対応のタグは無視されるか、エラーになります。
 - 入れ子のタグや複数属性の同時指定は一部制限があります。

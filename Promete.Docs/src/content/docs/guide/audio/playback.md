@@ -62,7 +62,7 @@ public override void OnStart()
 }
 ```
 
-## 注意点
+## ノート
 
 - 再生できるフォーマットはWAV, Ogg Vorbisなどです
 - 効果音再生には `PlayOneShot` を使うと便利です

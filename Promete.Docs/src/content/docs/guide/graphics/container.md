@@ -81,7 +81,7 @@ var absolutePos = child.AbsoluteLocation; // (150, 150)
 
 ### IEnumerableサポート
 
-ContainerはIEnumerableを実装しているため、様々なコレクション操作が可能です：
+ContainerはIEnumerableを実装しているため、様々なコレクション操作が可能です。
 
 ```csharp title="コレクション操作"
 var container = new Container();

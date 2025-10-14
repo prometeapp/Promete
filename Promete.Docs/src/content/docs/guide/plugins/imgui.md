@@ -98,7 +98,7 @@ imgui.Render += () =>
 };
 ```
 
-## 注意点
+## ノート
 
 - ImGuiPluginはOpenGL Desktopバックエンドでのみ利用可能です
 - シーン破棄時は `imgui.Render -= ...` でイベント解除を推奨します

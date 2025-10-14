@@ -7,7 +7,7 @@ sidebar:
 
 `Text`は、文字列を画面に表示するためのノードです。フォント、色、配置、ボーダーなど、豊富なテキスト表示オプションを提供し、ゲームやアプリケーションでのテキスト表示に必要な機能を備えています。
 
-## テキストの作成
+## 作成
 
 ```csharp title="基本的なテキストの作成"
 public class GameScene : Scene
@@ -69,7 +69,7 @@ text.Color = Color.FromArgb(128, 255, 255, 255);
 
 ### ボーダー
 
-テキストにボーダー（縁取り）を追加できます：
+テキストに（縁取り）を追加できます。
 
 ```csharp title="ボーダーの設定"
 var outlinedText = new Text("Outlined Text")
@@ -126,7 +126,7 @@ var multilineText = new Text("Line 1\nLine 2\nLine 3")
 
 ## リッチテキスト
 
-Prometeは[リッチテキスト機能](/guide/text/ptml)もサポートしています：
+部分的に文字装飾が可能です。[リッチテキスト機能](/guide/text/ptml)を参照してください。
 
 ```csharp title="リッチテキストの使用"
 var richText = new Text("", Font.GetDefault(16))

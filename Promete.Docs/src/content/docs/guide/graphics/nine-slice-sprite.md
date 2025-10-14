@@ -5,9 +5,7 @@ sidebar:
   order: 8
 ---
 
-`NineSliceSprite`は、9スライス（ナインスライス）方式でテクスチャを表示するノードです。この方式により、角や境界線の品質を保ったまま、任意のサイズにリサイズできるUI要素を作成できます。ボタン、ダイアログボックス、パネルなどのUI部品によく使用されます。
-
-9スライス方式は、1つの画像を9つの部分に分割し、それぞれを異なる方法でリサイズすることで、様々なサイズに対応できるようにする技術です：
+`NineSliceSprite`は、以下のように9スライス方式でテクスチャを表示するノードです。この方式により、角や境界線が不自然に引き伸ばされることなく、画像を任意のサイズに伸縮できます。主にボタンなどのUI部品に使用されます。
 
 ```
 ┌─────┬─────────┬─────┐
@@ -27,9 +25,8 @@ sidebar:
 - **垂直方向の辺（ML, MR）**: 垂直方向のみ拡縮
 - **中央（MC）**: 水平・垂直の両方向に拡縮
 
-## 9スライステクスチャの作成
-
-まず、9スライス用のテクスチャを作成します：
+## 作成
+テクスチャを読み込み、NineSliceSpriteノードのコンストラクタに渡します。
 
 ```csharp title="9スライステクスチャの作成"
 public class GameScene : Scene
@@ -59,9 +56,6 @@ public class GameScene : Scene
 ## 基本的なプロパティ
 
 ### テクスチャ
-
-9スライステクスチャを設定・変更できます：
-
 ```csharp title="テクスチャの設定"
 var sprite = new NineSliceSprite(defaultTexture);
 
@@ -75,9 +69,6 @@ sprite.Texture = isPressed ? pressedTexture :
 ```
 
 ### 色調（TintColor）
-
-テクスチャに色を重ねることができます：
-
 ```csharp title="色調の設定"
 // デフォルト（元の色）
 sprite.TintColor = Color.White;
@@ -90,9 +81,6 @@ sprite.TintColor = Color.FromArgb(128, 255, 255, 255);
 ```
 
 ### サイズ
-
-NineSliceSpriteは任意のサイズに設定できます：
-
 ```csharp title="サイズの設定"
 // 固定サイズ
 sprite.Size = (300, 150);

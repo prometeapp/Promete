@@ -28,9 +28,9 @@ cd MyPrometeGame
 dotnet add package Promete
 ```
 
-## 最小限のアプリケーション
+## 基本
 
-以下は最も基本的なPrometeアプリケーションの例です：
+Prometeアプリの基本的なエントリポイントを以下に示します。
 
 ```csharp
 using Promete;
@@ -79,8 +79,6 @@ public class MainScene : Scene
 
 ## アプリケーションの実行
 
-プロジェクトを実行します：
-
 ```bash
 dotnet run
 ```
@@ -118,7 +116,7 @@ dotnet run
 
 ## 代表的なプラグイン
 
-Prometeには用途別に様々なプラグインが用意されています。以下は代表的なプラグインの一覧です：
+Prometeには用途別に様々なプラグインが用意されています。
 
 | プラグイン名 | 説明 |
 |---------------|------|
@@ -129,34 +127,8 @@ Prometeには用途別に様々なプラグインが用意されています。�
 | `CoroutineManager` | コルーチン（非同期処理）を管理 |
 | `AudioPlayer` | オーディオ再生を管理 |
 
+プラグインの詳細については、[プラグインのドキュメント](/guide/manual/plugin-system/)を参照してください。
 
-これらを含む完全なセットアップ例：
-
-```csharp
-using Promete;
-using Promete.Input;
-using Promete.Windowing;
-using Promete.Audio;
-using Promete.Coroutines;
-
-var app = PrometeApp.Create()
-    .Use<Keyboard>()
-    .Use<Mouse>()
-    .Use<Gamepads>()
-    .Use<ConsoleLayer>()
-    .Use<CoroutineManager>()
-    .Use<AudioPlayer>()
-    .BuildWithOpenGLDesktop();
-
-return app.Run<MainScene>(WindowOptions.Default with
-{
-    Title = "My Promete Game",
-    Size = (800, 600),
-    Mode = WindowMode.Resizable,
-});
-
-public class MainScene : Scene;
-```
 
 ## トラブルシューティング
 

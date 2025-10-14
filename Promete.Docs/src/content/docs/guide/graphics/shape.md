@@ -9,7 +9,7 @@ sidebar:
 
 ## 図形の作成
 
-`Shape`クラスの静的メソッドを使用して各種図形を作成できます：
+`Shape`クラスの静的メソッドを使用して各種図形を作成できます。
 
 ```csharp title="基本的な図形の作成"
 public class GameScene : Scene
@@ -37,7 +37,7 @@ public class GameScene : Scene
 
 ### ピクセル
 
-単一のピクセル（点）を描画します：
+単一のピクセル（点）を描画します。
 
 ```csharp title="ピクセルの作成"
 // 座標指定
@@ -51,7 +51,11 @@ Root.AddRange(pixel1, pixel2);
 
 ### 線
 
-2点間を結ぶ直線を描画します：
+2点間を結ぶ直線を描画します。
+
+:::caution
+現状、OpenGLバックエンドにおいて `lineWidth` を2以上に設定しても、常に1px幅で描画されます。
+:::
 
 ```csharp title="線の作成"
 // 基本的な線
@@ -70,7 +74,10 @@ Root.AddRange(line1, line2, line3);
 
 ### 矩形
 
-四角形を描画します。塗りつぶしと枠線の両方を設定できます：
+四角形を描画します。塗りつぶしと枠線の両方を設定できます。
+:::caution
+現状、OpenGLバックエンドにおいて `lineWidth` を2以上に設定しても、常に1px幅で描画されます。
+:::
 
 ```csharp title="矩形の作成"
 // 塗りつぶしのみ
@@ -89,7 +96,10 @@ Root.AddRange(filledRect, outlineRect, combinedRect);
 
 ### 三角形
 
-3つの頂点で構成される三角形を描画します：
+3つの頂点で構成される三角形を描画します。
+:::caution
+現状、OpenGLバックエンドにおいて `lineWidth` を2以上に設定しても、常に1px幅で描画されます。
+:::
 
 ```csharp title="三角形の作成"
 // 座標指定
@@ -113,5 +123,3 @@ var triangle2 = Shape.CreateTriangle(
 Root.AddRange(triangle1, triangle2);
 ```
 
-## 注意点
-現状、OpenGLバックエンドにおいて `lineWidth` を2以上に設定しても、常に1px幅で描画されます。

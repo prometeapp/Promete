@@ -45,7 +45,7 @@ var font = new MyFont();
 var text = new Text("Hello", font);
 ```
 
-## 注意点
+## ノート
 
 - カスタムフォントプロバイダーはTextノードのコンストラクタで直接指定できます
 - 標準のFontクラスを参考に実装すると便利です

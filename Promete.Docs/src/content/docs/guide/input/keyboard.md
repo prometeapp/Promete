@@ -62,7 +62,7 @@ public override void OnUpdate()
 }
 ```
 
-## 注意点
+## ノート
 
 - 入力バッファは `GetString()` や `GetChar()` で消費されます。
 - モバイル環境では `OpenVirtualKeyboard()` で仮想キーボードを開けます。

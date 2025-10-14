@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Prometeでは、2D座標やサイズを扱うために `Vector`（実数）, `VectorInt`（整数）, `Rect`（実数矩形）, `RectInt`（整数矩形）を用意しています。
+Prometeでは、2D座標や矩形などを扱うために `Vector`（実数）, `VectorInt`（整数）, `Rect`（実数矩形）, `RectInt`（整数矩形）を用意しています。
 ゲームやUIの座標計算、当たり判定、移動処理など幅広く利用できます。
 
 ## 基本の使い方
@@ -36,6 +36,26 @@ var ri = new RectInt((10, 20), (100, 50));
 - `Rect.Intersect(rect)`<br/>矩形同士の交差判定
 - `Rect.Translate(offset)`<br/>矩形の平行移動
 
+## タプルとの相互変換
+
+`Vector`/`VectorInt`/`Rect`/`RectInt` は、タプルとの相互変換（暗黙的キャスト）が可能です。
+これにより、タプルから直接ベクトルや矩形を生成したり、逆にベクトルや矩形をタプルとして扱うことができます。
+
+```csharp
+// Vectorをタプルから生成
+Vector v = (10.5f, 20.0f);
+
+// Vectorの分解
+var (vx, vy) = v; // vx, vy: float
+
+// Rectをタプルから生成
+Rect r = (10f, 20f, 100f, 50f);
+
+// Rectの分解
+var (pos, rect) = r; // pos: Vector, rect: Vector
+var (rx, ry, rw, rh) = r; // rx, ry, rw, rh: float
+```
+
 ## サンプル：当たり判定
 
 ```csharp
@@ -46,9 +66,3 @@ if (player.Intersect(enemy))
     // 当たり判定成立
 }
 ```
-
-## 注意点
-
-- Vector/Rectは実数、VectorInt/RectIntは整数で計算されます
-- ベクトル・矩形はタプルからも初期化できます
-- 角度はラジアン単位です（度に変換するにはMathHelper.ToDegreeを利用）

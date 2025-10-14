@@ -58,7 +58,7 @@ public override void OnUpdate()
 }
 ```
 
-## 注意点
+## ノート
 
 - パッドの接続/切断は自動で検出されます。
 - ボタン・スティック・トリガーは `GamepadButtonType` で指定します。

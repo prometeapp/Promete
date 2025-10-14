@@ -55,7 +55,7 @@ public override void OnUpdate()
 }
 ```
 
-## 注意点
+## ノート
 
 - ボタンは `MouseButtonType` で指定できます（Left, Right, Middle など）。
 - ボタンの状態はフレームごとにリセットされます（IsButtonDown/IsButtonUp）。

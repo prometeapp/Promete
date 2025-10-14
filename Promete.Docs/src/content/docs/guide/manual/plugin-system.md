@@ -5,45 +5,11 @@ sidebar:
   order: 2
 ---
 
-Prometeは**DIコンテナを用いたプラグインシステム**を採用しています。このシステムにより、必要な機能のみを選択してゲームに組み込むことができ、環境の差異に対応したり、不要な機能を削減して最適化を図ることができます。
-
-## プラグインシステムの基本概念
-
-### 目的と利点
-
-プラグインシステムは以下の利点を提供します：
-
-- **モジュラー設計**: 必要な機能のみを選択して追加
-- **環境差異の吸収**: PC、モバイル、Webなど異なるプラットフォームに対応
-- **パフォーマンス最適化**: 不要な機能を除外して軽量化
-- **拡張性**: 独自のプラグインを簡単に作成
-- **テスタビリティ**: DIによる疎結合で単体テストが容易
-
-### DIコンテナとの統合
-
-PrometeはDIコンテナを採用しており、各シーンに必要に応じて機能を注入できます。
-
-不要な機能を除外することで、ゲームのパフォーマンスやソースコードの可読性を向上させることができます。
-
-```csharp
-// プラグインの登録
-var app = PrometeApp.Create()
-    .Use<Keyboard>()        // キーボード入力プラグイン
-    .Use<ConsoleLayer>()    // デバッグコンソールプラグイン
-    .BuildWithOpenGLDesktop();
-
-// シーンでのプラグイン使用（コンストラクタインジェクション）
-public class GameScene(Keyboard keyboard, ConsoleLayer console) : Scene
-{
-    // keyboard と console が自動的に注入される
-}
-```
+Prometeは**DIコンテナをベースとしたプラグインシステム**を採用しています。このシステムにより、必要な機能のみを選択してゲームに組み込むことができ、環境の差異に対応したり、不要な機能を削減して最適化を図ることができます。
 
 ## プラグインの登録
 
-### 基本的な登録方法
-
-`Use<T>()`メソッドでプラグインを登録します。
+アプリケーション初期化時に、`Use<T>()`メソッドでプラグインを登録します。
 
 ```csharp
 var app = PrometeApp.Create()
@@ -68,9 +34,13 @@ var app = PrometeApp.Create()
     .BuildWithOpenGLDesktop();
 ```
 
-## プライマリコンストラクタの活用
+## プラグインの取得
 
-Prometeでは**C# 12のプライマリコンストラクタ**を活用したシンプルな依存性注入を推奨しています。
+### コンストラクタ注入
+
+シーンおよびプラグインのコンストラクタでは、登録されたプラグインを引数として受け取ることができます。DIコンテナが自動的に解決してインスタンスを注入します。
+
+**C# 12のプライマリコンストラクタ**を活用すると、簡潔な記法でプラグインを利用できます。
 
 ### 基本的な使用方法
 
@@ -78,12 +48,14 @@ Prometeでは**C# 12のプライマリコンストラクタ**を活用したシ�
 // プラグインを受け取るシーンクラス
 public class MainScene(Keyboard keyboard, Mouse mouse, AudioPlayer audio) : Scene
 {
+    private readonly IAudioSource _clickSfx = new WaveAudioSource("assets/click.wav");
+
     public override void OnStart()
     {
         // keyboard, mouse, audio が自動的に利用可能
         if (keyboard.Enter.IsKeyDown)
         {
-            audio.PlayAsync("assets/click.wav");
+            audio.PlayAsync(_clickSfx);
         }
     }
 
@@ -101,11 +73,9 @@ public class MainScene(Keyboard keyboard, Mouse mouse, AudioPlayer audio) : Scen
 }
 ```
 
-## プラグインの取得
+### メソッドを用いた取得（安全）
 
 実行時にプラグインのインスタンスを取得することもできます。
-
-### 安全な取得
 
 ```csharp
 public class DynamicScene : Scene
@@ -128,7 +98,8 @@ public class DynamicScene : Scene
 }
 ```
 
-### 直接取得
+### メソッドを用いた取得（例外スローあり）
+`TryGetPlugin`ではなく、存在しない場合に例外をスローする`GetPlugin`も利用できます。
 
 ```csharp
 public class DirectAccessScene : Scene

@@ -9,11 +9,14 @@ sidebar:
 
 Prometeでは、`Texture2D`構造体がテクスチャを表現し、`TextureFactory`クラスがテクスチャの生成と読み込みを担当します。
 
+`TextureFactory` は、`IWindow`インターフェースの`TextureFactory`プロパティを通じてアクセスできます。通常、シーン内では`Window.TextureFactory`で利用します。
+
 ## 基本的なテクスチャ読み込み
+画像ファイルをテクスチャとして読み込む場合、パスを指定するか、`Stream` インスタンスを渡します。
 
-### ファイルからの読み込み
+### ファイルパス
 
-最も一般的なテクスチャの読み込み方法は、画像ファイルから読み込むことです：
+画像ファイルのパスを指定してテクスチャを読み込みます。PNG、JPEG、GIFなどの一般的なフォーマットに対応しています。
 
 ```csharp title="TextureLoadExample.cs"
 using Promete;
@@ -46,9 +49,9 @@ public class TextureLoadExample : Scene
 }
 ```
 
-### ストリームからの読み込み
+### ストリーム
 
-埋め込みリソースやメモリ上のデータからテクスチャを読み込むこともできます：
+埋め込みリソースやメモリ上のデータなど、.NETの `Stream` 型からテクスチャを生成できます。
 
 ```csharp title="StreamLoadExample.cs"
 using System.IO;
@@ -73,14 +76,13 @@ public class StreamLoadExample : Scene
 
 ## スプライトシート
 
-複数の画像を一つのファイルにまとめたスプライトシートを読み込むことができます：
+複数の画像を一つのファイルにまとめたスプライトシートを読み込むことができます。
 
 ```csharp title="SpriteSheetExample.cs"
 using Promete;
 using Promete.Graphics;
 using Promete.Nodes;
 
-[Demo("/graphics/sprite_sheet.demo", "スプライトシートの読み込み")]
 public class SpriteSheetExample : Scene
 {
     private Texture2D[] _iconTextures;
@@ -117,10 +119,11 @@ public class SpriteSheetExample : Scene
 ```
 
 ## プログラムによるテクスチャ生成
+ファイルを用いずに、動的にテクスチャを生成する方法もあります。
 
 ### 単色テクスチャ
 
-プログラムで単色のテクスチャを生成できます：
+`CreateSolid`メソッドを使って、指定した色とサイズの単色テクスチャを生成できます。
 
 ```csharp title="SolidTextureExample.cs"
 using System.Drawing;
@@ -146,7 +149,7 @@ public class SolidTextureExample : Scene
 
 ### ビットマップデータからの生成
 
-ピクセルデータから直接テクスチャを生成することも可能です：
+byte型の3次元配列（縦、横、RGBA）から直接テクスチャを生成することも可能です。
 
 ```csharp title="BitmapTextureExample.cs"
 using System.Drawing;
@@ -183,7 +186,9 @@ public class BitmapTextureExample : Scene
 
 ## 9スライステクスチャ
 
-UIパネルなどで使用される伸縮可能な9スライステクスチャを読み込めます：
+UIパネルなどで使用される伸縮可能な9スライステクスチャを読み込めます。詳しくは [NineSliceSprite](/guide/graphics/nine-slice-sprite/) を参照してください。
+
+この場合、`Texture2D` 構造体ではなく、 `Texture9Sliced` 構造体が返されます。
 
 ```csharp title="NineSliceExample.cs"
 using Promete.Graphics;
@@ -226,7 +231,7 @@ int handle = texture.Handle;
 
 ### 適切な解放
 
-テクスチャは必ず適切に解放してください：
+メモリリークを防ぐために、テクスチャは必ず適切に解放してください。
 
 ```csharp title="ResourceManagement.cs"
 public class ResourceManagement : Scene
@@ -253,26 +258,11 @@ public class ResourceManagement : Scene
 }
 ```
 
-### using文の活用
-
-一時的にテクスチャを使用する場合は`using`文を活用しましょう：
-
-```csharp
-public void CreateTemporarySprite()
-{
-    using var tempTexture = Window.TextureFactory.CreateSolid(Color.Blue, (32, 32));
-    var sprite = new Sprite(tempTexture).Location(200, 200);
-    Root.Add(sprite);
-
-    // using文を抜けるときに自動的にtempTexture.Dispose()が呼ばれる
-}
-```
-
 ## パフォーマンスの考慮事項
 
 ### テクスチャの再利用
 
-同じ画像を複数回使用する場合は、テクスチャを再利用しましょう：
+同じ画像を複数回使用する場合は、テクスチャを再利用しましょう。
 
 ```csharp title="TextureReuse.cs"
 public class TextureReuse : Scene

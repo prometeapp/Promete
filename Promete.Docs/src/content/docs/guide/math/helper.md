@@ -41,7 +41,7 @@ float deg = MathHelper.ToDegree(MathF.PI); // 180
 var pos = MathHelper.Lerp(time, startPos, endPos);
 ```
 
-## 注意点
+## ノート
 
 - timeは0.0～1.0の範囲で指定します
 - ベクトル補間は各成分ごとに計算されます

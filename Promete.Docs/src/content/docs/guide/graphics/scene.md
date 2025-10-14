@@ -9,11 +9,9 @@ sidebar:
 
 Prometeでは、`Scene`抽象クラスを継承してシーンを作成します。各シーンには独自のライフサイクルがあり、適切なタイミングで初期化、更新、破棄が行われます。
 
-## シーンの基本構造
+## シーンの定義
 
-### シーンの定義
-
-シーンを作成するには、`Scene`クラスを継承します：
+`Scene`クラスを継承してシーンを定義します。
 
 ```csharp title="GameScene.cs"
 using Promete;
@@ -44,9 +42,9 @@ public class GameScene(Keyboard keyboard) : Scene
 }
 ```
 
-### ライフサイクルメソッド
+## ライフサイクルメソッド
 
-シーンには以下のライフサイクルメソッドがあります：
+シーンには特定のタイミングで呼び出されるメソッド（ライフサイクルメソッド）があります。
 
 | メソッド名 | 呼び出しタイミング | 用途 |
 |------------|-------------------|------|
@@ -58,7 +56,7 @@ public class GameScene(Keyboard keyboard) : Scene
 
 ## シーンでの依存性注入
 
-Prometeでは、シーンのコンストラクタで依存性注入を利用できます：
+[プラグインシステム](/guide/manual/plugin-system)でも触れていますが、登録したプラグインはコンストラクタ経由でシーンに注入されます。
 
 ```csharp title="ExampleScene.cs"
 using Promete;
@@ -94,7 +92,7 @@ public class ExampleScene(
 
 ## ノードの管理
 
-シーンには`Root`プロパティがあり、このコンテナにノードを追加することで画面に要素を表示できます：
+シーンには`Root`プロパティがあり、このコンテナにノードを追加することで画面に要素を表示できます。
 
 ```csharp title="SpriteScene.cs"
 using Promete;
@@ -133,7 +131,7 @@ public class SpriteScene : Scene
 
 ### 基本的な切り替え
 
-`App.LoadScene<T>()`を使用してシーンを切り替えます：
+`App.LoadScene<T>()` で他のシーンに切り替えます。
 
 ```csharp
 // メインシーンに切り替え
@@ -145,7 +143,9 @@ App.LoadScene<GameScene>();
 
 ### シーンスタックの利用
 
-一時的に他のシーンを表示したい場合は、プッシュ/ポップを使用します：
+シーンスタック機能を使うと、開いたシーンを閉じて元のシーンに戻る、という操作を実現できます。
+
+`PushScene<T>()`で新しいシーンをスタックに積み、`PopScene()`で現在のシーンを閉じて前のシーンに戻ります。
 
 ```csharp
 // 現在のシーンを保持したまま設定画面を開く
@@ -157,7 +157,7 @@ App.PopScene();
 
 ## AppとWindowへのアクセス
 
-シーン内部では、`App`プロパティと`Window`プロパティを使用してアプリケーションとウィンドウにアクセスできます：
+シーン内部では、現在の `PrometeApp` `IWindow` インスタンスにそれぞれ `App` プロパティ、`Window` プロパティでアクセスできます。
 
 ```csharp
 public override void OnStart()
