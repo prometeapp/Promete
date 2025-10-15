@@ -17,14 +17,15 @@ Promete は、.NET 8以降を対象とするゲーム開発フレームワーク
 簡潔なエントリポイントからはじめる、シンプルなAPIを提供します。
 
 ```csharp
+// アプリケーションの初期化
 var app = PrometeApp.Create()
 	.Use<Keyboard>()
-	.Use<Mouse>()
 	.Use<ConsoleLayer>()
 	.BuildWithOpenGLDesktop();
 
 return app.Run<MainScene>();
 
+// ゲームシーンの定義
 public class MainScene
 {
 	private readonly Keyboard _keyboard;
