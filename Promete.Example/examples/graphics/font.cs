@@ -9,8 +9,10 @@ namespace Promete.Example.examples.graphics;
 [Demo("/graphics/font.demo", "フォントの描画例")]
 public class font(Keyboard keyboard, ConsoleLayer console) : Scene
 {
-    private readonly (string name, string path, int size, bool antialias)[] _fontDefinitions =
+    private readonly (string name, string? path, int size, bool antialias)[] _fontDefinitions =
     [
+        ("Default", null, 16, true),
+        ("Default (w/o antialiasing)", null, 16, false),
         ("美咲ゴシック", "assets/MisakiGothic.ttf", 8, false),
         ("JF-Dot-Shinonome14", "assets/JfDotShinonome14.ttf", 14, false),
         ("Koruri", "assets/Koruri.ttf", 16, true)
@@ -24,9 +26,10 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
                                          うつくしい森で飾られたモリーオ市、
                                          郊外のぎらぎらひかる草の波。
 
-                                         でもそれは本当に草なのかな？
-                                         いますぐ確かめてみよう
-                                         まずMicrosoft Storeへ行きアケアカNEOGEO ジョイジョイキッドを購入しましょう
+                                         [↑][↓]キーでフォントを選択
+                                         [Enter]キーでコンソールのフォントを変更
+                                         [D]キーでダークモード/ライトモード切替
+                                         [ESC]キーでメニューに戻る
                                          """, Font.GetDefault(), Color.White);
 
     private int _index;
@@ -37,7 +40,10 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
         var i = 0;
         foreach (var (name, path, size, antialias) in _fontDefinitions)
         {
-            var text = new Text(name, Font.FromFile(path, size, isAntialiased: antialias), Color.White)
+            var font = path == null
+                ? Font.GetDefault(size, FontStyle.Normal, antialias)
+                : Font.FromFile(path, size, isAntialiased: antialias);
+            var text = new Text(name, font, Color.White)
                 .Location(16, 24 + i * 24);
 
             _menuItems.Add(text);
@@ -72,12 +78,20 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
         {
             _isDarkMode = !_isDarkMode;
             _preview.Color = _isDarkMode ? Color.White : Color.Black;
-            _menuItems.ForEach(x => x.Color = _isDarkMode ? Color.White : Color.Black);
+            foreach (var (x, i) in _menuItems.Select((x, i) => (x, i)))
+            {
+                if (i == _index)
+                    x.Color = Color.Red;
+                else
+                    x.Color = _isDarkMode ? Color.White : Color.Black;
+            }
+
             App.BackgroundColor = _isDarkMode ? Color.Black : Color.White;
         }
         else if (keyboard.Enter.IsKeyDown)
         {
             console.Font = _menuItems[_index].Font;
+            console.Clear();
             console.Print($"Set console font to {_fontDefinitions[_index].name}.");
         }
     }
@@ -90,7 +104,10 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
     private void Choose()
     {
         _preview.Font = _menuItems[_index].Font;
-        _menuItems.ForEach(x => x.Location = x.Location with { X = 16 });
-        _menuItems[_index].Location = _menuItems[_index].Location with { X = 24 };
+        _menuItems.ForEach(x =>
+        {
+            x.Color = _isDarkMode ? Color.White : Color.Black;
+        });
+        _menuItems[_index].Color = Color.Red;
     }
 }
