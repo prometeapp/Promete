@@ -130,6 +130,10 @@ dotnet build
 ## サポート中のバージョンとポリシー
 [サポート状況とポリシー](SUPPORT.md) をご確認ください。
 
+## LLM向けの情報
+コーディング支援用のLLM向けに専用のドキュメントを用意しています。
+[LLM向けドキュメント](docs-llm.md) をプロジェクトにコピーし、ご利用ください。
+
 ## ライセンス
 [![License](https://img.shields.io/github/license/ebiselutica/promete.svg?style=for-the-badge)](LICENSE)
 
