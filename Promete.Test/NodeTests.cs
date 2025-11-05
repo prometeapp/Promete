@@ -58,4 +58,23 @@ public class NodeTests
         container.Count.Should().Be(1);
         child.Parent.Should().Be(container);
     }
+
+    [Fact]
+    public void InsertNodeWithExistingParent_ShouldMoveNode()
+    {
+        // Arrange
+        var oldParent = new Container();
+        var newParent = new Container();
+        var child = new Container();
+        
+        oldParent.Add(child);
+
+        // Act
+        newParent.Insert(0, child);
+
+        // Assert
+        oldParent.Count.Should().Be(0);
+        newParent.Count.Should().Be(1);
+        child.Parent.Should().Be(newParent);
+    }
 }

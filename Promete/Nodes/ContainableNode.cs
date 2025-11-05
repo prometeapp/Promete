@@ -102,7 +102,7 @@ public abstract class ContainableNode : Node
             throw new ArgumentException("ノードの子要素に自分自身を追加することはできません。", nameof(node));
         }
 
-        node.Parent?.Remove(this);
+        node.Parent?.Remove(node);
 
         children.Insert(index, node);
         node.Parent = this;
