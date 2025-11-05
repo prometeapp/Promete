@@ -1,10 +1,19 @@
 using FluentAssertions;
 using Promete.Headless;
+using System.Reflection;
 
 namespace Promete.Test;
 
 public class ScenelessRunTests
 {
+    /// <summary>
+    /// DefaultScene の型を取得するヘルパーメソッド
+    /// </summary>
+    private static Type GetDefaultSceneType()
+    {
+        return typeof(PrometeApp).GetNestedType("DefaultScene", BindingFlags.NonPublic)!;
+    }
+
     [Fact]
     public void Run_WithoutScene_ShouldHaveValidRoot()
     {
@@ -12,12 +21,9 @@ public class ScenelessRunTests
         var app = PrometeApp.Create()
             .BuildWithHeadless();
 
-        // DefaultSceneの型を取得する
-        var defaultSceneType = typeof(PrometeApp).GetNestedType("DefaultScene", System.Reflection.BindingFlags.NonPublic)!;
-
         // OnStartを手動で呼び出してDefaultSceneをロード
-        var onStartMethod = typeof(PrometeApp).GetMethod("OnStart", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        var genericOnStartMethod = onStartMethod.MakeGenericMethod(defaultSceneType);
+        var onStartMethod = typeof(PrometeApp).GetMethod("OnStart", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var genericOnStartMethod = onStartMethod.MakeGenericMethod(GetDefaultSceneType());
         genericOnStartMethod.Invoke(app, null);
 
         // Assert
@@ -46,14 +52,11 @@ public class ScenelessRunTests
         var app = PrometeApp.Create()
             .BuildWithHeadless();
 
-        // DefaultSceneの型を取得する
-        var defaultSceneType = typeof(PrometeApp).GetNestedType("DefaultScene", System.Reflection.BindingFlags.NonPublic)!;
-
         // Act - DefaultSceneのロードを試みる
-        var loadSceneMethod = typeof(PrometeApp).GetMethod("LoadScene", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, [typeof(Type)])!;
+        var loadSceneMethod = typeof(PrometeApp).GetMethod("LoadScene", BindingFlags.Public | BindingFlags.Instance, [typeof(Type)])!;
         
         // Assert - 例外がスローされないことを確認
-        var act = () => loadSceneMethod.Invoke(app, [defaultSceneType]);
+        var act = () => loadSceneMethod.Invoke(app, [GetDefaultSceneType()]);
         act.Should().NotThrow("DefaultScene should be registered and loadable");
     }
 }
