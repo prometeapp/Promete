@@ -7,6 +7,9 @@
 packages/
 TestResults/
 
+# Node.js
+node_modules/
+
 # globs
 Makefile.in
 *.DS_Store
