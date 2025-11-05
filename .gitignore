@@ -7,6 +7,10 @@
 packages/
 TestResults/
 
+# Node.js
+node_modules/
+package-lock.json
+
 # globs
 Makefile.in
 *.DS_Store

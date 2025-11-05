@@ -42,14 +42,13 @@ public class NextFrameTests
         executionOrder.Should().Contain("NextFrame_Action", "NextFrame should execute in the next frame");
         
         // 実行順序を確認
-        var expectedOrder = new[]
-        {
+        string[] expectedOrder = [
             "Frame1_Start",
             "Frame1_End",
             "Frame2_BeforeUpdate",
             "NextFrame_Action",    // OnUpdateの最初に実行される
             "Frame2_AfterUpdate"
-        };
+        ];
         
         executionOrder.Should().Equal(expectedOrder);
     }
@@ -76,6 +75,6 @@ public class NextFrameTests
         InvokeOnUpdate(app);
         
         // すべてのアクションが順序通りに実行される
-        executionOrder.Should().Equal("Action1", "Action2", "Action3");
+        executionOrder.Should().Equal(["Action1", "Action2", "Action3"]);
     }
 }
