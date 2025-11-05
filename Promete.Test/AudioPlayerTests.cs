@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Promete.Audio;
+using Promete.Headless;
 
 namespace Promete.Test;
 
@@ -16,6 +17,7 @@ public class AudioPlayerTests
     [Fact]
     public void PlayAndStop()
     {
+        using var app = PrometeApp.Create().BuildWithHeadless();
         using var audioPlayer = new AudioPlayer();
         using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
 
@@ -29,6 +31,7 @@ public class AudioPlayerTests
     [Fact]
     public void PauseAndResume()
     {
+        using var app = PrometeApp.Create().BuildWithHeadless();
         using var audioPlayer = new AudioPlayer();
         using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
 

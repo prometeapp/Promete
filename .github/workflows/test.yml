@@ -16,8 +16,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install OpenAL
-      run: sudo apt-get update && sudo apt-get install -y libopenal1
+    - name: Install OpenAL and audio dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenal1 pulseaudio
+        pulseaudio --start --exit-idle-time=-1
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
