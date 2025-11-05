@@ -5,6 +5,15 @@ namespace Promete.Test;
 
 public class NextFrameTests
 {
+    /// <summary>
+    /// PrometeAppのOnUpdateメソッドを呼び出すヘルパーメソッド
+    /// </summary>
+    private static void InvokeOnUpdate(PrometeApp app)
+    {
+        var onUpdateMethod = typeof(PrometeApp).GetMethod("OnUpdate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        onUpdateMethod.Invoke(app, null);
+    }
+
     [Fact]
     public void NextFrame_ShouldExecuteInNextFrame_NotCurrentFrame()
     {
@@ -16,9 +25,6 @@ public class NextFrameTests
         var app = PrometeApp.Create()
             .BuildWithHeadless();
         
-        // OnUpdateメソッドを取得（privateメソッドをリフレクションで呼び出す）
-        var onUpdateMethod = typeof(PrometeApp).GetMethod("OnUpdate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        
         // フレーム1: NextFrameを呼び出す
         executionOrder.Add("Frame1_Start");
         app.NextFrame(() => executionOrder.Add("NextFrame_Action"));
@@ -29,7 +35,7 @@ public class NextFrameTests
         
         // フレーム2: OnUpdateを呼び出す（NextFrameのアクションが実行される）
         executionOrder.Add("Frame2_BeforeUpdate");
-        onUpdateMethod.Invoke(app, null);
+        InvokeOnUpdate(app);
         executionOrder.Add("Frame2_AfterUpdate");
         
         // フレーム2でNextFrameアクションが実行されたはず
@@ -58,8 +64,6 @@ public class NextFrameTests
         var app = PrometeApp.Create()
             .BuildWithHeadless();
         
-        var onUpdateMethod = typeof(PrometeApp).GetMethod("OnUpdate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        
         // 複数のNextFrameアクションをエンキュー
         app.NextFrame(() => executionOrder.Add("Action1"));
         app.NextFrame(() => executionOrder.Add("Action2"));
@@ -69,7 +73,7 @@ public class NextFrameTests
         executionOrder.Should().BeEmpty();
         
         // 次のフレームで実行
-        onUpdateMethod.Invoke(app, null);
+        InvokeOnUpdate(app);
         
         // すべてのアクションが順序通りに実行される
         executionOrder.Should().Equal("Action1", "Action2", "Action3");
