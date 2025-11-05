@@ -137,6 +137,25 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
+    /// Promete アプリケーションをシーンなしで実行します。
+    /// </summary>
+    /// <returns>終了ステータスコード。</returns>
+    public int Run()
+    {
+        return Run(WindowOptions.Default);
+    }
+
+    /// <summary>
+    /// Promete アプリケーションをシーンなしで実行します。
+    /// </summary>
+    /// <param name="opts">ウィンドウのオプション。</param>
+    /// <returns>終了ステータスコード。</returns>
+    public int Run(WindowOptions opts)
+    {
+        return Run<DefaultScene>(opts);
+    }
+
+    /// <summary>
     /// 指定したステータスコードで Promete アプリケーションを終了します。
     /// </summary>
     /// <param name="status">ステータスコード。</param>
@@ -379,6 +398,9 @@ public sealed class PrometeApp : IDisposable
 
     private void RegisterAllScenes()
     {
+        // DefaultScene を明示的に登録
+        _services.AddTransient<DefaultScene>();
+        
         var asm = Assembly.GetEntryAssembly() ?? throw new InvalidOperationException("There is no entry assembly.");
         // Scene 派生クラスを全て取得する
         var types = asm.GetTypes();
@@ -402,6 +424,14 @@ public sealed class PrometeApp : IDisposable
     /// シーンが変更される直前に呼び出されるイベントです。
     /// </summary>
     public event Action? SceneWillChange;
+
+    /// <summary>
+    /// シーンを使用せずにアプリケーションを実行する際に使用されるデフォルトの空のシーン。
+    /// </summary>
+    [IgnoredScene]
+    private sealed class DefaultScene : Scene
+    {
+    }
 
     /// <summary>
     /// Promete アプリケーションを構築するためのビルダークラスです。
