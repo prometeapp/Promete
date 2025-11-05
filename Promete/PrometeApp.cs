@@ -328,12 +328,13 @@ public sealed class PrometeApp : IDisposable
 
     private void OnUpdate()
     {
+        // 前のフレームでエンキューされたアクションを実行
+        ProcessNextFrameQueue();
+
         UpdateNode(GlobalBackground);
         if (Root != null) UpdateNode(Root);
         UpdateNode(GlobalForeground);
         _currentScene?.OnUpdate();
-
-        ProcessNextFrameQueue();
     }
 
     private void OnRender()
