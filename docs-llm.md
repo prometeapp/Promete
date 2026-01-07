@@ -54,6 +54,7 @@ dotnet add package Promete
 ```csharp
 using Promete;
 using Promete.Windowing;
+using Promete.GLDesktop;
 
 // アプリケーションの作成
 var app = PrometeApp.Create()
@@ -77,11 +78,28 @@ public class MainScene : Scene
 }
 ```
 
+### シーンなしでの起動
+
+v1.1.0以降、シーンを指定せずにPrometeを起動できます：
+
+```csharp
+using Promete;
+using Promete.GLDesktop;
+
+var app = PrometeApp.Create()
+    .Use<ConsoleLayer>()
+    .BuildWithOpenGLDesktop();
+
+// シーンなしで起動
+return app.Run();
+```
+
 ### Hello World (ConsoleLayerを使用)
 
 ```csharp
 using Promete;
 using Promete.Windowing;
+using Promete.GLDesktop;
 
 var app = PrometeApp.Create()
     .Use<ConsoleLayer>()  // コンソール機能を有効化
@@ -116,6 +134,13 @@ PrometeApp app = PrometeApp.Current;
 // ウィンドウへのアクセス
 IWindow window = app.Window;
 
+// グローバルコンテナ（シーン切り替えで破棄されない）
+Container globalBg = app.GlobalBackground;   // 背景レイヤー
+Container globalFg = app.GlobalForeground;   // 前景レイヤー
+
+// 背景色
+app.BackgroundColor = Color.Black;
+
 // シーン管理
 app.LoadScene<NewScene>();       // シーンを切り替え
 app.PushScene<OverlayScene>();   // 現在のシーンの上に新しいシーンを積む
@@ -128,7 +153,7 @@ bool hasKeyboard = app.TryGetPlugin<Keyboard>(out var kb);
 // アプリケーション終了
 app.Exit();
 
-// 次のフレームでアクションを実行
+// 次のフレームでアクションを実行（イテレーション中のコレクション変更を防ぐ）
 app.NextFrame(() => { /* 処理 */ });
 ```
 
@@ -341,7 +366,7 @@ window.FileDropped += (sender, e) =>
 - **原点**: 画面左上が (0, 0)
 - **X軸**: 右方向が正
 - **Y軸**: 下方向が正
-- **角度**: 時計回りが正（ラジアン）
+- **角度**: 時計回りが正（度数 0-360°）
 
 #### 標準ノードタイプ
 
@@ -360,7 +385,7 @@ window.FileDropped += (sender, e) =>
 // 位置・変形
 node.Location = (100, 200);      // 位置（Vector型）
 node.Scale = (2.0f, 2.0f);       // スケール（Vector型）
-node.Angle = MathF.PI / 4;       // 回転角度（ラジアン、float型）
+node.Angle = 45;                 // 回転角度（度数 0-360°、float型）
 node.Pivot = (0.5f, 0.5f);       // 回転・スケールの中心点（0-1の相対座標）
 
 // サイズ
@@ -392,7 +417,7 @@ float absAngle = node.AbsoluteAngle;
 var sprite = new Sprite(texture)
     .Location(100, 200)
     .Scale(2.0f)
-    .Angle(45 * MathF.PI / 180)
+    .Angle(45)  // 45度
     .Pivot(0.5f, 0.5f)
     .ZIndex(10)
     .Visible(true);
@@ -406,7 +431,7 @@ var sprite = new Sprite(texture)
 var parent = new Container()
     .Location(200, 100)
     .Scale(2.0f)
-    .Angle(30 * MathF.PI / 180);
+    .Angle(30);  // 30度
 
 var child = new Sprite(texture)
     .Location(50, 0);  // 親からの相対座標
@@ -415,6 +440,9 @@ parent.Add(child);
 
 // childの実際の位置: 親の変形を適用した結果
 // 絶対座標は child.AbsoluteLocation で取得可能
+
+// 重要: ノードを自身の子として追加することはできません
+// parent.Add(parent); // ArgumentException がスローされる
 ```
 
 #### ライフサイクル
@@ -754,21 +782,21 @@ public class GameScene(Mouse mouse) : Scene
 {
     public override void OnUpdate()
     {
-        // マウス位置
-        Vector position = mouse.Position;
+        // マウス位置（VectorInt型）
+        VectorInt position = mouse.Position;
 
-        // ボタンの状態
-        if (mouse.Left.IsButtonDown)     // クリックした瞬間
+        // ボタンの状態（インデクサ経由でアクセス）
+        if (mouse[MouseButtonType.Left].IsButtonDown)     // クリックした瞬間
             OnClick(mouse.Position);
 
-        if (mouse.Right.IsPressed)       // 押されている
+        if (mouse[MouseButtonType.Right].IsPressed)       // 押されている
             OnRightDrag(mouse.Position);
 
-        if (mouse.Middle.IsButtonUp)     // 離した瞬間
+        if (mouse[MouseButtonType.Middle].IsButtonUp)     // 離した瞬間
             OnMiddleRelease();
 
-        // ホイール
-        float scroll = mouse.Scroll;
+        // ホイール（Vector型）
+        Vector scroll = mouse.Scroll;
     }
 }
 ```
@@ -788,12 +816,12 @@ float time = btn.ElapsedTime;           // 押されてからの時間
 #### API
 
 ```csharp
-Vector pos = mouse.Position;      // マウス座標
-float scroll = mouse.Scroll;      // ホイールの変化量
+VectorInt pos = mouse.Position;   // マウス座標（VectorInt型）
+Vector scroll = mouse.Scroll;     // ホイールの変化量（Vector型）
 
-MouseButton left = mouse.Left;    // 左ボタン
-MouseButton right = mouse.Right;  // 右ボタン
-MouseButton middle = mouse.Middle; // 中ボタン
+MouseButton left = mouse[MouseButtonType.Left];    // 左ボタン
+MouseButton right = mouse[MouseButtonType.Right];  // 右ボタン
+MouseButton middle = mouse[MouseButtonType.Middle]; // 中ボタン
 ```
 
 ### Gamepads（ゲームパッド）
@@ -1066,11 +1094,13 @@ RectInt ri2 = (10, 20, 100, 50);
 float lerp = MathHelper.Lerp(0.5f, start, end);
 
 // 角度変換
-float radians = MathHelper.ToRadians(180);  // 180度をラジアンに
-float degrees = MathHelper.ToDegrees(MathF.PI);  // ラジアンを度に
+float radians = MathHelper.ToRadian(180);  // 180度をラジアンに
+float degrees = MathHelper.ToDegree(MathF.PI);  // ラジアンを度に
 
-// クランプ
-float clamped = MathHelper.Clamp(value, min, max);
+// イージング関数
+float easeIn = MathHelper.EaseIn(0.5f, start, end);
+float easeOut = MathHelper.EaseOut(0.5f, start, end);
+float easeInOut = MathHelper.EaseInOut(0.5f, start, end);
 ```
 
 ---
@@ -1264,12 +1294,14 @@ public class CustomAudioSource : IAudioSource
 
 ```csharp
 // PrometeApp
+int Run<TScene>() where TScene : Scene  // シーンを指定して実行
+int Run()                                // シーンなしで実行（v1.1.0以降）
 void LoadScene<T>() where T : Scene
 void PushScene<T>() where T : Scene
-void PopScene()
-T? GetPlugin<T>() where T : class
-bool TryGetPlugin<T>(out T plugin) where T : class
-void Exit()
+bool PopScene()
+T GetPlugin<T>() where T : class
+bool TryGetPlugin<T>(out T? plugin) where T : class
+void Exit(int status = 0)
 void NextFrame(Action action)
 
 // Scene
@@ -1339,6 +1371,7 @@ using Promete.Graphics;
 using Promete.Input;
 using Promete.Audio;
 using Promete.Nodes;
+using Promete.GLDesktop;
 
 // アプリケーション初期化
 var app = PrometeApp.Create()
