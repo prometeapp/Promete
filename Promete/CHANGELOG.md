@@ -1,4 +1,7 @@
-﻿## 1.2.1
+﻿## 1.2.2
+- 特別なインターフェイス（IInitializable, IUpdatable, IDisposable）を複数実装していても、そのうち1つしかメソッドが呼ばれない不具合を修正
+
+## 1.2.1
 - Keyboard.ClipboardText プロパティを追加
     - 現在のクリップボード上の値を取得/設定できます
     - Silk.NET の不具合により、一部環境で非ASCII文字が文字化けします
