@@ -85,18 +85,9 @@ public sealed class PrometeApp : IDisposable
         // プラグインのインスタンスを取得し、インターフェース実装によって分類
         foreach (var instance in pluginTypes.Select(type => _provider.GetService(type)).OfType<object>())
         {
-            switch (instance)
-            {
-                case IInitializable initializable:
-                    _initializablePlugins.Add(initializable);
-                    break;
-                case IUpdatable updatable:
-                    _updatablePlugins.Add(updatable);
-                    break;
-                case IDisposable disposable:
-                    _disposablePlugins.Add(disposable);
-                    break;
-            }
+            if (instance is IInitializable initializable) _initializablePlugins.Add(initializable);
+            if (instance is IUpdatable updatable) _updatablePlugins.Add(updatable);
+            if (instance is IDisposable disposable) _disposablePlugins.Add(disposable);
         }
 
         Current = this;
