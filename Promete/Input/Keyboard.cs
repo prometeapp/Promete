@@ -14,23 +14,6 @@ namespace Promete.Input;
 /// </summary>
 public sealed partial class Keyboard
 {
-    private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
-
-    private readonly Queue<char> _keyChars = new();
-    private readonly IWindow _window;
-
-    private IKeyboard? _currentKeyboard;
-
-    public Keyboard(IWindow window)
-    {
-        _window = window;
-        TryFindKeyboard();
-
-        window.PreUpdate += OnPreUpdate;
-        window.PostUpdate += OnPostUpdate;
-        window.Destroy += OnDestroy;
-    }
-
     /// <summary>
     /// 存在する全てのキーコードを列挙します。
     /// </summary>
@@ -50,6 +33,34 @@ public sealed partial class Keyboard
     /// このフレームで離された全てのキーを列挙します。
     /// </summary>
     public IEnumerable<KeyCode> AllUpKeys => _allCodes.Where(c => KeyOf(c).IsKeyUp);
+
+    /// <summary>
+    /// クリップボード上のテキストを取得または設定します。
+    /// </summary>
+    public string? ClipboardText
+    {
+        get => _currentKeyboard?.ClipboardText;
+        set
+        {
+            if (value == null || _currentKeyboard == null) return;
+            _currentKeyboard.ClipboardText = value;
+        }
+    }
+
+    private IKeyboard? _currentKeyboard;
+    private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
+    private readonly Queue<char> _keyChars = new();
+    private readonly IWindow _window;
+
+    public Keyboard(IWindow window)
+    {
+        _window = window;
+        TryFindKeyboard();
+
+        window.PreUpdate += OnPreUpdate;
+        window.PostUpdate += OnPostUpdate;
+        window.Destroy += OnDestroy;
+    }
 
     /// <summary>
     /// キーボードバッファに蓄積されている、入力された文字列を取得します。
