@@ -12,7 +12,7 @@ namespace Promete.Input;
 /// <summary>
 /// キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed partial class Keyboard
+public sealed partial class Keyboard : IInitializable, IUpdatable
 {
     /// <summary>
     /// 存在する全てのキーコードを列挙します。
@@ -55,9 +55,7 @@ public sealed partial class Keyboard
     public Keyboard(IWindow window)
     {
         _window = window;
-        TryFindKeyboard();
 
-        window.PreUpdate += OnPreUpdate;
         window.PostUpdate += OnPostUpdate;
         window.Destroy += OnDestroy;
     }
@@ -110,7 +108,12 @@ public sealed partial class Keyboard
         _currentKeyboard?.EndInput();
     }
 
-    private void OnPreUpdate()
+    public void OnStart()
+    {
+        TryFindKeyboard();
+    }
+
+    public void OnUpdate()
     {
         if (_currentKeyboard is { IsConnected: false })
         {
@@ -147,7 +150,6 @@ public sealed partial class Keyboard
 
     private void OnDestroy()
     {
-        _window.PreUpdate -= OnPreUpdate;
         _window.PostUpdate -= OnPostUpdate;
         _window.Destroy -= OnDestroy;
     }

@@ -9,7 +9,7 @@ namespace Promete.Input;
 /// <summary>
 /// マウスカーソルの位置や、ボタン入力、ホイールスクロールの情報を取得する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed class Mouse
+public sealed class Mouse : IUpdatable
 {
     private readonly MouseButton[] _buttons;
 
@@ -22,12 +22,6 @@ public sealed class Mouse
     {
         _window = window;
 
-        var input = window._RawInputContext ??
-                    throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
-
-        if (input.Mice.Count == 0) return;
-
-        window.PreUpdate += OnPreUpdate;
         window.PostUpdate += OnPostUpdate;
         window.Destroy += OnDestroy;
 
@@ -57,7 +51,7 @@ public sealed class Mouse
     /// <param name="type">ボタンタイプ。</param>
     public MouseButton this[MouseButtonType type] => _buttons[(int)type];
 
-    private void OnPreUpdate()
+    public void OnUpdate()
     {
         UpdateMouseDevice();
         if (_mouse == null) return;
@@ -85,7 +79,6 @@ public sealed class Mouse
 
     private void OnDestroy()
     {
-        _window.PreUpdate -= OnPreUpdate;
         _window.PostUpdate -= OnPostUpdate;
         _window.Destroy -= OnDestroy;
 

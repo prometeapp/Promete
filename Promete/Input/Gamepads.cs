@@ -7,9 +7,10 @@ namespace Promete.Input;
 /// <summary>
 /// 接続されたゲームパッドの入力を取得する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed class Gamepads
+public sealed class Gamepads : IInitializable
 {
-    private readonly IInputContext _input;
+    private IInputContext _input;
+
     private readonly List<Gamepad> _pads = [];
 
     private readonly IWindow _window;
@@ -21,7 +22,11 @@ public sealed class Gamepads
     public Gamepads(IWindow window)
     {
         _window = window;
-        _input = window._RawInputContext!;
+    }
+
+    public void OnStart()
+    {
+        _input = _window._RawInputContext!;
         UpdateGamepads();
 
         _input.ConnectionChanged += OnConnectionChanged;

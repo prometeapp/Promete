@@ -7,7 +7,7 @@ using System.Linq;
 namespace Promete.Nodes;
 
 /// <summary>
-/// 子ノードを含むことができる抽象ノードクラスです。
+/// 子ノードを含められる抽象ノードクラスです。
 /// </summary>
 public abstract class ContainableNode : Node
 {

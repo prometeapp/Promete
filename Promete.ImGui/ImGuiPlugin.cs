@@ -10,11 +10,11 @@ namespace Promete.ImGui;
 /// ImGUI との連携を提供する Promete プラグインです。起動時のカスタマイズが必要な場合は、継承し、OnConfigureメソッドをオーバーライドしてください。
 /// 本プラグインは、Prometeが OpenGL デスクトップバックエンドである場合にのみ使用できます。
 /// </summary>
-public class ImGuiPlugin
+public class ImGuiPlugin : IInitializable
 {
-    private readonly PrometeApp _app;
+    private ImGuiController _controller;
 
-    private readonly ImGuiController _controller;
+    private readonly PrometeApp _app;
     private readonly IWindow _window;
 
     /// <summary>
@@ -27,14 +27,18 @@ public class ImGuiPlugin
     {
         _window = window;
         _app = app;
-        // PrometeがOpenGLバックエンドでなければ例外をスローする
-        if (window is not OpenGLDesktopWindow glWindow)
-            throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
-
-        _controller = new ImGuiController(glWindow.GL, glWindow.NativeWindow, window._RawInputContext, OnConfigure);
 
         _window.Destroy += OnWindowDestroy;
         _window.Render += OnWindowRender;
+    }
+
+    public void OnStart()
+    {
+        // PrometeがOpenGLバックエンドでなければ例外をスローする
+        if (_window is not OpenGLDesktopWindow glWindow)
+            throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
+
+        _controller = new ImGuiController(glWindow.GL, glWindow.NativeWindow, glWindow._RawInputContext, OnConfigure);
     }
 
     /// <summary>

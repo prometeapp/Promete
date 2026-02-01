@@ -11,19 +11,17 @@ namespace Promete;
 /// <summary>
 /// 画面上に簡易な文字出力を行うレイヤーを提供する Promete プラグインです。
 /// </summary>
-public class ConsoleLayer
+public class ConsoleLayer : IInitializable
 {
     private readonly List<string> _consoleBuffer = [];
 
-    private readonly Text _text;
     private readonly IWindow _window;
+    private Text _text;
     private int _maxLine;
 
     public ConsoleLayer(PrometeApp app, IWindow window)
     {
         _window = window;
-        _text = new Text("", Font.GetDefault(), Color.White);
-        _maxLine = CalculateMaxLine();
 
         app.SceneWillChange += Clear;
         window.Update += () => { _text.Update(); };
@@ -55,6 +53,12 @@ public class ConsoleLayer
     /// 現在の文字色を取得または設定します。
     /// </summary>
     public Color TextColor { get; set; } = Color.White;
+
+    public void OnStart()
+    {
+        _text = new Text("", Font.GetDefault(), Color.White);
+        _maxLine = CalculateMaxLine();
+    }
 
     /// <summary>
     /// コンソール上の文字列を完全に消去します。

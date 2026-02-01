@@ -474,6 +474,13 @@ public sealed class PrometeApp : IDisposable
         private readonly ServiceCollection _services;
         private readonly List<Type> _pluginTypes = [];
 
+        private static readonly List<Type> SpecializedPluginInterfaceTypes =
+        [
+            typeof(IInitializable),
+            typeof(IUpdatable),
+            typeof(IDisposable),
+        ];
+
         internal PrometeAppBuilder()
         {
             _services = [];
@@ -487,7 +494,7 @@ public sealed class PrometeApp : IDisposable
         public PrometeAppBuilder Use<T>() where T : class
         {
             _services.AddSingleton<T>();
-            _pluginTypes.Add(typeof(T));
+            CheckAndAddPluginTypes(typeof(T));
             return this;
         }
 
@@ -500,7 +507,7 @@ public sealed class PrometeApp : IDisposable
         public PrometeAppBuilder Use<TPlugin, TImpl>() where TPlugin : class where TImpl : class, TPlugin
         {
             _services.AddSingleton<TPlugin, TImpl>();
-            _pluginTypes.Add(typeof(TImpl));
+            CheckAndAddPluginTypes(typeof(TImpl));
             return this;
         }
 
@@ -527,6 +534,17 @@ public sealed class PrometeApp : IDisposable
         {
             _services.AddSingleton(typeof(IWindow), typeof(TWindow));
             return new PrometeApp(_services, _rendererTypes, _pluginTypes);
+        }
+
+        /// <summary>
+        /// プラグインが特殊なインターフェイスを実装しているかどうかを確認し、そうであればリストに追加します。
+        /// </summary>
+        private void CheckAndAddPluginTypes(Type t)
+        {
+            if (SpecializedPluginInterfaceTypes.Any(t.IsAssignableTo))
+            {
+                _pluginTypes.Add(t);
+            }
         }
     }
 }
