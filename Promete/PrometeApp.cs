@@ -66,8 +66,11 @@ public sealed class PrometeApp : IDisposable
     private readonly ServiceCollection _services;
     private readonly Dictionary<Type, NodeRendererBase?> _renderers = new();
     private readonly Dictionary<Type, Type> _rendererTypes;
+    private readonly List<IInitializable> _initializablePlugins = [];
+    private readonly List<IUpdatable> _updatablePlugins = [];
+    private readonly List<IDisposable> _disposablePlugins = [];
 
-    private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes)
+    private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes, List<Type> pluginTypes)
     {
         _mainThread = Thread.CurrentThread;
 
@@ -78,6 +81,23 @@ public sealed class PrometeApp : IDisposable
         services.AddSingleton<FrameBufferManager>();
 
         _provider = services.BuildServiceProvider();
+
+        // プラグインのインスタンスを取得し、インターフェース実装によって分類
+        foreach (var instance in pluginTypes.Select(type => _provider.GetService(type)).OfType<object>())
+        {
+            switch (instance)
+            {
+                case IInitializable initializable:
+                    _initializablePlugins.Add(initializable);
+                    break;
+                case IUpdatable updatable:
+                    _updatablePlugins.Add(updatable);
+                    break;
+                case IDisposable disposable:
+                    _disposablePlugins.Add(disposable);
+                    break;
+            }
+        }
 
         Current = this;
         Window = _provider.GetService<IWindow>() ??
@@ -99,6 +119,8 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public void Dispose()
     {
+        foreach (var plugin in _disposablePlugins)
+            plugin.Dispose();
         _provider.Dispose();
     }
 
@@ -342,6 +364,10 @@ public sealed class PrometeApp : IDisposable
             _renderers[nodeType] = _provider.GetService(rendererType) as NodeRendererBase ??
                                    throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
 
+        // プラグインの初期化
+        foreach (var plugin in _initializablePlugins)
+            plugin.OnStart();
+
         LoadScene<TScene>();
     }
 
@@ -349,6 +375,10 @@ public sealed class PrometeApp : IDisposable
     {
         // 前のフレームでエンキューされたアクションを実行
         ProcessNextFrameQueue();
+
+        // プラグインの更新
+        foreach (var plugin in _updatablePlugins)
+            plugin.OnUpdate();
 
         UpdateNode(GlobalBackground);
         if (Root != null) UpdateNode(Root);
@@ -367,6 +397,8 @@ public sealed class PrometeApp : IDisposable
     {
         _currentScene?.OnDestroy();
         ClearSceneStack();
+
+        Dispose();
     }
 
     private void ProcessNextFrameQueue()
@@ -400,7 +432,7 @@ public sealed class PrometeApp : IDisposable
     {
         // DefaultScene を明示的に登録
         _services.AddTransient<DefaultScene>();
-        
+
         var asm = Assembly.GetEntryAssembly() ?? throw new InvalidOperationException("There is no entry assembly.");
         // Scene 派生クラスを全て取得する
         var types = asm.GetTypes();
@@ -440,6 +472,7 @@ public sealed class PrometeApp : IDisposable
     {
         private readonly Dictionary<Type, Type> _rendererTypes = [];
         private readonly ServiceCollection _services;
+        private readonly List<Type> _pluginTypes = [];
 
         internal PrometeAppBuilder()
         {
@@ -454,6 +487,7 @@ public sealed class PrometeApp : IDisposable
         public PrometeAppBuilder Use<T>() where T : class
         {
             _services.AddSingleton<T>();
+            _pluginTypes.Add(typeof(T));
             return this;
         }
 
@@ -466,6 +500,7 @@ public sealed class PrometeApp : IDisposable
         public PrometeAppBuilder Use<TPlugin, TImpl>() where TPlugin : class where TImpl : class, TPlugin
         {
             _services.AddSingleton<TPlugin, TImpl>();
+            _pluginTypes.Add(typeof(TImpl));
             return this;
         }
 
@@ -491,7 +526,7 @@ public sealed class PrometeApp : IDisposable
         public PrometeApp Build<TWindow>() where TWindow : IWindow
         {
             _services.AddSingleton(typeof(IWindow), typeof(TWindow));
-            return new PrometeApp(_services, _rendererTypes);
+            return new PrometeApp(_services, _rendererTypes, _pluginTypes);
         }
     }
 }
