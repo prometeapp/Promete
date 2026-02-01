@@ -22,7 +22,7 @@
         <Description>ImGui support for Promete
         </Description>
         <Authors>Ebise Lutica</Authors>
-        <Copyright>(C)2024 Promete Developers</Copyright>
+        <Copyright>(C)2024-2026 Promete Developers</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/prometeapp/Promete</PackageProjectUrl>
         <RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
