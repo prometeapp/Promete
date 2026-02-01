@@ -12,7 +12,7 @@ namespace Promete.Input;
 /// <summary>
 /// キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed partial class Keyboard : IInitializable, IUpdatable
+public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatable
 {
     /// <summary>
     /// 存在する全てのキーコードを列挙します。
@@ -50,15 +50,6 @@ public sealed partial class Keyboard : IInitializable, IUpdatable
     private IKeyboard? _currentKeyboard;
     private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
     private readonly Queue<char> _keyChars = new();
-    private readonly IWindow _window;
-
-    public Keyboard(IWindow window)
-    {
-        _window = window;
-
-        window.PostUpdate += OnPostUpdate;
-        window.Destroy += OnDestroy;
-    }
 
     /// <summary>
     /// キーボードバッファに蓄積されている、入力された文字列を取得します。
@@ -110,6 +101,9 @@ public sealed partial class Keyboard : IInitializable, IUpdatable
 
     public void OnStart()
     {
+        window.PostUpdate += OnPostUpdate;
+        window.Destroy += OnDestroy;
+
         TryFindKeyboard();
     }
 
@@ -134,7 +128,7 @@ public sealed partial class Keyboard : IInitializable, IUpdatable
             var key = KeyOf(keyCode);
             key.IsPressed = isPressed;
             key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
-            key.ElapsedTime = isPressed ? key.ElapsedTime + _window.DeltaTime : 0;
+            key.ElapsedTime = isPressed ? key.ElapsedTime + window.DeltaTime : 0;
         });
     }
 
@@ -150,14 +144,14 @@ public sealed partial class Keyboard : IInitializable, IUpdatable
 
     private void OnDestroy()
     {
-        _window.PostUpdate -= OnPostUpdate;
-        _window.Destroy -= OnDestroy;
+        window.PostUpdate -= OnPostUpdate;
+        window.Destroy -= OnDestroy;
     }
 
     private void TryFindKeyboard()
     {
-        var input = _window._RawInputContext ??
-                    throw new InvalidOperationException($"{nameof(_window._RawInputContext)} is null.");
+        var input = window._RawInputContext ??
+                    throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
         if (input.Keyboards.Count == 0) return;
 
         _currentKeyboard = input.Keyboards[0];

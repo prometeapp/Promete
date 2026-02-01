@@ -11,24 +11,12 @@ namespace Promete;
 /// <summary>
 /// 画面上に簡易な文字出力を行うレイヤーを提供する Promete プラグインです。
 /// </summary>
-public class ConsoleLayer : IInitializable
+public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
 {
     private readonly List<string> _consoleBuffer = [];
 
-    private readonly IWindow _window;
     private Text _text;
     private int _maxLine;
-
-    public ConsoleLayer(PrometeApp app, IWindow window)
-    {
-        _window = window;
-
-        app.SceneWillChange += Clear;
-        window.Update += () => { _text.Update(); };
-        window.Render += () => { app.RenderNode(_text); };
-        window.Resize += () => { _maxLine = CalculateMaxLine(); };
-        window.PostUpdate += UpdateConsole;
-    }
 
     /// <summary>
     /// 現在のコンソール上のカーソル位置を取得または設定します。
@@ -58,6 +46,12 @@ public class ConsoleLayer : IInitializable
     {
         _text = new Text("", Font.GetDefault(), Color.White);
         _maxLine = CalculateMaxLine();
+
+        app.SceneWillChange += Clear;
+        window.Update += () => { _text.Update(); };
+        window.Render += () => { app.RenderNode(_text); };
+        window.Resize += () => { _maxLine = CalculateMaxLine(); };
+        window.PostUpdate += UpdateConsole;
     }
 
     /// <summary>
@@ -114,7 +108,7 @@ public class ConsoleLayer : IInitializable
             textToTest += "A\n";
             bounds = _text.Font.GetTextBounds(textToTest, _text.Options);
             l++;
-        } while (bounds.Height < _window.Height);
+        } while (bounds.Height < window.Height);
 
         return l - 1;
     }

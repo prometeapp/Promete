@@ -7,26 +7,15 @@ namespace Promete.Input;
 /// <summary>
 /// 接続されたゲームパッドの入力を取得する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed class Gamepads : IInitializable
+public sealed class Gamepads(IWindow window) : IInitializable
 {
     private IInputContext _input;
 
     private readonly List<Gamepad> _pads = [];
 
-    private readonly IWindow _window;
-
-    /// <summary>
-    /// 指定されたウィンドウでゲームパッド入力を管理するインスタンスを初期化します。
-    /// </summary>
-    /// <param name="window">ゲームパッド入力を取得するウィンドウ</param>
-    public Gamepads(IWindow window)
-    {
-        _window = window;
-    }
-
     public void OnStart()
     {
-        _input = _window._RawInputContext!;
+        _input = window._RawInputContext!;
         UpdateGamepads();
 
         _input.ConnectionChanged += OnConnectionChanged;
@@ -48,6 +37,6 @@ public sealed class Gamepads : IInitializable
     {
         _pads.ForEach(p => p.Dispose());
         _pads.Clear();
-        foreach (var silkGamepad in _input.Gamepads) _pads.Add(new Gamepad(silkGamepad, _window));
+        foreach (var silkGamepad in _input.Gamepads) _pads.Add(new Gamepad(silkGamepad, window));
     }
 }

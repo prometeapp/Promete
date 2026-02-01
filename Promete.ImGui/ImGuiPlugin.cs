@@ -10,35 +10,20 @@ namespace Promete.ImGui;
 /// ImGUI との連携を提供する Promete プラグインです。起動時のカスタマイズが必要な場合は、継承し、OnConfigureメソッドをオーバーライドしてください。
 /// 本プラグインは、Prometeが OpenGL デスクトップバックエンドである場合にのみ使用できます。
 /// </summary>
-public class ImGuiPlugin : IInitializable
+public class ImGuiPlugin(PrometeApp app, IWindow window) : IInitializable
 {
     private ImGuiController _controller;
-
-    private readonly PrometeApp _app;
-    private readonly IWindow _window;
-
-    /// <summary>
-    /// ImGuiPlugin の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="app"></param>
-    /// <param name="window"></param>
-    /// <exception cref="NotSupportedException">OpenGL デスクトップバックエンドでない場合スローされます。</exception>
-    public ImGuiPlugin(PrometeApp app, IWindow window)
-    {
-        _window = window;
-        _app = app;
-
-        _window.Destroy += OnWindowDestroy;
-        _window.Render += OnWindowRender;
-    }
 
     public void OnStart()
     {
         // PrometeがOpenGLバックエンドでなければ例外をスローする
-        if (_window is not OpenGLDesktopWindow glWindow)
+        if (window is not OpenGLDesktopWindow glWindow)
             throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
 
         _controller = new ImGuiController(glWindow.GL, glWindow.NativeWindow, glWindow._RawInputContext, OnConfigure);
+
+        window.Destroy += OnWindowDestroy;
+        window.Render += OnWindowRender;
     }
 
     /// <summary>
@@ -63,8 +48,8 @@ public class ImGuiPlugin : IInitializable
 
     private void OnWindowRender()
     {
-        _controller.Update(_window.DeltaTime);
-        if (IsSyncronizeWithWindowScaling) ImGuiNET.ImGui.GetIO().FontGlobalScale = _window.Scale * _window.PixelRatio;
+        _controller.Update(window.DeltaTime);
+        if (IsSyncronizeWithWindowScaling) ImGuiNET.ImGui.GetIO().FontGlobalScale = window.Scale * window.PixelRatio;
         Render?.Invoke();
         _controller.Render();
     }
