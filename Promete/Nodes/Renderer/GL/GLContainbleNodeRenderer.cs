@@ -20,7 +20,7 @@ public class GLContainbleNodeRenderer(PrometeApp app, IWindow window) : NodeRend
         if (container.isTrimmable) TrimEnd(w.GL);
     }
 
-    private void TrimStart(ContainableNode node, Silk.NET.OpenGL.GL gl)
+    protected void TrimStart(ContainableNode node, Silk.NET.OpenGL.GL gl)
     {
         app.ThrowIfNotMainThread();
         gl.Enable(GLEnum.ScissorTest);
@@ -41,7 +41,7 @@ public class GLContainbleNodeRenderer(PrometeApp app, IWindow window) : NodeRend
         gl.Scissor(left.X, left.Y, (uint)size.X, (uint)size.Y);
     }
 
-    private void TrimEnd(Silk.NET.OpenGL.GL gl)
+    protected void TrimEnd(Silk.NET.OpenGL.GL gl)
     {
         app.ThrowIfNotMainThread();
         gl.Scissor(0, 0, (uint)window.ActualWidth, (uint)window.ActualHeight);

@@ -23,10 +23,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Resources\shaders\texture.vert"/>
-        <EmbeddedResource Include="Resources\shaders\texture.frag"/>
-        <EmbeddedResource Include="Resources\shaders\primitive.vert"/>
-        <EmbeddedResource Include="Resources\shaders\primitive.frag"/>
+        <EmbeddedResource Include="Resources\shaders\*.vert"/>
+        <EmbeddedResource Include="Resources\shaders\*.frag"/>
     </ItemGroup>
 
     <ItemGroup>

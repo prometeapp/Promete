@@ -21,6 +21,7 @@ public static class OpenGLDesktopAppExtension
         return builder
             .UseRenderer<ContainableNode, GLContainbleNodeRenderer>()
             .UseRenderer<Container, GLContainbleNodeRenderer>()
+            .UseRenderer<MaskedContainer, GLMaskedContainerRenderer>()
             .UseRenderer<NineSliceSprite, GLNineSliceSpriteRenderer>()
             .UseRenderer<Shape, GLShapeRenderer>()
             .UseRenderer<Sprite, GLSpriteRenderer>()
@@ -29,6 +30,7 @@ public static class OpenGLDesktopAppExtension
             .Use<IFrameBufferProvider, GLFrameBufferProvider>()
             .Use<GLTextureRendererHelper>()
             .Use<GLPrimitiveRendererHelper>()
+            .Use<GLMaskedContainerHelper>()
             .Build<OpenGLDesktopWindow>();
     }
 }
