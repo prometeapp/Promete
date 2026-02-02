@@ -41,7 +41,7 @@ public static class RandomExtension
     }
 
     /// <summary>
-    /// ランダムな <see cref="Vector" /> を生成します。<see cref="NextVector" /> と異なり、小数部分もランダムに生成されます。
+    /// ランダムな <see cref="Vector" /> を生成します。<see cref="NextVector(Random, int, int)" /> と異なり、小数部分もランダムに生成されます。
     /// </summary>
     /// <param name="r">この <see cref="Random" /> オブジェクト。</param>
     /// <param name="xMax">X 座標の最大値。</param>
@@ -50,5 +50,38 @@ public static class RandomExtension
     public static Vector NextVectorFloat(this Random r, int xMax = 1, int yMax = 1)
     {
         return ((float)r.NextDouble() * xMax, (float)r.NextDouble() * yMax);
+    }
+
+    /// <summary>
+    /// ランダムな <see cref="Vector" /> を生成します。
+    /// </summary>
+    /// <param name="r">この <see cref="Random" /> オブジェクト。</param>
+    /// <param name="max">最大値を表す <see cref="Vector" />。</param>
+    /// <returns>生成された <see cref="Vector" />。</returns>
+    public static Vector NextVector(this Random r, Vector max)
+    {
+        return NextVector(r, (int)max.X, (int)max.Y);
+    }
+
+    /// <summary>
+    /// ランダムな <see cref="VectorInt" /> を生成します。
+    /// </summary>
+    /// <param name="r">この <see cref="Random" /> オブジェクト。</param>
+    /// <param name="max">最大値を表す <see cref="VectorInt" />。</param>
+    /// <returns>生成された <see cref="VectorInt" />。</returns>
+    public static VectorInt NextVectorInt(this Random r, VectorInt max)
+    {
+        return NextVectorInt(r, max.X, max.Y);
+    }
+
+    /// <summary>
+    /// ランダムな <see cref="Vector" /> を生成します。<see cref="NextVector(Random, Vector)" /> と異なり、小数部分もランダムに生成されます。
+    /// </summary>
+    /// <param name="r">この <see cref="Random" /> オブジェクト。</param>
+    /// <param name="max">最大値を表す <see cref="Vector" />。</param>
+    /// <returns>生成された <see cref="Vector" />。</returns>
+    public static Vector NextVectorFloat(this Random r, Vector max)
+    {
+        return ((float)r.NextDouble() * max.X, (float)r.NextDouble() * max.Y);
     }
 }
