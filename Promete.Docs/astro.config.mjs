@@ -76,6 +76,10 @@ export default defineConfig({
         label: 'エンジンを拡張する',
         autogenerate: {directory: 'guide/extends'},
       },
+      {
+        label: '更新履歴',
+        link: '/changelog',
+      },
     ],
   })],
   markdown: {
