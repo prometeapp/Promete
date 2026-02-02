@@ -4,6 +4,7 @@ description: PrometeのKeyboardプラグインによるキーボード入力の�
 sidebar:
   order: 1
 ---
+import { Badge } from '@astrojs/starlight/components';
 
 Prometeでは、`Keyboard`プラグインを使って簡単にキーボード入力を取得できます。
 キーの押下・離上・連打検出や、文字列入力、全キー列挙など幅広い用途に対応しています。
@@ -47,6 +48,7 @@ public class MainScene(Keyboard keyboard) : Scene
 - `keyboard.AllUpKeys`<br/>このフレームで離されたキーを列挙します。
 - `keyboard.GetString()`<br/>入力された文字列を取得します（バッファはクリアされます）。
 - `keyboard.HasChar()`<br/>入力バッファに文字があるか判定します。
+- `keyboard.ClipboardText` <Badge text="v1.2.1～"/><br/>OSのクリップボード上のテキストを取得/設定します。
 
 ## サンプル：メニュー操作
 
