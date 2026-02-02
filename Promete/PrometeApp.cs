@@ -66,6 +66,7 @@ public sealed class PrometeApp : IDisposable
     private readonly ServiceCollection _services;
     private readonly Dictionary<Type, NodeRendererBase?> _renderers = new();
     private readonly Dictionary<Type, Type> _rendererTypes;
+    private readonly List<Type> _pluginTypes;
     private readonly List<IInitializable> _initializablePlugins = [];
     private readonly List<IUpdatable> _updatablePlugins = [];
     private readonly List<IDisposable> _disposablePlugins = [];
@@ -76,19 +77,12 @@ public sealed class PrometeApp : IDisposable
 
         _services = services;
         _rendererTypes = rendererTypes;
+        _pluginTypes = pluginTypes;
         RegisterAllScenes();
         services.AddSingleton(this);
         services.AddSingleton<FrameBufferManager>();
 
         _provider = services.BuildServiceProvider();
-
-        // プラグインのインスタンスを取得し、インターフェース実装によって分類
-        foreach (var instance in pluginTypes.Select(type => _provider.GetService(type)).OfType<object>())
-        {
-            if (instance is IInitializable initializable) _initializablePlugins.Add(initializable);
-            if (instance is IUpdatable updatable) _updatablePlugins.Add(updatable);
-            if (instance is IDisposable disposable) _disposablePlugins.Add(disposable);
-        }
 
         Current = this;
         Window = _provider.GetService<IWindow>() ??
@@ -351,6 +345,14 @@ public sealed class PrometeApp : IDisposable
 
     private void OnStart<TScene>() where TScene : Scene
     {
+        // プラグインのインスタンスを取得し、インターフェース実装によって分類
+        foreach (var instance in _pluginTypes.Select(type => _provider.GetService(type)).OfType<object>())
+        {
+            if (instance is IInitializable initializable) _initializablePlugins.Add(initializable);
+            if (instance is IUpdatable updatable) _updatablePlugins.Add(updatable);
+            if (instance is IDisposable disposable) _disposablePlugins.Add(disposable);
+        }
+
         foreach (var (nodeType, rendererType) in _rendererTypes)
             _renderers[nodeType] = _provider.GetService(rendererType) as NodeRendererBase ??
                                    throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
