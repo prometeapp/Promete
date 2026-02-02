@@ -12,7 +12,10 @@ void main()
     vec4 content = texture(uContent, fUv);
     vec4 mask = texture(uMask, fUv);
 
-    // マスクのアルファ値でコンテンツのアルファを調整
+    // マスクのRGB値の平均（濃淡）を計算
+    float gray = (mask.r + mask.g + mask.b) / 3.0;
+
+    // 濃淡でコンテンツのアルファを調整
     FragColor = content * uTintColor;
-    FragColor.a *= mask.a;
+    FragColor.a *= gray;
 }

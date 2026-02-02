@@ -10,8 +10,11 @@ void main()
 {
     vec4 texColor = texture(uTexture0, fUv) * uTintColor;
 
-    // アルファ値が0.5以下の場合は破棄（ステンシルバッファに書き込まない）
-    if (texColor.a <= 0.5)
+    // RGB値の平均（濃淡）を計算
+    float gray = (texColor.r + texColor.g + texColor.b) / 3.0;
+
+    // 濃淡が0.5以下の場合は破棄（ステンシルバッファに書き込まない）
+    if (gray <= 0.5)
         discard;
 
     // カラーバッファには書き込まないが、ステンシルバッファには書き込む
