@@ -77,6 +77,13 @@ var relativePos = child.Location; // (50, 50)
 var absolutePos = child.AbsoluteLocation; // (150, 150)
 ```
 
+## トリムモード
+
+`IsTrimmable` プロパティを `true` に設定すると、`Container` はトリムモードで動作します。
+
+トリムモードになっていると、子要素の、 `Container` の外にはみ出た部分が切り抜かれます。
+スクロール可能なUIなどに利用できます。
+
 ## コレクション操作
 
 ### IEnumerableサポート
