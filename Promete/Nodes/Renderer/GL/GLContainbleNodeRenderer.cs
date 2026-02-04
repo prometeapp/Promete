@@ -38,13 +38,13 @@ public class GLContainbleNodeRenderer(PrometeApp app, IWindow window) : NodeRend
 
         left.Y = window.ActualHeight - left.Y - size.Y;
 
-        gl.Scissor(left.X, left.Y, (uint)size.X, (uint)size.Y);
+        gl.Scissor(left.X * window.Scale, left.Y * window.Scale, (uint)(size.X * window.Scale), (uint)(size.Y * window.Scale));
     }
 
     protected void TrimEnd(Silk.NET.OpenGL.GL gl)
     {
         app.ThrowIfNotMainThread();
-        gl.Scissor(0, 0, (uint)window.ActualWidth, (uint)window.ActualHeight);
+        gl.Scissor(0, 0, (uint)(window.ActualWidth * window.Scale), (uint)(window.ActualHeight * window.Scale));
         gl.Disable(GLEnum.ScissorTest);
     }
 }
