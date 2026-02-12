@@ -72,7 +72,7 @@ public class CoroutineManager
             }
             catch (Exception ex)
             {
-                coroutine.Stop();
+                Stop(coroutine);
                 if (coroutine.ErrorAction == null) throw;
                 coroutine.ErrorAction.Invoke(ex);
             }

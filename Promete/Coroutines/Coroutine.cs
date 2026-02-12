@@ -10,6 +10,8 @@ namespace Promete.Coroutines;
 public class Coroutine : YieldInstruction
 {
     private readonly IEnumerator _runningAction;
+    private bool _isExecuting;
+    private bool _needsDisposal;
 
     internal bool IsKeepAlive;
 
@@ -48,8 +50,14 @@ public class Coroutine : YieldInstruction
     {
         IsRunning = false;
 
-        // Dispose objects generated in the coroutine if possible
-        (_runningAction as IDisposable)?.Dispose();
+        if (_isExecuting)
+        {
+            _needsDisposal = true;
+        }
+        else
+        {
+            (_runningAction as IDisposable)?.Dispose();
+        }
     }
 
     /// <summary>
@@ -82,6 +90,19 @@ public class Coroutine : YieldInstruction
 
     internal bool MoveNext()
     {
-        return _runningAction.MoveNext();
+        _isExecuting = true;
+        try
+        {
+            return _runningAction.MoveNext();
+        }
+        finally
+        {
+            _isExecuting = false;
+            if (_needsDisposal)
+            {
+                (_runningAction as IDisposable)?.Dispose();
+                _needsDisposal = false;
+            }
+        }
     }
 }
