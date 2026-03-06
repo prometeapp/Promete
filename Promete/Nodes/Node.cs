@@ -43,7 +43,16 @@ public abstract class Node
     /// <summary>
     /// このノードのサイズを取得または設定します。
     /// </summary>
-    public virtual VectorInt Size { get; set; }
+    public virtual VectorInt Size
+    {
+        get => _size;
+        set
+        {
+            if (_size == value) return;
+            _size = value;
+            _isModelMatrixDirty = true;
+        }
+    }
 
     /// <summary>
     /// このノードの角度（0-360°）を取得または設定します。
@@ -152,6 +161,7 @@ public abstract class Node
     private Vector _pivot = Vector.Zero;
 
     private int _zIndex;
+    private VectorInt _size;
 
     /// <summary>
     /// このノードを破棄します。
