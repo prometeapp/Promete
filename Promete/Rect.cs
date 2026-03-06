@@ -70,6 +70,11 @@ public struct Rect
     }
 
     /// <summary>
+    /// この矩形の中心の座標を取得します。
+    /// </summary>
+    public Vector Center => Location + (Size / 2);
+
+    /// <summary>
     /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="location">位置。</param>
