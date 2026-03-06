@@ -256,7 +256,7 @@ public sealed class OpenGLDesktopWindow(PrometeApp app) : IWindow
     public event Action? PreUpdate;
     public event Action? PostUpdate;
 
-    private unsafe Image TakeScreenshotAsImage()
+    private unsafe Image<Rgba32> TakeScreenshotAsImage()
     {
         fixed (byte* buffer = _screenshotBuffer)
         {
