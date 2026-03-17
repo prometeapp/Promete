@@ -1,32 +1,22 @@
 namespace Promete.Nodes.Renderer.Commands;
 
 /// <summary>
-/// シザーテスト開始コマンドです。計算済みのピクセル座標を保持します。
+/// シザーテスト開始コマンドです。計算済み（親との積集合済み）のピクセル座標を保持します。
 /// </summary>
 public sealed class BeginScissorCommand : IRenderCommand
 {
-    /// <summary>シザー矩形のX座標（スクリーン座標）</summary>
+    /// <summary>シザー矩形のX座標（物理ピクセル、左端基準）</summary>
     public required int X { get; init; }
-    /// <summary>シザー矩形のY座標（スクリーン座標、下端基準）</summary>
+    /// <summary>シザー矩形のY座標（物理ピクセル、下端基準）</summary>
     public required int Y { get; init; }
-    /// <summary>シザー矩形の幅（ピクセル）</summary>
+    /// <summary>シザー矩形の幅（物理ピクセル）</summary>
     public required int Width { get; init; }
-    /// <summary>シザー矩形の高さ（ピクセル）</summary>
+    /// <summary>シザー矩形の高さ（物理ピクセル）</summary>
     public required int Height { get; init; }
-    /// <summary>親のシザー状態が有効だったかどうか</summary>
-    public required bool ParentWasEnabled { get; init; }
-    /// <summary>親のシザー矩形X</summary>
-    public required int ParentX { get; init; }
-    /// <summary>親のシザー矩形Y</summary>
-    public required int ParentY { get; init; }
-    /// <summary>親のシザー矩形幅</summary>
-    public required int ParentWidth { get; init; }
-    /// <summary>親のシザー矩形高さ</summary>
-    public required int ParentHeight { get; init; }
 }
 
 /// <summary>
-/// シザーテスト終了コマンドです。
+/// シザーテスト終了コマンドです。前の状態を復元するための情報を保持します。
 /// </summary>
 public sealed class EndScissorCommand : IRenderCommand
 {
