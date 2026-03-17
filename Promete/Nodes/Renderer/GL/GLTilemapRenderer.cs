@@ -1,36 +1,31 @@
-﻿using System.Collections.Generic;
-using System.Drawing;
-using Promete.Graphics;
-using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Nodes.Renderer.Commands;
 using Promete.Windowing;
 
 namespace Promete.Nodes.Renderer.GL;
 
-public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) : NodeRendererBase
+public class GLTilemapRenderer(IWindow window) : NodeRendererBase
 {
-    public override void Render(Node node)
+    public override void Collect(Node node, RenderCommandQueue queue)
     {
         var tilemap = (Tilemap)node;
         var mode = tilemap.RenderingMode == TilemapRenderingMode.Auto
             ? GetPrefferedMode(tilemap)
             : tilemap.RenderingMode;
-        if (mode == TilemapRenderingMode.Scan) ScanAndRender(tilemap);
-        else FullRender(tilemap);
+        if (mode == TilemapRenderingMode.Scan) ScanAndCollect(tilemap, queue);
+        else FullCollect(tilemap, queue);
     }
 
     private TilemapRenderingMode GetPrefferedMode(Tilemap tilemap)
     {
         var tileSize = tilemap.TileSize * tilemap.AbsoluteScale;
-        // ウィンドウ内に存在し得る最大のタイル数を概算する
         var (ww, wh) = window.Size;
         var maxTilesX = ww / tileSize.X + 2;
         var maxTilesY = wh / tileSize.Y + 2;
         var maxTilesInWindow = maxTilesX * maxTilesY;
-        // 存在しうるタイル数より実際のタイル数のほうが多い場合、画面を走査するほうがループ数を減らせる可能性がある
         return maxTilesInWindow < tilemap.Tiles.Count ? TilemapRenderingMode.Scan : TilemapRenderingMode.RenderAll;
     }
 
-    private void ScanAndRender(Tilemap tilemap)
+    private void ScanAndCollect(Tilemap tilemap, RenderCommandQueue queue)
     {
         var tileSize = tilemap.TileSize * tilemap.AbsoluteScale;
         var (ww, wh) = window.Size;
@@ -49,30 +44,32 @@ public class GLTilemapRenderer(IWindow window, GLTextureRendererHelper helper) :
             var tile = tilemap[x, y];
             if (tile == null) continue;
 
-            helper.Draw(tile.GetTexture(tilemap, (x, y), window), tilemap, tilemap.GetTileColorAt(x, y), offset,
-                tilemap.TileSize.X, tilemap.TileSize.Y);
+            queue.Enqueue(new DrawTextureCommand
+            {
+                Texture = tile.GetTexture(tilemap, (x, y), window),
+                ModelMatrix = tilemap.ModelMatrix,
+                TintColor = tilemap.GetTileColorAt(x, y).GetValueOrDefault(System.Drawing.Color.White),
+                Width = tilemap.TileSize.X,
+                Height = tilemap.TileSize.Y,
+                Pivot = offset,
+            });
         }
     }
 
-    private void FullRender(Tilemap tilemap)
+    private void FullCollect(Tilemap tilemap, RenderCommandQueue queue)
     {
         foreach (var (tileLocation, (tile, color)) in tilemap.Tiles)
         {
             var offset = tileLocation * tilemap.TileSize;
-            var texture = tile.GetTexture(tilemap, tileLocation, window);
-
-            helper.Draw(texture, tilemap, color, offset, tilemap.TileSize.X, tilemap.TileSize.Y);
-        }
-
-        return;
-
-        // カリング
-        bool Filter(KeyValuePair<VectorInt, (ITile, Color?)> kv)
-        {
-            var (left, top) = tilemap.AbsoluteLocation + kv.Key * tilemap.TileSize * tilemap.AbsoluteScale;
-            var right = left + tilemap.TileSize.X * tilemap.AbsoluteScale.X;
-            var bottom = top + tilemap.TileSize.Y * tilemap.AbsoluteScale.Y;
-            return left <= window.ActualWidth && top <= window.ActualHeight && right >= 0 && bottom >= 0;
+            queue.Enqueue(new DrawTextureCommand
+            {
+                Texture = tile.GetTexture(tilemap, tileLocation, window),
+                ModelMatrix = tilemap.ModelMatrix,
+                TintColor = color.GetValueOrDefault(System.Drawing.Color.White),
+                Width = tilemap.TileSize.X,
+                Height = tilemap.TileSize.Y,
+                Pivot = offset,
+            });
         }
     }
 }

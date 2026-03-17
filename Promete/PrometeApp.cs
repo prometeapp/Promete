@@ -11,6 +11,7 @@ using Promete.Graphics;
 using Promete.Internal;
 using Promete.Nodes;
 using Promete.Nodes.Renderer;
+using Promete.Nodes.Renderer.GL;
 using Promete.Windowing;
 
 namespace Promete;
@@ -70,6 +71,9 @@ public sealed class PrometeApp : IDisposable
     private readonly List<IInitializable> _initializablePlugins = [];
     private readonly List<IUpdatable> _updatablePlugins = [];
     private readonly List<IDisposable> _disposablePlugins = [];
+
+    private RenderCommandQueue? _renderCommandQueue;
+    private ScissorStateTracker? _scissorStateTracker;
 
     private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes, List<Type> pluginTypes)
     {
@@ -316,6 +320,19 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
+    /// 指定した <see cref="Node" /> のレンダリングコマンドをキューに収集します。
+    /// </summary>
+    /// <param name="node">収集対象のノード。</param>
+    /// <param name="queue">コマンドの収集先キュー。</param>
+    public void CollectNode(Node node, RenderCommandQueue queue)
+    {
+        if (!node.IsVisible || node.IsDestroyed) return;
+        node.BeforeRender();
+        var renderer = ResolveRenderer(node);
+        renderer?.Collect(node, queue);
+    }
+
+    /// <summary>
     /// 指定した <see cref="Node" /> を更新します。
     /// </summary>
     /// <param name="node">更新対象のノード。</param>
@@ -357,6 +374,10 @@ public sealed class PrometeApp : IDisposable
             _renderers[nodeType] = _provider.GetService(rendererType) as NodeRendererBase ??
                                    throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
 
+        // レンダリングキューとシザートラッカーをキャッシュ
+        _renderCommandQueue = _provider.GetService<RenderCommandQueue>();
+        _scissorStateTracker = _provider.GetService<ScissorStateTracker>();
+
         // プラグインの初期化
         foreach (var plugin in _initializablePlugins)
             plugin.OnStart();
@@ -381,9 +402,18 @@ public sealed class PrometeApp : IDisposable
 
     private void OnRender()
     {
-        RenderNode(GlobalBackground);
-        if (Root != null) RenderNode(Root);
-        RenderNode(GlobalForeground);
+        if (_renderCommandQueue == null)
+        {
+            throw new InvalidOperationException("コマンドキューが登録されていません。");
+        }
+
+        var queue = _renderCommandQueue;
+        _scissorStateTracker?.Clear();
+        queue.Clear();
+        CollectNode(GlobalBackground, queue);
+        if (Root != null) CollectNode(Root, queue);
+        CollectNode(GlobalForeground, queue);
+        queue.ProcessAndFlush();
     }
 
     private void OnDestroy()

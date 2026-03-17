@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Promete.Graphics;
 using Promete.Internal;
+using Promete.Nodes.Renderer;
 using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
@@ -13,13 +14,15 @@ namespace Promete.GLDesktop;
 public class GLFrameBufferProvider : IFrameBufferProvider
 {
     private readonly PrometeApp _app;
-    private readonly OpenGLDesktopWindow _glWindow;
     private readonly Dictionary<FrameBuffer, (uint framebuffer, uint renderbuffer, int textureHandle)> _fboCache = [];
+    private readonly OpenGLDesktopWindow _glWindow;
+    private readonly RenderCommandQueue _queue;
 
-    public GLFrameBufferProvider(IWindow window, PrometeApp app)
+    public GLFrameBufferProvider(IWindow window, PrometeApp app, RenderCommandQueue queue)
     {
         _app = app;
         _glWindow = (OpenGLDesktopWindow)window;
+        _queue = queue;
 
         // ウィンドウが破棄されたときにキャッシュをクリアする
         _glWindow.Destroy += ClearCache;
@@ -33,25 +36,30 @@ public class GLFrameBufferProvider : IFrameBufferProvider
         var gl = _glWindow.GL;
         gl.ActiveTexture(TextureUnit.Texture0);
         gl.BindTexture(GLEnum.Texture2D, textureHandle);
-        gl.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba, (uint)frameBuffer.Width, (uint)frameBuffer.Height, 0,
+        gl.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba, (uint)frameBuffer.Width, (uint)frameBuffer.Height,
+            0,
             PixelFormat.Rgba, PixelType.UnsignedByte, null);
         gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.Nearest);
         gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Nearest);
-        return new Texture2D((int)textureHandle, new VectorInt(frameBuffer.Width, frameBuffer.Height), HandleTextureDispose);
+        return new Texture2D((int)textureHandle, new VectorInt(frameBuffer.Width, frameBuffer.Height),
+            HandleTextureDispose);
     }
 
     public unsafe void Resize(FrameBuffer frameBuffer)
     {
         LogHelper.Info($"Resizing FrameBuffer: {frameBuffer.Width}x{frameBuffer.Height}");
         _glWindow.GL.BindTexture(GLEnum.Texture2D, (uint)frameBuffer.Texture.Handle);
-        _glWindow.GL.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba, (uint)frameBuffer.Width, (uint)frameBuffer.Height, 0,
+        _glWindow.GL.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba, (uint)frameBuffer.Width,
+            (uint)frameBuffer.Height, 0,
             PixelFormat.Rgba, PixelType.UnsignedByte, null);
         var err = _glWindow.GL.GetError();
         if (err != GLEnum.NoError)
         {
             LogHelper.FixMe($"Error resizing FrameBuffer texture: {err}");
         }
-        frameBuffer.Texture = new Texture2D(frameBuffer.Texture.Handle, new VectorInt(frameBuffer.Width, frameBuffer.Height), HandleTextureDispose);
+
+        frameBuffer.Texture = new Texture2D(frameBuffer.Texture.Handle,
+            new VectorInt(frameBuffer.Width, frameBuffer.Height), HandleTextureDispose);
     }
 
 
@@ -77,11 +85,11 @@ public class GLFrameBufferProvider : IFrameBufferProvider
         gl.ClearColor(bgColor.R / 255f, bgColor.G / 255f, bgColor.B / 255f, bgColor.A / 255f);
         gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        // 子要素をレンダリング
+        // 子要素をコマンドキュー経由でレンダリング（スコープで外側を保護）
+        _queue.PushScope();
         foreach (var child in frameBuffer.SortedChildren)
-        {
-            _app.RenderNode(child);
-        }
+            _app.CollectNode(child, _queue);
+        _queue.PopScopeAndFlush();
 
         // フレームバッファのバインドを解除
         gl.BindFramebuffer(GLEnum.Framebuffer, 0);
@@ -99,7 +107,8 @@ public class GLFrameBufferProvider : IFrameBufferProvider
         // レンダーバッファを作成（デプスバッファ用）
         var rbo = gl.GenRenderbuffer();
         gl.BindRenderbuffer(GLEnum.Renderbuffer, rbo);
-        gl.RenderbufferStorage(GLEnum.Renderbuffer, GLEnum.DepthComponent24, (uint)frameBuffer.Width, (uint)frameBuffer.Height);
+        gl.RenderbufferStorage(GLEnum.Renderbuffer, GLEnum.DepthComponent24, (uint)frameBuffer.Width,
+            (uint)frameBuffer.Height);
 
         // フレームバッファを作成
         var fbo = gl.GenFramebuffer();
@@ -165,6 +174,7 @@ public class GLFrameBufferProvider : IFrameBufferProvider
             gl.DeleteRenderbuffer(rbo);
             gl.DeleteTexture((uint)textureHandle);
         }
+
         _fboCache.Clear();
     }
 }
