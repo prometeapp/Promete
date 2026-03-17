@@ -18,17 +18,113 @@ public class GLBatchTextureRenderer : IDisposable
     // per-instance: mat4(16) + vec4 tintColor(4) = 20 floats
     private const int InstanceStride = 20;
 
-    private readonly uint _shader;
-    private readonly uint _vao, _vbo, _ebo, _instanceVbo;
     private readonly OpenGLDesktopWindow _window;
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
+    private bool _initialized;
+    private uint _shader;
+    private uint _vao, _vbo, _ebo, _instanceVbo;
 
-    public unsafe GLBatchTextureRenderer(IWindow window)
+    public GLBatchTextureRenderer(IWindow window)
     {
         _window = window as OpenGLDesktopWindow
             ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    }
 
+    /// <summary>
+    /// バッチをインスタンシングで描画します。件数が1の場合もこちらを使用します。
+    /// </summary>
+    public unsafe void DrawInstanced(List<DrawTextureCommand> items)
+    {
+        if (items.Count == 0) return;
+        PrometeApp.Current.ThrowIfNotMainThread();
+
+        EnsureInitialized();
+
+        var gl = _window.GL;
+        var count = items.Count;
+
+        EnsureInstanceBufferCapacity(count);
+
+        // プロジェクション行列を計算
+        var viewport = GLHelper.GetViewport(gl);
+        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
+        if (currentFrameBufferId == 0)
+            viewport /= _window.Scale;
+        var projection = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
+
+        // per-instanceデータを構築
+        for (var i = 0; i < count; i++)
+        {
+            var cmd = items[i];
+            var model =
+                Matrix4x4.CreateScale(cmd.Width, cmd.Height, 1)
+                * Matrix4x4.CreateTranslation(cmd.Pivot.X, cmd.Pivot.Y, 0)
+                * cmd.ModelMatrix;
+
+            var offset = i * InstanceStride;
+            _instanceData[offset +  0] = model.M11; _instanceData[offset +  1] = model.M12;
+            _instanceData[offset +  2] = model.M13; _instanceData[offset +  3] = model.M14;
+            _instanceData[offset +  4] = model.M21; _instanceData[offset +  5] = model.M22;
+            _instanceData[offset +  6] = model.M23; _instanceData[offset +  7] = model.M24;
+            _instanceData[offset +  8] = model.M31; _instanceData[offset +  9] = model.M32;
+            _instanceData[offset + 10] = model.M33; _instanceData[offset + 11] = model.M34;
+            _instanceData[offset + 12] = model.M41; _instanceData[offset + 13] = model.M42;
+            _instanceData[offset + 14] = model.M43; _instanceData[offset + 15] = model.M44;
+            var c = cmd.TintColor;
+            _instanceData[offset + 16] = c.R / 255f;
+            _instanceData[offset + 17] = c.G / 255f;
+            _instanceData[offset + 18] = c.B / 255f;
+            _instanceData[offset + 19] = c.A / 255f;
+        }
+
+        // インスタンスデータをGPUに転送
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, _instanceVbo);
+        gl.BufferSubData<float>(BufferTargetARB.ArrayBuffer, 0,
+            new ReadOnlySpan<float>(_instanceData, 0, count * InstanceStride));
+        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+
+        // 描画
+        gl.Enable(GLEnum.Blend);
+        gl.BlendFuncSeparate(
+            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,
+            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+
+        gl.UseProgram(_shader);
+        gl.ActiveTexture(TextureUnit.Texture0);
+        gl.BindTexture(TextureTarget.Texture2D, (uint)items[0].Texture.Handle);
+
+        var uProjection = gl.GetUniformLocation(_shader, "uProjection");
+        gl.UniformMatrix4(uProjection, 1, false, (float*)&projection);
+        var uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
+        gl.Uniform1(uTexture0, 0);
+
+        gl.BindVertexArray(_vao);
+        gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
+        gl.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)count);
+        gl.BindVertexArray(0);
+    }
+
+    public void Dispose()
+    {
+        if (!_initialized) return;
+        var gl = _window.GL;
+        gl.DeleteProgram(_shader);
+        gl.DeleteVertexArray(_vao);
+        gl.DeleteBuffer(_vbo);
+        gl.DeleteBuffer(_ebo);
+        gl.DeleteBuffer(_instanceVbo);
+    }
+
+    private void EnsureInitialized()
+    {
+        if (_initialized) return;
+        Initialize();
+        _initialized = true;
+    }
+
+    private unsafe void Initialize()
+    {
         var gl = _window.GL;
 
         // シェーダーをコンパイル・リンク
@@ -99,89 +195,6 @@ public class GLBatchTextureRenderer : IDisposable
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
         gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, indices, BufferUsageARB.StaticDraw);
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-    }
-
-    /// <summary>
-    /// バッチをインスタンシングで描画します。件数が1の場合もこちらを使用します。
-    /// </summary>
-    public unsafe void DrawInstanced(List<DrawTextureCommand> items)
-    {
-        if (items.Count == 0) return;
-        PrometeApp.Current.ThrowIfNotMainThread();
-
-        var gl = _window.GL;
-        var count = items.Count;
-
-        EnsureInstanceBufferCapacity(count);
-
-        // プロジェクション行列を計算
-        var viewport = GLHelper.GetViewport(gl);
-        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
-        if (currentFrameBufferId == 0)
-            viewport /= _window.Scale;
-        var projection = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
-
-        // per-instanceデータを構築
-        for (var i = 0; i < count; i++)
-        {
-            var cmd = items[i];
-            var model =
-                Matrix4x4.CreateScale(cmd.Width, cmd.Height, 1)
-                * Matrix4x4.CreateTranslation(cmd.Pivot.X, cmd.Pivot.Y, 0)
-                * cmd.ModelMatrix;
-
-            var offset = i * InstanceStride;
-            // mat4 を行優先で詰める（OpenGLは列優先なので転置なし）
-            _instanceData[offset +  0] = model.M11; _instanceData[offset +  1] = model.M12;
-            _instanceData[offset +  2] = model.M13; _instanceData[offset +  3] = model.M14;
-            _instanceData[offset +  4] = model.M21; _instanceData[offset +  5] = model.M22;
-            _instanceData[offset +  6] = model.M23; _instanceData[offset +  7] = model.M24;
-            _instanceData[offset +  8] = model.M31; _instanceData[offset +  9] = model.M32;
-            _instanceData[offset + 10] = model.M33; _instanceData[offset + 11] = model.M34;
-            _instanceData[offset + 12] = model.M41; _instanceData[offset + 13] = model.M42;
-            _instanceData[offset + 14] = model.M43; _instanceData[offset + 15] = model.M44;
-            var c = cmd.TintColor;
-            _instanceData[offset + 16] = c.R / 255f;
-            _instanceData[offset + 17] = c.G / 255f;
-            _instanceData[offset + 18] = c.B / 255f;
-            _instanceData[offset + 19] = c.A / 255f;
-        }
-
-        // インスタンスデータをGPUに転送
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, _instanceVbo);
-        gl.BufferSubData<float>(BufferTargetARB.ArrayBuffer, 0,
-            new ReadOnlySpan<float>(_instanceData, 0, count * InstanceStride));
-        gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-
-        // 描画
-        gl.Enable(GLEnum.Blend);
-        gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,
-            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
-
-        gl.UseProgram(_shader);
-        gl.ActiveTexture(TextureUnit.Texture0);
-        gl.BindTexture(TextureTarget.Texture2D, (uint)items[0].Texture.Handle);
-
-        var uProjection = gl.GetUniformLocation(_shader, "uProjection");
-        gl.UniformMatrix4(uProjection, 1, false, (float*)&projection);
-        var uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
-        gl.Uniform1(uTexture0, 0);
-
-        gl.BindVertexArray(_vao);
-        gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
-        gl.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)count);
-        gl.BindVertexArray(0);
-    }
-
-    public void Dispose()
-    {
-        var gl = _window.GL;
-        gl.DeleteProgram(_shader);
-        gl.DeleteVertexArray(_vao);
-        gl.DeleteBuffer(_vbo);
-        gl.DeleteBuffer(_ebo);
-        gl.DeleteBuffer(_instanceVbo);
     }
 
     private unsafe void EnsureInstanceBufferCapacity(int count)

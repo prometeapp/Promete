@@ -12,25 +12,11 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 /// </summary>
 public class GLPrimitiveRendererHelper
 {
-    /// <summary>
-    /// シェーダーへのハンドル
-    /// </summary>
-    private readonly uint _shader;
-
-    /// <summary>
-    /// Element Buffer Object
-    /// </summary>
-    private readonly uint _ebo;
-
-    /// <summary>
-    /// Vertex Array Object
-    /// </summary>
-    private readonly uint _vao;
-
-    /// <summary>
-    /// Vertex Buffer Object
-    /// </summary>
-    private readonly uint _vbo;
+    private uint _shader;
+    private uint _ebo;
+    private uint _vao;
+    private uint _vbo;
+    private bool _initialized;
 
     /// <summary>
     /// 描画対象のウィンドウ
@@ -41,6 +27,17 @@ public class GLPrimitiveRendererHelper
     {
         _window = window as OpenGLDesktopWindow ??
                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    }
+
+    private void EnsureInitialized()
+    {
+        if (_initialized) return;
+        Initialize();
+        _initialized = true;
+    }
+
+    private void Initialize()
+    {
         var gl = _window.GL;
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
@@ -87,6 +84,7 @@ public class GLPrimitiveRendererHelper
         if (worldVertices.Length == 0)
             return;
 
+        EnsureInitialized();
         var gl = _window.GL;
 
         // ビューポートの大きさを取得する

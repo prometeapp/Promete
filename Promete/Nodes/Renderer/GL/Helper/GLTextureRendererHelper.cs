@@ -14,9 +14,9 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 /// </summary>
 public class GLTextureRendererHelper
 {
-    private readonly uint _shader;
-
-    private readonly uint _vbo, _vao, _ebo;
+    private uint _shader;
+    private uint _vbo, _vao, _ebo;
+    private bool _initialized;
 
     private readonly OpenGLDesktopWindow _window;
 
@@ -24,7 +24,17 @@ public class GLTextureRendererHelper
     {
         _window = window as OpenGLDesktopWindow ??
                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    }
 
+    private void EnsureInitialized()
+    {
+        if (_initialized) return;
+        Initialize();
+        _initialized = true;
+    }
+
+    private void Initialize()
+    {
         var gl = _window.GL;
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
@@ -97,6 +107,7 @@ public class GLTextureRendererHelper
         float? overriddenWidth = null, float? overriddenHeight = null)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
+        EnsureInitialized();
         var gl = _window.GL;
         var c = color ?? Color.White;
         var finalWidth = overriddenWidth ?? node.Size.X;

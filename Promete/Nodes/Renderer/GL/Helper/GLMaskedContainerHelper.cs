@@ -16,9 +16,10 @@ public class GLMaskedContainerHelper : IDisposable
 {
     private readonly OpenGLDesktopWindow _window;
     private readonly IFrameBufferProvider _fbProvider;
-    private readonly uint _maskShader;
-    private readonly uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
-    private readonly uint _vao, _vbo, _ebo;
+    private uint _maskShader;
+    private uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
+    private uint _vao, _vbo, _ebo;
+    private bool _initialized;
 
     // 独自のフレームバッファキャッシュ（OpenGLのFBO、RBO、テクスチャ）
     private readonly Dictionary<MaskedContainer, (uint fbo, uint rbo, uint texture, VectorInt size)> _glFrameBufferCache = [];
@@ -28,7 +29,17 @@ public class GLMaskedContainerHelper : IDisposable
         _window = window as OpenGLDesktopWindow ??
                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
         _fbProvider = fbProvider;
+    }
 
+    private void EnsureInitialized()
+    {
+        if (_initialized) return;
+        Initialize();
+        _initialized = true;
+    }
+
+    private void Initialize()
+    {
         var gl = _window.GL;
 
         // マスク適用用のシェーダーをコンパイル
@@ -146,6 +157,7 @@ public class GLMaskedContainerHelper : IDisposable
     /// </summary>
     public Texture2D RenderToTexture(MaskedContainer container)
     {
+        EnsureInitialized();
         var size = container.Size;
 
         // サイズが0以下の場合はデフォルトサイズを使用
@@ -293,6 +305,7 @@ public class GLMaskedContainerHelper : IDisposable
     public unsafe void DrawMaskToStencil(Texture2D maskTexture, Node node)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
+        EnsureInitialized();
         var gl = _window.GL;
 
         // モデル行列を計算
@@ -351,6 +364,7 @@ public class GLMaskedContainerHelper : IDisposable
     public unsafe void DrawMasked(Texture2D contentTexture, Texture2D maskTexture, Node node)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
+        EnsureInitialized();
         var gl = _window.GL;
 
         // モデル行列を計算
@@ -426,6 +440,7 @@ public class GLMaskedContainerHelper : IDisposable
     /// </summary>
     public void Dispose()
     {
+        if (!_initialized) return;
         var gl = _window.GL;
 
         // 全てのフレームバッファを破棄
