@@ -8,7 +8,7 @@ namespace Promete.Nodes.Renderer.Commands;
 /// <see cref="RenderCommandQueue"/> が <see cref="DrawTextureCommand"/> を受け取った際に
 /// 自動的に生成・マージします。
 /// </summary>
-public sealed class DrawTextureBatchedCommand : IRenderCommand
+internal sealed class DrawTextureBatchedCommand : IRenderCommand
 {
     /// <summary>バッチ内の全アイテムで共通のテクスチャ。</summary>
     public Texture2D Texture { get; }

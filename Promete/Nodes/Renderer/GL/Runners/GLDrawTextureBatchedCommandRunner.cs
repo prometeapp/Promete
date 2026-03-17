@@ -6,7 +6,7 @@ namespace Promete.Nodes.Renderer.GL.Runners;
 /// <summary>
 /// <see cref="DrawTextureBatchedCommand"/> をインスタンシングで描画するランナーです。
 /// </summary>
-public class GLDrawTextureBatchedCommandRunner(GLBatchTextureRenderer batchRenderer)
+internal class GLDrawTextureBatchedCommandRunner(GLBatchTextureRenderer batchRenderer)
     : CommandRunner<DrawTextureBatchedCommand>
 {
     public override void Execute(DrawTextureBatchedCommand command)
