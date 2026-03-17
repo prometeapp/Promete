@@ -14,11 +14,11 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 /// </summary>
 public class GLPieSpriteRendererHelper
 {
-    private uint _shader;
-    private uint _vbo, _vao, _ebo;
-    private bool _initialized;
-
     private readonly OpenGLDesktopWindow _window;
+    private bool _initialized;
+    private uint _shader;
+    private int _uModel, _uProjection, _uTexture0, _uTintColor, _uStartAngle, _uEndAngle;
+    private uint _vbo, _vao, _ebo;
 
     public GLPieSpriteRendererHelper(IWindow window)
     {
@@ -92,6 +92,14 @@ public class GLPieSpriteRendererHelper
         Span<uint> indices = [0, 1, 3, 1, 2, 3];
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
         gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, indices, BufferUsageARB.StaticDraw);
+
+        // uniform location をキャッシュ
+        _uModel = gl.GetUniformLocation(_shader, "uModel");
+        _uProjection = gl.GetUniformLocation(_shader, "uProjection");
+        _uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
+        _uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
+        _uStartAngle = gl.GetUniformLocation(_shader, "uStartAngle");
+        _uEndAngle = gl.GetUniformLocation(_shader, "uEndAngle");
     }
 
     /// <summary>
@@ -137,7 +145,7 @@ public class GLPieSpriteRendererHelper
         // 描画開始
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,  // RGB
+            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, // RGB
             BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
@@ -147,20 +155,14 @@ public class GLPieSpriteRendererHelper
         gl.BindTexture(TextureTarget.Texture2D, (uint)texture.Handle);
 
         // シェーダーに行列情報を渡す
-        var uModel = gl.GetUniformLocation(_shader, "uModel");
-        gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
-        var uProjection = gl.GetUniformLocation(_shader, "uProjection");
-        gl.UniformMatrix4(uProjection, 1, false, (float*)&projectionMatrix);
-        var uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
-        gl.Uniform1(uTexture0, 0);
-        var uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
-        gl.Uniform4(uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
+        gl.UniformMatrix4(_uModel, 1, false, (float*)&modelMatrix);
+        gl.UniformMatrix4(_uProjection, 1, false, (float*)&projectionMatrix);
+        gl.Uniform1(_uTexture0, 0);
+        gl.Uniform4(_uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
 
         // パーセント角度をシェーダーに渡す
-        var uStartAngle = gl.GetUniformLocation(_shader, "uStartAngle");
-        gl.Uniform1(uStartAngle, startAngle);
-        var uEndAngle = gl.GetUniformLocation(_shader, "uEndAngle");
-        gl.Uniform1(uEndAngle, endAngle);
+        gl.Uniform1(_uStartAngle, startAngle);
+        gl.Uniform1(_uEndAngle, endAngle);
 
         // 描画
         gl.BindVertexArray(_vao);

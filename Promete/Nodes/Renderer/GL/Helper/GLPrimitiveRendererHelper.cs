@@ -12,16 +12,17 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 /// </summary>
 public class GLPrimitiveRendererHelper
 {
-    private uint _shader;
-    private uint _ebo;
-    private uint _vao;
-    private uint _vbo;
-    private bool _initialized;
-
     /// <summary>
     /// 描画対象のウィンドウ
     /// </summary>
     private readonly OpenGLDesktopWindow _window;
+
+    private uint _ebo;
+    private bool _initialized;
+    private uint _shader;
+    private int _uTintColor;
+    private uint _vao;
+    private uint _vbo;
 
     public GLPrimitiveRendererHelper(IWindow window)
     {
@@ -66,6 +67,9 @@ public class GLPrimitiveRendererHelper
         _vao = gl.GenVertexArray();
         _vbo = gl.GenBuffer();
         _ebo = gl.GenBuffer();
+
+        // uniform location をキャッシュ
+        _uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
     }
 
     /// <summary>
@@ -111,7 +115,7 @@ public class GLPrimitiveRendererHelper
         // 描画開始
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,  // RGB
+            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, // RGB
             BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
@@ -147,8 +151,7 @@ public class GLPrimitiveRendererHelper
         gl.EnableVertexAttribArray(0);
 
         // シェーダーに線の色を渡す
-        var uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
-        gl.Uniform4(uTintColor, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
+        gl.Uniform4(_uTintColor, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
 
         // 描画
         gl.DrawArrays(PrimitiveType.LineLoop, 0, (uint)vertices.Length / 2);
@@ -182,8 +185,7 @@ public class GLPrimitiveRendererHelper
         gl.EnableVertexAttribArray(0);
 
         // シェーダーに色データを渡す
-        var uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
-        gl.Uniform4(uTintColor, new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
+        gl.Uniform4(_uTintColor, new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
 
         // 矩形の場合は、インデックスバッファを利用してドローコールを減らす
         // TODO: 他のタイプに対してもEBOを利用したい

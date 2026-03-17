@@ -15,20 +15,33 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 public class GLBatchTextureRenderer : IDisposable
 {
     private const int InitialInstanceCapacity = 512;
+
     // per-instance: mat4(16) + vec4 tintColor(4) = 20 floats
     private const int InstanceStride = 20;
 
     private readonly OpenGLDesktopWindow _window;
+    private bool _initialized;
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
-    private bool _initialized;
     private uint _shader;
+    private int _uProjection, _uTexture0;
     private uint _vao, _vbo, _ebo, _instanceVbo;
 
     public GLBatchTextureRenderer(IWindow window)
     {
         _window = window as OpenGLDesktopWindow
-            ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+                  ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    }
+
+    public void Dispose()
+    {
+        if (!_initialized) return;
+        var gl = _window.GL;
+        gl.DeleteProgram(_shader);
+        gl.DeleteVertexArray(_vao);
+        gl.DeleteBuffer(_vbo);
+        gl.DeleteBuffer(_ebo);
+        gl.DeleteBuffer(_instanceVbo);
     }
 
     /// <summary>
@@ -63,14 +76,22 @@ public class GLBatchTextureRenderer : IDisposable
                 * cmd.ModelMatrix;
 
             var offset = i * InstanceStride;
-            _instanceData[offset +  0] = model.M11; _instanceData[offset +  1] = model.M12;
-            _instanceData[offset +  2] = model.M13; _instanceData[offset +  3] = model.M14;
-            _instanceData[offset +  4] = model.M21; _instanceData[offset +  5] = model.M22;
-            _instanceData[offset +  6] = model.M23; _instanceData[offset +  7] = model.M24;
-            _instanceData[offset +  8] = model.M31; _instanceData[offset +  9] = model.M32;
-            _instanceData[offset + 10] = model.M33; _instanceData[offset + 11] = model.M34;
-            _instanceData[offset + 12] = model.M41; _instanceData[offset + 13] = model.M42;
-            _instanceData[offset + 14] = model.M43; _instanceData[offset + 15] = model.M44;
+            _instanceData[offset + 0] = model.M11;
+            _instanceData[offset + 1] = model.M12;
+            _instanceData[offset + 2] = model.M13;
+            _instanceData[offset + 3] = model.M14;
+            _instanceData[offset + 4] = model.M21;
+            _instanceData[offset + 5] = model.M22;
+            _instanceData[offset + 6] = model.M23;
+            _instanceData[offset + 7] = model.M24;
+            _instanceData[offset + 8] = model.M31;
+            _instanceData[offset + 9] = model.M32;
+            _instanceData[offset + 10] = model.M33;
+            _instanceData[offset + 11] = model.M34;
+            _instanceData[offset + 12] = model.M41;
+            _instanceData[offset + 13] = model.M42;
+            _instanceData[offset + 14] = model.M43;
+            _instanceData[offset + 15] = model.M44;
             var c = cmd.TintColor;
             _instanceData[offset + 16] = c.R / 255f;
             _instanceData[offset + 17] = c.G / 255f;
@@ -94,26 +115,13 @@ public class GLBatchTextureRenderer : IDisposable
         gl.ActiveTexture(TextureUnit.Texture0);
         gl.BindTexture(TextureTarget.Texture2D, (uint)items[0].Texture.Handle);
 
-        var uProjection = gl.GetUniformLocation(_shader, "uProjection");
-        gl.UniformMatrix4(uProjection, 1, false, (float*)&projection);
-        var uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
-        gl.Uniform1(uTexture0, 0);
+        gl.UniformMatrix4(_uProjection, 1, false, (float*)&projection);
+        gl.Uniform1(_uTexture0, 0);
 
         gl.BindVertexArray(_vao);
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
         gl.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)count);
         gl.BindVertexArray(0);
-    }
-
-    public void Dispose()
-    {
-        if (!_initialized) return;
-        var gl = _window.GL;
-        gl.DeleteProgram(_shader);
-        gl.DeleteVertexArray(_vao);
-        gl.DeleteBuffer(_vbo);
-        gl.DeleteBuffer(_ebo);
-        gl.DeleteBuffer(_instanceVbo);
     }
 
     private void EnsureInitialized()
@@ -171,7 +179,8 @@ public class GLBatchTextureRenderer : IDisposable
         // インスタンスVBO（per-instance: mat4 + vec4）
         _instanceVbo = gl.GenBuffer();
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _instanceVbo);
-        gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(_instanceData.Length * sizeof(float)), null, BufferUsageARB.DynamicDraw);
+        gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(_instanceData.Length * sizeof(float)), null,
+            BufferUsageARB.DynamicDraw);
 
         for (uint i = 0; i < 4; i++)
         {
@@ -181,6 +190,7 @@ public class GLBatchTextureRenderer : IDisposable
             gl.EnableVertexAttribArray(loc);
             gl.VertexAttribDivisor(loc, 1);
         }
+
         // TintColor (location 6)
         gl.VertexAttribPointer(6, 4, VertexAttribPointerType.Float, false,
             (uint)(InstanceStride * sizeof(float)), 16 * sizeof(float));
@@ -195,6 +205,10 @@ public class GLBatchTextureRenderer : IDisposable
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
         gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, indices, BufferUsageARB.StaticDraw);
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
+
+        // uniform location をキャッシュ
+        _uProjection = gl.GetUniformLocation(_shader, "uProjection");
+        _uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
     }
 
     private unsafe void EnsureInstanceBufferCapacity(int count)
