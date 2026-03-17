@@ -1,7 +1,9 @@
-﻿using Promete.Graphics;
+using Promete.Graphics;
 using Promete.Nodes;
+using Promete.Nodes.Renderer;
 using Promete.Nodes.Renderer.GL;
 using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Nodes.Renderer.GL.Runners;
 using Promete.Windowing.GLDesktop;
 
 namespace Promete.GLDesktop;
@@ -18,7 +20,7 @@ public static class OpenGLDesktopAppExtension
     /// <returns>構築されたPrometeAppインスタンス</returns>
     public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder)
     {
-        return builder
+        var app = builder
             .UseRenderer<ContainableNode, GLContainbleNodeRenderer>()
             .UseRenderer<Container, GLContainbleNodeRenderer>()
             .UseRenderer<MaskedContainer, GLMaskedContainerRenderer>()
@@ -33,6 +35,33 @@ public static class OpenGLDesktopAppExtension
             .Use<GLPieSpriteRendererHelper>()
             .Use<GLPrimitiveRendererHelper>()
             .Use<GLMaskedContainerHelper>()
+            .Use<GLBatchTextureRenderer>()
+            .Use<GLRenderState>()
+            .Use<ScissorStateTracker>()
+            .Use<RenderCommandQueue>()
+            // GL CommandRunner 群
+            .Use<GLDrawTextureBatchedCommandRunner>()
+            .Use<GLDrawPrimitiveCommandRunner>()
+            .Use<GLBeginScissorCommandRunner>()
+            .Use<GLEndScissorCommandRunner>()
+            .Use<GLBeginStencilMaskCommandRunner>()
+            .Use<GLBeginAlphaMaskCommandRunner>()
+            .Use<GLEndMaskCommandRunner>()
+            .Use<GLLegacyRenderCommandRunner>()
             .Build<OpenGLDesktopWindow>();
+
+        // ビルド後にランナーをキューへ一括紐付け
+        app.GetPlugin<RenderCommandQueue>().RegisterRunnerRange(
+            app.GetPlugin<GLDrawTextureBatchedCommandRunner>(),
+            app.GetPlugin<GLDrawPrimitiveCommandRunner>(),
+            app.GetPlugin<GLBeginScissorCommandRunner>(),
+            app.GetPlugin<GLEndScissorCommandRunner>(),
+            app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
+            app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
+            app.GetPlugin<GLEndMaskCommandRunner>(),
+            app.GetPlugin<GLLegacyRenderCommandRunner>()
+        );
+
+        return app;
     }
 }

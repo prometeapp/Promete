@@ -23,6 +23,15 @@ public class RenderCommandQueue
     }
 
     /// <summary>
+    /// 複数のランナーをまとめて登録します。
+    /// </summary>
+    public void RegisterRunnerRange(params CommandRunner[] runners)
+    {
+        foreach (var runner in runners)
+            _runners[runner.CommandType] = runner;
+    }
+
+    /// <summary>
     /// コマンドをキューに追加します。
     /// <see cref="DrawTextureCommand"/> は自動的に <see cref="DrawTextureBatchedCommand"/> へ集約されます。
     /// </summary>
