@@ -1,12 +1,21 @@
-﻿using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes.Renderer.GL;
 
-public class GLShapeRenderer(GLPrimitiveRendererHelper helper) : NodeRendererBase
+public class GLShapeRenderer : NodeRendererBase
 {
-    public override void Render(Node node)
+    public override void Collect(Node node, RenderCommandQueue queue)
     {
         var shape = (Shape)node;
-        helper.Draw(shape, shape.Vertices, shape.Type, shape.Color, shape.LineWidth, shape.LineColor);
+
+        queue.Enqueue(new DrawPrimitiveCommand
+        {
+            Node = shape,
+            WorldVertices = shape.Vertices,
+            ShapeType = shape.Type,
+            Color = shape.Color,
+            LineWidth = shape.LineWidth,
+            LineColor = shape.LineColor,
+        });
     }
 }

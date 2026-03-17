@@ -1,11 +1,11 @@
-﻿using Promete.Graphics;
-using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Graphics;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes.Renderer.GL;
 
-public class GLNineSliceSpriteRenderer(GLTextureRendererHelper helper) : NodeRendererBase
+public class GLNineSliceSpriteRenderer : NodeRendererBase
 {
-    public override void Render(Node node)
+    public override void Collect(Node node, RenderCommandQueue queue)
     {
         var sprite = (NineSliceSprite)node;
 
@@ -17,22 +17,27 @@ public class GLNineSliceSpriteRenderer(GLTextureRendererHelper helper) : NodeRen
         var xSpan = sprite.Width - left - right;
         var ySpan = sprite.Height - top - bottom;
 
-        void Draw(Texture2D tex, Vector location, float? width = null, float? height = null)
+        void Enqueue(Texture2D tex, Vector pivot, float? width = null, float? height = null)
         {
-            var w = width ?? tex.Size.X;
-            var h = height ?? tex.Size.Y;
-            helper.Draw(tex, sprite, sprite.TintColor, location, w, h);
+            queue.Enqueue(new DrawTextureCommand
+            {
+                Texture = tex,
+                ModelMatrix = sprite.ModelMatrix,
+                TintColor = sprite.TintColor,
+                Width = width ?? tex.Size.X,
+                Height = height ?? tex.Size.Y,
+                Pivot = pivot,
+            });
         }
 
-        // 9枚を全て描画する
-        Draw(sprite.Texture.TopLeft, (0, 0));
-        Draw(sprite.Texture.TopCenter, Vector.Right * left, xSpan);
-        Draw(sprite.Texture.TopRight, Vector.Right * (left + xSpan));
-        Draw(sprite.Texture.MiddleLeft, Vector.Down * top, null, ySpan);
-        Draw(sprite.Texture.MiddleCenter, (left, top), xSpan, ySpan);
-        Draw(sprite.Texture.MiddleRight, (left + xSpan, top), null, ySpan);
-        Draw(sprite.Texture.BottomLeft, (0, top + ySpan));
-        Draw(sprite.Texture.BottomCenter, (left, top + ySpan), xSpan);
-        Draw(sprite.Texture.BottomRight, (left + xSpan, top + ySpan));
+        Enqueue(sprite.Texture.TopLeft,     (0, 0));
+        Enqueue(sprite.Texture.TopCenter,    Vector.Right * left,             xSpan);
+        Enqueue(sprite.Texture.TopRight,     Vector.Right * (left + xSpan));
+        Enqueue(sprite.Texture.MiddleLeft,   Vector.Down * top,               null, ySpan);
+        Enqueue(sprite.Texture.MiddleCenter, (left, top),                     xSpan, ySpan);
+        Enqueue(sprite.Texture.MiddleRight,  (left + xSpan, top),             null, ySpan);
+        Enqueue(sprite.Texture.BottomLeft,   (0, top + ySpan));
+        Enqueue(sprite.Texture.BottomCenter, (left, top + ySpan),             xSpan);
+        Enqueue(sprite.Texture.BottomRight,  (left + xSpan, top + ySpan));
     }
 }

@@ -1,13 +1,21 @@
-﻿using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes.Renderer.GL;
 
-public class GLSpriteRenderer(GLTextureRendererHelper helper) : NodeRendererBase
+public class GLSpriteRenderer : NodeRendererBase
 {
-    public override void Render(Node node)
+    public override void Collect(Node node, RenderCommandQueue queue)
     {
         var sprite = (Sprite)node;
         if (sprite.Texture is not { } tex) return;
-        helper.Draw(tex, sprite, sprite.TintColor);
+
+        queue.Enqueue(new DrawTextureCommand
+        {
+            Texture = tex,
+            ModelMatrix = sprite.ModelMatrix,
+            TintColor = sprite.TintColor,
+            Width = sprite.Size.X,
+            Height = sprite.Size.Y,
+        });
     }
 }
