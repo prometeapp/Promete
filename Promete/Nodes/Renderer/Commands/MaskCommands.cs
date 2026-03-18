@@ -1,5 +1,4 @@
 using Promete.Graphics;
-using Promete.Nodes;
 
 namespace Promete.Nodes.Renderer.Commands;
 
@@ -19,6 +18,7 @@ public sealed class BeginAlphaMaskCommand : IRenderCommand
 {
     public required MaskedContainer Container { get; init; }
     public required Texture2D MaskTexture { get; init; }
+    public required RenderContext Context { get; init; }
 }
 
 /// <summary>

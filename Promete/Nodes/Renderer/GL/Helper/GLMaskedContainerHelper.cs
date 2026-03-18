@@ -200,7 +200,7 @@ public class GLMaskedContainerHelper : IDisposable
     /// <summary>
     /// MaskedContainerの子要素を独自のフレームバッファにレンダリングし、テクスチャを返します。
     /// </summary>
-    public Texture2D RenderToTexture(MaskedContainer container)
+    public Texture2D RenderToTexture(MaskedContainer container, RenderContext ctx)
     {
         EnsureInitialized();
         var size = container.Size;
@@ -279,7 +279,7 @@ public class GLMaskedContainerHelper : IDisposable
         // 子要素をコマンドキュー経由でレンダリング（スコープで外側を保護）
         _queue.PushScope();
         foreach (var child in sorted)
-            _app.CollectNode(child, _queue);
+            _app.CollectNode(child, _queue, ctx);
         _queue.PopScopeAndFlush();
 
         // MaskedContainerの状態を元に戻す

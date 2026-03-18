@@ -1,4 +1,6 @@
 using System.Drawing;
+using Promete.Nodes.Renderer;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes;
 
@@ -41,6 +43,19 @@ public class Shape : Node
     /// 図形の種類を取得します。
     /// </summary>
     public ShapeType Type { get; }
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        queue.Enqueue(new DrawPrimitiveCommand
+        {
+            Node = this,
+            WorldVertices = Vertices,
+            ShapeType = Type,
+            Color = Color,
+            LineWidth = LineWidth,
+            LineColor = LineColor,
+        });
+    }
 
     /// <summary>
     /// ピクセルを作成します。

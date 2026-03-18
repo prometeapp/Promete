@@ -11,10 +11,13 @@ namespace Promete.Nodes.Renderer;
 /// </summary>
 public class RenderCommandQueue
 {
+    private readonly record struct TrimState(int X, int Y, int Width, int Height, bool Enabled);
+
     private readonly Stack<DrawTextureBatchedCommand> _batchPool = new();
     private readonly Stack<List<IRenderCommand>> _listPool = new();
     private readonly Dictionary<Type, CommandRunner> _runners = new();
     private readonly Stack<List<IRenderCommand>> _scopeStack = new();
+    private readonly Stack<TrimState> _trimStack = new();
     private List<IRenderCommand> _commands = [];
 
     /// <summary>
@@ -67,12 +70,83 @@ public class RenderCommandQueue
     }
 
     /// <summary>
+    /// トリム矩形をスタックにプッシュし、親との積集合を計算して BeginTrimCommand をキューに追加します。
+    /// </summary>
+    /// <param name="node">トリム対象のノード。</param>
+    /// <param name="ctx">レンダリングコンテキスト。</param>
+    public void PushTrim(ContainableNode node, RenderContext ctx)
+    {
+        var parent = _trimStack.TryPeek(out var p) ? p : new TrimState(0, 0, 0, 0, false);
+
+        var left = (VectorInt)node.AbsoluteLocation;
+        var size = (VectorInt)(node.Size * node.AbsoluteScale);
+
+        if (left.X < 0) left.X = 0;
+        if (left.Y < 0) left.Y = 0;
+
+        if (left.X + size.X > ctx.ActualWidth)
+            size.X = left.X + size.X - ctx.ActualWidth;
+
+        if (left.Y + size.Y > ctx.ActualHeight)
+            size.Y = left.Y + size.Y - ctx.ActualHeight;
+
+        // OpenGL の Scissor は左下原点なので Y を反転
+        var flippedY = ctx.ActualHeight - left.Y - size.Y;
+
+        var sx = left.X * ctx.WindowScale;
+        var sy = flippedY * ctx.WindowScale;
+        var sw = size.X * ctx.WindowScale;
+        var sh = size.Y * ctx.WindowScale;
+
+        // 親のトリムが有効なら積集合を取る
+        if (parent.Enabled)
+        {
+            var right = Math.Min(sx + sw, parent.X + parent.Width);
+            var top = Math.Min(sy + sh, parent.Y + parent.Height);
+            sx = Math.Max(sx, parent.X);
+            sy = Math.Max(sy, parent.Y);
+            sw = Math.Max(0, right - sx);
+            sh = Math.Max(0, top - sy);
+        }
+
+        var newState = new TrimState((int)sx, (int)sy, (int)sw, (int)sh, true);
+        _trimStack.Push(newState);
+
+        Enqueue(new BeginTrimCommand
+        {
+            X = newState.X,
+            Y = newState.Y,
+            Width = newState.Width,
+            Height = newState.Height,
+        });
+    }
+
+    /// <summary>
+    /// トリムスタックからポップし、EndTrimCommand をキューに追加します。
+    /// </summary>
+    public void PopTrim()
+    {
+        if (_trimStack.Count > 0) _trimStack.Pop();
+
+        var parent = _trimStack.TryPeek(out var p) ? p : new TrimState(0, 0, 0, 0, false);
+        Enqueue(new EndTrimCommand
+        {
+            X = parent.X,
+            Y = parent.Y,
+            Width = parent.Width,
+            Height = parent.Height,
+            WasEnabled = parent.Enabled,
+        });
+    }
+
+    /// <summary>
     /// キューをクリアします。フレーム開始時に呼び出してください。
     /// </summary>
     public void Clear()
     {
         ReturnBatchesToPool(_commands);
         _commands.Clear();
+        _trimStack.Clear();
     }
 
     /// <summary>
