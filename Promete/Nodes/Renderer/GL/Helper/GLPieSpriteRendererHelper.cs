@@ -3,6 +3,7 @@ using System;
 using System.Drawing;
 using System.Numerics;
 using Promete.Graphics;
+using Promete.Nodes.Renderer.Commands;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
@@ -103,27 +104,36 @@ public class GLPieSpriteRendererHelper
     }
 
     /// <summary>
+    /// DrawPieTextureCommand を使用して PieSprite を画面上に描画します。
+    /// </summary>
+    /// <param name="command">描画コマンド。</param>
+    public unsafe void Draw(DrawPieTextureCommand command)
+    {
+        Draw(command.Texture, command.ModelMatrix, command.TintColor, command.Width, command.Height, command.StartPercent, command.Percent);
+    }
+
+    /// <summary>
     /// PieSpriteを画面上に描画します。
     /// </summary>
     /// <param name="texture">描画対象のテクスチャ。</param>
-    /// <param name="node">位置やサイズなどの情報を保持するノード。</param>
+    /// <param name="modelMatrix">モデル行列。</param>
     /// <param name="color">テクスチャに反映するティントカラー。</param>
+    /// <param name="width">描画幅。</param>
+    /// <param name="height">描画高さ。</param>
     /// <param name="startPercent">描画開始位置のパーセント（0.0 ~ 100.0）。</param>
     /// <param name="percent">描画終了位置のパーセント（0.0 ~ 100.0）。</param>
-    public unsafe void Draw(Texture2D texture, Node node, Color? color, float startPercent, float percent)
+    public unsafe void Draw(Texture2D texture, Matrix4x4 modelMatrix, Color color, float width, float height, float startPercent, float percent)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
         var gl = _window.GL;
-        var c = color ?? Color.White;
-        var finalWidth = node.Size.X;
-        var finalHeight = node.Size.Y;
+        var c = color;
 
         // モデル行列を計算
-        var modelMatrix =
-            Matrix4x4.CreateScale(new Vector3(finalWidth, finalHeight, 1))
+        modelMatrix =
+            Matrix4x4.CreateScale(new Vector3(width, height, 1))
             * Matrix4x4.CreateTranslation(new Vector3(Vector.Zero.ToNumerics(), 0))
-            * node.ModelMatrix;
+            * modelMatrix;
 
         // ビューポートの大きさを取得する
         var viewport = GLHelper.GetViewport(gl);

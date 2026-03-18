@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Promete.Nodes.Renderer;
 
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
 
@@ -46,6 +47,25 @@ public abstract class ContainableNode : Node
         {
             if (!children[i].IsDestroyed) continue;
             children.RemoveAt(i);
+        }
+    }
+
+    internal override void BeforeRender()
+    {
+        base.BeforeRender();
+        foreach (var child in sortedChildren)
+        {
+            if (!child.IsVisible || child.IsDestroyed) continue;
+            child.BeforeRender();
+        }
+    }
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        foreach (var child in sortedChildren)
+        {
+            if (!child.IsVisible || child.IsDestroyed) continue;
+            child.Collect(queue, ctx);
         }
     }
 

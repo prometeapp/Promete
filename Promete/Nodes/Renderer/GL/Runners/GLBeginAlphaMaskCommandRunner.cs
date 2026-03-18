@@ -11,7 +11,7 @@ public class GLBeginAlphaMaskCommandRunner(GLMaskedContainerHelper maskHelper)
 {
     public override void Execute(BeginAlphaMaskCommand command)
     {
-        var contentTexture = maskHelper.RenderToTexture(command.Container);
+        var contentTexture = maskHelper.RenderToTexture(command.Container, command.Context);
         maskHelper.DrawMasked(contentTexture, command.MaskTexture, command.Container);
     }
 }

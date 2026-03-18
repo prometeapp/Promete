@@ -1,5 +1,4 @@
 using Promete.Graphics;
-using Promete.Nodes;
 using Promete.Nodes.Renderer;
 using Promete.Nodes.Renderer.GL;
 using Promete.Nodes.Renderer.GL.Helper;
@@ -21,15 +20,6 @@ public static class OpenGLDesktopAppExtension
     public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder)
     {
         var app = builder
-            .UseRenderer<ContainableNode, GLContainbleNodeRenderer>()
-            .UseRenderer<Container, GLContainbleNodeRenderer>()
-            .UseRenderer<MaskedContainer, GLMaskedContainerRenderer>()
-            .UseRenderer<NineSliceSprite, GLNineSliceSpriteRenderer>()
-            .UseRenderer<PieSprite, GLPieSpriteRenderer>()
-            .UseRenderer<Shape, GLShapeRenderer>()
-            .UseRenderer<Sprite, GLSpriteRenderer>()
-            .UseRenderer<Text, GLTextRenderer>()
-            .UseRenderer<Tilemap, GLTilemapRenderer>()
             .Use<IFrameBufferProvider, GLFrameBufferProvider>()
             .Use<GLTextureRendererHelper>()
             .Use<GLPieSpriteRendererHelper>()
@@ -37,29 +27,28 @@ public static class OpenGLDesktopAppExtension
             .Use<GLMaskedContainerHelper>()
             .Use<GLBatchTextureRenderer>()
             .Use<GLRenderState>()
-            .Use<ScissorStateTracker>()
             .Use<RenderCommandQueue>()
             // GL CommandRunner 群
             .Use<GLDrawTextureBatchedCommandRunner>()
             .Use<GLDrawPrimitiveCommandRunner>()
-            .Use<GLBeginScissorCommandRunner>()
-            .Use<GLEndScissorCommandRunner>()
+            .Use<GLBeginTrimCommandRunner>()
+            .Use<GLEndTrimCommandRunner>()
             .Use<GLBeginStencilMaskCommandRunner>()
             .Use<GLBeginAlphaMaskCommandRunner>()
             .Use<GLEndMaskCommandRunner>()
-            .Use<GLLegacyRenderCommandRunner>()
+            .Use<GLDrawPieTextureCommandRunner>()
             .Build<OpenGLDesktopWindow>();
 
         // ビルド後にランナーをキューへ一括紐付け
         app.GetPlugin<RenderCommandQueue>().RegisterRunnerRange(
             app.GetPlugin<GLDrawTextureBatchedCommandRunner>(),
             app.GetPlugin<GLDrawPrimitiveCommandRunner>(),
-            app.GetPlugin<GLBeginScissorCommandRunner>(),
-            app.GetPlugin<GLEndScissorCommandRunner>(),
+            app.GetPlugin<GLBeginTrimCommandRunner>(),
+            app.GetPlugin<GLEndTrimCommandRunner>(),
             app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
             app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
             app.GetPlugin<GLEndMaskCommandRunner>(),
-            app.GetPlugin<GLLegacyRenderCommandRunner>()
+            app.GetPlugin<GLDrawPieTextureCommandRunner>()
         );
 
         return app;

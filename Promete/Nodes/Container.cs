@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Promete.Nodes.Renderer;
 
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
 
@@ -37,6 +38,20 @@ public class Container : ContainableNode, IEnumerable<Node>
     {
         get => isTrimmable;
         set => isTrimmable = value;
+    }
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        if (IsTrimmable)
+        {
+            queue.PushTrim(this, ctx);
+            base.Collect(queue, ctx);
+            queue.PopTrim();
+        }
+        else
+        {
+            base.Collect(queue, ctx);
+        }
     }
 
     /// <summary>

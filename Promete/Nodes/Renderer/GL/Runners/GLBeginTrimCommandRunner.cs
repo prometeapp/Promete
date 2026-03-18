@@ -7,14 +7,14 @@ using Silk.NET.OpenGL;
 namespace Promete.Nodes.Renderer.GL.Runners;
 
 /// <summary>
-/// <see cref="BeginScissorCommand"/> でシザーテストを開始するランナーです。
+/// <see cref="BeginTrimCommand"/> でシザーテストを開始するランナーです。
 /// </summary>
-public class GLBeginScissorCommandRunner(IWindow window) : CommandRunner<BeginScissorCommand>
+public class GLBeginTrimCommandRunner(IWindow window) : CommandRunner<BeginTrimCommand>
 {
     private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow
         ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
 
-    public override void Execute(BeginScissorCommand command)
+    public override void Execute(BeginTrimCommand command)
     {
         var gl = _window.GL;
         gl.Enable(GLEnum.ScissorTest);

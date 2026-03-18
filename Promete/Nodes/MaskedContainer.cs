@@ -1,4 +1,6 @@
 using Promete.Graphics;
+using Promete.Nodes.Renderer;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes;
 
@@ -51,5 +53,56 @@ public class MaskedContainer : Container
     {
         MaskTexture = maskTexture;
         UseAlphaMask = useAlphaMask;
+    }
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        // マスクなしの場合は通常のコンテナとして収集
+        if (MaskTexture is not { } maskTexture)
+        {
+            base.Collect(queue, ctx);
+            return;
+        }
+
+        if (UseAlphaMask)
+        {
+            queue.Enqueue(new BeginAlphaMaskCommand
+            {
+                Container = this,
+                MaskTexture = maskTexture,
+                Context = ctx,
+            });
+            // BeginAlphaMaskCommandRunner が内部で子要素のレンダリングまで完結させる
+        }
+        else
+        {
+            queue.Enqueue(new BeginStencilMaskCommand
+            {
+                Container = this,
+                MaskTexture = maskTexture,
+            });
+
+            if (IsTrimmable)
+            {
+                queue.PushTrim(this, ctx);
+                CollectChildren(queue, ctx);
+                queue.PopTrim();
+            }
+            else
+            {
+                CollectChildren(queue, ctx);
+            }
+
+            queue.Enqueue(new EndMaskCommand());
+        }
+    }
+
+    private void CollectChildren(RenderCommandQueue queue, RenderContext ctx)
+    {
+        foreach (var child in sortedChildren)
+        {
+            if (!child.IsVisible || child.IsDestroyed) continue;
+            child.Collect(queue, ctx);
+        }
     }
 }

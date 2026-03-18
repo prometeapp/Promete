@@ -1,4 +1,5 @@
 using System.Numerics;
+using Promete.Nodes.Renderer;
 
 namespace Promete.Nodes;
 
@@ -179,11 +180,20 @@ public abstract class Node
         OnUpdate();
     }
 
-    internal void BeforeRender()
+    internal virtual void BeforeRender()
     {
         if (_isModelMatrixDirty) UpdateModelMatrix();
         OnPreRender();
         OnRender();
+    }
+
+    /// <summary>
+    /// このノードのレンダリングコマンドをキューに収集します。
+    /// </summary>
+    /// <param name="queue">コマンドの収集先キュー。</param>
+    /// <param name="ctx">レンダリングコンテキスト。</param>
+    internal virtual void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
     }
 
     protected internal virtual void UpdateModelMatrix()

@@ -11,7 +11,6 @@ using Promete.Graphics;
 using Promete.Internal;
 using Promete.Nodes;
 using Promete.Nodes.Renderer;
-using Promete.Nodes.Renderer.GL;
 using Promete.Windowing;
 
 namespace Promete;
@@ -65,22 +64,18 @@ public sealed class PrometeApp : IDisposable
 
     private readonly ServiceProvider _provider;
     private readonly ServiceCollection _services;
-    private readonly Dictionary<Type, NodeRendererBase?> _renderers = new();
-    private readonly Dictionary<Type, Type> _rendererTypes;
     private readonly List<Type> _pluginTypes;
     private readonly List<IInitializable> _initializablePlugins = [];
     private readonly List<IUpdatable> _updatablePlugins = [];
     private readonly List<IDisposable> _disposablePlugins = [];
 
     private RenderCommandQueue? _renderCommandQueue;
-    private ScissorStateTracker? _scissorStateTracker;
 
-    private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes, List<Type> pluginTypes)
+    private PrometeApp(ServiceCollection services, List<Type> pluginTypes)
     {
         _mainThread = Thread.CurrentThread;
 
         _services = services;
-        _rendererTypes = rendererTypes;
         _pluginTypes = pluginTypes;
         RegisterAllScenes();
         services.AddSingleton(this);
@@ -306,30 +301,16 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    /// 指定した <see cref="Node" /> を描画します。
-    /// </summary>
-    /// <param name="node">描画対象のノード。</param>
-    public void RenderNode(Node node)
-    {
-        // ノードが非表示あるいは破棄されている場合は描画しない
-        if (!node.IsVisible || node.IsDestroyed) return;
-
-        node.BeforeRender();
-        var renderer = ResolveRenderer(node);
-        renderer?.Render(node);
-    }
-
-    /// <summary>
     /// 指定した <see cref="Node" /> のレンダリングコマンドをキューに収集します。
     /// </summary>
     /// <param name="node">収集対象のノード。</param>
     /// <param name="queue">コマンドの収集先キュー。</param>
-    public void CollectNode(Node node, RenderCommandQueue queue)
+    /// <param name="ctx">レンダリングコンテキスト。</param>
+    public void CollectNode(Node node, RenderCommandQueue queue, RenderContext ctx)
     {
         if (!node.IsVisible || node.IsDestroyed) return;
         node.BeforeRender();
-        var renderer = ResolveRenderer(node);
-        renderer?.Collect(node, queue);
+        node.Collect(queue, ctx);
     }
 
     /// <summary>
@@ -370,13 +351,8 @@ public sealed class PrometeApp : IDisposable
             if (instance is IDisposable disposable) _disposablePlugins.Add(disposable);
         }
 
-        foreach (var (nodeType, rendererType) in _rendererTypes)
-            _renderers[nodeType] = _provider.GetService(rendererType) as NodeRendererBase ??
-                                   throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
-
-        // レンダリングキューとシザートラッカーをキャッシュ
+        // レンダリングキューをキャッシュ
         _renderCommandQueue = _provider.GetService<RenderCommandQueue>();
-        _scissorStateTracker = _provider.GetService<ScissorStateTracker>();
 
         // プラグインの初期化
         foreach (var plugin in _initializablePlugins)
@@ -408,11 +384,17 @@ public sealed class PrometeApp : IDisposable
         }
 
         var queue = _renderCommandQueue;
-        _scissorStateTracker?.Clear();
+        var ctx = new RenderContext
+        {
+            WindowSize = Window.Size,
+            WindowScale = Window.Scale,
+            ActualWidth = Window.ActualWidth,
+            ActualHeight = Window.ActualHeight,
+        };
         queue.Clear();
-        CollectNode(GlobalBackground, queue);
-        if (Root != null) CollectNode(Root, queue);
-        CollectNode(GlobalForeground, queue);
+        CollectNode(GlobalBackground, queue, ctx);
+        if (Root != null) CollectNode(Root, queue, ctx);
+        CollectNode(GlobalForeground, queue, ctx);
         queue.ProcessAndFlush();
     }
 
@@ -431,24 +413,6 @@ public sealed class PrometeApp : IDisposable
             if (!_nextFrameQueue.TryDequeue(out var task)) return;
             task();
         }
-    }
-
-    private NodeRendererBase? ResolveRenderer(Node node)
-    {
-        var nodeType = node.GetType();
-        if (_renderers.TryGetValue(nodeType, out var renderer)) return renderer;
-
-        // ノードの型が登録されていない場合、親クラスの型が登録されているかを確認する
-        var alternativeRendererType = _renderers.Keys.FirstOrDefault(k => nodeType.IsSubclassOf(k));
-        if (alternativeRendererType is null)
-        {
-            LogHelper.Warn($"The renderer for \"{nodeType}\" is not registered.");
-            _renderers[nodeType] = null;
-            return null;
-        }
-
-        _renderers[nodeType] = _renderers[alternativeRendererType];
-        return _renderers[nodeType];
     }
 
     private void RegisterAllScenes()
@@ -493,7 +457,6 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public sealed class PrometeAppBuilder
     {
-        private readonly Dictionary<Type, Type> _rendererTypes = [];
         private readonly ServiceCollection _services;
         private readonly List<Type> _pluginTypes = [];
 
@@ -535,20 +498,6 @@ public sealed class PrometeApp : IDisposable
         }
 
         /// <summary>
-        /// 指定したノード型とレンダラー型のレンダラーを追加します。
-        /// </summary>
-        /// <typeparam name="TNode">ノードの型。</typeparam>
-        /// <typeparam name="TRenderer">レンダラーの型。</typeparam>
-        /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder UseRenderer<TNode, TRenderer>()
-            where TRenderer : NodeRendererBase
-            where TNode : Node
-        {
-            _rendererTypes[typeof(TNode)] = typeof(TRenderer);
-            return Use<TRenderer>();
-        }
-
-        /// <summary>
         /// Promete アプリケーションをビルドします。
         /// </summary>
         /// <typeparam name="TWindow">ウィンドウの型。</typeparam>
@@ -556,7 +505,7 @@ public sealed class PrometeApp : IDisposable
         public PrometeApp Build<TWindow>() where TWindow : IWindow
         {
             _services.AddSingleton(typeof(IWindow), typeof(TWindow));
-            return new PrometeApp(_services, _rendererTypes, _pluginTypes);
+            return new PrometeApp(_services, _pluginTypes);
         }
 
         /// <summary>

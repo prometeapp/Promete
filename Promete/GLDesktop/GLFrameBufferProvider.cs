@@ -86,9 +86,16 @@ public class GLFrameBufferProvider : IFrameBufferProvider
         gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         // 子要素をコマンドキュー経由でレンダリング（スコープで外側を保護）
+        var ctx = new RenderContext
+        {
+            WindowSize = _glWindow.Size,
+            WindowScale = _glWindow.Scale,
+            ActualWidth = _glWindow.ActualWidth,
+            ActualHeight = _glWindow.ActualHeight,
+        };
         _queue.PushScope();
         foreach (var child in frameBuffer.SortedChildren)
-            _app.CollectNode(child, _queue);
+            _app.CollectNode(child, _queue, ctx);
         _queue.PopScopeAndFlush();
 
         // フレームバッファのバインドを解除
