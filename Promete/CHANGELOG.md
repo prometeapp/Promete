@@ -1,4 +1,4 @@
-﻿## 1.3.2
+## 1.3.2
 - fix(Node): Sizeプロパティを変更しても内部のジオメトリマトリックスが変化しない問題を修正
 - fix(OpenGLDesktopWindow): TakeScreenshotAsImage()の戻り値を修正し、警告を抑制
 - fix(Rect, RectInt): Centerプロパティを追加し、矩形の中心座標を取得できるように

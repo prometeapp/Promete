@@ -16,8 +16,8 @@ public class GLBatchTextureRenderer : IDisposable
 {
     private const int InitialInstanceCapacity = 512;
 
-    // per-instance: mat4(16) + vec4 tintColor(4) = 20 floats
-    private const int InstanceStride = 20;
+    // per-instance: mat4(16) + vec4 tintColor(4) + vec4 uvRect(4) = 24 floats
+    private const int InstanceStride = 24;
 
     private readonly OpenGLDesktopWindow _window;
     private bool _initialized;
@@ -97,6 +97,14 @@ public class GLBatchTextureRenderer : IDisposable
             _instanceData[offset + 17] = c.G / 255f;
             _instanceData[offset + 18] = c.B / 255f;
             _instanceData[offset + 19] = c.A / 255f;
+
+            // UV座標（シェーダー側でmix補間するため、Y反転は不要）
+            var uvStart = cmd.Texture.UvStart;
+            var uvEnd = cmd.Texture.UvEnd;
+            _instanceData[offset + 20] = uvStart.X;
+            _instanceData[offset + 21] = uvStart.Y;
+            _instanceData[offset + 22] = uvEnd.X;
+            _instanceData[offset + 23] = uvEnd.Y;
         }
 
         // インスタンスデータをGPUに転送
@@ -196,6 +204,12 @@ public class GLBatchTextureRenderer : IDisposable
             (uint)(InstanceStride * sizeof(float)), 16 * sizeof(float));
         gl.EnableVertexAttribArray(6);
         gl.VertexAttribDivisor(6, 1);
+
+        // UvRect (location 7): xy = uvStart, zw = uvEnd
+        gl.VertexAttribPointer(7, 4, VertexAttribPointerType.Float, false,
+            (uint)(InstanceStride * sizeof(float)), 20 * sizeof(float));
+        gl.EnableVertexAttribArray(7);
+        gl.VertexAttribDivisor(7, 1);
 
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
         gl.BindVertexArray(0);
