@@ -6,10 +6,11 @@ namespace Promete;
 public static class TransformExtension
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Rotate(this Vector point, float angleInRadian)
+    public static Vector Rotate(this Vector point, Angle angle)
     {
-        var cos = MathF.Cos(angleInRadian);
-        var sin = MathF.Sin(angleInRadian);
+        var rad = angle.Radians;
+        var cos = MathF.Cos(rad);
+        var sin = MathF.Sin(rad);
         return (point.X * cos - point.Y * sin, point.X * sin + point.Y * cos);
     }
 

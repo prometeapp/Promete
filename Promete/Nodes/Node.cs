@@ -8,6 +8,17 @@ namespace Promete.Nodes;
 /// </summary>
 public abstract class Node
 {
+    private Angle _angle;
+
+    private bool _isModelMatrixDirty = true;
+
+    private Vector _location;
+    private Vector _pivot = Vector.Zero;
+    private Vector _scale = (1, 1);
+    private VectorInt _size;
+
+    private int _zIndex;
+
     /// <summary>
     /// このノードの名前を取得または設定します。
     /// </summary>
@@ -56,9 +67,9 @@ public abstract class Node
     }
 
     /// <summary>
-    /// このノードの角度（0-360°）を取得または設定します。
+    /// このノードの角度を取得または設定します。
     /// </summary>
-    public float Angle
+    public Angle Angle
     {
         get => _angle;
         set
@@ -144,7 +155,7 @@ public abstract class Node
     /// <summary>
     /// このノードの絶対角度（親ノードの角度を考慮した角度）を取得します。
     /// </summary>
-    public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
+    public Angle AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
 
     /// <summary>
     /// このノードの親ノードを取得します。
@@ -152,17 +163,6 @@ public abstract class Node
     public ContainableNode? Parent { get; internal set; }
 
     internal Matrix4x4 ModelMatrix { get; private set; } = Matrix4x4.Identity;
-
-    private float _angle;
-
-    private bool _isModelMatrixDirty = true;
-
-    private Vector _location;
-    private Vector _scale = (1, 1);
-    private Vector _pivot = Vector.Zero;
-
-    private int _zIndex;
-    private VectorInt _size;
 
     /// <summary>
     /// このノードを破棄します。
@@ -201,7 +201,7 @@ public abstract class Node
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
         ModelMatrix = Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0) *
                       Matrix4x4.CreateScale(Scale.X, Scale.Y, 1) *
-                      Matrix4x4.CreateRotationZ(MathHelper.ToRadian(Angle)) *
+                      Matrix4x4.CreateRotationZ(Angle.Radians) *
                       Matrix4x4.CreateTranslation(Location.X, Location.Y, 0) *
                       parentMatrix;
         _isModelMatrixDirty = false;
