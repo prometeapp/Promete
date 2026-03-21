@@ -25,7 +25,7 @@ public class GLDrawPieTextureCommandRunner(IWindow window) : CommandRunner<DrawP
 
     public override void Execute(DrawPieTextureCommand command)
     {
-        Draw(command.Texture, command.ModelMatrix, command.TintColor, command.Width, command.Height, command.StartPercent, command.Percent);
+        Draw(command.Texture, command.ModelMatrix, command.TintColor, command.Width, command.Height, command.StartPercent, command.Percent, command.Material);
     }
 
     /// <summary>
@@ -38,7 +38,8 @@ public class GLDrawPieTextureCommandRunner(IWindow window) : CommandRunner<DrawP
     /// <param name="height">描画高さ。</param>
     /// <param name="startPercent">描画開始位置のパーセント（0.0 ~ 100.0）。</param>
     /// <param name="percent">描画終了位置のパーセント（0.0 ~ 100.0）。</param>
-    public unsafe void Draw(Texture2D texture, Matrix4x4 modelMatrix, Color color, float width, float height, float startPercent, float percent)
+    /// <param name="material">適用するマテリアル。null の場合はデフォルトシェーダーを使用します。</param>
+    public unsafe void Draw(Texture2D texture, Matrix4x4 modelMatrix, Color color, float width, float height, float startPercent, float percent, Material? material = null)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
@@ -75,20 +76,40 @@ public class GLDrawPieTextureCommandRunner(IWindow window) : CommandRunner<DrawP
             BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
-        // シェーダーおよびテクスチャを利用する
-        gl.UseProgram(_shader);
+        // シェーダー選択: カスタムマテリアルがある場合はそのプログラムを使用
+        var program = material is { } mat ? (uint)mat.Shader.Handle : _shader;
+        gl.UseProgram(program);
+
         gl.ActiveTexture(TextureUnit.Texture0);
         gl.BindTexture(TextureTarget.Texture2D, (uint)texture.Handle);
 
-        // シェーダーに行列情報を渡す
-        gl.UniformMatrix4(_uModel, 1, false, (float*)&modelMatrix);
-        gl.UniformMatrix4(_uProjection, 1, false, (float*)&projectionMatrix);
-        gl.Uniform1(_uTexture0, 0);
-        gl.Uniform4(_uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
-
-        // パーセント角度をシェーダーに渡す
-        gl.Uniform1(_uStartAngle, startAngle);
-        gl.Uniform1(_uEndAngle, endAngle);
+        if (material is not null)
+        {
+            // カスタムシェーダー: ロケーションをキャッシュ付きで取得 (-1 はスキップ)
+            var uModel = GLMaterialApplier.GetLocation(gl, program, "uModel");
+            var uProj = GLMaterialApplier.GetLocation(gl, program, "uProjection");
+            var uTex = GLMaterialApplier.GetLocation(gl, program, "uTexture0");
+            var uTint = GLMaterialApplier.GetLocation(gl, program, "uTintColor");
+            var uStart = GLMaterialApplier.GetLocation(gl, program, "uStartAngle");
+            var uEnd = GLMaterialApplier.GetLocation(gl, program, "uEndAngle");
+            if (uModel >= 0) gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
+            if (uProj >= 0) gl.UniformMatrix4(uProj, 1, false, (float*)&projectionMatrix);
+            if (uTex >= 0) gl.Uniform1(uTex, 0);
+            if (uTint >= 0) gl.Uniform4(uTint, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
+            if (uStart >= 0) gl.Uniform1(uStart, startAngle);
+            if (uEnd >= 0) gl.Uniform1(uEnd, endAngle);
+            GLMaterialApplier.Apply(gl, program, material);
+        }
+        else
+        {
+            // デフォルトシェーダー: キャッシュ済みロケーションを使用
+            gl.UniformMatrix4(_uModel, 1, false, (float*)&modelMatrix);
+            gl.UniformMatrix4(_uProjection, 1, false, (float*)&projectionMatrix);
+            gl.Uniform1(_uTexture0, 0);
+            gl.Uniform4(_uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
+            gl.Uniform1(_uStartAngle, startAngle);
+            gl.Uniform1(_uEndAngle, endAngle);
+        }
 
         // 描画
         gl.BindVertexArray(_vao);

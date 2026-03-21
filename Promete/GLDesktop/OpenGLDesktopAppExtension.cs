@@ -20,6 +20,7 @@ public static class OpenGLDesktopAppExtension
     public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder)
     {
         var app = builder
+            .Use<IShaderFactory, GLShaderFactory>()
             .Use<IFrameBufferProvider, GLFrameBufferProvider>()
             .Use<GLMaskedContainerHelper>()
             .Use<GLRenderState>()

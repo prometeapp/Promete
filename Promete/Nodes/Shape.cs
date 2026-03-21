@@ -12,6 +12,7 @@ public class Shape : Node
 {
     private DrawPrimitiveCommand? _cachedCommand;
     private Matrix4x4 _cachedModelMatrix;
+    private Material? _cachedMaterial;
 
     private Shape(Color c, ShapeType type, int lineWidth, Color? lineColor, params VectorInt[] vertices)
     {
@@ -50,7 +51,7 @@ public class Shape : Node
 
     internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        if (_cachedCommand == null || ModelMatrix != _cachedModelMatrix)
+        if (_cachedCommand == null || ModelMatrix != _cachedModelMatrix || !ReferenceEquals(Material, _cachedMaterial))
         {
             var worldVertices = new Vector[Vertices.Length];
             for (var i = 0; i < Vertices.Length; i++)
@@ -63,8 +64,10 @@ public class Shape : Node
                 Color = Color,
                 LineWidth = LineWidth,
                 LineColor = LineColor,
+                Material = Material,
             };
             _cachedModelMatrix = ModelMatrix;
+            _cachedMaterial = Material;
         }
 
         queue.Enqueue(_cachedCommand);

@@ -40,6 +40,7 @@ public class NineSliceSprite(Texture9Sliced texture, Color? tintColor = default)
                 Width = width ?? tex.Size.X,
                 Height = height ?? tex.Size.Y,
                 Pivot = pivot,
+                Material = Material,
             });
         }
 

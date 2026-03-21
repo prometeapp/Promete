@@ -52,6 +52,7 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
             TintColor = TintColor,
             Width = Size.X,
             Height = Size.Y,
+            Material = Material,
         });
     }
 
