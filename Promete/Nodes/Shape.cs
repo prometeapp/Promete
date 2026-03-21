@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Numerics;
 using Promete.Nodes.Renderer;
 using Promete.Nodes.Renderer.Commands;
 
@@ -9,6 +10,9 @@ namespace Promete.Nodes;
 /// </summary>
 public class Shape : Node
 {
+    private DrawPrimitiveCommand? _cachedCommand;
+    private Matrix4x4 _cachedModelMatrix;
+
     private Shape(Color c, ShapeType type, int lineWidth, Color? lineColor, params VectorInt[] vertices)
     {
         Color = c;
@@ -46,15 +50,24 @@ public class Shape : Node
 
     internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        queue.Enqueue(new DrawPrimitiveCommand
+        if (_cachedCommand == null || ModelMatrix != _cachedModelMatrix)
         {
-            Node = this,
-            WorldVertices = Vertices,
-            ShapeType = Type,
-            Color = Color,
-            LineWidth = LineWidth,
-            LineColor = LineColor,
-        });
+            var worldVertices = new Vector[Vertices.Length];
+            for (var i = 0; i < Vertices.Length; i++)
+                worldVertices[i] = RenderingHelper.Transform(Vertices[i], this);
+
+            _cachedCommand = new DrawPrimitiveCommand
+            {
+                WorldVertices = worldVertices,
+                ShapeType = Type,
+                Color = Color,
+                LineWidth = LineWidth,
+                LineColor = LineColor,
+            };
+            _cachedModelMatrix = ModelMatrix;
+        }
+
+        queue.Enqueue(_cachedCommand);
     }
 
     /// <summary>

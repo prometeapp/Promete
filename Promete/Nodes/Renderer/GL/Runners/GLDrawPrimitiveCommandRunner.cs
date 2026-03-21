@@ -11,7 +11,7 @@ public class GLDrawPrimitiveCommandRunner(GLPrimitiveRendererHelper helper)
 {
     public override void Execute(DrawPrimitiveCommand command)
     {
-        helper.Draw(command.Node, command.WorldVertices, command.ShapeType,
+        helper.Draw(command.WorldVertices, command.ShapeType,
             command.Color, command.LineWidth, command.LineColor);
     }
 }
