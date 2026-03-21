@@ -101,8 +101,8 @@ public class VectorIntTests
         var v1 = new VectorInt(1, 1);
         var v2 = new VectorInt(1, 5);
 
-        v1.Angle().Should().Be(45 * MathF.PI / 180);
-        v1.Angle(v2).Should().Be(90 * MathF.PI / 180);
+        v1.Angle().Should().Be(Promete.Angle.FromDegrees(45));
+        v1.Angle(v2).Should().Be(Promete.Angle.FromDegrees(90));
     }
 
     [Fact]

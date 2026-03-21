@@ -127,10 +127,9 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// 2つのベクトルがなす角を取得します。
     /// </summary>
-    /// <returns>ラジアン単位の角度。</returns>
-    public static float Angle(Vector from, Vector to)
+    public static Angle Angle(Vector from, Vector to)
     {
-        return MathF.Atan2(to.Y - from.Y, to.X - from.X);
+        return Promete.Angle.FromRadians(MathF.Atan2(to.Y - from.Y, to.X - from.X));
     }
 
     /// <summary>
@@ -186,15 +185,15 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このベクトルの角度を取得します。
     /// </summary>
-    public float Angle()
+    public Angle Angle()
     {
-        return MathF.Atan2(Y, X);
+        return Promete.Angle.FromRadians(MathF.Atan2(Y, X));
     }
 
     /// <summary>
     /// このベクトルに対する指定したベクトルの方向を取得します。
     /// </summary>
-    public float Angle(Vector to)
+    public Angle Angle(Vector to)
     {
         return Angle(this, to);
     }

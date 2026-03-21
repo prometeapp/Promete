@@ -28,7 +28,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードの角度を設定します
     /// </summary>
-    public static T Angle<T>(this T node, float angle) where T : Node
+    public static T Angle<T>(this T node, Angle angle) where T : Node
     {
         node.Angle = angle;
         return node;
@@ -127,7 +127,8 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのピボット位置を水平・垂直アライメントで設定します
     /// </summary>
-    public static T Pivot<T>(this T node, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment) where T : Node
+    public static T Pivot<T>(this T node, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
+        where T : Node
     {
         var x = horizontalAlignment switch
         {

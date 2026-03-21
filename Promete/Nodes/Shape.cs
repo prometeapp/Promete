@@ -1,4 +1,7 @@
 using System.Drawing;
+using System.Numerics;
+using Promete.Nodes.Renderer;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes;
 
@@ -7,6 +10,10 @@ namespace Promete.Nodes;
 /// </summary>
 public class Shape : Node
 {
+    private DrawPrimitiveCommand? _cachedCommand;
+    private Matrix4x4 _cachedModelMatrix;
+    private Material? _cachedMaterial;
+
     private Shape(Color c, ShapeType type, int lineWidth, Color? lineColor, params VectorInt[] vertices)
     {
         Color = c;
@@ -41,6 +48,30 @@ public class Shape : Node
     /// 図形の種類を取得します。
     /// </summary>
     public ShapeType Type { get; }
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        if (_cachedCommand == null || ModelMatrix != _cachedModelMatrix || !ReferenceEquals(Material, _cachedMaterial))
+        {
+            var worldVertices = new Vector[Vertices.Length];
+            for (var i = 0; i < Vertices.Length; i++)
+                worldVertices[i] = RenderingHelper.Transform(Vertices[i], this);
+
+            _cachedCommand = new DrawPrimitiveCommand
+            {
+                WorldVertices = worldVertices,
+                ShapeType = Type,
+                Color = Color,
+                LineWidth = LineWidth,
+                LineColor = LineColor,
+                Material = Material,
+            };
+            _cachedModelMatrix = ModelMatrix;
+            _cachedMaterial = Material;
+        }
+
+        queue.Enqueue(_cachedCommand);
+    }
 
     /// <summary>
     /// ピクセルを作成します。

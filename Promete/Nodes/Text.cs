@@ -1,6 +1,8 @@
 using System.Drawing;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
+using Promete.Nodes.Renderer;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes;
 
@@ -206,6 +208,20 @@ public class Text : Node
     /// デフォルトのテキストレンダリングオプション
     /// </summary>
     public static TextRenderingOptions DefaultOptions { get; } = new();
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        if (RenderedTexture is not { } tex) return;
+
+        queue.Enqueue(new DrawTextureCommand
+        {
+            Texture = tex,
+            ModelMatrix = ModelMatrix,
+            TintColor = Color.White,
+            Width = Size.X,
+            Height = Size.Y,
+        });
+    }
 
     protected override void OnPreRender()
     {

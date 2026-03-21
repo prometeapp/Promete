@@ -1,5 +1,7 @@
 ﻿using System.Drawing;
 using Promete.Graphics;
+using Promete.Nodes.Renderer;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes;
 
@@ -38,6 +40,21 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
     }
 
     private Texture2D? _texture = texture;
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        if (Texture is not { } tex) return;
+
+        queue.Enqueue(new DrawTextureCommand
+        {
+            Texture = tex,
+            ModelMatrix = ModelMatrix,
+            TintColor = TintColor,
+            Width = Size.X,
+            Height = Size.Y,
+            Material = Material,
+        });
+    }
 
     /// <summary>
     /// スプライトのサイズをリセットし、テクスチャのサイズを使用するようにします。

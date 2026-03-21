@@ -97,10 +97,9 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// </summary>
     /// <param name="from">始点。</param>
     /// <param name="to">終点。</param>
-    /// <returns>ラジアン単位の角度。</returns>
-    public static float Angle(VectorInt from, VectorInt to)
+    public static Angle Angle(VectorInt from, VectorInt to)
     {
-        return MathF.Atan2(to.Y - from.Y, to.X - from.X);
+        return Promete.Angle.FromRadians(MathF.Atan2(to.Y - from.Y, to.X - from.X));
     }
 
     /// <summary>
@@ -160,15 +159,15 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルの角度を取得します。
     /// </summary>
-    public float Angle()
+    public Angle Angle()
     {
-        return MathF.Atan2(Y, X);
+        return Promete.Angle.FromRadians(MathF.Atan2(Y, X));
     }
 
     /// <summary>
     /// このベクトルに対する指定したベクトルの方向を取得します。
     /// </summary>
-    public float Angle(VectorInt to)
+    public Angle Angle(VectorInt to)
     {
         return Angle(this, to);
     }

@@ -1,7 +1,4 @@
-﻿using System;
-using Silk.NET.OpenGL;
-
-namespace Promete.Nodes.Renderer;
+﻿namespace Promete.Nodes.Renderer;
 
 public static class RenderingHelper
 {
@@ -9,14 +6,14 @@ public static class RenderingHelper
     {
         vertex = vertex
             .Translate(additionalLocation ?? (0, 0))
-            .Rotate(MathHelper.ToRadian(node.Angle))
+            .Rotate(node.Angle)
             .Scale(node.Scale)
             .Translate(node.Location);
         var parent = node.Parent;
         while (parent != null)
         {
             vertex = vertex
-                .Rotate(MathHelper.ToRadian(parent.Angle))
+                .Rotate(parent.Angle)
                 .Scale(parent.Scale)
                 .Translate(parent.Location);
             parent = parent.Parent;

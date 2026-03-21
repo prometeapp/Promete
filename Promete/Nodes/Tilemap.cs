@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using Promete.Graphics;
+using Promete.Nodes.Renderer;
+using Promete.Nodes.Renderer.Commands;
 
 namespace Promete.Nodes;
 
@@ -48,6 +50,77 @@ public class Tilemap(
     {
         get => GetTileAt(point);
         set => SetTile(point, value);
+    }
+
+    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        var mode = RenderingMode == TilemapRenderingMode.Auto
+            ? GetPreferredMode(ctx)
+            : RenderingMode;
+        if (mode == TilemapRenderingMode.Scan)
+            ScanAndCollect(queue, ctx);
+        else
+            FullCollect(queue);
+    }
+
+    private TilemapRenderingMode GetPreferredMode(RenderContext ctx)
+    {
+        var tileSize = TileSize * AbsoluteScale;
+        var (ww, wh) = ctx.WindowSize;
+        var maxTilesX = ww / tileSize.X + 2;
+        var maxTilesY = wh / tileSize.Y + 2;
+        var maxTilesInWindow = maxTilesX * maxTilesY;
+        return maxTilesInWindow < Tiles.Count ? TilemapRenderingMode.Scan : TilemapRenderingMode.RenderAll;
+    }
+
+    private void ScanAndCollect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        var tileSize = TileSize * AbsoluteScale;
+        var (ww, wh) = ctx.WindowSize;
+        var maxTilesX = ww / tileSize.X + 2;
+        var maxTilesY = wh / tileSize.Y + 2;
+
+        var tl = -AbsoluteLocation / tileSize;
+        if (tl.X < 0) tl.X--;
+        if (tl.Y < 0) tl.Y--;
+        var (tx, ty) = (VectorInt)tl;
+
+        var window = PrometeApp.Current.Window;
+        for (var y = ty; y < ty + maxTilesY; y++)
+        for (var x = tx; x < tx + maxTilesX; x++)
+        {
+            var offset = (x, y) * TileSize;
+            var tile = this[x, y];
+            if (tile == null) continue;
+
+            queue.Enqueue(new DrawTextureCommand
+            {
+                Texture = tile.GetTexture(this, (x, y), window),
+                ModelMatrix = ModelMatrix,
+                TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
+                Width = TileSize.X,
+                Height = TileSize.Y,
+                Pivot = offset,
+            });
+        }
+    }
+
+    private void FullCollect(RenderCommandQueue queue)
+    {
+        var window = PrometeApp.Current.Window;
+        foreach (var (tileLocation, (tile, color)) in Tiles)
+        {
+            var offset = tileLocation * TileSize;
+            queue.Enqueue(new DrawTextureCommand
+            {
+                Texture = tile.GetTexture(this, tileLocation, window),
+                ModelMatrix = ModelMatrix,
+                TintColor = color.GetValueOrDefault(Color.White),
+                Width = TileSize.X,
+                Height = TileSize.Y,
+                Pivot = offset,
+            });
+        }
     }
 
     protected override void OnDestroy()

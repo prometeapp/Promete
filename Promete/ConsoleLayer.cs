@@ -14,9 +14,9 @@ namespace Promete;
 public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
 {
     private readonly List<string> _consoleBuffer = [];
+    private int _maxLine;
 
     private Text _text;
-    private int _maxLine;
 
     /// <summary>
     /// 現在のコンソール上のカーソル位置を取得または設定します。
@@ -47,9 +47,10 @@ public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
         _text = new Text("", Font.GetDefault(), Color.White);
         _maxLine = CalculateMaxLine();
 
+        app.GlobalForeground.Add(_text);
+
         app.SceneWillChange += Clear;
         window.Update += () => { _text.Update(); };
-        window.Render += () => { app.RenderNode(_text); };
         window.Resize += () => { _maxLine = CalculateMaxLine(); };
         window.PostUpdate += UpdateConsole;
     }

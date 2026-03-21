@@ -1,4 +1,28 @@
-﻿## 1.3.2
+## HEAD
+
+Promete v2では、より高速な描画を実現するためのレンダリングシステムの大幅な改訂、.NET 10への移行などを実現しました。
+
+- グラフィック描画の仕組みとして、コマンドキューシステムを追加
+    - テクスチャ描画、プリミティブ描画、マスクモード有効化など、GPUへの命令を「コマンド」としてカプセル化し、そのコマンドを毎フレーム実行するという低レイヤー層を新たに導入
+- IWindowの定義を分割し、以下のように機能を分けました。IWindow利用箇所は書き換えが必要です。
+    - IWindow: ウィンドウの位置やサイズなど、その名の通りウィンドウの制御
+    - IGameTime: フレームや時間を取得
+    - IScreenshotProvider: スクリーンショットの取得
+- アプリケーションの起動、終了、フレーム更新などのイベントを `PrometeApp` クラスへ移動しました
+    - `Start`: ゲーム開始時
+    - `PreUpdate`: フレーム更新前
+    - `Update`: フレーム更新
+    - `PostUpdate`: フレーム更新後
+    - `Render`: フレーム描画時
+    - `Destroy`: ゲーム終了時
+- OpenGLTextureFactory: LoadSpriteSheetで、同じハンドルのUV違いのTexture2Dを生成するように
+- Node Rendererを廃止。Nodeは、描画コマンドを発行するように
+- Texture2D: UV座標を持てるように
+- Angle構造体を新規追加
+- 既存の、角度をfloat値として要求または戻り値とする箇所をAngle構造体に置き換え
+- .NET 10へ移行
+
+## 1.3.2
 - fix(Node): Sizeプロパティを変更しても内部のジオメトリマトリックスが変化しない問題を修正
 - fix(OpenGLDesktopWindow): TakeScreenshotAsImage()の戻り値を修正し、警告を抑制
 - fix(Rect, RectInt): Centerプロパティを追加し、矩形の中心座標を取得できるように

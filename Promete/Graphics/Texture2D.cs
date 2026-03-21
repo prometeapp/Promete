@@ -18,13 +18,30 @@ public readonly struct Texture2D : IDisposable
     /// </summary>
     public VectorInt Size { get; }
 
+    /// <summary>
+    /// このテクスチャの左上のUV座標を取得します。
+    /// </summary>
+    public Vector UvStart { get; }
+
+    /// <summary>
+    /// このテクスチャの右下のUV座標を取得します。
+    /// </summary>
+    public Vector UvEnd { get; }
+
     private readonly Action<Texture2D> _onDispose;
 
     internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose)
+        : this(handle, size, onDispose, (0, 0), (1, 1))
+    {
+    }
+
+    internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose, Vector uvStart, Vector uvEnd)
     {
         Handle = handle;
         Size = size;
         _onDispose = onDispose;
+        UvStart = uvStart;
+        UvEnd = uvEnd;
     }
 
     /// <summary>

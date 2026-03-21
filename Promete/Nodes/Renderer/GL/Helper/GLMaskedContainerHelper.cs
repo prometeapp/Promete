@@ -12,23 +12,56 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 /// <summary>
 /// <see cref="MaskedContainer"/> のアルファブレンディング方式でのレンダリングを支援するヘルパークラスです。
 /// </summary>
-public class GLMaskedContainerHelper : IDisposable
+public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderCommandQueue queue) : IDisposable
 {
-    private readonly OpenGLDesktopWindow _window;
-    private readonly IFrameBufferProvider _fbProvider;
-    private readonly uint _maskShader;
-    private readonly uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
-    private readonly uint _vao, _vbo, _ebo;
-
     // 独自のフレームバッファキャッシュ（OpenGLのFBO、RBO、テクスチャ）
-    private readonly Dictionary<MaskedContainer, (uint fbo, uint rbo, uint texture, VectorInt size)> _glFrameBufferCache = [];
+    private readonly Dictionary<MaskedContainer, (uint fbo, uint rbo, uint texture, VectorInt size)>
+        _glFrameBufferCache = [];
 
-    public GLMaskedContainerHelper(IWindow window, IFrameBufferProvider fbProvider)
+    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow ??
+                                                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    private bool _initialized;
+    private uint _maskShader;
+    private uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
+    private int _uMaskModel, _uMaskProjection, _uContent, _uMask, _uMaskTintColor;
+    private int _uStencilModel, _uStencilProjection, _uStencilTexture0, _uStencilTintColor;
+    private uint _vao, _vbo, _ebo;
+
+    /// <summary>
+    /// 全てのキャッシュをクリアします。
+    /// </summary>
+    public void Dispose()
     {
-        _window = window as OpenGLDesktopWindow ??
-                  throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
-        _fbProvider = fbProvider;
+        if (!_initialized) return;
+        var gl = _window.GL;
 
+        // 全てのフレームバッファを破棄
+        foreach (var (_, (fbo, rbo, texture, _)) in _glFrameBufferCache)
+        {
+            gl.DeleteFramebuffer(fbo);
+            gl.DeleteRenderbuffer(rbo);
+            gl.DeleteTexture(texture);
+        }
+
+        _glFrameBufferCache.Clear();
+
+        // シェーダーとバッファを削除
+        gl.DeleteProgram(_maskShader);
+        gl.DeleteProgram(_stencilShader);
+        gl.DeleteVertexArray(_vao);
+        gl.DeleteBuffer(_vbo);
+        gl.DeleteBuffer(_ebo);
+    }
+
+    private void EnsureInitialized()
+    {
+        if (_initialized) return;
+        Initialize();
+        _initialized = true;
+    }
+
+    private void Initialize()
+    {
         var gl = _window.GL;
 
         // マスク適用用のシェーダーをコンパイル
@@ -139,13 +172,27 @@ public class GLMaskedContainerHelper : IDisposable
         Span<uint> indices = [0, 1, 3, 1, 2, 3];
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
         gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, indices, BufferUsageARB.StaticDraw);
+
+        // uniform location をキャッシュ (_maskShader)
+        _uMaskModel = gl.GetUniformLocation(_maskShader, "uModel");
+        _uMaskProjection = gl.GetUniformLocation(_maskShader, "uProjection");
+        _uContent = gl.GetUniformLocation(_maskShader, "uContent");
+        _uMask = gl.GetUniformLocation(_maskShader, "uMask");
+        _uMaskTintColor = gl.GetUniformLocation(_maskShader, "uTintColor");
+
+        // uniform location をキャッシュ (_stencilShader)
+        _uStencilModel = gl.GetUniformLocation(_stencilShader, "uModel");
+        _uStencilProjection = gl.GetUniformLocation(_stencilShader, "uProjection");
+        _uStencilTexture0 = gl.GetUniformLocation(_stencilShader, "uTexture0");
+        _uStencilTintColor = gl.GetUniformLocation(_stencilShader, "uTintColor");
     }
 
     /// <summary>
     /// MaskedContainerの子要素を独自のフレームバッファにレンダリングし、テクスチャを返します。
     /// </summary>
-    public Texture2D RenderToTexture(MaskedContainer container)
+    public Texture2D RenderToTexture(MaskedContainer container, RenderContext ctx)
     {
+        EnsureInitialized();
         var size = container.Size;
 
         // サイズが0以下の場合はデフォルトサイズを使用
@@ -219,12 +266,11 @@ public class GLMaskedContainerHelper : IDisposable
             child.BeforeRender();
         }
 
-        // 子要素を直接レンダリング
-        var app = PrometeApp.Current;
+        // 子要素をコマンドキュー経由でレンダリング（スコープで外側を保護）
+        queue.PushScope();
         foreach (var child in sorted)
-        {
-            app.RenderNode(child);
-        }
+            app.CollectNode(child, queue, ctx);
+        queue.PopScopeAndFlush();
 
         // MaskedContainerの状態を元に戻す
         container.Parent = originalParent;
@@ -293,6 +339,7 @@ public class GLMaskedContainerHelper : IDisposable
     public unsafe void DrawMaskToStencil(Texture2D maskTexture, Node node)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
+        EnsureInitialized();
         var gl = _window.GL;
 
         // モデル行列を計算
@@ -322,17 +369,10 @@ public class GLMaskedContainerHelper : IDisposable
         gl.BindTexture(TextureTarget.Texture2D, (uint)maskTexture.Handle);
 
         // Uniformを設定
-        var uModel = gl.GetUniformLocation(_stencilShader, "uModel");
-        gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
-
-        var uProjection = gl.GetUniformLocation(_stencilShader, "uProjection");
-        gl.UniformMatrix4(uProjection, 1, false, (float*)&projectionMatrix);
-
-        var uTexture0 = gl.GetUniformLocation(_stencilShader, "uTexture0");
-        gl.Uniform1(uTexture0, 0);
-
-        var uTintColor = gl.GetUniformLocation(_stencilShader, "uTintColor");
-        gl.Uniform4(uTintColor, new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+        gl.UniformMatrix4(_uStencilModel, 1, false, (float*)&modelMatrix);
+        gl.UniformMatrix4(_uStencilProjection, 1, false, (float*)&projectionMatrix);
+        gl.Uniform1(_uStencilTexture0, 0);
+        gl.Uniform4(_uStencilTintColor, new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
 
         // 描画
         gl.BindVertexArray(_vao);
@@ -351,6 +391,7 @@ public class GLMaskedContainerHelper : IDisposable
     public unsafe void DrawMasked(Texture2D contentTexture, Texture2D maskTexture, Node node)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
+        EnsureInitialized();
         var gl = _window.GL;
 
         // モデル行列を計算
@@ -375,7 +416,7 @@ public class GLMaskedContainerHelper : IDisposable
         // ブレンド設定
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,  // RGB
+            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, // RGB
             BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
@@ -391,21 +432,12 @@ public class GLMaskedContainerHelper : IDisposable
         gl.BindTexture(TextureTarget.Texture2D, (uint)maskTexture.Handle);
 
         // Uniformを設定
-        var uModel = gl.GetUniformLocation(_maskShader, "uModel");
-        gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
-
-        var uProjection = gl.GetUniformLocation(_maskShader, "uProjection");
-        gl.UniformMatrix4(uProjection, 1, false, (float*)&projectionMatrix);
-
-        var uContent = gl.GetUniformLocation(_maskShader, "uContent");
-        gl.Uniform1(uContent, 0);
-
-        var uMask = gl.GetUniformLocation(_maskShader, "uMask");
-        gl.Uniform1(uMask, 1);
-
+        gl.UniformMatrix4(_uMaskModel, 1, false, (float*)&modelMatrix);
+        gl.UniformMatrix4(_uMaskProjection, 1, false, (float*)&projectionMatrix);
+        gl.Uniform1(_uContent, 0);
+        gl.Uniform1(_uMask, 1);
         // MaskedContainerは常に白でレンダリング（子要素のTintColorはそのまま保持）
-        var uTintColor = gl.GetUniformLocation(_maskShader, "uTintColor");
-        gl.Uniform4(uTintColor, new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
+        gl.Uniform4(_uMaskTintColor, new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
 
         // 描画
         gl.BindVertexArray(_vao);
@@ -419,29 +451,5 @@ public class GLMaskedContainerHelper : IDisposable
         gl.BindTexture(TextureTarget.Texture2D, 0);
         gl.ActiveTexture(TextureUnit.Texture1);
         gl.BindTexture(TextureTarget.Texture2D, 0);
-    }
-
-    /// <summary>
-    /// 全てのキャッシュをクリアします。
-    /// </summary>
-    public void Dispose()
-    {
-        var gl = _window.GL;
-
-        // 全てのフレームバッファを破棄
-        foreach (var (_, (fbo, rbo, texture, _)) in _glFrameBufferCache)
-        {
-            gl.DeleteFramebuffer(fbo);
-            gl.DeleteRenderbuffer(rbo);
-            gl.DeleteTexture(texture);
-        }
-        _glFrameBufferCache.Clear();
-
-        // シェーダーとバッファを削除
-        gl.DeleteProgram(_maskShader);
-        gl.DeleteProgram(_stencilShader);
-        gl.DeleteVertexArray(_vao);
-        gl.DeleteBuffer(_vbo);
-        gl.DeleteBuffer(_ebo);
     }
 }
