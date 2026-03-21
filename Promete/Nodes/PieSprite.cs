@@ -47,6 +47,7 @@ public class PieSprite(Texture2D? texture = null, Color? tintColor = default) : 
             Height = Size.Y,
             StartPercent = StartPercent,
             Percent = Percent,
+            Material = Material,
         });
     }
 }

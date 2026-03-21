@@ -86,6 +86,12 @@ public abstract class Node
     public bool IsDestroyed { get; private set; }
 
     /// <summary>
+    /// このノードに適用するマテリアルを取得または設定します。使用されない場合もあります。
+    /// null の場合はデフォルトシェーダーで描画します。
+    /// </summary>
+    public Material? Material { get; set; }
+
+    /// <summary>
     /// このノードの幅を取得または設定します。
     /// </summary>
     public int Width

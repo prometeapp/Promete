@@ -45,12 +45,14 @@ public class RenderCommandQueue
 
     /// <summary>
     /// <see cref="DrawTextureCommand"/> をキューに追加します。ボックス化なしでバッチに集約されます。
+    /// 同一テクスチャかつ同一マテリアルの連続するコマンドは1つのバッチにまとめられます。
     /// </summary>
     public void Enqueue(DrawTextureCommand texCmd)
     {
         if (_commands.Count > 0
             && _commands[^1] is DrawTextureBatchedCommand batch
-            && batch.Texture.Handle == texCmd.Texture.Handle)
+            && batch.Texture.Handle == texCmd.Texture.Handle
+            && MaterialEquals(batch.Material, texCmd.Material))
         {
             batch.Add(texCmd);
             return;
@@ -59,6 +61,13 @@ public class RenderCommandQueue
         var newBatch = _batchPool.Count > 0 ? _batchPool.Pop() : new DrawTextureBatchedCommand();
         newBatch.Reset(texCmd);
         _commands.Add(newBatch);
+    }
+
+    private static bool MaterialEquals(Material? a, Material? b)
+    {
+        if (a is null && b is null) return true;
+        if (a is null || b is null) return false;
+        return a.Equals(b);
     }
 
     /// <summary>

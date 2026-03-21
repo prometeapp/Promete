@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Promete.Graphics;
+using Promete.Nodes;
 
 namespace Promete.Nodes.Renderer.Commands;
 
@@ -13,12 +14,16 @@ internal sealed class DrawTextureBatchedCommand : IRenderCommand
     /// <summary>バッチ内の全アイテムで共通のテクスチャ。</summary>
     public Texture2D Texture { get; private set; }
 
+    /// <summary>バッチ内の全アイテムで共通のマテリアル。null の場合はデフォルトシェーダー。</summary>
+    public Material? Material { get; private set; }
+
     /// <summary>バッチ内の個別描画アイテム。</summary>
     public List<DrawTextureCommand> Items { get; } = new(512);
 
     internal void Reset(DrawTextureCommand first)
     {
         Texture = first.Texture;
+        Material = first.Material;
         Items.Clear();
         Items.Add(first);
     }

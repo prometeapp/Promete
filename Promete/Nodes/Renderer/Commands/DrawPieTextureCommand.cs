@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Numerics;
 using Promete.Graphics;
+using Promete.Nodes;
 
 namespace Promete.Nodes.Renderer.Commands;
 
@@ -16,4 +17,7 @@ public sealed class DrawPieTextureCommand : IRenderCommand
     public required float Height { get; init; }
     public required float StartPercent { get; init; }
     public required float Percent { get; init; }
+
+    /// <summary>適用するマテリアル。null の場合はデフォルトシェーダーを使用します。</summary>
+    public Material? Material { get; init; }
 }

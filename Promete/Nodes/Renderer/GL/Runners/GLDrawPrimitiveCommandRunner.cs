@@ -25,7 +25,7 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
 
     public override void Execute(DrawPrimitiveCommand command)
     {
-        Draw(command.WorldVertices, command.ShapeType, command.Color, command.LineWidth, command.LineColor);
+        Draw(command.WorldVertices, command.ShapeType, command.Color, command.LineWidth, command.LineColor, command.Material);
     }
 
     /// <summary>
@@ -36,8 +36,9 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
     /// <param name="color">図形の塗りつぶし色</param>
     /// <param name="lineWidth">線の幅。GPUによってはサポートされません。</param>
     /// <param name="lineColor">線の色。</param>
+    /// <param name="material">適用するマテリアル。null の場合はデフォルトシェーダーを使用します。</param>
     public unsafe void Draw(Span<Vector> worldVertices, ShapeType type, Color color, int lineWidth = 0,
-        Color? lineColor = null)
+        Color? lineColor = null, Material? material = null)
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         if (worldVertices.Length == 0)
@@ -67,6 +68,9 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
             vertices[i * 2 + 1] = y;
         }
 
+        // シェーダー選択: カスタムマテリアルがある場合はそのプログラムを使用
+        var program = material is { } mat ? (uint)mat.Shader.Handle : _shader;
+
         // 描画開始
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
@@ -74,8 +78,8 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
             BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
-        DrawFill(vertices, type, color, lineWidth);
-        DrawStroke(vertices, lineWidth, lineColor);
+        DrawFill(vertices, type, color, lineWidth, program, material);
+        DrawStroke(vertices, lineWidth, lineColor, program, material);
 
         gl.Disable(EnableCap.Blend);
     }
@@ -83,7 +87,7 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
     /// <summary>
     /// 図形の線を描画します。
     /// </summary>
-    private unsafe void DrawStroke(Span<float> vertices, int lineWidth, Color? lineColor)
+    private unsafe void DrawStroke(Span<float> vertices, int lineWidth, Color? lineColor, uint program, Material? material)
     {
         if (lineWidth <= 0 || lineColor is not { } lc) return;
         var gl = _window.GL;
@@ -96,14 +100,19 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
         gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
         // シェーダーを利用する
-        gl.UseProgram(_shader);
+        gl.UseProgram(program);
 
         // 頂点属性を設定
         gl.VertexAttribPointer(0, 2, GLEnum.Float, false, 2 * sizeof(float), (void*)(0 * sizeof(float)));
         gl.EnableVertexAttribArray(0);
 
         // シェーダーに線の色を渡す
-        gl.Uniform4(_uTintColor, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
+        var tintLoc = material is not null ? GLMaterialApplier.GetLocation(gl, program, "uTintColor") : _uTintColor;
+        if (tintLoc >= 0)
+            gl.Uniform4(tintLoc, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
+
+        if (material is not null)
+            GLMaterialApplier.Apply(gl, program, material);
 
         // 描画
         gl.DrawArrays(PrimitiveType.LineLoop, 0, (uint)vertices.Length / 2);
@@ -112,7 +121,7 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
     /// <summary>
     /// 図形の塗りつぶし領域を描画します。
     /// </summary>
-    private unsafe void DrawFill(Span<float> vertices, ShapeType type, Color color, int lineWidth)
+    private unsafe void DrawFill(Span<float> vertices, ShapeType type, Color color, int lineWidth, uint program, Material? material)
     {
         // 透明度が0未満の場合は、塗りつぶし領域の描画をスキップする
         if (color.A <= 0) return;
@@ -126,14 +135,19 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
         gl.BufferData<float>(GLEnum.ArrayBuffer, vertices, GLEnum.StaticDraw);
 
         // シェーダーを利用する
-        gl.UseProgram(_shader);
+        gl.UseProgram(program);
 
         // 頂点属性を設定
         gl.VertexAttribPointer(0, 2, GLEnum.Float, false, 2 * sizeof(float), (void*)(0 * sizeof(float)));
         gl.EnableVertexAttribArray(0);
 
         // シェーダーに色データを渡す
-        gl.Uniform4(_uTintColor, new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
+        var tintLoc = material is not null ? GLMaterialApplier.GetLocation(gl, program, "uTintColor") : _uTintColor;
+        if (tintLoc >= 0)
+            gl.Uniform4(tintLoc, new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
+
+        if (material is not null)
+            GLMaterialApplier.Apply(gl, program, material);
 
         // 矩形の場合は、インデックスバッファを利用してドローコールを減らす
         // TODO: 他のタイプに対してもEBOを利用したい

@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Promete.Graphics;
+using Promete.Nodes;
 using Promete.Nodes.Renderer.Commands;
 using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
@@ -42,13 +44,14 @@ internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner
 
     public override void Execute(DrawTextureBatchedCommand command)
     {
-        DrawInstanced(command.Items);
+        DrawInstanced(command.Items, command.Material);
     }
 
     /// <summary>
     /// バッチをインスタンシングで描画します。件数が1の場合もこちらを使用します。
+    /// <paramref name="material"/> が非 null の場合はそのシェーダーを使用し、カスタム Uniform を適用します。
     /// </summary>
-    private unsafe void DrawInstanced(List<DrawTextureCommand> items)
+    private unsafe void DrawInstanced(List<DrawTextureCommand> items, Material? material)
     {
         if (items.Count == 0) return;
         PrometeApp.Current.ThrowIfNotMainThread();
@@ -120,12 +123,28 @@ internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner
             BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,
             BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
 
-        gl.UseProgram(_shader);
+        // シェーダー選択: カスタムマテリアルがある場合はそのプログラムを使用
+        var program = material is { } mat ? (uint)mat.Shader.Handle : _shader;
+        gl.UseProgram(program);
+
         gl.ActiveTexture(TextureUnit.Texture0);
         gl.BindTexture(TextureTarget.Texture2D, (uint)items[0].Texture.Handle);
 
-        gl.UniformMatrix4(_uProjection, 1, false, (float*)&projection);
-        gl.Uniform1(_uTexture0, 0);
+        if (material is not null)
+        {
+            // カスタムシェーダー: ロケーションをキャッシュ付きで取得 (-1 はスキップ)
+            var uProj = GLMaterialApplier.GetLocation(gl, program, "uProjection");
+            var uTex = GLMaterialApplier.GetLocation(gl, program, "uTexture0");
+            if (uProj >= 0) gl.UniformMatrix4(uProj, 1, false, (float*)&projection);
+            if (uTex >= 0) gl.Uniform1(uTex, 0);
+            GLMaterialApplier.Apply(gl, program, material);
+        }
+        else
+        {
+            // デフォルトシェーダー: キャッシュ済みロケーションを使用
+            gl.UniformMatrix4(_uProjection, 1, false, (float*)&projection);
+            gl.Uniform1(_uTexture0, 0);
+        }
 
         gl.BindVertexArray(_vao);
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
