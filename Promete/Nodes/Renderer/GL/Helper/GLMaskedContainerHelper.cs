@@ -12,30 +12,20 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 /// <summary>
 /// <see cref="MaskedContainer"/> のアルファブレンディング方式でのレンダリングを支援するヘルパークラスです。
 /// </summary>
-public class GLMaskedContainerHelper : IDisposable
+public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderCommandQueue queue) : IDisposable
 {
-    private readonly PrometeApp _app;
-
     // 独自のフレームバッファキャッシュ（OpenGLのFBO、RBO、テクスチャ）
     private readonly Dictionary<MaskedContainer, (uint fbo, uint rbo, uint texture, VectorInt size)>
         _glFrameBufferCache = [];
 
-    private readonly RenderCommandQueue _queue;
-    private readonly OpenGLDesktopWindow _window;
+    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow ??
+                                                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
     private bool _initialized;
     private uint _maskShader;
     private uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
     private int _uMaskModel, _uMaskProjection, _uContent, _uMask, _uMaskTintColor;
     private int _uStencilModel, _uStencilProjection, _uStencilTexture0, _uStencilTintColor;
     private uint _vao, _vbo, _ebo;
-
-    public GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderCommandQueue queue)
-    {
-        _window = window as OpenGLDesktopWindow ??
-                  throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
-        _app = app;
-        _queue = queue;
-    }
 
     /// <summary>
     /// 全てのキャッシュをクリアします。
@@ -277,10 +267,10 @@ public class GLMaskedContainerHelper : IDisposable
         }
 
         // 子要素をコマンドキュー経由でレンダリング（スコープで外側を保護）
-        _queue.PushScope();
+        queue.PushScope();
         foreach (var child in sorted)
-            _app.CollectNode(child, _queue, ctx);
-        _queue.PopScopeAndFlush();
+            app.CollectNode(child, queue, ctx);
+        queue.PopScopeAndFlush();
 
         // MaskedContainerの状態を元に戻す
         container.Parent = originalParent;
