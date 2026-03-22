@@ -1,4 +1,4 @@
-namespace Promete.Nodes.Renderer.Commands;
+namespace Promete.Graphics.Rendering.Commands;
 
 /// <summary>
 /// レンダリングコマンドのマーカーインターフェースです。

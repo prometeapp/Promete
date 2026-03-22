@@ -2,12 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using Promete.Graphics.Rendering;
 using Promete.Nodes;
 
 namespace Promete.Graphics;
 
 /// <summary>
-/// 子要素をテクスチャにレンダリングする <see cref="Container"/> です。
+/// 子要素をテクスチャにレンダリングできる要素です。
 /// </summary>
 public class FrameBuffer : IEnumerable<Node>, IDisposable
 {
@@ -120,9 +121,9 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     public void Render()
     {
         var app = PrometeApp.Current;
-        var queue = app.GetPlugin<Promete.Nodes.Renderer.RenderCommandQueue>();
+        var queue = app.GetPlugin<RenderCommandQueue>();
         var window = app.Window;
-        var ctx = new Promete.Nodes.Renderer.RenderContext
+        var ctx = new RenderContext
         {
             WindowSize = window.Size,
             WindowScale = window.Scale,

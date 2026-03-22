@@ -1,6 +1,6 @@
-using Promete.Graphics;
+using Promete.Nodes;
 
-namespace Promete.Nodes.Renderer.Commands;
+namespace Promete.Graphics.Rendering.Commands;
 
 /// <summary>
 /// ステンシルマスク開始コマンドです。

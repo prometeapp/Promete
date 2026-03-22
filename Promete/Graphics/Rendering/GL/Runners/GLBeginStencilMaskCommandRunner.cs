@@ -1,11 +1,10 @@
 using System;
-using Promete.Nodes.Renderer.Commands;
-using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Graphics.Rendering.Commands;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Nodes.Renderer.GL.Runners;
+namespace Promete.Graphics.Rendering.GL.Runners;
 
 /// <summary>
 /// <see cref="BeginStencilMaskCommand"/> でステンシルマスクの書き込みフェーズを開始するランナーです。

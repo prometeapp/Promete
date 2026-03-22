@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Promete.Nodes.Renderer;
+using Promete.Graphics.Rendering;
 
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
 

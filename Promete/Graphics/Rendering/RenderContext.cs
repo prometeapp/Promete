@@ -1,4 +1,4 @@
-namespace Promete.Nodes.Renderer;
+namespace Promete.Graphics.Rendering;
 
 /// <summary>
 /// フレーム毎のレンダリングコンテキスト情報を保持します。

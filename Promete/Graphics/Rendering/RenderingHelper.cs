@@ -1,4 +1,6 @@
-﻿namespace Promete.Nodes.Renderer;
+﻿using Promete.Nodes;
+
+namespace Promete.Graphics.Rendering;
 
 public static class RenderingHelper
 {

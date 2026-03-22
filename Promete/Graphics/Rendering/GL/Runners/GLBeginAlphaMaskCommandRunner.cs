@@ -1,7 +1,6 @@
-using Promete.Nodes.Renderer.Commands;
-using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Graphics.Rendering.Commands;
 
-namespace Promete.Nodes.Renderer.GL.Runners;
+namespace Promete.Graphics.Rendering.GL.Runners;
 
 /// <summary>
 /// <see cref="BeginAlphaMaskCommand"/> でアルファマスク合成を行うランナーです。

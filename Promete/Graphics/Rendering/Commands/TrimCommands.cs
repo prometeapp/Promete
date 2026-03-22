@@ -1,4 +1,4 @@
-namespace Promete.Nodes.Renderer.Commands;
+namespace Promete.Graphics.Rendering.Commands;
 
 /// <summary>
 /// トリム（クリッピング）開始コマンドです。計算済みの物理ピクセル座標を保持します。

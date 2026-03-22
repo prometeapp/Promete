@@ -1,11 +1,9 @@
 using System;
-using Promete.Graphics;
-using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Nodes.Renderer.GL;
+namespace Promete.Graphics.Rendering.GL;
 
 /// <summary>
 /// OpenGL バックエンドにおける <see cref="IShaderFactory"/> の実装です。

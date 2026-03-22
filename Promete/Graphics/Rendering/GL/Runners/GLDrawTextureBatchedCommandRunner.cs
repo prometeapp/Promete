@@ -2,15 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Promete.Graphics;
-using Promete.Nodes;
-using Promete.Nodes.Renderer.Commands;
-using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Graphics.Rendering.Commands;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Nodes.Renderer.GL.Runners;
+namespace Promete.Graphics.Rendering.GL.Runners;
 
 /// <summary>
 /// <see cref="DrawTextureBatchedCommand"/> をインスタンシングで描画するランナーです。

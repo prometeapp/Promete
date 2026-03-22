@@ -1,7 +1,7 @@
 using System.Drawing;
 using Promete.Nodes;
 
-namespace Promete.Nodes.Renderer.Commands;
+namespace Promete.Graphics.Rendering.Commands;
 
 /// <summary>
 /// プリミティブ図形描画コマンドです。

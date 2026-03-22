@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Promete.Nodes.Renderer.GL;
+namespace Promete.Graphics.Rendering.GL;
 
 /// <summary>
 /// GL描画フェーズで複数のランナー間を跨いで共有する描画状態です。

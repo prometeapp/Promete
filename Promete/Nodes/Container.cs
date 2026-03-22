@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Promete.Nodes.Renderer;
+using Promete.Graphics.Rendering;
 
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
 

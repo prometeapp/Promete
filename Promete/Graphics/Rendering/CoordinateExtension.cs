@@ -1,4 +1,4 @@
-namespace Promete.Nodes.Renderer;
+namespace Promete.Graphics.Rendering;
 
 /// <summary>
 /// 座標系変換の為のメソッドを提供します。

@@ -1,5 +1,6 @@
 using System.Numerics;
-using Promete.Nodes.Renderer;
+using Promete.Graphics;
+using Promete.Graphics.Rendering;
 
 namespace Promete.Nodes;
 

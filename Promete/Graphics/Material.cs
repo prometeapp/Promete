@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using Promete.Graphics;
 
-namespace Promete.Nodes;
+namespace Promete.Graphics;
 
 /// <summary>
 /// シェーダーと Uniform パラメーターをまとめたマテリアルを表します。
-/// <see cref="Node.Material"/> に設定することで、そのノードにカスタムシェーダーを適用できます。
 /// </summary>
 public sealed class Material : IEquatable<Material>
 {

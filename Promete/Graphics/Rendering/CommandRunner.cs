@@ -1,7 +1,7 @@
 using System;
-using Promete.Nodes.Renderer.Commands;
+using Promete.Graphics.Rendering.Commands;
 
-namespace Promete.Nodes.Renderer;
+namespace Promete.Graphics.Rendering;
 
 /// <summary>
 /// レンダリングコマンドを実行するランナーの基底クラスです。

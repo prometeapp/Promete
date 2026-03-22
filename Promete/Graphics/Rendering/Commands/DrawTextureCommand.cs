@@ -1,9 +1,7 @@
 using System.Drawing;
 using System.Numerics;
-using Promete.Graphics;
-using Promete.Nodes;
 
-namespace Promete.Nodes.Renderer.Commands;
+namespace Promete.Graphics.Rendering.Commands;
 
 /// <summary>
 /// テクスチャ描画コマンドです。

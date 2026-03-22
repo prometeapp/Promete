@@ -1,7 +1,7 @@
 ﻿using System;
 using Silk.NET.OpenGL;
 
-namespace Promete.Nodes.Renderer.GL.Helper;
+namespace Promete.Graphics.Rendering.GL;
 
 public static class GLHelper
 {

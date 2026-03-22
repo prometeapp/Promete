@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using Promete.Graphics;
-using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Graphics.Rendering.GL;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;

@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
-using Promete.Graphics;
 using Promete.Internal;
+using Promete.Nodes;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Nodes.Renderer.GL.Helper;
+namespace Promete.Graphics.Rendering.GL;
 
 /// <summary>
 /// <see cref="MaskedContainer"/> のアルファブレンディング方式でのレンダリングを支援するヘルパークラスです。

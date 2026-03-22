@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Promete.Graphics;
+using Promete.Graphics.Rendering.GL;
 using Promete.Nodes;
-using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;

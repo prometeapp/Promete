@@ -1,7 +1,8 @@
 using System.Drawing;
 using System.Numerics;
-using Promete.Nodes.Renderer;
-using Promete.Nodes.Renderer.Commands;
+using Promete.Graphics;
+using Promete.Graphics.Rendering;
+using Promete.Graphics.Rendering.Commands;
 
 namespace Promete.Nodes;
 

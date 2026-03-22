@@ -1,13 +1,13 @@
 using System;
 using System.Drawing;
 using System.Numerics;
-using Promete.Nodes.Renderer.Commands;
-using Promete.Nodes.Renderer.GL.Helper;
+using Promete.Graphics.Rendering.Commands;
+using Promete.Nodes;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
-namespace Promete.Nodes.Renderer.GL.Runners;
+namespace Promete.Graphics.Rendering.GL.Runners;
 
 /// <summary>
 /// <see cref="DrawPrimitiveCommand"/> でプリミティブ図形を描画するランナーです。

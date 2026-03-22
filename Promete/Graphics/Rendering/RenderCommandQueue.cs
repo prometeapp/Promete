@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Promete.Nodes.Renderer.Commands;
+using Promete.Graphics.Rendering.Commands;
+using Promete.Nodes;
 
-namespace Promete.Nodes.Renderer;
+namespace Promete.Graphics.Rendering;
 
 /// <summary>
 /// ノード走査フェーズで収集したレンダリングコマンドを管理し、

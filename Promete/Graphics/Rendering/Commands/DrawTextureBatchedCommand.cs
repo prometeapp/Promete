@@ -1,8 +1,6 @@
 using System.Collections.Generic;
-using Promete.Graphics;
-using Promete.Nodes;
 
-namespace Promete.Nodes.Renderer.Commands;
+namespace Promete.Graphics.Rendering.Commands;
 
 /// <summary>
 /// 同テクスチャの <see cref="DrawTextureCommand"/> を集約したバッチ描画コマンドです。

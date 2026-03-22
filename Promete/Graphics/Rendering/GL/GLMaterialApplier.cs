@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Numerics;
-using Promete.Graphics;
 using Silk.NET.OpenGL;
 
-namespace Promete.Nodes.Renderer.GL.Helper;
+namespace Promete.Graphics.Rendering.GL;
 
 /// <summary>
 /// マテリアルの Uniform 値を OpenGL プログラムに適用するヘルパーです。
