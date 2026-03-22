@@ -53,6 +53,13 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public bool IsFrameBufferSupported => _provider.GetService<IRenderTextureProvider>() is not null;
 
+    /// <summary>
+    /// スクリーン全体に適用するマテリアルを取得または設定します。
+    /// GL 環境では、最終的なスクリーンへのブリット時にこのマテリアルのシェーダーが使用されます。
+    /// null の場合はデフォルトのブリットシェーダーが使用されます。
+    /// </summary>
+    public Material? RootMaterial { get; set; }
+
     private Scene? _currentScene;
     private int _statusCode;
 
@@ -414,7 +421,7 @@ public sealed class PrometeApp : IDisposable
             queue.ProcessAndFlush();
         }
 
-        blitter?.BlitToScreen();
+        blitter?.BlitToScreen(RootMaterial);
     }
 
     private void OnDestroy()

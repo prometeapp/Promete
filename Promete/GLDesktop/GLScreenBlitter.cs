@@ -1,6 +1,8 @@
 using System;
 using Promete.Graphics;
 using Promete.Internal;
+using Promete.Nodes;
+using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
@@ -35,7 +37,11 @@ internal sealed class GLScreenBlitter : IDisposable
     /// <summary>
     /// スクリーン RenderTexture の内容をデフォルト FBO に描画します。
     /// </summary>
-    public void BlitToScreen()
+    /// <param name="material">
+    /// 使用するマテリアル。null の場合はデフォルトシェーダーを使用します。
+    /// カスタムシェーダーは <c>uScreenTexture</c>（sampler2D, slot 0）でスクリーンテクスチャを参照できます。
+    /// </param>
+    public void BlitToScreen(Material? material = null)
     {
         EnsureInitialized();
         var gl = _window.GL;
@@ -49,11 +55,20 @@ internal sealed class GLScreenBlitter : IDisposable
 
         gl.Disable(GLEnum.Blend);
 
-        gl.UseProgram(_shader);
+        var program = material is not null ? (uint)material.Shader.Handle : _shader;
+        gl.UseProgram(program);
 
+        // スクリーンテクスチャを slot 0 にバインド
         gl.ActiveTexture(TextureUnit.Texture0);
         gl.BindTexture(GLEnum.Texture2D, (uint)ScreenRenderTexture.Texture.Handle);
-        gl.Uniform1(_uScreenTexture, 0);
+
+        // uScreenTexture を 0 に設定（デフォルト・カスタム両方のシェーダーで有効な場合のみ）
+        var uScreenTextureLoc = GLMaterialApplier.GetLocation(gl, program, "uScreenTexture");
+        if (uScreenTextureLoc >= 0) gl.Uniform1(uScreenTextureLoc, 0);
+
+        // カスタム Uniform を適用（テクスチャは slot 1 から）
+        if (material is not null)
+            GLMaterialApplier.Apply(gl, program, material, firstTextureSlot: 1);
 
         gl.BindVertexArray(_vao);
         gl.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
