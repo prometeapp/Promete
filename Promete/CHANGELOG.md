@@ -9,7 +9,11 @@ Promete v2では、より高速な描画を実現するためのレンダリン�
         - `AutoRender = false` にすると毎フレームの自動レンダリングを抑止し、任意のタイミングで `Render()` を呼び出せます
         - `AutoClear = false` にすると前フレームの内容を保持したままレンダリングできます
 - シェーダーAPIを追加しました
-- OpenGL環境下において、スクリーン全体をFBOでオフスクリーンレンダリングするよう変更
+  - `ShaderProgram` クラスを用いて、シェーダーの読み込み・コンパイルを行えるように
+  - 生成したシェーダーとユニフォーム値の組み合わせを `Material` クラスで保持できるように
+    - `Node.Material` プロパティおよび `PrometeApp.PostProcessMaterials` プロパティで用います
+- スクリーン全体をFBOでオフスクリーンレンダリングするよう変更
+- スクリーン全体に対し、シェーダーを用いてポストプロセスできるように
 - OpenGLTextureFactory: LoadSpriteSheetで、同じハンドルのUV違いのTexture2Dを生成するように
 - Node Rendererを廃止。Nodeは、描画コマンドを発行するように
 - Texture2D: UV座標を持てるように
