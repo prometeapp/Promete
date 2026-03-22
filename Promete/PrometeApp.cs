@@ -51,7 +51,7 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// フレームバッファがサポートされているかどうかを取得します。
     /// </summary>
-    public bool IsFrameBufferSupported => _provider.GetService<IFrameBufferProvider>() is not null;
+    public bool IsFrameBufferSupported => _provider.GetService<IRenderTextureProvider>() is not null;
 
     private Scene? _currentScene;
     private int _statusCode;
@@ -391,11 +391,30 @@ public sealed class PrometeApp : IDisposable
             ActualWidth = Window.ActualWidth,
             ActualHeight = Window.ActualHeight,
         };
-        queue.Clear();
-        CollectNode(GlobalBackground, queue, ctx);
-        if (Root != null) CollectNode(Root, queue, ctx);
-        CollectNode(GlobalForeground, queue, ctx);
-        queue.ProcessAndFlush();
+
+        var blitter = _provider.GetService<Promete.GLDesktop.GLScreenBlitter>();
+        if (blitter != null)
+        {
+            // グローバルスクリーン FBO にキャプチャしてからブリット
+            using var capture = blitter.ScreenRenderTexture.BeginCapture(BackgroundColor);
+            queue.Clear();
+            CollectNode(GlobalBackground, queue, ctx);
+            if (Root != null) CollectNode(Root, queue, ctx);
+            CollectNode(GlobalForeground, queue, ctx);
+            queue.ProcessAndFlush();
+            // capture.Dispose() で FBO アンバインド
+        }
+        else
+        {
+            // ヘッドレス等のフォールバック
+            queue.Clear();
+            CollectNode(GlobalBackground, queue, ctx);
+            if (Root != null) CollectNode(Root, queue, ctx);
+            CollectNode(GlobalForeground, queue, ctx);
+            queue.ProcessAndFlush();
+        }
+
+        blitter?.BlitToScreen();
     }
 
     private void OnDestroy()

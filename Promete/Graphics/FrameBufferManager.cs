@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Promete.Internal;
 
@@ -11,13 +10,12 @@ public class FrameBufferManager
 {
     internal HashSet<FrameBuffer> ActiveFrameBuffers { get; } = [];
 
-    private readonly IFrameBufferProvider? _frameBufferProvider;
-
+    private readonly bool _supported;
 
     public FrameBufferManager(PrometeApp app)
     {
-        _frameBufferProvider = app.TryGetPlugin<IFrameBufferProvider>(out var provider) ? provider : null;
-        if (_frameBufferProvider == null)
+        _supported = app.TryGetPlugin<IRenderTextureProvider>(out _);
+        if (!_supported)
         {
             LogHelper.Warn("FrameBuffer is not supported on this backend.");
             return;
@@ -29,18 +27,18 @@ public class FrameBufferManager
 
     private void RenderAll()
     {
-        if (_frameBufferProvider == null) return;
+        if (!_supported) return;
 
         foreach (var frameBuffer in ActiveFrameBuffers)
         {
             frameBuffer.BeforeRender();
-            _frameBufferProvider.Render(frameBuffer);
+            if (frameBuffer.AutoRender) frameBuffer.Render();
         }
     }
 
     private void UpdateAll()
     {
-        if (_frameBufferProvider == null) return;
+        if (!_supported) return;
 
         foreach (var frameBuffer in ActiveFrameBuffers)
         {
@@ -48,4 +46,3 @@ public class FrameBufferManager
         }
     }
 }
-

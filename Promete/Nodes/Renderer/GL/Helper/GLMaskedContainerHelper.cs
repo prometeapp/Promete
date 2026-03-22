@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Numerics;
 using Promete.Graphics;
 using Promete.Internal;
@@ -12,11 +13,10 @@ namespace Promete.Nodes.Renderer.GL.Helper;
 /// <summary>
 /// <see cref="MaskedContainer"/> のアルファブレンディング方式でのレンダリングを支援するヘルパークラスです。
 /// </summary>
-public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderCommandQueue queue) : IDisposable
+public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderCommandQueue queue, IRenderTextureProvider renderTextureProvider) : IDisposable
 {
-    // 独自のフレームバッファキャッシュ（OpenGLのFBO、RBO、テクスチャ）
-    private readonly Dictionary<MaskedContainer, (uint fbo, uint rbo, uint texture, VectorInt size)>
-        _glFrameBufferCache = [];
+    // MaskedContainer ごとの RenderTexture キャッシュ
+    private readonly Dictionary<MaskedContainer, RenderTexture> _renderTextureCache = [];
 
     private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow ??
                                                    throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
@@ -32,18 +32,13 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
     /// </summary>
     public void Dispose()
     {
+        // RenderTexture キャッシュを解放
+        foreach (var rt in _renderTextureCache.Values)
+            rt.Dispose();
+        _renderTextureCache.Clear();
+
         if (!_initialized) return;
         var gl = _window.GL;
-
-        // 全てのフレームバッファを破棄
-        foreach (var (_, (fbo, rbo, texture, _)) in _glFrameBufferCache)
-        {
-            gl.DeleteFramebuffer(fbo);
-            gl.DeleteRenderbuffer(rbo);
-            gl.DeleteTexture(texture);
-        }
-
-        _glFrameBufferCache.Clear();
 
         // シェーダーとバッファを削除
         gl.DeleteProgram(_maskShader);
@@ -201,50 +196,19 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
             size = new VectorInt(1, 1);
         }
 
-        var gl = _window.GL;
-
-        // フレームバッファを取得または作成
-        uint fbo, rbo, textureId;
-        if (_glFrameBufferCache.TryGetValue(container, out var cached))
+        // RenderTexture を取得または作成
+        if (!_renderTextureCache.TryGetValue(container, out var rt))
         {
-            if (cached.size == size)
-            {
-                // サイズが同じ場合は既存のものを使用
-                fbo = cached.fbo;
-                rbo = cached.rbo;
-                textureId = cached.texture;
-            }
-            else
-            {
-                // サイズが変わった場合は古いものを削除して新規作成
-                gl.DeleteFramebuffer(cached.fbo);
-                gl.DeleteRenderbuffer(cached.rbo);
-                gl.DeleteTexture(cached.texture);
-
-                (fbo, rbo, textureId) = CreateFrameBuffer(gl, size);
-                _glFrameBufferCache[container] = (fbo, rbo, textureId, size);
-            }
+            rt = renderTextureProvider.Create(size);
+            _renderTextureCache[container] = rt;
         }
-        else
+        else if (rt.Size != size)
         {
-            // 新しいフレームバッファを作成
-            (fbo, rbo, textureId) = CreateFrameBuffer(gl, size);
-            _glFrameBufferCache[container] = (fbo, rbo, textureId, size);
+            rt.Resize(size);
         }
 
-        // 現在のビューポートとフレームバッファを保存
-        var previousViewport = GLHelper.GetViewport(gl);
-        var previousFrameBuffer = gl.GetInteger(GLEnum.FramebufferBinding);
-
-        // フレームバッファにバインド
-        gl.BindFramebuffer(GLEnum.Framebuffer, fbo);
-
-        // ビューポートを設定
-        gl.Viewport(0, 0, (uint)size.X, (uint)size.Y);
-
-        // 背景をクリア（透明）
-        gl.ClearColor(0, 0, 0, 0);
-        gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        // キャプチャスコープ（例外安全）
+        using var capture = rt.BeginCapture(Color.Transparent);
 
         // 子要素を相対座標でレンダリングするため、一時的にMaskedContainerの変換を除去
         var originalLocation = container.Location;
@@ -285,52 +249,7 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
             child.BeforeRender();
         }
 
-        // フレームバッファのバインドを解除
-        gl.BindFramebuffer(GLEnum.Framebuffer, (uint)previousFrameBuffer);
-
-        // ビューポートを元に戻す
-        gl.Viewport(0, 0, (uint)previousViewport.X, (uint)previousViewport.Y);
-
-        // テクスチャを返す（Disposeは不要、キャッシュで管理）
-        return new Texture2D((int)textureId, size, _ => { });
-    }
-
-    /// <summary>
-    /// OpenGLのフレームバッファを作成します。
-    /// </summary>
-    private unsafe (uint fbo, uint rbo, uint texture) CreateFrameBuffer(Silk.NET.OpenGL.GL gl, VectorInt size)
-    {
-        // テクスチャを作成
-        var texture = gl.GenTexture();
-        gl.BindTexture(GLEnum.Texture2D, texture);
-        gl.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba, (uint)size.X, (uint)size.Y, 0,
-            PixelFormat.Rgba, PixelType.UnsignedByte, null);
-        gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.Nearest);
-        gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Nearest);
-        gl.BindTexture(GLEnum.Texture2D, 0);
-
-        // レンダーバッファを作成（デプスバッファ用）
-        var rbo = gl.GenRenderbuffer();
-        gl.BindRenderbuffer(GLEnum.Renderbuffer, rbo);
-        gl.RenderbufferStorage(GLEnum.Renderbuffer, GLEnum.DepthComponent24, (uint)size.X, (uint)size.Y);
-        gl.BindRenderbuffer(GLEnum.Renderbuffer, 0);
-
-        // フレームバッファを作成
-        var fbo = gl.GenFramebuffer();
-        gl.BindFramebuffer(GLEnum.Framebuffer, fbo);
-        gl.FramebufferTexture2D(GLEnum.Framebuffer, GLEnum.ColorAttachment0, GLEnum.Texture2D, texture, 0);
-        gl.FramebufferRenderbuffer(GLEnum.Framebuffer, GLEnum.DepthAttachment, GLEnum.Renderbuffer, rbo);
-
-        // フレームバッファの状態をチェック
-        var status = gl.CheckFramebufferStatus(GLEnum.Framebuffer);
-        if (status != GLEnum.FramebufferComplete)
-        {
-            gl.BindFramebuffer(GLEnum.Framebuffer, 0);
-            throw new InvalidOperationException($"フレームバッファが不完全です: {status}");
-        }
-
-        gl.BindFramebuffer(GLEnum.Framebuffer, 0);
-        return (fbo, rbo, texture);
+        return rt.Texture;
     }
 
     /// <summary>

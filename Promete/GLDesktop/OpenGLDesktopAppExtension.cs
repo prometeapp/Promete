@@ -21,7 +21,8 @@ public static class OpenGLDesktopAppExtension
     {
         var app = builder
             .Use<IShaderFactory, GLShaderFactory>()
-            .Use<IFrameBufferProvider, GLFrameBufferProvider>()
+            .Use<IRenderTextureProvider, GLRenderTextureProvider>()
+            .Use<GLScreenBlitter>()
             .Use<GLMaskedContainerHelper>()
             .Use<GLRenderState>()
             .Use<RenderCommandQueue>()
