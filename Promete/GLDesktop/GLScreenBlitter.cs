@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using Promete.Graphics;
-using Promete.Internal;
 using Promete.Nodes;
 using Promete.Nodes.Renderer.GL.Helper;
 using Promete.Windowing;
@@ -11,7 +11,7 @@ namespace Promete.GLDesktop;
 
 /// <summary>
 /// 全描画を一度スクリーンサイズの <see cref="RenderTexture"/> にキャプチャし、
-/// その後デフォルト FBO (画面) へブリットするクラスです。
+/// ポストプロセスを適用した後にデフォルト FBO (画面) へブリットするクラスです。
 /// </summary>
 internal sealed class GLScreenBlitter : IDisposable
 {
@@ -21,60 +21,62 @@ internal sealed class GLScreenBlitter : IDisposable
     public RenderTexture ScreenRenderTexture { get; }
 
     private readonly OpenGLDesktopWindow _window;
-    private uint _shader;
+    private readonly IRenderTextureProvider _provider;
+
+    private Material _defaultMaterial = null!;
+
+    // フルスクリーンクワッド
     private uint _vao, _vbo;
-    private int _uScreenTexture;
+
+    // ピンポンバッファ（複数パス時に遅延生成）
+    private RenderTexture? _pingPong0;
+    private RenderTexture? _pingPong1;
+
     private bool _initialized;
     private bool _disposed;
 
     public GLScreenBlitter(IWindow window, IRenderTextureProvider provider)
     {
         _window = (OpenGLDesktopWindow)window;
+        _provider = provider;
         ScreenRenderTexture = provider.Create(_window.Size);
-        _window.Resize += () => ScreenRenderTexture.Resize(_window.Size);
+        _window.Resize += OnWindowResize;
     }
 
     /// <summary>
-    /// スクリーン RenderTexture の内容をデフォルト FBO に描画します。
+    /// ポストプロセスマテリアルを順番に適用してスクリーンへブリットします。
     /// </summary>
-    /// <param name="material">
-    /// 使用するマテリアル。null の場合はデフォルトシェーダーを使用します。
-    /// カスタムシェーダーは <c>uScreenTexture</c>（sampler2D, slot 0）でスクリーンテクスチャを参照できます。
+    /// <param name="materials">
+    /// 適用するマテリアルのリスト。空の場合はデフォルトシェーダーで直接ブリットします。
+    /// 各マテリアルのシェーダーは <c>uScreenTexture</c>（sampler2D, slot 0）で前パスの結果を参照できます。
     /// </param>
-    public void BlitToScreen(Material? material = null)
+    public void BlitToScreen(IReadOnlyList<Material> materials)
     {
         EnsureInitialized();
         var gl = _window.GL;
-
-        // デフォルト FBO へバインド
-        gl.BindFramebuffer(GLEnum.Framebuffer, 0);
-
-        // 物理ピクセルサイズでビューポートを設定
-        var size = _window.ActualSize;
-        gl.Viewport(0, 0, (uint)size.X, (uint)size.Y);
-
         gl.Disable(GLEnum.Blend);
 
-        var program = material is not null ? (uint)material.Shader.Handle : _shader;
-        gl.UseProgram(program);
+        EnsurePingPongBuffers();
+        var src = ScreenRenderTexture;
+        Span<RenderTexture> pingPongs = [_pingPong0!, _pingPong1!];
+        var pingIdx = 0;
 
-        // スクリーンテクスチャを slot 0 にバインド
-        gl.ActiveTexture(TextureUnit.Texture0);
-        gl.BindTexture(GLEnum.Texture2D, (uint)ScreenRenderTexture.Texture.Handle);
+        // 2枚のバッファを交互に参照して描画。マテリアル数が0なら実行されない
+        foreach (var t in materials)
+        {
+            var dst = pingPongs[pingIdx];
+            using var capture = dst.BeginCapture();
+            BlitQuad(gl, src, material: t);
+            src = dst;
+            pingIdx = 1 - pingIdx;
+        }
 
-        // uScreenTexture を 0 に設定（デフォルト・カスタム両方のシェーダーで有効な場合のみ）
-        var uScreenTextureLoc = GLMaterialApplier.GetLocation(gl, program, "uScreenTexture");
-        if (uScreenTextureLoc >= 0) gl.Uniform1(uScreenTextureLoc, 0);
+        // バッファへの描画結果をスクリーンへ描画
+        gl.BindFramebuffer(GLEnum.Framebuffer, 0);
+        var size = _window.ActualSize;
+        gl.Viewport(0, 0, (uint)size.X, (uint)size.Y);
+        BlitQuad(gl, src, material: _defaultMaterial);
 
-        // カスタム Uniform を適用（テクスチャは slot 1 から）
-        if (material is not null)
-            GLMaterialApplier.Apply(gl, program, material, firstTextureSlot: 1);
-
-        gl.BindVertexArray(_vao);
-        gl.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
-        gl.BindVertexArray(0);
-
-        gl.BindTexture(GLEnum.Texture2D, 0);
         gl.Enable(GLEnum.Blend);
     }
 
@@ -83,15 +85,55 @@ internal sealed class GLScreenBlitter : IDisposable
         if (_disposed) return;
         _disposed = true;
 
+        _window.Resize -= OnWindowResize;
         ScreenRenderTexture.Dispose();
+        _pingPong0?.Dispose();
+        _pingPong1?.Dispose();
 
         if (_initialized)
         {
             var gl = _window.GL;
-            gl.DeleteProgram(_shader);
+            _defaultMaterial.Shader.Dispose();
             gl.DeleteVertexArray(_vao);
             gl.DeleteBuffer(_vbo);
         }
+    }
+
+    // --- private ---
+
+    private void BlitQuad(GL gl, RenderTexture src, Material material)
+    {
+        var program = (uint)material.Shader.Handle;
+        gl.UseProgram(program);
+
+        gl.ActiveTexture(TextureUnit.Texture0);
+        gl.BindTexture(GLEnum.Texture2D, (uint)src.Texture.Handle);
+
+        var uLoc = GLMaterialApplier.GetLocation(gl, program, "uScreenTexture");
+        if (uLoc >= 0) gl.Uniform1(uLoc, 0);
+
+        GLMaterialApplier.Apply(gl, program, material, firstTextureSlot: 1);
+
+        gl.BindVertexArray(_vao);
+        gl.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
+        gl.BindVertexArray(0);
+
+        gl.BindTexture(GLEnum.Texture2D, 0);
+    }
+
+    private void EnsurePingPongBuffers()
+    {
+        var size = ScreenRenderTexture.Size;
+        _pingPong0 ??= _provider.Create(size);
+        _pingPong1 ??= _provider.Create(size);
+    }
+
+    private void OnWindowResize()
+    {
+        var size = _window.Size;
+        ScreenRenderTexture.Resize(size);
+        _pingPong0?.Resize(size);
+        _pingPong1?.Resize(size);
     }
 
     private void EnsureInitialized()
@@ -105,35 +147,13 @@ internal sealed class GLScreenBlitter : IDisposable
     {
         var gl = _window.GL;
 
-        // シェーダーコンパイル
-        var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.blit.vert"));
-        gl.CompileShader(vsh);
-        var vshLog = gl.GetShaderInfoLog(vsh);
-        if (!string.IsNullOrWhiteSpace(vshLog))
-            LogHelper.Bug($"Blit vertex shader compilation error: {vshLog}");
+        var shader = ShaderProgram.Create()
+            .Vertex(EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.blit.vert"))
+            .Fragment(EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.blit.frag"))
+            .Compile();
 
-        var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(fsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.blit.frag"));
-        gl.CompileShader(fsh);
-        var fshLog = gl.GetShaderInfoLog(fsh);
-        if (!string.IsNullOrWhiteSpace(fshLog))
-            LogHelper.Bug($"Blit fragment shader compilation error: {fshLog}");
+        _defaultMaterial = new Material(shader);
 
-        _shader = gl.CreateProgram();
-        gl.AttachShader(_shader, vsh);
-        gl.AttachShader(_shader, fsh);
-        gl.LinkProgram(_shader);
-        var linkLog = gl.GetProgramInfoLog(_shader);
-        if (!string.IsNullOrWhiteSpace(linkLog))
-            LogHelper.Bug($"Blit shader linking error: {linkLog}");
-
-        gl.DetachShader(_shader, vsh);
-        gl.DetachShader(_shader, fsh);
-        gl.DeleteShader(vsh);
-        gl.DeleteShader(fsh);
-
-        _uScreenTexture = gl.GetUniformLocation(_shader, "uScreenTexture");
 
         // NDC フルスクリーンクワッド (TriangleStrip): pos(x,y) + uv(u,v)
         Span<float> vertices =
@@ -151,11 +171,9 @@ internal sealed class GLScreenBlitter : IDisposable
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
         gl.BufferData<float>(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.StaticDraw);
 
-        // 頂点座標属性
         gl.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
         gl.EnableVertexAttribArray(0);
 
-        // テクスチャ座標属性
         gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
         gl.EnableVertexAttribArray(1);
 

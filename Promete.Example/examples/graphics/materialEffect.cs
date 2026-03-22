@@ -167,15 +167,21 @@ public class MaterialEffectDemo(ConsoleLayer console, Keyboard keyboard) : Scene
 
         var grayscaleMat = new Material(_grayscaleShader);
 
-        var mosaicMat = new Material(_mosaicShader);
-        mosaicMat["uTextureSize"] = texSize;
-        mosaicMat["uBlockSize"] = 4.0f;
+        var mosaicMat = new Material(_mosaicShader)
+        {
+            ["uTextureSize"] = texSize,
+            ["uBlockSize"] = 4.0f
+        };
 
-        var outlineMat = new Material(_outlineShader);
-        outlineMat["uTextureSize"] = texSize;
+        var outlineMat = new Material(_outlineShader)
+        {
+            ["uTextureSize"] = texSize
+        };
 
-        _rasterScrollMat = new Material(_rasterScrollShader);
-        _rasterScrollMat["uTime"] = 0.0f;
+        _rasterScrollMat = new Material(_rasterScrollShader)
+        {
+            ["uTime"] = 0.0f
+        };
 
         // 2×3グリッドで6エフェクトを配置
         var font = Font.GetDefault(18);

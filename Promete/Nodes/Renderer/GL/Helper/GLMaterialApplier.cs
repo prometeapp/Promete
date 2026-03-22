@@ -54,6 +54,12 @@ internal static class GLMaterialApplier
                 case int i:
                     gl.Uniform1(loc, i);
                     break;
+                case Vector v:
+                    gl.Uniform2(loc, v.X, v.Y);
+                    break;
+                case VectorInt vi:
+                    gl.Uniform2(loc, vi.X, vi.Y);
+                    break;
                 case Vector2 v2:
                     gl.Uniform2(loc, v2.X, v2.Y);
                     break;
