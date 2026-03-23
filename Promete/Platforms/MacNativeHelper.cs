@@ -8,24 +8,6 @@ namespace Promete.Platforms;
 /// </summary>
 public static class MacNativeHelper
 {
-    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_getClass")]
-    private static extern IntPtr GetClass(string name);
-
-    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "sel_registerName")]
-    private static extern IntPtr GetSelector(string name);
-
-    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
-    private static extern IntPtr ObjcMsgSend(IntPtr receiver, IntPtr selector);
-
-    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
-    private static extern void ObjcMsgSendVoid(IntPtr receiver, IntPtr selector, IntPtr arg);
-
-    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
-    private static extern IntPtr ObjcMsgSendStr(IntPtr receiver, IntPtr selector, string str);
-
-    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
-    private static extern IntPtr ObjcMsgSendInt(IntPtr receiver, IntPtr selector, int value);
-
     /// <summary>
     /// メニューバーのタイトルを変更します。
     /// </summary>
@@ -45,4 +27,22 @@ public static class MacNativeHelper
         var firstItem = ObjcMsgSendInt(mainMenu, GetSelector("itemAtIndex:"), 0 );
         ObjcMsgSendVoid(firstItem, GetSelector("setTitle:"), nsStr);
     }
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_getClass")]
+    private static extern IntPtr GetClass(string name);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "sel_registerName")]
+    private static extern IntPtr GetSelector(string name);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    private static extern IntPtr ObjcMsgSend(IntPtr receiver, IntPtr selector);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void ObjcMsgSendVoid(IntPtr receiver, IntPtr selector, IntPtr arg);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    private static extern IntPtr ObjcMsgSendStr(IntPtr receiver, IntPtr selector, string str);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    private static extern IntPtr ObjcMsgSendInt(IntPtr receiver, IntPtr selector, int value);
 }
