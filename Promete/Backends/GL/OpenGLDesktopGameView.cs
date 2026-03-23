@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Promete.Graphics;
+using Promete.Platforms;
 using Promete.Windowing;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -124,6 +125,7 @@ public class OpenGLDesktopGameView : IGameView
         {
             if (NativeWindow.Title == value) return;
             NativeWindow.Title = value;
+            MacNativeHelper.SetMenuBarTitle(value);
         }
     }
 
