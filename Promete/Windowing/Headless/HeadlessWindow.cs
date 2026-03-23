@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using Promete.Backends;
 using Promete.Graphics;
 using Silk.NET.Input;
 using Timer = System.Timers.Timer;
@@ -76,7 +77,7 @@ public class HeadlessWindow : IWindow
     public string Title { get; set; }
     public WindowMode Mode { get; set; }
     public IInputContext? _RawInputContext { get; } = new DummyInputContext();
-    public TextureFactory TextureFactory { get; } = new HeadlessTextureFactory();
+    public TextureFactoryBase TextureFactory { get; } = new HeadlessTextureFactory();
 
     /// <summary>
     /// このウィンドウを開き、指定されたオプションでゲームを開始します。

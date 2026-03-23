@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Promete.Backends;
 using Promete.Graphics;
 using Silk.NET.Input;
 
@@ -9,6 +10,7 @@ namespace Promete.Windowing;
 /// <summary>
 /// ゲーム実行用のウィンドウを表します。
 /// </summary>
+[Obsolete("IWindowは非推奨になりました。")]
 public interface IWindow
 {
     /// <summary>
@@ -155,7 +157,7 @@ public interface IWindow
     /// <summary>
     /// INTERNAL API (使用しないでください)
     /// </summary>
-    public TextureFactory TextureFactory { get; }
+    public TextureFactoryBase TextureFactory { get; }
 
     /// <summary>
     /// このウィンドウを開き、ゲームを開始します。
