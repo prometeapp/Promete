@@ -1,4 +1,5 @@
-﻿using Promete.Windowing.Headless;
+﻿using System;
+using Promete.Windowing.Headless;
 
 namespace Promete.Headless;
 
@@ -14,6 +15,7 @@ public static class HeadlessAppExtesion
     /// <returns>構築されたPrometeアプリケーション</returns>
     public static PrometeApp BuildWithHeadless(this PrometeApp.PrometeAppBuilder builder)
     {
-        return builder.Build<HeadlessWindow>();
+        throw new NotImplementedException("TODO");
+        // return builder.Build<HeadlessWindow>();
     }
 }

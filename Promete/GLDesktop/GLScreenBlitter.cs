@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Promete.Backends;
+using Promete.Backends.GL;
 using Promete.Graphics;
 using Promete.Graphics.Rendering.GL;
-using Promete.Nodes;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
@@ -20,7 +21,7 @@ internal sealed class GLScreenBlitter : IDisposable
     /// </summary>
     public RenderTexture ScreenRenderTexture { get; }
 
-    private readonly OpenGLDesktopWindow _window;
+    private readonly OpenGLDesktopGameView _view;
     private readonly IRenderTextureProvider _provider;
 
     private Material _defaultMaterial = null!;
@@ -35,12 +36,12 @@ internal sealed class GLScreenBlitter : IDisposable
     private bool _initialized;
     private bool _disposed;
 
-    public GLScreenBlitter(IWindow window, IRenderTextureProvider provider)
+    public GLScreenBlitter(IGameView view, IRenderTextureProvider provider)
     {
-        _window = (OpenGLDesktopWindow)window;
+        _view = (OpenGLDesktopGameView)view;
         _provider = provider;
-        ScreenRenderTexture = provider.Create(_window.Size);
-        _window.Resize += OnWindowResize;
+        ScreenRenderTexture = provider.Create(_view.Size);
+        _view.Resize += OnViewResize;
     }
 
     /// <summary>
@@ -53,7 +54,7 @@ internal sealed class GLScreenBlitter : IDisposable
     public void BlitToScreen(IReadOnlyList<Material> materials)
     {
         EnsureInitialized();
-        var gl = _window.GL;
+        var gl = _view.GL;
         gl.Disable(GLEnum.Blend);
 
         EnsurePingPongBuffers();
@@ -73,7 +74,7 @@ internal sealed class GLScreenBlitter : IDisposable
 
         // バッファへの描画結果をスクリーンへ描画
         gl.BindFramebuffer(GLEnum.Framebuffer, 0);
-        var size = _window.ActualSize;
+        var size = _view.ActualSize;
         gl.Viewport(0, 0, (uint)size.X, (uint)size.Y);
         BlitQuad(gl, src, material: _defaultMaterial);
 
@@ -85,14 +86,14 @@ internal sealed class GLScreenBlitter : IDisposable
         if (_disposed) return;
         _disposed = true;
 
-        _window.Resize -= OnWindowResize;
+        _view.Resize -= OnViewResize;
         ScreenRenderTexture.Dispose();
         _pingPong0?.Dispose();
         _pingPong1?.Dispose();
 
         if (_initialized)
         {
-            var gl = _window.GL;
+            var gl = _view.GL;
             _defaultMaterial.Shader.Dispose();
             gl.DeleteVertexArray(_vao);
             gl.DeleteBuffer(_vbo);
@@ -128,9 +129,9 @@ internal sealed class GLScreenBlitter : IDisposable
         _pingPong1 ??= _provider.Create(size);
     }
 
-    private void OnWindowResize()
+    private void OnViewResize()
     {
-        var size = _window.Size;
+        var size = _view.Size;
         ScreenRenderTexture.Resize(size);
         _pingPong0?.Resize(size);
         _pingPong1?.Resize(size);
@@ -145,7 +146,7 @@ internal sealed class GLScreenBlitter : IDisposable
 
     private void Initialize()
     {
-        var gl = _window.GL;
+        var gl = _view.GL;
 
         var shader = ShaderProgram.Create()
             .Vertex(EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.blit.vert"))

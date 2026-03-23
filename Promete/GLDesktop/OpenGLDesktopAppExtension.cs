@@ -1,7 +1,9 @@
+using Promete.Backends.GL;
 using Promete.Graphics;
 using Promete.Graphics.Rendering;
 using Promete.Graphics.Rendering.GL;
 using Promete.Graphics.Rendering.GL.Runners;
+using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
 
 namespace Promete.GLDesktop;
@@ -16,11 +18,9 @@ public static class OpenGLDesktopAppExtension
     /// </summary>
     /// <param name="builder">PrometeAppのビルダー</param>
     /// <returns>構築されたPrometeAppインスタンス</returns>
-    public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder)
+    public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder, WindowOptions? opts = null)
     {
         var app = builder
-            .Use<IShaderFactory, GLShaderFactory>()
-            .Use<IRenderTextureProvider, GLRenderTextureProvider>()
             .Use<GLScreenBlitter>()
             .Use<GLMaskedContainerHelper>()
             .Use<GLRenderState>()
@@ -34,7 +34,7 @@ public static class OpenGLDesktopAppExtension
             .Use<GLBeginAlphaMaskCommandRunner>()
             .Use<GLEndMaskCommandRunner>()
             .Use<GLDrawPieTextureCommandRunner>()
-            .Build<OpenGLDesktopWindow>();
+            .Build<OpenGLDesktopBackend>(opts);
 
         // ビルド後にランナーをキューへ一括紐付け
         app.GetPlugin<RenderCommandQueue>().RegisterRunnerRange(
