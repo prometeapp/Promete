@@ -8,7 +8,7 @@ namespace Promete.Graphics;
 /// </summary>
 public interface ITile
 {
-    public Texture2D GetTexture(Tilemap map, VectorInt tileLocation, IWindow window);
+    public Texture2D GetTexture(Tilemap map, VectorInt tileLocation);
 
     /// <summary>
     /// この <see cref="ITile" /> を破棄します。

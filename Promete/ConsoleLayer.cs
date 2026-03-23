@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using Promete.Backends;
 using Promete.Graphics.Fonts;
 using Promete.Nodes;
 using Promete.Windowing;
@@ -11,7 +12,7 @@ namespace Promete;
 /// <summary>
 /// 画面上に簡易な文字出力を行うレイヤーを提供する Promete プラグインです。
 /// </summary>
-public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
+public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
 {
     private readonly List<string> _consoleBuffer = [];
     private int _maxLine;
@@ -50,9 +51,9 @@ public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
         app.GlobalForeground.Add(_text);
 
         app.SceneWillChange += Clear;
-        window.Update += () => { _text.Update(); };
-        window.Resize += () => { _maxLine = CalculateMaxLine(); };
-        window.PostUpdate += UpdateConsole;
+        app.Update += () => { _text.Update(); };
+        app.PostUpdate += UpdateConsole;
+        view.Resize += () => { _maxLine = CalculateMaxLine(); };
     }
 
     /// <summary>
@@ -109,7 +110,7 @@ public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
             textToTest += "A\n";
             bounds = _text.Font.GetTextBounds(textToTest, _text.Options);
             l++;
-        } while (bounds.Height < window.Height);
+        } while (bounds.Height < view.Height);
 
         return l - 1;
     }

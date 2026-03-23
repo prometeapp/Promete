@@ -9,7 +9,7 @@ namespace Promete.Nodes;
 
 public class Tilemap(
     VectorInt tileSize,
-    Color? defaultColor = default,
+    Color? defaultColor = null,
     TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto) : Node
 {
     private readonly Dictionary<VectorInt, (ITile tile, Color? color)> _tiles = [];
@@ -85,7 +85,6 @@ public class Tilemap(
         if (tl.Y < 0) tl.Y--;
         var (tx, ty) = (VectorInt)tl;
 
-        var window = PrometeApp.Current.Window;
         for (var y = ty; y < ty + maxTilesY; y++)
         for (var x = tx; x < tx + maxTilesX; x++)
         {
@@ -95,7 +94,7 @@ public class Tilemap(
 
             queue.Enqueue(new DrawTextureCommand
             {
-                Texture = tile.GetTexture(this, (x, y), window),
+                Texture = tile.GetTexture(this, (x, y)),
                 ModelMatrix = ModelMatrix,
                 TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
                 Width = TileSize.X,
@@ -107,13 +106,12 @@ public class Tilemap(
 
     private void FullCollect(RenderCommandQueue queue)
     {
-        var window = PrometeApp.Current.Window;
         foreach (var (tileLocation, (tile, color)) in Tiles)
         {
             var offset = tileLocation * TileSize;
             queue.Enqueue(new DrawTextureCommand
             {
-                Texture = tile.GetTexture(this, tileLocation, window),
+                Texture = tile.GetTexture(this, tileLocation),
                 ModelMatrix = ModelMatrix,
                 TintColor = color.GetValueOrDefault(Color.White),
                 Width = TileSize.X,
@@ -133,7 +131,9 @@ public class Tilemap(
     /// </summary>
     public ITile? GetTileAt(VectorInt point)
     {
-        return _tiles.ContainsKey(point) ? _tiles[point].tile : default;
+        return _tiles.TryGetValue(point, out var tile)
+            ? tile.tile
+            : null;
     }
 
     /// <summary>

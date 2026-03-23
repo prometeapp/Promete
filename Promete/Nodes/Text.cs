@@ -241,7 +241,7 @@ public class Text : Node
     public void RenderTexture()
     {
         var oldTexture = RenderedTexture;
-        RenderedTexture = _font.GenerateTexture(PrometeApp.Current.Window.TextureFactory, Content, Options);
+        RenderedTexture = _font.GenerateTexture(PrometeApp.Current.TextureFactory, Content, Options);
         UpdateModelMatrix();
         oldTexture?.Dispose();
     }
