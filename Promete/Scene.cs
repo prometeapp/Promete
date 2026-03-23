@@ -1,4 +1,5 @@
 using System;
+using Promete.Backends;
 using Promete.Nodes;
 using Promete.Windowing;
 
@@ -17,7 +18,13 @@ public abstract class Scene
     protected PrometeApp App =>
         PrometeApp.Current ?? throw new InvalidOperationException("PrometeApp is not initialized.");
 
+    [Obsolete("IWindow は非推奨になりました。")]
     protected IWindow Window => App.Window ?? throw new InvalidOperationException("Window is not initialized.");
+
+    protected IGameView View => App.View;
+
+    protected ITimeProvider Time => App.Time;
+
 
     /// <summary>
     /// シーンが開始したときに呼び出されます。
