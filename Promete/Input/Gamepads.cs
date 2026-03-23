@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Promete.Backends.SilkNetCommon;
 using Promete.Windowing;
 using Silk.NET.Input;
 
@@ -7,18 +8,16 @@ namespace Promete.Input;
 /// <summary>
 /// 接続されたゲームパッドの入力を取得する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed class Gamepads(IWindow window) : IInitializable
+public sealed class Gamepads(PrometeApp app, InputProvider inputProvider) : IInitializable
 {
-    private IInputContext _input;
-
     private readonly List<Gamepad> _pads = [];
+    private IInputContext _ctx;
 
     public void OnStart()
     {
-        _input = window._RawInputContext!;
+        _ctx = inputProvider.CreateInput();
         UpdateGamepads();
-
-        _input.ConnectionChanged += OnConnectionChanged;
+        _ctx.ConnectionChanged += OnConnectionChanged;
     }
 
     /// <summary>
@@ -37,6 +36,6 @@ public sealed class Gamepads(IWindow window) : IInitializable
     {
         _pads.ForEach(p => p.Dispose());
         _pads.Clear();
-        foreach (var silkGamepad in _input.Gamepads) _pads.Add(new Gamepad(silkGamepad, window));
+        foreach (var silkGamepad in _ctx.Gamepads) _pads.Add(new Gamepad(silkGamepad, app));
     }
 }

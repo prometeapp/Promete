@@ -14,12 +14,12 @@ public sealed class Gamepad : IDisposable
 
     private readonly GamepadButton[] _buttons;
     private readonly IGamepad _pad;
-    private readonly IWindow _window;
+    private readonly PrometeApp _app;
 
-    public Gamepad(IGamepad pad, IWindow window)
+    public Gamepad(IGamepad pad, PrometeApp app)
     {
         _pad = pad;
-        _window = window;
+        _app = app;
         _buttons = new GamepadButton[pad.Buttons.Count + TriggerCount];
         for (var i = 0; i < pad.Buttons.Count; i++)
         {
@@ -35,8 +35,8 @@ public sealed class Gamepad : IDisposable
         pad.ButtonUp += OnButtonUp;
         pad.TriggerMoved += OnTriggerMove;
 
-        window.PreUpdate += OnPreUpdate;
-        window.PostUpdate += OnPostUpdate;
+        app.PreUpdate += OnPreUpdate;
+        app.PostUpdate += OnPostUpdate;
     }
 
     /// <summary>
@@ -125,7 +125,7 @@ public sealed class Gamepad : IDisposable
                 : _pad.Triggers[i - _buttons.Length + 2].Position >= 1;
             _buttons[i].IsPressed = isPressed;
             _buttons[i].ElapsedFrameCount = isPressed ? _buttons[i].ElapsedFrameCount + 1 : 0;
-            _buttons[i].ElapsedTime = isPressed ? _buttons[i].ElapsedTime + _window.DeltaTime : 0;
+            _buttons[i].ElapsedTime = isPressed ? _buttons[i].ElapsedTime + _app.Time.DeltaTime : 0;
         }
     }
 
@@ -163,8 +163,8 @@ public sealed class Gamepad : IDisposable
         _pad.ButtonDown -= OnButtonDown;
         _pad.ButtonUp -= OnButtonUp;
         _pad.TriggerMoved -= OnTriggerMove;
-        _window.PreUpdate -= OnPreUpdate;
-        _window.PostUpdate -= OnPostUpdate;
+        _app.PreUpdate -= OnPreUpdate;
+        _app.PostUpdate -= OnPostUpdate;
     }
 
     ~Gamepad()
