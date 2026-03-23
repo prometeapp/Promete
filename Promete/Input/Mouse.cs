@@ -57,7 +57,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         if (_mouse == null) return;
         var wheel = _mouse.ScrollWheels[0];
         Scroll = (wheel.X, wheel.Y);
-        Position = VectorInt.From(_mouse.Position / app.View.Scale);
+        Position = VectorInt.From(_mouse.Position / (app.View.Scale * app.View.PixelRatio));
 
         for (var i = 0; i < _buttons.Length; i++)
         {
@@ -121,7 +121,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         var id = (int)btn;
         if (id < 0 || _buttons.Length <= id) return;
 
-        Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos / app.View.Scale)));
+        Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos / (app.View.Scale * app.View.PixelRatio))));
     }
 
     private void OnMouseDown(IMouse mouse, SilkMouseButton btn)
@@ -130,7 +130,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         if (id < 0 || _buttons.Length <= id) return;
 
         _buttons[id].IsButtonDown = true;
-        ButtonDown?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / app.View.Scale)));
+        ButtonDown?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))));
     }
 
     private void OnMouseUp(IMouse mouse, SilkMouseButton btn)
@@ -139,12 +139,12 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         if (id < 0 || _buttons.Length <= id) return;
 
         _buttons[id].IsButtonUp = true;
-        ButtonUp?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / app.View.Scale)));
+        ButtonUp?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))));
     }
 
     private void OnMouseMove(IMouse mouse, Vector2 pos)
     {
-        pos /= app.View.Scale;
+        pos /= app.View.Scale * app.View.PixelRatio;
         Move?.Invoke(new MouseEventArgs((VectorInt)Vector.From(pos)));
 
         // マウスが画面に出入りしたときのイベント発火条件をチェックする
