@@ -1,11 +1,12 @@
 ﻿using System.IO;
+using Promete.Backends;
 using Promete.Graphics;
 using SixLabors.ImageSharp;
 using Color = System.Drawing.Color;
 
 namespace Promete.Windowing.Headless;
 
-public class HeadlessTextureFactory : TextureFactory
+public class HeadlessTextureFactory : TextureFactoryBase
 {
     public override Texture2D Load(string path)
     {

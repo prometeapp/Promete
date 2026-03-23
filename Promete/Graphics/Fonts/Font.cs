@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Promete.Backends;
 using Promete.Internal;
 using Promete.Markup;
 using SixLabors.Fonts;
@@ -84,7 +85,7 @@ public class Font : IFont
     }
 
     /// <inheritdoc />
-    public Texture2D GenerateTexture(TextureFactory factory, string text, TextRenderingOptions options)
+    public Texture2D GenerateTexture(TextureFactoryBase factory, string text, TextRenderingOptions options)
     {
         (text, var textOptions) = CreateTextOptions(options, text);
         var drawingOptions = CreateDrawingOptions(options);

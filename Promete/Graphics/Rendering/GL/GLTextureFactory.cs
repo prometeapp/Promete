@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Promete.Backends;
 using Promete.Graphics;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;
@@ -12,8 +13,10 @@ using Color = System.Drawing.Color;
 
 namespace Promete.Windowing.GLDesktop;
 
-public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
+public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
 {
+    public GL GL { get; set; }
+
     public override Texture2D Load(string path)
     {
         return LoadFromImageSharpImage(Image.Load(path));
@@ -134,13 +137,13 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
         app.ThrowIfNotMainThread();
         fixed (byte* b = bitmap)
         {
-            var texture = gl.GenTexture();
-            gl.ActiveTexture(GLEnum.Texture0);
-            gl.BindTexture(GLEnum.Texture2D, texture);
+            var texture = GL.GenTexture();
+            GL.ActiveTexture(GLEnum.Texture0);
+            GL.BindTexture(GLEnum.Texture2D, texture);
 
-            gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            gl.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            gl.TexImage2D(GLEnum.Texture2D, 0, (int)GLEnum.Rgba, width, height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, b);
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexImage2D(GLEnum.Texture2D, 0, (int)GLEnum.Rgba, width, height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, b);
             return (int)texture;
         }
     }
@@ -148,6 +151,6 @@ public class OpenGLTextureFactory(GL gl, PrometeApp app) : TextureFactory
     private void DisposeTexture(Texture2D texture)
     {
         app.ThrowIfNotMainThread();
-        gl.DeleteTexture((uint)texture.Handle);
+        GL.DeleteTexture((uint)texture.Handle);
     }
 }
