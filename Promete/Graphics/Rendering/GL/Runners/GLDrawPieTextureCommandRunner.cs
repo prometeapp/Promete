@@ -2,6 +2,8 @@
 using System;
 using System.Drawing;
 using System.Numerics;
+using Promete.Backends;
+using Promete.Backends.GL;
 using Promete.Graphics.Rendering.Commands;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
@@ -12,10 +14,10 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="DrawPieTextureCommand"/> を実行するランナーです。
 /// </summary>
-public class GLDrawPieTextureCommandRunner(IWindow window) : CommandRunner<DrawPieTextureCommand>
+public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawPieTextureCommand>
 {
-    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow ??
-                                                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+
     private bool _initialized;
     private uint _shader;
     private int _uModel, _uProjection, _uTexture0, _uTintColor, _uStartAngle, _uEndAngle;
@@ -41,7 +43,7 @@ public class GLDrawPieTextureCommandRunner(IWindow window) : CommandRunner<DrawP
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
-        var gl = _window.GL;
+        var gl = _view.GL;
         var c = color;
 
         // モデル行列を計算
@@ -57,7 +59,7 @@ public class GLDrawPieTextureCommandRunner(IWindow window) : CommandRunner<DrawP
         var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
         if (currentFrameBufferId == 0)
         {
-            viewport /= _window.Scale;
+            viewport /= _view.Scale;
         }
 
         // プロジェクション行列を計算
@@ -126,7 +128,7 @@ public class GLDrawPieTextureCommandRunner(IWindow window) : CommandRunner<DrawP
 
     private void Initialize()
     {
-        var gl = _window.GL;
+        var gl = _view.GL;
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
         var vsh = gl.CreateShader(GLEnum.VertexShader);

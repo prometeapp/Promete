@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Promete.Backends;
+using Promete.Backends.GL;
 using Promete.Graphics.Rendering.Commands;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
@@ -12,15 +14,14 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="DrawTextureBatchedCommand"/> をインスタンシングで描画するランナーです。
 /// </summary>
-internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner<DrawTextureBatchedCommand>, IDisposable
+internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner<DrawTextureBatchedCommand>, IDisposable
 {
     private const int InitialInstanceCapacity = 512;
 
     // per-instance: mat4(16) + vec4 tintColor(4) + vec4 uvRect(4) = 24 floats
     private const int InstanceStride = 24;
 
-    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow
-                                                   ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
     private bool _initialized;
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
@@ -31,7 +32,7 @@ internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner
     public void Dispose()
     {
         if (!_initialized) return;
-        var gl = _window.GL;
+        var gl = _view.GL;
         gl.DeleteProgram(_shader);
         gl.DeleteVertexArray(_vao);
         gl.DeleteBuffer(_vbo);
@@ -55,7 +56,7 @@ internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner
 
         EnsureInitialized();
 
-        var gl = _window.GL;
+        var gl = _view.GL;
         var count = items.Count;
 
         EnsureInstanceBufferCapacity(count);
@@ -64,7 +65,7 @@ internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner
         var viewport = GLHelper.GetViewport(gl);
         var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
         if (currentFrameBufferId == 0)
-            viewport /= _window.Scale;
+            viewport /= _view.Scale;
         var projection = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
 
         // per-instanceデータを構築
@@ -158,7 +159,7 @@ internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner
 
     private unsafe void Initialize()
     {
-        var gl = _window.GL;
+        var gl = _view.GL;
 
         // シェーダーをコンパイル・リンク
         var vsh = gl.CreateShader(ShaderType.VertexShader);
@@ -251,7 +252,7 @@ internal class GLDrawTextureBatchedCommandRunner(IWindow window) : CommandRunner
         while (newSize < required) newSize *= 2;
         _instanceData = new float[newSize];
 
-        var gl = _window.GL;
+        var gl = _view.GL;
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _instanceVbo);
         gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(newSize * sizeof(float)), null, BufferUsageARB.DynamicDraw);
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);

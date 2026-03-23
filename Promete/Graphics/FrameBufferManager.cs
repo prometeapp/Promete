@@ -14,15 +14,8 @@ public class FrameBufferManager
 
     public FrameBufferManager(PrometeApp app)
     {
-        _supported = app.TryGetPlugin<IRenderTextureProvider>(out _);
-        if (!_supported)
-        {
-            LogHelper.Warn("FrameBuffer is not supported on this backend.");
-            return;
-        }
-
-        app.Window.Render += RenderAll;
-        app.Window.Update += UpdateAll;
+        app.Render += RenderAll;
+        app.Update += UpdateAll;
     }
 
     private void RenderAll()

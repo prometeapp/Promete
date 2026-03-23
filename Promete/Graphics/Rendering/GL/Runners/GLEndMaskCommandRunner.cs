@@ -1,4 +1,6 @@
 using System;
+using Promete.Backends;
+using Promete.Backends.GL;
 using Promete.Graphics.Rendering.Commands;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
@@ -9,14 +11,13 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="EndMaskCommand"/> でステンシルマスクの後処理を行うランナーです。
 /// </summary>
-public class GLEndMaskCommandRunner(IWindow window, GLRenderState state) : CommandRunner<EndMaskCommand>
+public class GLEndMaskCommandRunner(IGameView view, GLRenderState state) : CommandRunner<EndMaskCommand>
 {
-    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow
-        ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
 
     public override void Execute(EndMaskCommand command)
     {
-        var gl = _window.GL;
+        var gl = _view.GL;
         gl.StencilMask(0xFF);
         var wasEnabled = state.StencilStateStack.TryPop(out var prev) && prev;
         if (!wasEnabled)

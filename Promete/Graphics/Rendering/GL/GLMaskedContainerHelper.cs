@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using Promete.Backends.GL;
 using Promete.Internal;
 using Promete.Nodes;
 using Promete.Windowing;
@@ -13,13 +14,11 @@ namespace Promete.Graphics.Rendering.GL;
 /// <summary>
 /// <see cref="MaskedContainer"/> のアルファブレンディング方式でのレンダリングを支援するヘルパークラスです。
 /// </summary>
-public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderCommandQueue queue, IRenderTextureProvider renderTextureProvider) : IDisposable
+public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, IRenderTextureProvider renderTextureProvider) : IDisposable
 {
     // MaskedContainer ごとの RenderTexture キャッシュ
     private readonly Dictionary<MaskedContainer, RenderTexture> _renderTextureCache = [];
 
-    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow ??
-                                                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
     private bool _initialized;
     private uint _maskShader;
     private uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
@@ -38,7 +37,7 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
         _renderTextureCache.Clear();
 
         if (!_initialized) return;
-        var gl = _window.GL;
+        var gl = ((OpenGLDesktopGameView)app.View).GL;
 
         // シェーダーとバッファを削除
         gl.DeleteProgram(_maskShader);
@@ -57,7 +56,7 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
 
     private void Initialize()
     {
-        var gl = _window.GL;
+        var gl = ((OpenGLDesktopGameView)app.View).GL;
 
         // マスク適用用のシェーダーをコンパイル
         var vsh = gl.CreateShader(GLEnum.VertexShader);
@@ -259,7 +258,7 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
-        var gl = _window.GL;
+        var gl = ((OpenGLDesktopGameView)app.View).GL;
 
         // モデル行列を計算
         var size = node.Size;
@@ -274,7 +273,7 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
         var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
         if (currentFrameBufferId == 0)
         {
-            viewport /= _window.Scale;
+            viewport /= app.View.Scale;
         }
 
         // プロジェクション行列を計算
@@ -311,7 +310,7 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
-        var gl = _window.GL;
+        var gl = ((OpenGLDesktopGameView)app.View).GL;
 
         // モデル行列を計算
         var size = node.Size;
@@ -326,7 +325,7 @@ public class GLMaskedContainerHelper(IWindow window, PrometeApp app, RenderComma
         var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
         if (currentFrameBufferId == 0)
         {
-            viewport /= _window.Scale;
+            viewport /= app.View.Scale;
         }
 
         // プロジェクション行列を計算

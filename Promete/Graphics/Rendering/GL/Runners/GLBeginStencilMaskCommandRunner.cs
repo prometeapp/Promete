@@ -1,4 +1,6 @@
 using System;
+using Promete.Backends;
+using Promete.Backends.GL;
 using Promete.Graphics.Rendering.Commands;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
@@ -9,15 +11,14 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="BeginStencilMaskCommand"/> でステンシルマスクの書き込みフェーズを開始するランナーです。
 /// </summary>
-public class GLBeginStencilMaskCommandRunner(IWindow window, GLMaskedContainerHelper maskHelper, GLRenderState state)
+public class GLBeginStencilMaskCommandRunner(IGameView view, GLMaskedContainerHelper maskHelper, GLRenderState state)
     : CommandRunner<BeginStencilMaskCommand>
 {
-    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow
-        ?? throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
 
     public override void Execute(BeginStencilMaskCommand command)
     {
-        var gl = _window.GL;
+        var gl = _view.GL;
 
         state.StencilStateStack.Push(gl.IsEnabled(GLEnum.StencilTest));
 

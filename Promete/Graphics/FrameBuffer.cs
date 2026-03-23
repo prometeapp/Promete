@@ -122,13 +122,13 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     {
         var app = PrometeApp.Current;
         var queue = app.GetPlugin<RenderCommandQueue>();
-        var window = app.Window;
+        var view = app.View;
         var ctx = new RenderContext
         {
-            WindowSize = window.Size,
-            WindowScale = window.Scale,
-            ActualWidth = window.ActualWidth,
-            ActualHeight = window.ActualHeight,
+            WindowSize = view.Size,
+            WindowScale = view.Scale,
+            ActualWidth = view.ActualWidth,
+            ActualHeight = view.ActualHeight,
         };
 
         var clearColor = AutoClear ? BackgroundColor : (Color?)null;
