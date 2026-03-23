@@ -2,6 +2,15 @@
 
 Promete v2では、より高速な描画を実現するためのレンダリングシステムの大幅な改訂、.NET 10への移行などを実現しました。
 
+- **BREAKING CHANGE:** `IWindow` インターフェイスを廃止し、`BackendBase` ベースの新しいバックエンドアーキテクチャに移行しました
+    - `IWindow` が担っていた複合責務（ウィンドウ管理・時間情報・テクスチャ・イベント）を以下のように分離しました
+    - `IGameView`: 画面表示に関するインターフェイス
+    - `ITimeProvider`: 時間情報（DeltaTime, TotalTime等）に関するインターフェイス
+    - `BackendBase`: バックエンド実装の抽象基底クラス
+    - `IWindow` は後方互換のため `[Obsolete]` として残してありますが、新規コードでは `IGameView` / `ITimeProvider` を直接使用してください
+    - 既存の `IWindow` 依存コードは `CompatibleWindow` アダプタで引き続き動作します
+- `TextureFactory` を `TextureFactoryBase`（基底クラス）と `GLTextureFactory`（OpenGL固有実装）に分割しました
+- `PrometeApp` にライフサイクルイベント (`PreUpdate`, `PostUpdate`, `PreRender`, `PostRender` 等) を追加しました
 - グラフィック描画の仕組みとして、コマンドキューシステムを追加
     - テクスチャ・プリミティブ描画、マスクモード有効化など、GPUへの命令を「コマンド」としてカプセル化して扱うレイヤーを新たに導入しました。
 - フレームバッファシステムをリファクタリング
