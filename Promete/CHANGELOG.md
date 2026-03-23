@@ -1,34 +1,42 @@
 ## HEAD
 
-Promete v2では、より高速な描画を実現するためのレンダリングシステムの大幅な改訂、.NET 10への移行などを実現しました。
+Promete v2では、より高速な描画を実現するためのレンダリングシステムの大幅な改訂とAPIの大幅な整理を行い、
+フレームバッファやシェーダーに対する高度なサポートを追加し、.NET 10への移行などを実現しました。
 
-- **BREAKING CHANGE:** `IWindow` インターフェイスを廃止し、`BackendBase` ベースの新しいバックエンドアーキテクチャに移行しました
+### Breaking Changes
+
+- `IWindow` インターフェイスを廃止し、`BackendBase` ベースの新しいバックエンドアーキテクチャに移行しました
     - `IWindow` が担っていた複合責務（ウィンドウ管理・時間情報・テクスチャ・イベント）を以下のように分離しました
     - `IGameView`: 画面表示に関するインターフェイス
     - `ITimeProvider`: 時間情報（DeltaTime, TotalTime等）に関するインターフェイス
     - `BackendBase`: バックエンド実装の抽象基底クラス
     - `IWindow` は後方互換のため `[Obsolete]` として残してありますが、新規コードでは `IGameView` / `ITimeProvider` を直接使用してください
-    - 既存の `IWindow` 依存コードは `CompatibleWindow` アダプタで引き続き動作します
-- `TextureFactory` を `TextureFactoryBase`（基底クラス）と `GLTextureFactory`（OpenGL固有実装）に分割しました
-- `PrometeApp` にライフサイクルイベント (`PreUpdate`, `PostUpdate`, `PreRender`, `PostRender` 等) を追加しました
-- グラフィック描画の仕組みとして、コマンドキューシステムを追加
-    - テクスチャ・プリミティブ描画、マスクモード有効化など、GPUへの命令を「コマンド」としてカプセル化して扱うレイヤーを新たに導入しました。
-- フレームバッファシステムをリファクタリング
+- `TextureFactory` を `TextureFactoryBase`（基底クラス）に名称変更しました
+- `PrometeApp` にライフサイクルイベント（`PreUpdate`, `PostUpdate`, `PreRender`, `PostRender` 等）を移動しました
+- グラフィック描画の仕組みとして、コマンドキューシステムに移行しました
+    - テクスチャ・プリミティブ描画、マスクモード有効化など、GPUへの命令を「コマンド」としてカプセル化して扱うレイヤーを新たに導入しました
+    - 従来のNode Rendererを廃止しました。Nodeは描画コマンドを直接発行するようになりました
+- 角度をfloat値として要求または戻り値とする箇所を `Angle` 構造体に置き換えました
+
+### Features
+
+- シェーダーAPIを追加しました
+    - `ShaderProgram` クラスを用いて、シェーダーの読み込み・コンパイルを行えるように
+    - 生成したシェーダーとユニフォーム値の組み合わせを `Material` クラスで保持できるように
+        - `Node.Material` プロパティおよび `PrometeApp.PostProcessMaterials` プロパティで用います
+- スクリーン全体に対し、シェーダーを用いてポストプロセスできるようになりました
+- `Angle` 構造体を新規追加しました
+- `Texture2D`: UV座標を追加しました
+- `OpenGLTextureFactory`: `LoadSpriteSheet` で、同じハンドルのUV違いの `Texture2D` を生成するように
+
+### Enhancements
+
+- フレームバッファシステムをリファクタリングしました
     - `FrameBuffer` に `AutoRender` / `AutoClear` プロパティと手動レンダリング用の `Render()` メソッドを追加
         - `AutoRender = false` にすると毎フレームの自動レンダリングを抑止し、任意のタイミングで `Render()` を呼び出せます
         - `AutoClear = false` にすると前フレームの内容を保持したままレンダリングできます
-- シェーダーAPIを追加しました
-  - `ShaderProgram` クラスを用いて、シェーダーの読み込み・コンパイルを行えるように
-  - 生成したシェーダーとユニフォーム値の組み合わせを `Material` クラスで保持できるように
-    - `Node.Material` プロパティおよび `PrometeApp.PostProcessMaterials` プロパティで用います
-- スクリーン全体をFBOでオフスクリーンレンダリングするよう変更
-- スクリーン全体に対し、シェーダーを用いてポストプロセスできるように
-- OpenGLTextureFactory: LoadSpriteSheetで、同じハンドルのUV違いのTexture2Dを生成するように
-- Node Rendererを廃止。Nodeは、描画コマンドを発行するように
-- Texture2D: UV座標を持てるように
-- Angle構造体を新規追加
-- 既存の、角度をfloat値として要求または戻り値とする箇所をAngle構造体に置き換え
-- .NET 10へ移行
+- スクリーン全体をFBOでオフスクリーンレンダリングするよう変更しました
+- .NET 10へ移行しました
 
 ## 1.3.2
 - fix(Node): Sizeプロパティを変更しても内部のジオメトリマトリックスが変化しない問題を修正
