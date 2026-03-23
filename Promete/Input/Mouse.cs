@@ -57,7 +57,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         if (_mouse == null) return;
         var wheel = _mouse.ScrollWheels[0];
         Scroll = (wheel.X, wheel.Y);
-        Position = VectorInt.From(_mouse.Position / (app.View.Scale * app.View.PixelRatio));
+        Position = VectorInt.From(_mouse.Position / app.View.Scale);
 
         for (var i = 0; i < _buttons.Length; i++)
         {
