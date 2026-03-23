@@ -34,4 +34,8 @@
         <PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1"/>
         <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Windowing\GLDesktop\" />
+    </ItemGroup>
 </Project>
