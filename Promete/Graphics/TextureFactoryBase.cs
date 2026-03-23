@@ -11,7 +11,7 @@ namespace Promete.Graphics;
 /// <summary>
 /// テクスチャを生成するファクトリです。
 /// </summary>
-public abstract class TextureFactory
+public abstract class TextureFactoryBase
 {
     /// <summary>
     /// 指定したパスからテクスチャを読み込みます。

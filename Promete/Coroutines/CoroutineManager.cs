@@ -13,13 +13,10 @@ namespace Promete.Coroutines;
 public class CoroutineManager
 {
     private readonly Dictionary<Coroutine, YieldInstruction?> _coroutines = new();
-    private readonly IWindow _window;
 
-    public CoroutineManager(PrometeApp app, IWindow window)
+    public CoroutineManager(PrometeApp app)
     {
-        _window = window;
-        _window.Update += Update;
-
+        app.Update += Update;
         app.SceneWillChange += ClearAllNonKeepAliveCoroutines;
     }
 

@@ -9,7 +9,9 @@ public class time(ConsoleLayer console, Keyboard keyboard) : Scene
     public override void OnUpdate()
     {
         console.Clear();
+        console.Print($"TimeScale: {Window.TimeScale}");
         console.Print($"Time: {Window.TotalTime}");
+        console.Print($"Time without Scale: {Window.TotalTimeWithoutScale}");
         console.Print($"DeltaTime: {Window.DeltaTime}");
         console.Print($"FPS: {Window.FramePerSeconds}");
         console.Print($"UPS: {Window.UpdatePerSeconds}");

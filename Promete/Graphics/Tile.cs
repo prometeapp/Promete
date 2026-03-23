@@ -64,9 +64,10 @@ public class Tile : ITile
     /// </summary>
     public double Interval { get; }
 
-    public Texture2D GetTexture(Tilemap map, VectorInt tileLocation, IWindow window)
+    public Texture2D GetTexture(Tilemap map, VectorInt tileLocation)
     {
-        if (_prevFrameCount != window.TotalFrame)
+        var time = PrometeApp.Current.Time;
+        if (_prevFrameCount != time.TotalFrame)
         {
             if (_timer > Interval)
             {
@@ -77,10 +78,10 @@ public class Tile : ITile
             }
 
             Texture = Animations[_animationState];
-            _timer += window.DeltaTime;
+            _timer += time.DeltaTime;
         }
 
-        _prevFrameCount = window.TotalFrame;
+        _prevFrameCount = time.TotalFrame;
         return Texture;
     }
 

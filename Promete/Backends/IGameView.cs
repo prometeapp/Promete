@@ -1,17 +1,15 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Promete.Backends;
 using Promete.Graphics;
-using Silk.NET.Input;
+using Promete.Windowing;
 
-namespace Promete.Windowing;
+namespace Promete.Backends;
 
 /// <summary>
-/// ゲーム実行用のウィンドウを表します。
+/// ゲーム画面（ウィンドウ等）の情報にアクセスします。
 /// </summary>
-[Obsolete("IWindowは非推奨になりました。")]
-public interface IWindow
+public interface IGameView
 {
     /// <summary>
     /// ゲームウィンドウの位置を取得または設定します。
@@ -87,53 +85,6 @@ public interface IWindow
     public bool TopMost { get; set; }
 
     /// <summary>
-    /// ゲーム起動時からの経過時間を取得または設定します。
-    /// </summary>
-    public float TotalTime { get; }
-
-    /// <summary>
-    /// 前回の更新フレームからの経過時間を取得します。
-    /// </summary>
-    public float DeltaTime { get; }
-
-    /// <summary>
-    /// レンダリングFPSを取得します。
-    /// </summary>
-    public long FramePerSeconds { get; }
-
-    /// <summary>
-    /// 更新FPSを取得します。
-    /// </summary>
-    public long UpdatePerSeconds { get; }
-
-    /// <summary>
-    /// ゲームウィンドウが開始してからの総フレーム数を取得または設定します。
-    /// </summary>
-    public long TotalFrame { get; }
-
-    /// <summary>
-    /// ゲームウィンドウがVsyncモードかどうかを取得または設定します。
-    /// </summary>
-    public bool IsVsyncMode { get; set; }
-
-    /// <summary>
-    /// FPS目標を取得または設定します。
-    /// </summary>
-    public int TargetFps { get; set; }
-
-    /// <summary>
-    /// UPS目標を取得または設定します。
-    /// </summary>
-    public int TargetUps { get; set; }
-
-    /// <summary>
-    /// 時間が流れる速度（通常の速度を<c>1.0f</c>とした倍率）を取得または設定します。
-    /// </summary>
-    public float TimeScale { get; set; }
-
-    public float TotalTimeWithoutScale { get; }
-
-    /// <summary>
     /// ゲームウィンドウのピクセル比率を取得します。
     /// </summary>
     public float PixelRatio { get; }
@@ -149,27 +100,6 @@ public interface IWindow
     public WindowMode Mode { get; set; }
 
     /// <summary>
-    /// INTERNAL API (使用しないでください)
-    /// </summary>
-    // ReSharper disable once InconsistentNaming
-    public IInputContext? _RawInputContext { get; }
-
-    /// <summary>
-    /// INTERNAL API (使用しないでください)
-    /// </summary>
-    public TextureFactoryBase TextureFactory { get; }
-
-    /// <summary>
-    /// このウィンドウを開き、ゲームを開始します。
-    /// </summary>
-    public void Run(WindowOptions opts);
-
-    /// <summary>
-    /// 指定されたステータスコードでゲームを終了します。
-    /// </summary>
-    public void Exit();
-
-    /// <summary>
     /// スクリーンショットを撮り、それをテクスチャとして生成します。
     /// </summary>
     /// <returns>スクリーンショットのテクスチャ</returns>
@@ -181,36 +111,6 @@ public interface IWindow
     /// <param name="path">パス</param>
     /// <param name="ct">このタスクのキャンセレーショントークン</param>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default);
-
-    /// <summary>
-    /// ゲームが開始されたときに発生します。
-    /// </summary>
-    public event Action? Start;
-
-    /// <summary>
-    /// ゲームがフレームを更新するときに発生します。
-    /// </summary>
-    public event Action? Update;
-
-    /// <summary>
-    /// ゲームがフレームをレンダリングするときに発生します。
-    /// </summary>
-    public event Action? Render;
-
-    /// <summary>
-    /// ゲームが終了したときに発生します。
-    /// </summary>
-    public event Action? Destroy;
-
-    /// <summary>
-    /// ゲームがフレームを更新する前に発生します。
-    /// </summary>
-    public event Action? PreUpdate;
-
-    /// <summary>
-    /// ゲームがフレームを更新した後に発生します。
-    /// </summary>
-    public event Action? PostUpdate;
 
     /// <summary>
     /// ユーザーがウィンドウにファイルをドロップしたときに発生します。

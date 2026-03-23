@@ -1,6 +1,8 @@
 using System;
 using System.Drawing;
 using System.Numerics;
+using Promete.Backends;
+using Promete.Backends.GL;
 using Promete.Graphics.Rendering.Commands;
 using Promete.Nodes;
 using Promete.Windowing;
@@ -12,10 +14,9 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="DrawPrimitiveCommand"/> でプリミティブ図形を描画するランナーです。
 /// </summary>
-public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPrimitiveCommand>
+public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPrimitiveCommand>
 {
-    private readonly OpenGLDesktopWindow _window = window as OpenGLDesktopWindow ??
-                                                   throw new InvalidOperationException("Window is not a OpenGLDesktopWindow");
+    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
     private uint _ebo;
     private bool _initialized;
     private uint _shader;
@@ -45,7 +46,7 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
             return;
 
         EnsureInitialized();
-        var gl = _window.GL;
+        var gl = _view.GL;
 
         // ビューポートの大きさを取得する
         var viewport = GLHelper.GetViewport(gl);
@@ -54,14 +55,14 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
         var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
         if (currentFrameBufferId == 0)
         {
-            viewport /= _window.Scale;
+            viewport /= _view.Scale;
         }
 
         // 図形の頂点を、ワールド座標からビューポート座標に変換（事前変換済みなのでPixelRatioを乗算するだけ）
         Span<float> vertices = stackalloc float[worldVertices.Length * 2];
         for (var i = 0; i < worldVertices.Length; i++)
         {
-            var vertex = worldVertices[i] * _window.PixelRatio;
+            var vertex = worldVertices[i] * _view.PixelRatio;
 
             var (x, y) = vertex.ToViewportPoint(viewport.X / 2, viewport.Y / 2);
             vertices[i * 2 + 0] = x;
@@ -90,7 +91,7 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
     private unsafe void DrawStroke(Span<float> vertices, int lineWidth, Color? lineColor, uint program, Material? material)
     {
         if (lineWidth <= 0 || lineColor is not { } lc) return;
-        var gl = _window.GL;
+        var gl = _view.GL;
 
         gl.LineWidth(lineWidth);
 
@@ -126,7 +127,7 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
         // 透明度が0未満の場合は、塗りつぶし領域の描画をスキップする
         if (color.A <= 0) return;
 
-        var gl = _window.GL;
+        var gl = _view.GL;
         if (type == ShapeType.Line) gl.LineWidth(lineWidth);
 
         // すべての頂点データをバッファに書き込む
@@ -177,7 +178,7 @@ public class GLDrawPrimitiveCommandRunner(IWindow window) : CommandRunner<DrawPr
 
     private void Initialize()
     {
-        var gl = _window.GL;
+        var gl = _view.GL;
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
         var vsh = gl.CreateShader(GLEnum.VertexShader);

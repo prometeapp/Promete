@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Promete.Backends.SilkNetCommon;
 using Promete.Input.Internal;
 using Promete.Windowing;
 using Silk.NET.Input;
@@ -12,7 +13,7 @@ namespace Promete.Input;
 /// <summary>
 /// キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatable
+public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider) : IInitializable, IUpdatable
 {
     /// <summary>
     /// 存在する全てのキーコードを列挙します。
@@ -50,6 +51,7 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
     private IKeyboard? _currentKeyboard;
     private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
     private readonly Queue<char> _keyChars = new();
+    private IInputContext _ctx;
 
     /// <summary>
     /// キーボードバッファに蓄積されている、入力された文字列を取得します。
@@ -101,8 +103,10 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
 
     public void OnStart()
     {
-        window.PostUpdate += OnPostUpdate;
-        window.Destroy += OnDestroy;
+        app.PostUpdate += OnPostUpdate;
+        app.Destroy += OnDestroy;
+
+        _ctx = inputProvider.CreateInput();
 
         TryFindKeyboard();
     }
@@ -128,7 +132,7 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
             var key = KeyOf(keyCode);
             key.IsPressed = isPressed;
             key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
-            key.ElapsedTime = isPressed ? key.ElapsedTime + window.DeltaTime : 0;
+            key.ElapsedTime = isPressed ? key.ElapsedTime + app.Time.DeltaTime : 0;
         });
     }
 
@@ -144,17 +148,15 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
 
     private void OnDestroy()
     {
-        window.PostUpdate -= OnPostUpdate;
-        window.Destroy -= OnDestroy;
+        app.PostUpdate -= OnPostUpdate;
+        app.Destroy -= OnDestroy;
     }
 
     private void TryFindKeyboard()
     {
-        var input = window._RawInputContext ??
-                    throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
-        if (input.Keyboards.Count == 0) return;
+        if (_ctx.Keyboards.Count == 0) return;
 
-        _currentKeyboard = input.Keyboards[0];
+        _currentKeyboard = _ctx.Keyboards[0];
         _currentKeyboard.KeyDown += OnKeyDown;
         _currentKeyboard.KeyUp += OnKeyUp;
         _currentKeyboard.KeyChar += OnKeyChar;

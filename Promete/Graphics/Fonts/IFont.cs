@@ -1,4 +1,6 @@
-﻿namespace Promete.Graphics.Fonts;
+﻿using Promete.Backends;
+
+namespace Promete.Graphics.Fonts;
 
 /// <summary>
 /// Prometeで利用できるフォントを表すインターフェイス。
@@ -20,5 +22,5 @@ public interface IFont
     /// <param name="text">描画するテキスト。</param>
     /// <param name="options">テキストの描画オプション。</param>
     /// <returns>生成されたテクスチャ。</returns>
-    public Texture2D GenerateTexture(TextureFactory factory, string text, TextRenderingOptions options);
+    public Texture2D GenerateTexture(TextureFactoryBase factory, string text, TextRenderingOptions options);
 }

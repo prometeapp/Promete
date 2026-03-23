@@ -7,10 +7,13 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Promete.Backends;
 using Promete.Graphics;
 using Promete.Graphics.Rendering;
 using Promete.Nodes;
 using Promete.Windowing;
+using Silk.NET.Input;
+using Silk.NET.OpenGL;
 
 namespace Promete;
 
@@ -45,7 +48,12 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// 実行中のPromete ウィンドウを取得します。
     /// </summary>
+    [Obsolete("IWindow is obsoleted and will be removed in Promete v3.")]
     public IWindow Window { get; }
+
+    public ITimeProvider Time { get; private set; } = null!;
+    public IGameView View { get; private set; } = null!;
+    public TextureFactoryBase TextureFactory { get; private set; } = null!;
 
     /// <summary>
     /// フレームバッファがサポートされているかどうかを取得します。
@@ -60,15 +68,15 @@ public sealed class PrometeApp : IDisposable
     public List<Material> PostProcessMaterials { get; } = [];
 
     private Scene? _currentScene;
+    private Type? _initialSceneType;
     private int _statusCode;
-
-    private static PrometeApp? _current;
+    private ServiceProvider _provider = null!;
+    private BackendBase _backend = null!;
 
     private readonly Thread _mainThread;
     private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
     private readonly Stack<Scene> _sceneStack = new();
 
-    private readonly ServiceProvider _provider;
     private readonly ServiceCollection _services;
     private readonly List<Type> _pluginTypes;
     private readonly List<IInitializable> _initializablePlugins = [];
@@ -86,12 +94,10 @@ public sealed class PrometeApp : IDisposable
         RegisterAllScenes();
         services.AddSingleton(this);
         services.AddSingleton<FrameBufferManager>();
-
-        _provider = services.BuildServiceProvider();
-
-        Current = this;
-        Window = _provider.GetService<IWindow>() ??
-                 throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
+#pragma warning disable CS0618 // 型またはメンバーが旧型式です
+        Window = new CompatibleWindow(this);
+        services.AddSingleton(Window);
+#pragma warning restore CS0618 // 型またはメンバーが旧型式です
     }
 
     /// <summary>
@@ -100,8 +106,8 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public static PrometeApp Current
     {
-        get => _current ?? throw new InvalidOperationException("Promete is not initialized.");
-        private set => _current = value;
+        get => field ?? throw new InvalidOperationException("Promete is not initialized.");
+        private set;
     }
 
     /// <summary>
@@ -140,11 +146,8 @@ public sealed class PrometeApp : IDisposable
     /// <returns>終了ステータスコード。</returns>
     public int Run<TScene>(WindowOptions opts) where TScene : Scene
     {
-        Window.Start += OnStart<TScene>;
-        Window.Update += OnUpdate;
-        Window.Render += OnRender;
-        Window.Destroy += OnDestroy;
-        Window.Run(opts);
+        _initialSceneType = typeof(TScene);
+        _backend.OnStart(this);
         return _statusCode;
     }
 
@@ -174,7 +177,7 @@ public sealed class PrometeApp : IDisposable
     public void Exit(int status = 0)
     {
         _statusCode = status;
-        Window.Exit();
+        _backend.OnExit(this);
     }
 
     /// <summary>
@@ -347,7 +350,8 @@ public sealed class PrometeApp : IDisposable
         throw new InvalidOperationException("This method must be called from the main thread.");
     }
 
-    private void OnStart<TScene>() where TScene : Scene
+
+    public void OnStart()
     {
         // プラグインのインスタンスを取得し、インターフェース実装によって分類
         foreach (var instance in _pluginTypes.Select(type => _provider.GetService(type)).OfType<object>())
@@ -364,11 +368,14 @@ public sealed class PrometeApp : IDisposable
         foreach (var plugin in _initializablePlugins)
             plugin.OnStart();
 
-        LoadScene<TScene>();
+        if (_initialSceneType != null) LoadScene(_initialSceneType);
+        Start?.Invoke();
     }
 
-    private void OnUpdate()
+    public void OnUpdate()
     {
+        PreUpdate?.Invoke();
+
         // 前のフレームでエンキューされたアクションを実行
         ProcessNextFrameQueue();
 
@@ -380,9 +387,12 @@ public sealed class PrometeApp : IDisposable
         if (Root != null) UpdateNode(Root);
         UpdateNode(GlobalForeground);
         _currentScene?.OnUpdate();
+        Update?.Invoke();
+
+        PostUpdate?.Invoke();
     }
 
-    private void OnRender()
+    public void OnRender()
     {
         if (_renderCommandQueue == null)
         {
@@ -392,43 +402,59 @@ public sealed class PrometeApp : IDisposable
         var queue = _renderCommandQueue;
         var ctx = new RenderContext
         {
-            WindowSize = Window.Size,
-            WindowScale = Window.Scale,
-            ActualWidth = Window.ActualWidth,
-            ActualHeight = Window.ActualHeight,
+            WindowSize = View.Size,
+            WindowScale = View.Scale,
+            ActualWidth = View.ActualWidth,
+            ActualHeight = View.ActualHeight,
         };
 
-        var blitter = _provider.GetService<Promete.GLDesktop.GLScreenBlitter>();
-        if (blitter != null)
-        {
-            // グローバルスクリーン FBO にキャプチャしてからブリット
-            using var capture = blitter.ScreenRenderTexture.BeginCapture(BackgroundColor);
-            queue.Clear();
-            CollectNode(GlobalBackground, queue, ctx);
-            if (Root != null) CollectNode(Root, queue, ctx);
-            CollectNode(GlobalForeground, queue, ctx);
-            queue.ProcessAndFlush();
-            // capture.Dispose() で FBO アンバインド
-        }
-        else
-        {
-            // ヘッドレス等のフォールバック
-            queue.Clear();
-            CollectNode(GlobalBackground, queue, ctx);
-            if (Root != null) CollectNode(Root, queue, ctx);
-            CollectNode(GlobalForeground, queue, ctx);
-            queue.ProcessAndFlush();
-        }
+        var blitter = _provider.GetService<GLDesktop.GLScreenBlitter>();
+
+        IDisposable? capture = null;
+        if (blitter != null) capture = blitter.ScreenRenderTexture.BeginCapture(BackgroundColor);
+
+        queue.Clear();
+        PreRender?.Invoke();
+        CollectNode(GlobalBackground, queue, ctx);
+        if (Root != null) CollectNode(Root, queue, ctx);
+        CollectNode(GlobalForeground, queue, ctx);
+        Render?.Invoke();
+
+        queue.ProcessAndFlush();
+        capture?.Dispose();
 
         blitter?.BlitToScreen(PostProcessMaterials);
+        PostRender?.Invoke();
     }
 
-    private void OnDestroy()
+    public void OnDestroy()
     {
         _currentScene?.OnDestroy();
         ClearSceneStack();
 
         Dispose();
+        Destroy?.Invoke();
+    }
+
+    private void RegisterBackend(BackendBase backend, WindowOptions opts)
+    {
+        _backend = backend;
+        backend.OnInitialize(this, opts);
+        Time = backend.SetupTimeProvider();
+        View = backend.SetupGameView();
+        TextureFactory = backend.SetupTextureFactory();
+        var shaderFactory = backend.SetupShaderFactory();
+        var inputContext = backend.SetupInputProvider();
+        var renderTextureProvider = backend.SetupRenderTextureProvider();
+
+        _services.AddSingleton(Time);
+        _services.AddSingleton(View);
+        _services.AddSingleton(TextureFactory);
+        _services.AddSingleton(shaderFactory);
+        _services.AddSingleton(inputContext);
+        _services.AddSingleton(renderTextureProvider);
+        _provider = _services.BuildServiceProvider();
+        Current = this;
     }
 
     private void ProcessNextFrameQueue()
@@ -463,6 +489,46 @@ public sealed class PrometeApp : IDisposable
         return _provider.GetService(scene) as Scene ??
                throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
     }
+
+    /// <summary>
+    /// ゲームが開始されたときに発生します。
+    /// </summary>
+    public event Action? Start;
+
+    /// <summary>
+    /// ゲームがフレームを更新するときに発生します。
+    /// </summary>
+    public event Action? Update;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングするときに発生します。
+    /// </summary>
+    public event Action? Render;
+
+    /// <summary>
+    /// ゲームが終了したときに発生します。
+    /// </summary>
+    public event Action? Destroy;
+
+    /// <summary>
+    /// ゲームがフレームを更新する前に発生します。
+    /// </summary>
+    public event Action? PreUpdate;
+
+    /// <summary>
+    /// ゲームがフレームを更新した後に発生します。
+    /// </summary>
+    public event Action? PostUpdate;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングする前に発生します。
+    /// </summary>
+    public event Action? PreRender;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングした後に発生します。
+    /// </summary>
+    public event Action? PostRender;
 
     /// <summary>
     /// シーンが変更される直前に呼び出されるイベントです。
@@ -522,15 +588,11 @@ public sealed class PrometeApp : IDisposable
             return this;
         }
 
-        /// <summary>
-        /// Promete アプリケーションをビルドします。
-        /// </summary>
-        /// <typeparam name="TWindow">ウィンドウの型。</typeparam>
-        /// <returns>構築されたアプリケーション。</returns>
-        public PrometeApp Build<TWindow>() where TWindow : IWindow
+        public PrometeApp Build<T>(WindowOptions? opts) where T : BackendBase, new()
         {
-            _services.AddSingleton(typeof(IWindow), typeof(TWindow));
-            return new PrometeApp(_services, _pluginTypes);
+            var app = new PrometeApp(_services, _pluginTypes);
+            app.RegisterBackend(new T(), opts ?? WindowOptions.Default);
+            return app;
         }
 
         /// <summary>
