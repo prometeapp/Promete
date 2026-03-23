@@ -14,12 +14,12 @@ namespace Promete.GLDesktop;
 /// 全描画を一度スクリーンサイズの <see cref="RenderTexture"/> にキャプチャし、
 /// ポストプロセスを適用した後にデフォルト FBO (画面) へブリットするクラスです。
 /// </summary>
-internal sealed class GLScreenBlitter : IDisposable
+internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
 {
     /// <summary>
     /// 全描画のキャプチャ先 RenderTexture を取得します。
     /// </summary>
-    public RenderTexture ScreenRenderTexture { get; }
+    public RenderTexture ScreenRenderTexture { get; private set; } = null!;
 
     private readonly OpenGLDesktopGameView _view;
     private readonly IRenderTextureProvider _provider;
@@ -40,8 +40,12 @@ internal sealed class GLScreenBlitter : IDisposable
     {
         _view = (OpenGLDesktopGameView)view;
         _provider = provider;
-        ScreenRenderTexture = provider.Create(_view.Size);
         _view.Resize += OnViewResize;
+    }
+
+    public void InitializeScreenRenderTexture()
+    {
+        ScreenRenderTexture = _provider.Create(_view.Size);
     }
 
     /// <summary>

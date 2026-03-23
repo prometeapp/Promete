@@ -12,9 +12,6 @@ using Promete.Graphics;
 using Promete.Graphics.Rendering;
 using Promete.Nodes;
 using Promete.Windowing;
-using Silk.NET.Input;
-using Silk.NET.OpenGL;
-
 namespace Promete;
 
 /// <summary>
@@ -83,6 +80,7 @@ public sealed class PrometeApp : IDisposable
     private readonly List<IUpdatable> _updatablePlugins = [];
     private readonly List<IDisposable> _disposablePlugins = [];
 
+    private IScreenBlitter _screenBlitter;
     private RenderCommandQueue? _renderCommandQueue;
 
     private PrometeApp(ServiceCollection services, List<Type> pluginTypes)
@@ -408,22 +406,20 @@ public sealed class PrometeApp : IDisposable
             ActualHeight = View.ActualHeight,
         };
 
-        var blitter = _provider.GetService<GLDesktop.GLScreenBlitter>();
+        using (_screenBlitter.ScreenRenderTexture.BeginCapture(BackgroundColor))
+        {
 
-        IDisposable? capture = null;
-        if (blitter != null) capture = blitter.ScreenRenderTexture.BeginCapture(BackgroundColor);
+            queue.Clear();
+            PreRender?.Invoke();
+            CollectNode(GlobalBackground, queue, ctx);
+            if (Root != null) CollectNode(Root, queue, ctx);
+            CollectNode(GlobalForeground, queue, ctx);
+            Render?.Invoke();
 
-        queue.Clear();
-        PreRender?.Invoke();
-        CollectNode(GlobalBackground, queue, ctx);
-        if (Root != null) CollectNode(Root, queue, ctx);
-        CollectNode(GlobalForeground, queue, ctx);
-        Render?.Invoke();
+            queue.ProcessAndFlush();
+        }
 
-        queue.ProcessAndFlush();
-        capture?.Dispose();
-
-        blitter?.BlitToScreen(PostProcessMaterials);
+        _screenBlitter.BlitToScreen(PostProcessMaterials);
         PostRender?.Invoke();
     }
 
@@ -446,6 +442,7 @@ public sealed class PrometeApp : IDisposable
         var shaderFactory = backend.SetupShaderFactory();
         var inputContext = backend.SetupInputProvider();
         var renderTextureProvider = backend.SetupRenderTextureProvider();
+        _screenBlitter = backend.SetupScreenBlitter();
 
         _services.AddSingleton(Time);
         _services.AddSingleton(View);
@@ -453,6 +450,7 @@ public sealed class PrometeApp : IDisposable
         _services.AddSingleton(shaderFactory);
         _services.AddSingleton(inputContext);
         _services.AddSingleton(renderTextureProvider);
+        _services.AddSingleton(_screenBlitter);
         _provider = _services.BuildServiceProvider();
         Current = this;
     }

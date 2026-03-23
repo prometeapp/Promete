@@ -24,6 +24,7 @@ public class OpenGLDesktopBackend : BackendBase
     private GLTextureFactory _textureFactory = null!;
     private GLRenderTextureProvider _renderTextureProvider = null!;
     private GLShaderFactory _shaderFactory = null!;
+    private GLScreenBlitter _screenBlitter = null!;
 
     public override void OnInitialize(PrometeApp app, WindowOptions opts)
     {
@@ -60,13 +61,16 @@ public class OpenGLDesktopBackend : BackendBase
         _renderTextureProvider = new GLRenderTextureProvider(_app);
         _shaderFactory = new GLShaderFactory();
         _gameView = new OpenGLDesktopGameView(_app, _nativeWindow, _textureFactory);
+        _screenBlitter = new GLScreenBlitter(_gameView, _renderTextureProvider);
     }
 
     public override ITimeProvider SetupTimeProvider() => _time;
 
     public override IGameView SetupGameView() => _gameView;
 
-    public override InputProvider SetupInputProvider() => new InputProvider(_nativeWindow);
+    public override InputProvider SetupInputProvider() => new(_nativeWindow);
+
+    public override IScreenBlitter SetupScreenBlitter() => _screenBlitter;
 
     public override TextureFactoryBase SetupTextureFactory() => _textureFactory;
 
@@ -91,6 +95,7 @@ public class OpenGLDesktopBackend : BackendBase
         _textureFactory.GL = _gl;
         _renderTextureProvider.GL = _gl;
         _shaderFactory.GL = _gl;
+        _screenBlitter.InitializeScreenRenderTexture();
     }
 
     private void OnRenderFrame(double delta)

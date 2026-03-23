@@ -21,7 +21,6 @@ public static class OpenGLDesktopAppExtension
     public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder, WindowOptions? opts = null)
     {
         var app = builder
-            .Use<GLScreenBlitter>()
             .Use<GLMaskedContainerHelper>()
             .Use<GLRenderState>()
             .Use<RenderCommandQueue>()

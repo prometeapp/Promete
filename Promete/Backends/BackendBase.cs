@@ -29,8 +29,14 @@ public abstract class BackendBase
     public abstract IGameView SetupGameView();
 
     /// <summary>
+    ///
     /// </summary>
     public abstract InputProvider SetupInputProvider();
+
+    /// <summary>
+    ///
+    /// </summary>
+    public abstract IScreenBlitter SetupScreenBlitter();
 
     /// <summary>
     /// テクスチャの初期化に用いる、 <see cref="TextureFactoryBase"/> をエンジンに提供します。
