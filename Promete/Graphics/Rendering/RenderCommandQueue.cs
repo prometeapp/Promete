@@ -94,19 +94,19 @@ public class RenderCommandQueue
         if (left.X < 0) left.X = 0;
         if (left.Y < 0) left.Y = 0;
 
-        if (left.X + size.X > ctx.ActualWidth)
-            size.X = left.X + size.X - ctx.ActualWidth;
+        if (left.X + size.X > ctx.WindowSize.X)
+            size.X = ctx.WindowSize.X - left.X;
 
-        if (left.Y + size.Y > ctx.ActualHeight)
-            size.Y = left.Y + size.Y - ctx.ActualHeight;
+        if (left.Y + size.Y > ctx.WindowSize.Y)
+            size.Y = ctx.WindowSize.Y - left.Y;
 
         // OpenGL の Scissor は左下原点なので Y を反転
-        var flippedY = ctx.ActualHeight - left.Y - size.Y;
+        var flippedY = ctx.WindowSize.Y - left.Y - size.Y;
 
-        var sx = left.X * ctx.WindowScale;
-        var sy = flippedY * ctx.WindowScale;
-        var sw = size.X * ctx.WindowScale;
-        var sh = size.Y * ctx.WindowScale;
+        var sx = (float)left.X;
+        var sy = (float)flippedY;
+        var sw = (float)size.X;
+        var sh = (float)size.Y;
 
         // 親のトリムが有効なら積集合を取る
         if (parent.Enabled)

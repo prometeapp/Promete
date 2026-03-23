@@ -51,20 +51,11 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
         // ビューポートの大きさを取得する
         var viewport = GLHelper.GetViewport(gl);
 
-        // フレームバッファが0の場合は、ウィンドウのスケールを反映する
-        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
-        if (currentFrameBufferId == 0)
-        {
-            viewport /= _view.Scale;
-        }
-
-        // 図形の頂点を、ワールド座標からビューポート座標に変換（事前変換済みなのでPixelRatioを乗算するだけ）
+        // 図形の頂点を、ワールド座標からビューポート座標に変換
         Span<float> vertices = stackalloc float[worldVertices.Length * 2];
         for (var i = 0; i < worldVertices.Length; i++)
         {
-            var vertex = worldVertices[i] * _view.PixelRatio;
-
-            var (x, y) = vertex.ToViewportPoint(viewport.X / 2, viewport.Y / 2);
+            var (x, y) = worldVertices[i].ToViewportPoint(viewport.X / 2, viewport.Y / 2);
             vertices[i * 2 + 0] = x;
             vertices[i * 2 + 1] = y;
         }

@@ -76,10 +76,10 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
             pingIdx = 1 - pingIdx;
         }
 
-        // バッファへの描画結果をスクリーンへ描画
+        // バッファへの描画結果をスクリーンへ描画（物理ピクセル全体を覆う）
         gl.BindFramebuffer(GLEnum.Framebuffer, 0);
-        var size = _view.ActualSize;
-        gl.Viewport(0, 0, (uint)size.X, (uint)size.Y);
+        var fb = _view.NativeWindow.FramebufferSize;
+        gl.Viewport(0, 0, (uint)fb.X, (uint)fb.Y);
         BlitQuad(gl, src, material: _defaultMaterial);
 
         gl.Enable(GLEnum.Blend);

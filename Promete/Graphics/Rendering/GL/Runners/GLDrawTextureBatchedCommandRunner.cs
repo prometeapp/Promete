@@ -63,9 +63,6 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
 
         // プロジェクション行列を計算
         var viewport = GLHelper.GetViewport(gl);
-        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
-        if (currentFrameBufferId == 0)
-            viewport /= _view.Scale;
         var projection = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
 
         // per-instanceデータを構築

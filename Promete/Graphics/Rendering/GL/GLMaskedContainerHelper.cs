@@ -269,13 +269,6 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
         // ビューポートの大きさを取得する
         var viewport = GLHelper.GetViewport(gl);
 
-        // フレームバッファが0の場合は、ウィンドウのスケールを反映する
-        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
-        if (currentFrameBufferId == 0)
-        {
-            viewport /= app.View.Scale;
-        }
-
         // プロジェクション行列を計算
         var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
 
@@ -320,13 +313,6 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
 
         // ビューポートの大きさを取得する
         var viewport = GLHelper.GetViewport(gl);
-
-        // フレームバッファが0の場合は、ウィンドウのスケールを反映する
-        var currentFrameBufferId = gl.GetInteger(GLEnum.FramebufferBinding);
-        if (currentFrameBufferId == 0)
-        {
-            viewport /= app.View.Scale;
-        }
 
         // プロジェクション行列を計算
         var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);

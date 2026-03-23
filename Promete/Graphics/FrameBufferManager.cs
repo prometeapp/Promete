@@ -10,8 +10,6 @@ public class FrameBufferManager
 {
     internal HashSet<FrameBuffer> ActiveFrameBuffers { get; } = [];
 
-    private readonly bool _supported;
-
     public FrameBufferManager(PrometeApp app)
     {
         app.Render += RenderAll;
@@ -20,8 +18,6 @@ public class FrameBufferManager
 
     private void RenderAll()
     {
-        if (!_supported) return;
-
         foreach (var frameBuffer in ActiveFrameBuffers)
         {
             frameBuffer.BeforeRender();
@@ -31,8 +27,6 @@ public class FrameBufferManager
 
     private void UpdateAll()
     {
-        if (!_supported) return;
-
         foreach (var frameBuffer in ActiveFrameBuffers)
         {
             frameBuffer.Update();
