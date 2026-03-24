@@ -34,7 +34,7 @@ public class PieSprite(Texture2D? texture = null, Color? tintColor = default) : 
         set => _percent = Math.Clamp(value, 0.0f, 100.0f);
     }
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         if (Texture is not { } tex) return;
 

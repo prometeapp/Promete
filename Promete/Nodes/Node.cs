@@ -199,7 +199,7 @@ public abstract class Node
     /// </summary>
     /// <param name="queue">コマンドの収集先キュー。</param>
     /// <param name="ctx">レンダリングコンテキスト。</param>
-    internal virtual void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public virtual void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
     }
 

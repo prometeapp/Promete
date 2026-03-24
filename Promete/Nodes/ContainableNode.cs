@@ -60,7 +60,7 @@ public abstract class ContainableNode : Node
         }
     }
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         foreach (var child in sortedChildren)
         {

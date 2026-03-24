@@ -55,7 +55,7 @@ public class MaskedContainer : Container
         UseAlphaMask = useAlphaMask;
     }
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         // マスクなしの場合は通常のコンテナとして収集
         if (MaskTexture is not { } maskTexture)

@@ -209,7 +209,7 @@ public class Text : Node
     /// </summary>
     public static TextRenderingOptions DefaultOptions { get; } = new();
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         if (RenderedTexture is not { } tex) return;
 

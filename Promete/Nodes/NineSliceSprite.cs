@@ -20,7 +20,7 @@ public class NineSliceSprite(Texture9Sliced texture, Color? tintColor = default)
     /// </summary>
     public Color TintColor { get; set; } = tintColor ?? Color.White;
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         var left = Texture.TopLeft.Size.X;
         var right = Texture.TopRight.Size.X;

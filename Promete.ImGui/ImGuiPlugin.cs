@@ -1,10 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using ImGuiNET;
+﻿using ImGuiNET;
 using Promete.Backends.GL;
 using Promete.Backends.SilkNetCommon;
-using Promete.Windowing;
-using Promete.Windowing.GLDesktop;
-using Silk.NET.Input;
 using Silk.NET.OpenGL.Extensions.ImGui;
 
 namespace Promete.ImGui;

@@ -52,7 +52,7 @@ public class Tilemap(
         set => SetTile(point, value);
     }
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         var mode = RenderingMode == TilemapRenderingMode.Auto
             ? GetPreferredMode(ctx)

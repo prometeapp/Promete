@@ -50,7 +50,7 @@ public class Shape : Node
     /// </summary>
     public ShapeType Type { get; }
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         if (_cachedCommand == null || ModelMatrix != _cachedModelMatrix || !ReferenceEquals(Material, _cachedMaterial))
         {

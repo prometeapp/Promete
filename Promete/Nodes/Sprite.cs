@@ -41,7 +41,7 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
 
     private Texture2D? _texture = texture;
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         if (Texture is not { } tex) return;
 

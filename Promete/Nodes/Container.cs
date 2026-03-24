@@ -40,7 +40,7 @@ public class Container : ContainableNode, IEnumerable<Node>
         set => isTrimmable = value;
     }
 
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
         if (IsTrimmable)
         {
