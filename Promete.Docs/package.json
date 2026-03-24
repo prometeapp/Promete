@@ -12,10 +12,11 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "@astrojs/starlight": "^0.29.2",
-        "astro": "^4.16.14",
+        "@astrojs/starlight": "^0.38.2",
+        "astro": "^6.0.8",
         "playwright": "^1.49.0",
         "rehype-mermaid": "^2.1.0",
-        "sass-embedded": "^1.81.0"
+        "sass-embedded": "^1.81.0",
+        "starlight-versions": "^0.8.1"
     }
 }

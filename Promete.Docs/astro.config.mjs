@@ -1,10 +1,18 @@
 import {defineConfig} from 'astro/config';
 import starlight from '@astrojs/starlight';
 import rehypeMermaid from 'rehype-mermaid';
+import starlightVersions from 'starlight-versions';
 
 // https://astro.build/config
 export default defineConfig({
   integrations: [starlight({
+    plugins: [
+      starlightVersions({
+        versions: [
+          { slug: '1', label: '1.x' },
+        ],
+      }),
+    ],
     title: 'Promete',
     description: 'Prometeは、2Dゲームの開発に特化した、.NET向けのゲームエンジンです。',
     defaultLocale: 'root',
@@ -14,9 +22,9 @@ export default defineConfig({
         label: '日本語'
       }
     },
-    social: {
-      github: 'https://github.com/PrometeApp/Promete',
-    },
+    social: [
+      {icon: 'github', label: 'GitHub', href: 'https://github.com/PrometeApp/Promete'},
+    ],
     logo: {
       src: './assets/logo.png',
       alt: 'Promete',

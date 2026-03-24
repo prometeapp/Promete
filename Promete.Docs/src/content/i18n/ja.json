@@ -1,0 +1,9 @@
+{
+    "starlightVersions.link.latest": "最新のドキュメントを見る場合は<a href={{link}}>こちら</a>をご確認ください。",
+    "starlightVersions.outdated.label": "このドキュメントは{{label}}向けです。",
+    "starlightVersions.outdated.slug": "このドキュメントはバージョン{{slug}}向けです。",
+    "starlightVersions.search.link.latest": "最新の検索結果は<a href={{link}}>こちら</a>をご確認ください。",
+    "starlightVersions.search.outdated.label": "検索対象は{{label}}に限定されています。",
+    "starlightVersions.search.outdated.slug": "検索対象はバージョン{{slug}}に限定されています。",
+    "starlightVersions.select.accessibleLabel": "バージョンを選択"
+}
