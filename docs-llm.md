@@ -385,7 +385,7 @@ window.FileDropped += (sender, e) =>
 // 位置・変形
 node.Location = (100, 200);      // 位置（Vector型）
 node.Scale = (2.0f, 2.0f);       // スケール（Vector型）
-node.Angle = 45;                 // 回転角度（度数 0-360°、float型）
+node.Angle = 45.Degrees;         // 回転角度（Angle型。.Degrees/.Radians拡張で生成）
 node.Pivot = (0.5f, 0.5f);       // 回転・スケールの中心点（0-1の相対座標）
 
 // サイズ
@@ -406,7 +406,7 @@ Node? parent = node.Parent;      // 親ノードへの参照
 // 絶対座標（読み取り専用）
 Vector absLocation = node.AbsoluteLocation;
 Vector absScale = node.AbsoluteScale;
-float absAngle = node.AbsoluteAngle;
+Angle absAngle = node.AbsoluteAngle;
 ```
 
 #### Setup API（メソッドチェーン）
@@ -417,7 +417,7 @@ float absAngle = node.AbsoluteAngle;
 var sprite = new Sprite(texture)
     .Location(100, 200)
     .Scale(2.0f)
-    .Angle(45)  // 45度
+    .Angle(45.Degrees)  // 45度
     .Pivot(0.5f, 0.5f)
     .ZIndex(10)
     .Visible(true);
@@ -431,7 +431,7 @@ var sprite = new Sprite(texture)
 var parent = new Container()
     .Location(200, 100)
     .Scale(2.0f)
-    .Angle(30);  // 30度
+    .Angle(30.Degrees);  // 30度
 
 var child = new Sprite(texture)
     .Location(50, 0);  // 親からの相対座標
@@ -998,6 +998,36 @@ var text = new Text("Hello", customFont, Color.White);
 
 ## 数学ユーティリティ
 
+### Angle
+
+角度を表す構造体です。内部的には度数法で値を保持します。
+
+```csharp
+// 生成
+Angle a1 = Angle.FromDegrees(45);     // 度数法
+Angle a2 = Angle.FromRadians(MathF.PI); // ラジアン
+
+// 拡張メソッドによる糖衣構文（推奨）
+Angle a3 = 45.Degrees;                // int から度数法
+Angle a4 = 45.0f.Degrees;            // float から度数法
+Angle a5 = MathF.PI.Radians;         // float からラジアン
+
+// プロパティ
+float deg = a3.Degrees;  // 度数法の値を取得
+float rad = a3.Radians;  // ラジアンの値を取得
+
+// 算術演算
+Angle sum = a1 + a2;          // 加算
+Angle diff = a1 - a2;         // 減算
+Angle scaled = a1 * 2.0f;     // スカラー倍
+Angle divided = a1 / 2.0f;    // スカラー除算
+Angle wrapped = a1 % 360f;    // 剰余（正規化に使用）
+Angle neg = -a1;              // 符号反転
+
+// 定数
+Angle.Zero  // 0度
+```
+
 ### Vector / VectorInt
 
 2D座標やベクトルを表します。
@@ -1019,12 +1049,12 @@ Vector scaled = v * 2.0f;
 Vector divided = v / 2.0f;
 
 // 静的メソッド
-float angle = Vector.Angle(from, to);    // 角度（ラジアン）
+Angle angle = Vector.Angle(from, to);    // 角度
 float distance = Vector.Distance(v1, v2); // 距離
 float dot = Vector.Dot(v1, v2);          // 内積
 
 // インスタンスメソッド
-float angleToTarget = v.Angle(target);
+Angle angleToTarget = v.Angle(target);
 float distToTarget = v.Distance(target);
 bool inRect = v.In(rect);                // 矩形内判定
 

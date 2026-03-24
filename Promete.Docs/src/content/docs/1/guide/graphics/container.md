@@ -44,7 +44,7 @@ public class GameScene : Scene
 var parent = new Container()
     .Location(200, 100)
     .Scale(2.0f)
-    .Angle(30);
+    .Angle(30.Degrees);
 
 // 子ノード（親からの相対座標で配置）
 var child1 = new Sprite(texture)

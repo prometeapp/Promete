@@ -41,18 +41,6 @@ public struct Angle : IEquatable<Angle>
     /// </summary>
     public static readonly Angle Zero = new(0);
 
-    // --- 暗黙変換 ---
-
-    /// <summary>
-    /// <c>float</c>（度数法）から <see cref="Angle"/> へ暗黙変換します。
-    /// </summary>
-    public static implicit operator Angle(float degrees) => new(degrees);
-
-    /// <summary>
-    /// <see cref="Angle"/> から <c>float</c>（度数法）へ暗黙変換します。
-    /// </summary>
-    public static implicit operator float(Angle angle) => angle.Degrees;
-
     // --- 算術演算子 ---
 
     public static Angle operator +(Angle a, Angle b) => new(a.Degrees + b.Degrees);

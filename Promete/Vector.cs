@@ -129,7 +129,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// </summary>
     public static Angle Angle(Vector from, Vector to)
     {
-        return Promete.Angle.FromRadians(MathF.Atan2(to.Y - from.Y, to.X - from.X));
+        return MathF.Atan2(to.Y - from.Y, to.X - from.X).Radians;
     }
 
     /// <summary>

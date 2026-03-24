@@ -99,7 +99,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <param name="to">終点。</param>
     public static Angle Angle(VectorInt from, VectorInt to)
     {
-        return Promete.Angle.FromRadians(MathF.Atan2(to.Y - from.Y, to.X - from.X));
+        return MathF.Atan2(to.Y - from.Y, to.X - from.X).Radians;
     }
 
     /// <summary>

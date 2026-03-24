@@ -74,7 +74,7 @@ public class pivot : Scene
     public override void OnUpdate()
     {
         _spriteTopLeft.Angle = _spriteCenter.Angle =
-            _spriteBottomRight.Angle = (_spriteBottomRight.Angle + 180 * Window.DeltaTime) % 360;
+            _spriteBottomRight.Angle = (_spriteBottomRight.Angle + (180 * Window.DeltaTime).Degrees) % 360f;
 
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

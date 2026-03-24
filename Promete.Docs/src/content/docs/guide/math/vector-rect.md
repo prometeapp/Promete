@@ -29,7 +29,7 @@ var ri = new RectInt((10, 20), (100, 50));
 - `v.X`, `v.Y`<br/>座標値
 - `v.Magnitude`<br/>長さ
 - `v.Normalized`<br/>単位ベクトル
-- `Vector.Angle(from, to)`<br/>2点間の角度（ラジアン）
+- `Vector.Angle(from, to)`<br/>2点間の角度（`Angle`型）
 - `Vector.Distance(from, to)`<br/>2点間の距離
 - `Vector.Dot(v1, v2)`<br/>内積
 - `v.In(rect)`<br/>矩形内判定

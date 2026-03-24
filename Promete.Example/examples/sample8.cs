@@ -51,7 +51,7 @@ public class SpriteRotateTest3Scene : Scene
             if (angle > 360) angle -= 360;
         }
 
-        allIchigos.ForEach(i => i.Angle = angle);
+        allIchigos.ForEach(i => i.Angle = angle.Degrees);
 
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

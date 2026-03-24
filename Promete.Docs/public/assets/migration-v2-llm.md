@@ -105,24 +105,65 @@ public class MyScene(TextureFactoryBase textureFactory) : Scene
 }
 ```
 
-### ステップ5: `Angle` 型の変更を確認する
+### ステップ5: `Angle` 型の変更に対応する
 
-ノードの回転角度の型が `float` から `Angle` 構造体に変更された。`float` との暗黙的な変換が用意されているため、ほとんどの場合はコードを変更せずにそのまま動作する。
+ノードの回転角度の型が `float` から `Angle` 構造体に変更された。`float` との暗黙的な変換はできないので、`Angle` を受け取るプロパティ・メソッドへの `float` / `int` の直接代入はコンパイルエラーになる。
 
-ただし、`float` 型の変数に代入する際などに型エラーが出る場合は、明示的なキャストまたは新しい API を使用する。
+拡張プロパティ `.Degrees` / `.Radians` を使って `Angle` を生成する。
 
+**Before (v1):**
 ```csharp
-// 引き続き動作する
 sprite.Angle = 90f;
 sprite.Angle += 1f;
+```
 
-// 型エラーが出る場合は .Radians / .Degrees プロパティで取り出す
-float rad = sprite.Angle.Radians;
-float deg = sprite.Angle.Degrees;
+**After (v2):**
+```csharp
+sprite.Angle = 90.Degrees;           // int から度数法
+sprite.Angle = 90.0f.Degrees;        // float から度数法
+sprite.Angle += 1.Degrees;
+sprite.Angle = MathF.PI.Radians;     // float からラジアン
 
-// 単位を明示した新しい書き方
+// 静的メソッドも引き続き使用可能
 sprite.Angle = Angle.FromDegrees(90);
 sprite.Angle = Angle.FromRadians(MathF.PI / 2);
+```
+
+`float` で角度を管理しているコードは次のように書き換える。
+
+**Before (v1):**
+```csharp
+float angle = 0;
+angle += Window.DeltaTime * 90;
+sprite.Angle = angle;
+```
+
+**After (v2):**
+```csharp
+float angle = 0;
+angle += Time.DeltaTime * 90;
+sprite.Angle = angle.Degrees;
+```
+
+`float` として取り出す場合は `.Degrees` / `.Radians` プロパティを使う。
+
+```csharp
+float deg = sprite.Angle.Degrees;
+float rad = sprite.Angle.Radians;
+```
+
+`Vector` / `VectorInt` の `.Angle()` メソッドの戻り値も `float`（ラジアン）から `Angle` 型に変わったため、当該箇所の修正を行う。
+
+**Before (v1):**
+```csharp
+float angle = player.Location.Angle(mouse.Position);
+sprite.Angle = angle;
+```
+
+**After (v2):**
+```csharp
+Angle angle = player.Location.Angle(mouse.Position);
+sprite.Angle = angle;
 ```
 
 ### ステップ6: ビルドエラーと警告を確認する

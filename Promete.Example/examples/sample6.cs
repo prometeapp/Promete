@@ -39,7 +39,7 @@ public class SpriteRotateTestScene : Scene
     {
         angle += Window.DeltaTime * 90;
         if (angle > 360) angle -= 360;
-        sprite.Angle = angle;
+        sprite.Angle = angle.Degrees;
 
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

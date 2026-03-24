@@ -66,14 +66,14 @@ public class SpriteRotateTest2Scene : Scene
         switch (mode)
         {
             case 0:
-                wrapper.Angle = angle;
+                wrapper.Angle = angle.Degrees;
                 break;
             case 1:
-                spriteChild.Angle = angle;
+                spriteChild.Angle = angle.Degrees;
                 break;
             case 2:
-                wrapper.Angle = angle;
-                spriteChild.Angle = angle;
+                wrapper.Angle = angle.Degrees;
+                spriteChild.Angle = angle.Degrees;
                 break;
         }
 
@@ -82,7 +82,7 @@ public class SpriteRotateTest2Scene : Scene
 
         if (_keyboard.Number1.IsKeyDown)
         {
-            wrapper.Angle = spriteChild.Angle = 0;
+            wrapper.Angle = spriteChild.Angle = 0.Degrees;
             mode = (mode + 1) % 3;
         }
 

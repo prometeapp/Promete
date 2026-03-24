@@ -218,7 +218,7 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
         // MaskedContainerを一時的に原点に配置（Y軸を反転してOpenGLの座標系に合わせる）
         container.Parent = null; // 親の影響を除去
         container.Location = (0, size.Y); // Y軸の原点を下に移動
-        container.Angle = 0;
+        container.Angle = 0.Degrees;
         container.Scale = (1, -1); // Y軸を反転
 
         // 子要素のModelMatrixを再計算させる

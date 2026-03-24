@@ -37,7 +37,7 @@ sidebar:
 // 位置とトランスフォーム
 node.Location = (100, 50);      // 位置
 node.Scale = (2.0f, 1.5f);      // スケール（倍率）
-node.Angle = 45.0f;             // 回転角度（度）
+node.Angle = 45.Degrees;        // 回転角度（Angle型）
 node.Pivot = (0.5f, 0.5f);      // 中心点（0-1の相対座標）
 
 // サイズ
@@ -61,7 +61,7 @@ node.Name = "PlayerSprite";     // ノード名（デバッグ用）
 var sprite = new Sprite(texture)
     .Location(100, 100)
     .Scale(2.0f, 2.0f)
-    .Angle(45)
+    .Angle(45.Degrees)
     .Pivot(0.5f, 0.5f)
     .ZIndex(10)
     .Name("RotatedSprite");
@@ -80,7 +80,7 @@ Root.Add(sprite);
 var parent = new Container()
     .Location(200, 100)
     .Scale(2.0f)
-    .Angle(30);
+    .Angle(30.Degrees);
 
 // 子ノードを追加
 var child = new Sprite(texture)
@@ -141,5 +141,5 @@ sprite.Pivot = (0.5f, 0.5f);
 sprite.Pivot = (1, 1);
 
 // 回転してみる
-sprite.Angle = 45; // ピボット位置を中心に回転
+sprite.Angle = 45.Degrees; // ピボット位置を中心に回転
 ```

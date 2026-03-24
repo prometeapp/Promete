@@ -137,7 +137,7 @@ public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard) : Scene
             var ichigo = new Sprite(_texture)
                 .Location(Random.Shared.NextVector(Window.Size))
                 .Size(Random.Shared.NextVectorInt(128, 128) + (16, 16))
-                .Angle(Angle.FromDegrees(Random.Shared.Next(0, 359)))
+                .Angle(Random.Shared.Next(0, 359).Degrees)
                 .Pivot(HorizontalAlignment.Center, VerticalAlignment.Center);
             ichigo.TintColor = Random.Shared.NextColor();
 

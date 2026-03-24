@@ -125,25 +125,75 @@ import { Aside, Tabs, TabItem, Steps } from '@astrojs/starlight/components';
    }
    ```
 
-5. **`Angle` 型の変更を確認する**
+5. **`Angle` 型の変更に対応する**
 
-   ノードの回転角度の型が `float` から `Angle` 構造体に変更されました。`float` との暗黙的な変換が用意されているため、**ほとんどの場合はコードを変更せずにそのまま動作します**。
+   ノードの回転角度の型が `float` から `Angle` 構造体に変更されました。`float` との暗黙的な変換はできないので、`Angle` を受け取るプロパティ・メソッドへの `float` / `int` の直接代入はコンパイルエラーになります。
 
-   ただし、`float` 型の変数に代入する際などに型エラーが出る場合は、明示的なキャストまたは新しい API を使用してください。
+   拡張プロパティ `.Degrees` / `.Radians` を使って `Angle` を生成してください。
 
+   <Tabs>
+     <TabItem label="v1">
    ```csharp
-   // 引き続き動作する
    sprite.Angle = 90f;
    sprite.Angle += 1f;
+   ```
+     </TabItem>
+     <TabItem label="v2">
+   ```csharp
+   sprite.Angle = 90.Degrees;           // int から度数法
+   sprite.Angle = 90.0f.Degrees;        // float から度数法
+   sprite.Angle += 1.Degrees;
+   sprite.Angle = MathF.PI.Radians;     // float からラジアン
 
-   // 型エラーが出る場合は .Radians / .Degrees プロパティで取り出す
-   float rad = sprite.Angle.Radians;
-   float deg = sprite.Angle.Degrees;
-
-   // 単位を明示した新しい書き方
+   // 静的メソッドも引き続き使用可能
    sprite.Angle = Angle.FromDegrees(90);
    sprite.Angle = Angle.FromRadians(MathF.PI / 2);
    ```
+     </TabItem>
+   </Tabs>
+
+   `float` で角度を管理しているコードは次のように書き換えてください。
+
+   <Tabs>
+     <TabItem label="v1">
+   ```csharp
+   float angle = 0;
+   angle += Window.DeltaTime * 90;
+   sprite.Angle = angle;
+   ```
+     </TabItem>
+     <TabItem label="v2">
+   ```csharp
+   float angle = 0;
+   angle += Time.DeltaTime * 90;
+   sprite.Angle = angle.Degrees;
+   ```
+     </TabItem>
+   </Tabs>
+
+   `float` として取り出す場合は `.Degrees` / `.Radians` プロパティを使います。
+
+   ```csharp
+   float deg = sprite.Angle.Degrees;
+   float rad = sprite.Angle.Radians;
+   ```
+
+   また、`Vector` / `VectorInt` の `.Angle()` メソッドの戻り値も `float`（ラジアン）から `Angle` 型に変わったため、該当する箇所の修正が必要です。
+
+   <Tabs>
+     <TabItem label="v1">
+   ```csharp
+   float angle = player.Location.Angle(mouse.Position);
+   sprite.Angle = angle;
+   ```
+     </TabItem>
+     <TabItem label="v2">
+   ```csharp
+   Angle angle = player.Location.Angle(mouse.Position);
+   sprite.Angle = angle;
+   ```
+     </TabItem>
+   </Tabs>
 
 6. **ビルドエラーと警告を確認する**
 

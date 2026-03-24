@@ -237,7 +237,7 @@ public class WipeTransition : Scene
 var maskedContainer = new MaskedContainer(maskTexture)
     .Location(100, 100)
     .Scale(1.5f)
-    .Angle(45); // 回転も可能
+    .Angle(45.Degrees); // 回転も可能
 
 // トリミング機能も使用可能
 var trimmableContainer = new MaskedContainer(maskTexture, isTrimmable: true);

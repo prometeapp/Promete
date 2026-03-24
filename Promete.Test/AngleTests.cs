@@ -28,21 +28,6 @@ public class AngleTests
     }
 
     [Fact]
-    public void ImplicitConversionFromFloat()
-    {
-        Angle angle = 45f;
-        angle.Degrees.Should().Be(45);
-    }
-
-    [Fact]
-    public void ImplicitConversionToFloat()
-    {
-        var angle = Angle.FromDegrees(90);
-        float value = angle;
-        value.Should().Be(90);
-    }
-
-    [Fact]
     public void Addition()
     {
         var a = Angle.FromDegrees(30);
