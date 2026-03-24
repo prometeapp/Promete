@@ -5,508 +5,278 @@ sidebar:
   order: 10
 ---
 
-import { Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Aside, Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
-このガイドでは、Promete v1 から v2 へコードを移行する際に必要な変更点を解説します。
+このガイドでは、Promete v1 で作られたプロジェクトを v2 に移行する手順を解説します。
 
 <Aside type="tip">
-v2 では `IWindow` に `[Obsolete]` 属性が付与され、`CompatibleWindow` による後方互換ラッパーが提供されています。
-そのため、既存のコードはビルド警告が出るものの、すぐに動かなくなるわけではありません。
-ただし、新しいAPIへの移行を推奨します。
+v2 では `IWindow` に `[Obsolete]` 属性が付与されており、`CompatibleWindow` による後方互換ラッパーが提供されています。
+そのため、多くの既存コードはビルド警告が出るものの、すぐに動かなくなるわけではありません。
+このガイドの手順を順番に進めることで、段階的に移行できます。
 </Aside>
 
-## 対象ランタイムの変更
-
-v2 では対象ランタイムが **.NET 8** から **.NET 10** に変更されました。
-
-```xml
-<!-- v1 -->
-<TargetFramework>net8.0</TargetFramework>
-
-<!-- v2 -->
-<TargetFramework>net10.0</TargetFramework>
-```
-
-## アプリケーション開発者向けの変更
-
-### アプリの初期化
-
-初期化コードに変更はありません。`BuildWithOpenGLDesktop()` は引き続き使用できます。
-
-```csharp
-var app = PrometeApp.Create()
-    .Use<Keyboard>()
-    .Use<Mouse>()
-    .Use<Gamepads>()
-    .BuildWithOpenGLDesktop();
-
-return app.Run<MainScene>(WindowOptions.Default with
-{
-    Title = "My Game",
-});
-```
-
-### IWindow の分割: IGameView と ITimeProvider
-
-v1 では `IWindow` がウィンドウ表示・時間管理・イベントなどを一手に担っていましたが、v2 ではこれらが分割されました。
-
-| 用途 | v1 | v2 |
-|------|----|----|
-| ウィンドウ表示・サイズ・状態 | `IWindow` | `IGameView` |
-| フレーム時間・FPS | `IWindow` | `ITimeProvider` |
-
-Scene からは `View` と `Time` プロパティで直接アクセスできます。
-
-<Tabs>
-  <TabItem label="v1">
-```csharp
-public class MainScene(IWindow window) : Scene
-{
-    public override void OnUpdate()
-    {
-        var dt = window.DeltaTime;
-        var size = window.Size;
-        window.Title = "My Game";
-    }
-}
-```
-  </TabItem>
-  <TabItem label="v2">
-```csharp
-public class MainScene() : Scene
-{
-    public override void OnUpdate()
-    {
-        var dt = Time.DeltaTime;
-        var size = View.Size;
-        View.Title = "My Game";
-    }
-}
-```
-  </TabItem>
-</Tabs>
-
-#### IGameView の主要メンバー
-
-```csharp
-public interface IGameView
-{
-    VectorInt Location { get; set; }
-    VectorInt Size { get; set; }
-    VectorInt ActualSize { get; }
-    int Scale { get; set; }
-    bool IsVisible { get; set; }
-    bool IsFocused { get; }
-    bool IsFullScreen { get; set; }
-    float PixelRatio { get; }        // Retinaディスプレイ対応
-    string Title { get; set; }
-    WindowMode Mode { get; set; }
-    Texture2D TakeScreenshot();
-    Task SaveScreenshotAsync(string path, CancellationToken ct = default);
-    event Action<FileDroppedEventArgs>? FileDropped;
-    event Action? Resize;
-}
-```
-
-#### ITimeProvider の主要メンバー
-
-```csharp
-public interface ITimeProvider
-{
-    float TotalTime { get; }
-    float DeltaTime { get; }
-    long FramePerSeconds { get; }
-    int TargetFps { get; set; }
-    float TimeScale { get; set; }     // 新機能: 時間のスケーリング
-}
-```
-
-### Angle 構造体の導入
+---
+
+## アプリケーション開発者向け手順
+
+<Steps>
+
+1. **ターゲットフレームワークを更新する**
+
+   プロジェクトファイル（`.csproj`）の `TargetFramework` を `net10.0` に変更してください。
+
+   ```xml
+   <!-- Before -->
+   <TargetFramework>net8.0</TargetFramework>
+
+   <!-- After -->
+   <TargetFramework>net10.0</TargetFramework>
+   ```
+
+   変更後、`dotnet restore` を実行してパッケージを再取得してください。
+
+2. **Promete パッケージを更新する**
+
+   NuGet パッケージを v2 系の最新版に更新してください。
+
+   ```sh
+   dotnet add package Promete
+   ```
+
+   プラグインパッケージを使用している場合は合わせて更新してください（例：`Promete.ImGui`）。
+
+3. **`IWindow` の参照を `View` / `Time` に置き換える**
+
+   v1 では `IWindow` がウィンドウ操作と時間管理の両方を担っていましたが、v2 ではそれぞれ `IGameView`（`View`）と `ITimeProvider`（`Time`）に分割されました。
+
+   シーン内の `window.*` の呼び出しを次の表を参考に書き換えてください。
+
+   | v1 | v2 |
+   |----|----|
+   | `window.Size` / `Window.Size` | `View.Size` |
+   | `window.Title` / `Window.Title` | `View.Title` |
+   | `window.Location` | `View.Location` |
+   | `window.Scale` | `View.Scale` |
+   | `window.IsFullScreen` | `View.IsFullScreen` |
+   | `window.Mode` | `View.Mode` |
+   | `window.TakeScreenshot()` | `View.TakeScreenshot()` |
+   | `window.DeltaTime` | `Time.DeltaTime` |
+   | `window.TotalTime` | `Time.TotalTime` |
+   | `window.FramePerSeconds` | `Time.FramePerSeconds` |
+   | `window.TargetFps` | `Time.TargetFps` |
+   | `window.TimeScale` | `Time.TimeScale` |
+
+   コンストラクタで `IWindow` を受け取っていたシーンは、コンストラクタから削除して `View` / `Time` プロパティを直接使うように変更してください。
 
-ノードの回転角度が `float` から `Angle` 構造体に変更されました。`float` との暗黙的な変換が用意されているため、多くの場合は既存コードがそのまま動作します。
-
-<Tabs>
-  <TabItem label="v1">
-```csharp
-sprite.Angle = 90f;
-sprite.Angle += 1f;
-float angle = sprite.Angle;
-```
-  </TabItem>
-  <TabItem label="v2">
-```csharp
-// 暗黙変換があるのでそのままでもOK
-sprite.Angle = 90f;
-sprite.Angle += 1f;
-float angle = sprite.Angle;
-
-// 新しい機能: 明示的な単位指定
-sprite.Angle = Angle.FromDegrees(90);
-sprite.Angle = Angle.FromRadians(MathF.PI / 2);
-float rad = sprite.Angle.Radians;
-```
-  </TabItem>
-</Tabs>
-
-### Material とシェーダー（新機能）
-
-v2 では、ノードにシェーダーエフェクトを適用できるようになりました。
-
-#### 基本的な使い方
-
-```csharp
-// 1. シェーダープログラムを作成
-var shader = ShaderProgram.Create()
-    .Vertex(vertexGlsl)
-    .Fragment(fragmentGlsl)
-    .Compile();
-
-// 2. マテリアルを作成
-var material = new Material(shader);
-
-// 3. uniform変数を設定
-material["uTime"] = 1.0f;
-
-// 4. ノードに適用
-sprite.Material = material;
-```
-
-#### 画面全体へのポストエフェクト
-
-```csharp
-App.PostProcessMaterials.Add(material);
-```
-
-複数のマテリアルを追加すると、順番にチェーン適用されます。
-
-<Aside type="caution">
-`ShaderProgram` は `IDisposable` です。不要になったら `Dispose()` を呼んでください。
-</Aside>
-
-### FrameBuffer の変更
-
-v2 では `FrameBuffer` に手動レンダリングや自動クリアの制御が追加されました。
-
-```csharp
-var fb = new FrameBuffer(320, 240);
-
-// 新プロパティ
-fb.AutoRender = false;  // 自動レンダリングを無効化
-fb.AutoClear = false;   // 自動クリアを無効化
-
-// 手動でレンダリングを実行
-fb.Render();
-
-// テクスチャの取得（読み取り専用に変更）
-var texture = fb.Texture;
-```
-
-### TextureFactory の参照先変更
-
-テクスチャファクトリの取得先が変わりました。
-
-<Tabs>
-  <TabItem label="v1">
-```csharp
-var texture = Window.TextureFactory.Load("image.png");
-```
-  </TabItem>
-  <TabItem label="v2">
-```csharp
-var texture = App.TextureFactory.Load("image.png");
-```
-  </TabItem>
-</Tabs>
-
-----
-
-加えて、コンストラクタ経由で取得することもできます。
-
-```csharp
-public class TheScene(TextureFactoryBase textureFactory) : Scene
-{
-    private Texture2D _texture;
-
-    public override void OnStart()
-    {
-        _texture = textureFactory.Load("./path/to/texture.png");
-    }
-
-    public override void OnDestroy()
-    {
-        _texture.Dispose();
-    }
-}
-```
-
-### Texture2D の UV 座標サポート（新機能）
-
-`Texture2D` に UV 座標を表すプロパティ `UvStart` `UvEnd` を追加しました。
-
-これに伴い、スプライトシートを読み込んだときに、同じソースの場合は同じテクスチャハンドルを参照し、UV値のみが異なる `Texture2D` が生成されるようになりました。
-
-## プラグイン開発者向けの変更
-
-### バックエンドアーキテクチャの刷新
-
-v1 では `IWindow` を直接実装してバックエンドを構成していましたが、v2 では `BackendBase` 抽象クラスを継承し、各責務を個別のインターフェースで実装する方式に変更されました。
-
-```csharp
-public abstract class BackendBase
-{
-    public abstract void OnInitialize(PrometeApp app, WindowOptions windowOptions);
-    public abstract ITimeProvider SetupTimeProvider();
-    public abstract IGameView SetupGameView();
-    public abstract InputProvider SetupInputProvider();
-    public abstract IScreenBlitter SetupScreenBlitter();
-    public abstract TextureFactoryBase SetupTextureFactory();
-    public abstract IRenderTextureProvider SetupRenderTextureProvider();
-    public abstract IShaderFactory SetupShaderFactory();
-    public abstract void OnStart(PrometeApp app);
-    public abstract void OnExit(PrometeApp app);
-}
-```
-
-各メソッドで返すインターフェースを実装することで、バックエンドの各機能を構築します。
-
-| メソッド | 返す型 | 責務 |
-|----------|--------|------|
-| `SetupGameView()` | `IGameView` | ウィンドウ表示・サイズ管理 |
-| `SetupTimeProvider()` | `ITimeProvider` | フレーム時間・FPS管理 |
-| `SetupInputProvider()` | `InputProvider` | 入力デバイスのコンテキスト提供 |
-| `SetupScreenBlitter()` | `IScreenBlitter` | 画面レンダリングとポストエフェクト |
-| `SetupTextureFactory()` | `TextureFactoryBase` | テクスチャの読み込み |
-| `SetupRenderTextureProvider()` | `IRenderTextureProvider` | RenderTexture の生成・管理 |
-| `SetupShaderFactory()` | `IShaderFactory` | シェーダーのコンパイル |
-
-バックエンドの登録は `Build<T>()` メソッドで行います:
-
-```csharp
-var app = PrometeApp.Create()
-    .Use<Keyboard>()
-    // ...
-    .Build<MyCustomBackend>(opts);
-```
-
-### NodeRenderer の廃止
-
-v1 では各ノードタイプに対して `NodeRenderer` クラスを実装し、`UseRenderer<TNode, TRenderer>()` で登録していました。
-
-v2 ではこの仕組みが完全に廃止され、ノード自身が `Collect()` メソッドでレンダリングコマンドを生成する方式に変わりました。
-
-<Tabs>
-  <TabItem label="v1">
-```csharp
-// カスタムノード
-public class MyNode : Node { ... }
-
-// レンダラーの実装
-public class MyNodeRenderer : NodeRendererBase
-{
-    public override void Render(Node node) { ... }
-}
-
-// 登録
-app.UseRenderer<MyNode, MyNodeRenderer>();
-```
-  </TabItem>
-  <TabItem label="v2">
-```csharp
-// カスタムノードが直接レンダリングコマンドを生成
-public class MyNode : Node
-{
-    internal override void Collect(RenderCommandQueue queue, RenderContext ctx)
-    {
-        // レンダリングコマンドをキューに追加
-        queue.Enqueue(new DrawTextureCommand
-        {
-            Texture = _texture,
-            Location = AbsoluteLocation,
-            Scale = AbsoluteScale,
-            Angle = AbsoluteAngle,
-            // ...
-        });
-    }
-}
-```
-  </TabItem>
-</Tabs>
-
-### レンダリングコマンドシステム
-
-v2 のレンダリングは、コマンドキュー方式で動作します。
-
-#### コマンドの種類
-
-| コマンド | 用途 |
-|----------|------|
-| `DrawTextureCommand` | テクスチャ描画（自動バッチング対応） |
-| `DrawPrimitiveCommand` | プリミティブ図形の描画 |
-| `DrawPieTextureCommand` | 扇形テクスチャの描画 |
-| `BeginTrimCommand` / `EndTrimCommand` | シザーテスト（描画範囲の制限） |
-| `BeginStencilMaskCommand` / `EndStencilMaskCommand` | ステンシルマスク |
-| `BeginAlphaMaskCommand` / `EndAlphaMaskCommand` | アルファマスク |
-
-#### CommandRunner
-
-各コマンドの実行は `CommandRunner<T>` クラスが担います。バックエンド固有のレンダリング処理はここに実装します。
-
-```csharp
-// RenderCommandQueue にランナーを登録
-app.GetPlugin<RenderCommandQueue>().RegisterRunnerRange(
-    app.GetPlugin<GLDrawTextureBatchedCommandRunner>(),
-    app.GetPlugin<GLDrawPrimitiveCommandRunner>(),
-    // ...
-);
-```
-
-### TextureFactory の名称変更
-
-`TextureFactory` クラスは元々抽象クラスでしたが、その名称を `TextureFactoryBase` に変更しました。
-
-### IScreenBlitter
-
-画面全体のレンダリングとポストエフェクトの適用を担う新しいインターフェースです。
-
-```csharp
-public interface IScreenBlitter
-{
-    RenderTexture ScreenRenderTexture { get; }
-    void BlitToScreen(IReadOnlyList<Material> materials);
-}
-```
-
-### IShaderFactory
-
-シェーダーのコンパイルとデフォルトシェーダーの生成を担います。
-
-```csharp
-public interface IShaderFactory
-{
-    void Compile(ShaderProgram program);
-    ShaderProgram CreateDefault();
-}
-```
-
-### IRenderTextureProvider
-
-`IFrameBufferProvider` から名前が変更され、API も整理されました。
-
-```csharp
-public interface IRenderTextureProvider
-{
-    RenderTexture Create(VectorInt size);
-    IDisposable BeginCapture(RenderTexture rt, Color? clearColor);
-    void Resize(RenderTexture rt, VectorInt newSize);
-    void Release(RenderTexture rt);
-}
-```
+   <Tabs>
+     <TabItem label="v1">
+   ```csharp
+   public class MainScene(IWindow window) : Scene
+   {
+       public override void OnUpdate()
+       {
+           var dt = window.DeltaTime;
+           var size = window.Size;
+           window.Title = "My Game";
+       }
+   }
+   ```
+     </TabItem>
+     <TabItem label="v2">
+   ```csharp
+   public class MainScene() : Scene
+   {
+       public override void OnUpdate()
+       {
+           var dt = Time.DeltaTime;
+           var size = View.Size;
+           View.Title = "My Game";
+       }
+   }
+   ```
+     </TabItem>
+   </Tabs>
+
+4. **`TextureFactory` の参照先を変更する**
+
+   テクスチャの読み込みで `Window.TextureFactory` を使っている箇所を `App.TextureFactory` に置き換えてください。
+
+   <Tabs>
+     <TabItem label="v1">
+   ```csharp
+   var texture = Window.TextureFactory.Load("image.png");
+   ```
+     </TabItem>
+     <TabItem label="v2">
+   ```csharp
+   var texture = App.TextureFactory.Load("image.png");
+   ```
+     </TabItem>
+   </Tabs>
+
+   またはコンストラクタ経由で `TextureFactoryBase` をインジェクションして取得することもできます。
+
+   ```csharp
+   public class MyScene(TextureFactoryBase textureFactory) : Scene
+   {
+       public override void OnStart()
+       {
+           var texture = textureFactory.Load("./path/to/texture.png");
+       }
+   }
+   ```
+
+5. **`Angle` 型の変更を確認する**
+
+   ノードの回転角度の型が `float` から `Angle` 構造体に変更されました。`float` との暗黙的な変換が用意されているため、**ほとんどの場合はコードを変更せずにそのまま動作します**。
+
+   ただし、`float` 型の変数に代入する際などに型エラーが出る場合は、明示的なキャストまたは新しい API を使用してください。
+
+   ```csharp
+   // 引き続き動作する
+   sprite.Angle = 90f;
+   sprite.Angle += 1f;
+
+   // 型エラーが出る場合は .Radians / .Degrees プロパティで取り出す
+   float rad = sprite.Angle.Radians;
+   float deg = sprite.Angle.Degrees;
+
+   // 単位を明示した新しい書き方
+   sprite.Angle = Angle.FromDegrees(90);
+   sprite.Angle = Angle.FromRadians(MathF.PI / 2);
+   ```
+
+6. **ビルドエラーと警告を確認する**
+
+   ここまでの手順を終えたら一度ビルドしてください。`IWindow` を参照している箇所に `[Obsolete]` 警告が出ます。警告の一覧を見て、手順3・4で対応できていない箇所が残っていないか確認してください。
+
+   <Aside type="tip">
+   `[Obsolete]` 警告が出ていても、動作自体はします。焦らず、警告が0になるまで順番に対応してください。
+   </Aside>
+
+</Steps>
+
+---
+
+## プラグイン・バックエンド開発者向け追加手順
+
+ゲームロジックのみ書いていて、カスタムノードやバックエンドを実装していない場合はここから先は不要です。
+
+<Steps>
+
+1. **`NodeRenderer` を `Collect()` に移行する**
+
+   v1 では各ノードタイプに対して `NodeRendererBase` を継承したレンダラーを実装し `UseRenderer<TNode, TRenderer>()` で登録していましたが、この仕組みは v2 で廃止されました。
+
+   代わりに、ノード自身が `Collect()` メソッドをオーバーライドしてレンダリングコマンドをキューに追加する方式に変わりました。
+
+   <Tabs>
+     <TabItem label="v1">
+   ```csharp
+   public class MyNode : Node { ... }
+
+   public class MyNodeRenderer : NodeRendererBase
+   {
+       public override void Render(Node node) { ... }
+   }
+
+   app.UseRenderer<MyNode, MyNodeRenderer>();
+   ```
+     </TabItem>
+     <TabItem label="v2">
+   ```csharp
+   public class MyNode : Node
+   {
+       public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+       {
+           queue.Enqueue(new DrawTextureCommand
+           {
+               Texture = _texture,
+               ModelMatrix = ModelMatrix,
+               TintColor = Color.White,
+               Width = Size.X,
+               Height = Size.Y,
+           });
+       }
+   }
+   ```
+     </TabItem>
+   </Tabs>
+
+   登録コード（`UseRenderer<,>()`）はすべて削除してください。
+
+2. **バックエンドを `BackendBase` に移行する**
+
+   v1 では `IWindow` インターフェースを直接実装してバックエンドを構成していましたが、v2 では `BackendBase` 抽象クラスを継承する方式に変わりました。
+
+   各抽象メソッドを実装することで、ウィンドウ・時間管理・入力・レンダリングなどの責務を個別に提供します。
+
+   ```csharp
+   public class MyBackend : BackendBase
+   {
+       public override void OnInitialize(PrometeApp app, WindowOptions windowOptions) { ... }
+       public override ITimeProvider SetupTimeProvider() => new MyTimeProvider();
+       public override IGameView SetupGameView() => new MyGameView();
+       public override InputProvider SetupInputProvider() => new MyInputProvider();
+       public override IScreenBlitter SetupScreenBlitter() => new MyScreenBlitter();
+       public override TextureFactoryBase SetupTextureFactory() => new MyTextureFactory();
+       public override IRenderTextureProvider SetupRenderTextureProvider() => new MyRenderTextureProvider();
+       public override IShaderFactory SetupShaderFactory() => new MyShaderFactory();
+       public override void OnStart(PrometeApp app) { ... }
+       public override void OnExit(PrometeApp app) { ... }
+   }
+   ```
+
+   バックエンドの登録は `Build<T>()` で行います。
+
+   ```csharp
+   var app = PrometeApp.Create()
+       .Use<Keyboard>()
+       .Build<MyBackend>(WindowOptions.Default);
+   ```
+
+   また、以下の型が廃止・リネームされています。
+
+   | v1 の型 | v2 の代替 |
+   |---------|-----------|
+   | `IFrameBufferProvider` | `IRenderTextureProvider` |
+   | `GLFrameBufferProvider` | `GLRenderTextureProvider` |
+   | `OpenGLDesktopWindow` | `OpenGLDesktopBackend` |
+   | `TextureFactory`（抽象クラス） | `TextureFactoryBase` |
+   | `OpenGLTextureFactory` | `GLTextureFactory` |
+
+</Steps>
 
 ---
 
 ## 名前空間の変更一覧
 
-v2 ではレンダリング関連のクラスを中心に、名前空間の大幅な再編が行われました。
+### 移動された型
 
-### 移動された型（リネーム含む）
-
-| 型名 | v1 の名前空間 | v2 の名前空間 | 備考 |
-|-------|--------------|--------------|------|
-| `TextureFactoryBase` | `Promete.Graphics` | `Promete.Graphics` | クラス名が `TextureFactory` → `TextureFactoryBase` に変更 |
-| `GLTextureFactory` | `Promete.Windowing.GLDesktop` | `Promete.Windowing.GLDesktop` | クラス名が `OpenGLTextureFactory` → `GLTextureFactory` に変更 |
-| `CoordinateExtension` | `Promete.Nodes.Renderer` | `Promete.Graphics.Rendering` | |
-| `RenderingHelper` | `Promete.Nodes.Renderer` | `Promete.Graphics.Rendering` | |
-| `GLHelper` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL` | |
-| `GLMaskedContainerHelper` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL` | |
-| `GLDrawPieTextureCommandRunner` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL.Runners` | クラス名が `GLPieSpriteRendererHelper` から変更 |
-| `GLDrawPrimitiveCommandRunner` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL.Runners` | クラス名が `GLPrimitiveRendererHelper` から変更 |
+| 型名 | v1 の名前空間 | v2 の名前空間 |
+|-------|--------------|--------------|
+| `TextureFactoryBase` | `Promete.Graphics` | `Promete.Graphics` |
+| `GLTextureFactory` | `Promete.Windowing.GLDesktop` | `Promete.Windowing.GLDesktop` |
+| `CoordinateExtension` | `Promete.Nodes.Renderer` | `Promete.Graphics.Rendering` |
+| `RenderingHelper` | `Promete.Nodes.Renderer` | `Promete.Graphics.Rendering` |
+| `GLHelper` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL` |
+| `GLMaskedContainerHelper` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL` |
+| `GLDrawPieTextureCommandRunner` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL.Runners` |
+| `GLDrawPrimitiveCommandRunner` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL.Runners` |
 
 ### 削除された型
 
-以下の型は v2 で廃止されました。代替となる仕組みについてはそれぞれ記載の通りです。
-
 | v1 の型 | 代替 |
 |---------|------|
-| `Promete.Windowing.GLDesktop.OpenGLDesktopWindow` | `BackendBase` を継承する `OpenGLDesktopBackend` に置き換え |
-| `Promete.Graphics.IFrameBufferProvider` | `Promete.Graphics.IRenderTextureProvider` に置き換え |
-| `Promete.GLDesktop.GLFrameBufferProvider` | `Promete.GLDesktop.GLRenderTextureProvider` に置き換え |
-| `Promete.Nodes.Renderer.NodeRendererBase` | ノード自身の `Collect()` メソッドに移行 |
-| `Promete.Nodes.Renderer.GL.GLSpriteRenderer` | `Sprite.Collect()` + `DrawTextureCommand` に移行 |
-| `Promete.Nodes.Renderer.GL.GLTextRenderer` | `Text.Collect()` + `DrawTextureCommand` に移行 |
-| `Promete.Nodes.Renderer.GL.GLShapeRenderer` | `Shape.Collect()` + `DrawPrimitiveCommand` に移行 |
-| `Promete.Nodes.Renderer.GL.GLTilemapRenderer` | `Tilemap.Collect()` + `DrawTextureCommand` に移行 |
-| `Promete.Nodes.Renderer.GL.GLContainbleNodeRenderer` | `ContainableNode.Collect()` に移行 |
-| `Promete.Nodes.Renderer.GL.GLNineSliceSpriteRenderer` | `NineSliceSprite.Collect()` + `DrawTextureCommand` に移行 |
-| `Promete.Nodes.Renderer.GL.GLPieSpriteRenderer` | `PieSprite.Collect()` + `DrawPieTextureCommand` に移行 |
-| `Promete.Nodes.Renderer.GL.GLMaskedContainerRenderer` | `MaskedContainer.Collect()` + マスクコマンドに移行 |
-| `Promete.Nodes.Renderer.GL.Helper.GLTextureRendererHelper` | `GLDrawTextureBatchedCommandRunner` に統合 |
-
-### 新規追加された型
-
-#### コア
-
-| 型 | 概要 |
-|----|------|
-| `Promete.Angle` | 角度を表す構造体 |
-| `Promete.IScreenBlitter` | 画面へのレンダリングとポストエフェクト適用 |
-
-#### バックエンド
-
-| 型 | 概要 |
-|----|------|
-| `Promete.Backends.BackendBase` | バックエンドの抽象基底クラス |
-| `Promete.Backends.IGameView` | ウィンドウ表示に関するインターフェース |
-| `Promete.Backends.ITimeProvider` | 時間管理に関するインターフェース |
-| `Promete.Backends.GL.OpenGLDesktopBackend` | OpenGL デスクトップバックエンドの実装 |
-| `Promete.Backends.GL.OpenGLDesktopGameView` | OpenGL デスクトップの `IGameView` 実装 |
-| `Promete.Backends.SilkNetCommon.SilkNetCommonInputProvider` | Silk.NET ベースの入力プロバイダー |
-| `Promete.Backends.SilkNetCommon.SilkNetCommonTimeProvider` | Silk.NET ベースの時間プロバイダー |
-
-#### グラフィックス
-
-| 型 | 概要 |
-|----|------|
-| `Promete.Graphics.Material` | シェーダーとuniform変数のバインディング |
-| `Promete.Graphics.ShaderProgram` | シェーダープログラムの作成・コンパイル |
-| `Promete.Graphics.RenderTexture` | オフスクリーンレンダリングターゲット |
-| `Promete.Graphics.IRenderTextureProvider` | `RenderTexture` の生成・管理 |
-| `Promete.Graphics.IShaderFactory` | シェーダーのコンパイル |
-
-#### レンダリングシステム
-
-| 型 | 概要 |
-|----|------|
-| `Promete.Graphics.Rendering.RenderCommandQueue` | レンダリングコマンドのキュー |
-| `Promete.Graphics.Rendering.RenderContext` | レンダリング時のコンテキスト情報 |
-| `Promete.Graphics.Rendering.CommandRunner` / `CommandRunner<T>` | コマンド実行の抽象基底 |
-| `Promete.Graphics.Rendering.Commands.IRenderCommand` | レンダリングコマンドのインターフェース |
-| `Promete.Graphics.Rendering.Commands.DrawTextureCommand` | テクスチャ描画コマンド |
-| `Promete.Graphics.Rendering.Commands.DrawTextureBatchedCommand` | バッチングされたテクスチャ描画コマンド |
-| `Promete.Graphics.Rendering.Commands.DrawPrimitiveCommand` | プリミティブ描画コマンド |
-| `Promete.Graphics.Rendering.Commands.DrawPieTextureCommand` | 扇形テクスチャ描画コマンド |
-| `Promete.Graphics.Rendering.Commands.BeginTrimCommand` / `EndTrimCommand` | シザーテストコマンド |
-| `Promete.Graphics.Rendering.Commands.BeginStencilMaskCommand` / `EndStencilMaskCommand` | ステンシルマスクコマンド |
-| `Promete.Graphics.Rendering.Commands.BeginAlphaMaskCommand` / `EndAlphaMaskCommand` | アルファマスクコマンド |
-
-#### GL レンダリング実装
-
-| 型 | 概要 |
-|----|------|
-| `Promete.Graphics.Rendering.GL.GLShaderFactory` | OpenGL シェーダーファクトリ |
-| `Promete.Graphics.Rendering.GL.GLMaterialApplier` | マテリアルの適用処理 |
-| `Promete.Graphics.Rendering.GL.GLRenderState` | OpenGL レンダリング状態管理 |
-| `Promete.Graphics.Rendering.GL.Runners.GLDrawTextureBatchedCommandRunner` | テクスチャ描画ランナー |
-| `Promete.Graphics.Rendering.GL.Runners.GLDrawPieTextureCommandRunner` | 扇形テクスチャ描画ランナー |
-| `Promete.Graphics.Rendering.GL.Runners.GLBeginTrimCommandRunner` | シザーテスト開始ランナー |
-| `Promete.Graphics.Rendering.GL.Runners.GLEndTrimCommandRunner` | シザーテスト終了ランナー |
-| `Promete.Graphics.Rendering.GL.Runners.GLBeginStencilMaskCommandRunner` | ステンシルマスク開始ランナー |
-| `Promete.Graphics.Rendering.GL.Runners.GLBeginAlphaMaskCommandRunner` | アルファマスク開始ランナー |
-| `Promete.Graphics.Rendering.GL.Runners.GLEndMaskCommandRunner` | マスク終了ランナー |
-
-#### その他
-
-| 型 | 概要 |
-|----|------|
-| `Promete.GLDesktop.GLRenderTextureProvider` | OpenGL の `IRenderTextureProvider` 実装 |
-| `Promete.GLDesktop.GLScreenBlitter` | OpenGL の `IScreenBlitter` 実装 |
-| `Promete.Windowing.CompatibleWindow` | `IWindow` の後方互換ラッパー |
+| `Promete.Windowing.GLDesktop.OpenGLDesktopWindow` | `Promete.Backends.GL.OpenGLDesktopBackend` |
+| `Promete.Graphics.IFrameBufferProvider` | `Promete.Graphics.IRenderTextureProvider` |
+| `Promete.GLDesktop.GLFrameBufferProvider` | `Promete.GLDesktop.GLRenderTextureProvider` |
+| `Promete.Nodes.Renderer.NodeRendererBase` | ノード自身の `Collect()` メソッド |
+| `Promete.Nodes.Renderer.GL.GLSpriteRenderer` | `Sprite.Collect()` + `DrawTextureCommand` |
+| `Promete.Nodes.Renderer.GL.GLTextRenderer` | `Text.Collect()` + `DrawTextureCommand` |
+| `Promete.Nodes.Renderer.GL.GLShapeRenderer` | `Shape.Collect()` + `DrawPrimitiveCommand` |
+| `Promete.Nodes.Renderer.GL.GLTilemapRenderer` | `Tilemap.Collect()` + `DrawTextureCommand` |
+| `Promete.Nodes.Renderer.GL.GLNineSliceSpriteRenderer` | `NineSliceSprite.Collect()` + `DrawTextureCommand` |
+| `Promete.Nodes.Renderer.GL.GLPieSpriteRenderer` | `PieSprite.Collect()` + `DrawPieTextureCommand` |
+| `Promete.Nodes.Renderer.GL.GLMaskedContainerRenderer` | `MaskedContainer.Collect()` + マスクコマンド |
+| `Promete.Nodes.Renderer.GL.Helper.GLTextureRendererHelper` | `GLDrawTextureBatchedCommandRunner` |
