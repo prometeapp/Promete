@@ -171,11 +171,11 @@ import { Aside, Tabs, TabItem, Steps } from '@astrojs/starlight/components';
      </TabItem>
    </Tabs>
 
-   `float` として取り出す場合は `.Degrees` / `.Radians` プロパティを使います。
+   `float` として取り出す場合は `ToDegrees()` / `ToRadians()` メソッドを使います。
 
    ```csharp
-   float deg = sprite.Angle.Degrees;
-   float rad = sprite.Angle.Radians;
+   float deg = sprite.Angle.ToDegrees();
+   float rad = sprite.Angle.ToRadians();
    ```
 
    また、`Vector` / `VectorInt` の `.Angle()` メソッドの戻り値も `float`（ラジアン）から `Angle` 型に変わったため、該当する箇所の修正が必要です。

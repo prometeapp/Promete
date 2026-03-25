@@ -1013,8 +1013,8 @@ Angle a4 = 45.0f.Degrees;            // float から度数法
 Angle a5 = MathF.PI.Radians;         // float からラジアン
 
 // プロパティ
-float deg = a3.Degrees;  // 度数法の値を取得
-float rad = a3.Radians;  // ラジアンの値を取得
+float deg = a3.ToDegrees();  // 度数法の値を取得
+float rad = a3.ToRadians();  // ラジアンの値を取得
 
 // 算術演算
 Angle sum = a1 + a2;          // 加算

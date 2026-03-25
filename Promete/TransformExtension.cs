@@ -8,7 +8,7 @@ public static class TransformExtension
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector Rotate(this Vector point, Angle angle)
     {
-        var rad = angle.Radians;
+        var rad = angle.ToRadians();
         var cos = MathF.Cos(rad);
         var sin = MathF.Sin(rad);
         return (point.X * cos - point.Y * sin, point.X * sin + point.Y * cos);

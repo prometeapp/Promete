@@ -33,6 +33,7 @@
     - オーディオソース `/guide/audio/source`
   - 数学
     - VectorとRect `/guide/math/vector-rect`
+    - Angle（角度） `/guide/math/angle`
     - 数学ヘルパー `/guide/math/helper`
   - その他
     - コルーチン `/guide/other/coroutine`

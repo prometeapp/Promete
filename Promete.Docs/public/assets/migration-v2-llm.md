@@ -145,11 +145,11 @@ angle += Time.DeltaTime * 90;
 sprite.Angle = angle.Degrees;
 ```
 
-`float` として取り出す場合は `.Degrees` / `.Radians` プロパティを使う。
+`float` として取り出す場合は `ToDegrees()` / `ToRadians()` メソッドを使う。
 
 ```csharp
-float deg = sprite.Angle.Degrees;
-float rad = sprite.Angle.Radians;
+float deg = sprite.Angle.ToDegrees();
+float rad = sprite.Angle.ToRadians();
 ```
 
 `Vector` / `VectorInt` の `.Angle()` メソッドの戻り値も `float`（ラジアン）から `Angle` 型に変わったため、当該箇所の修正を行う。

@@ -208,7 +208,7 @@ public abstract class Node
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
         ModelMatrix = Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0) *
                       Matrix4x4.CreateScale(Scale.X, Scale.Y, 1) *
-                      Matrix4x4.CreateRotationZ(Angle.Radians) *
+                      Matrix4x4.CreateRotationZ(Angle.ToRadians()) *
                       Matrix4x4.CreateTranslation(Location.X, Location.Y, 0) *
                       parentMatrix;
         _isModelMatrixDirty = false;

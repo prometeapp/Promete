@@ -7,23 +7,21 @@ namespace Promete;
 /// </summary>
 public struct Angle : IEquatable<Angle>
 {
-    /// <summary>
-    /// 角度を度数法で取得または設定します。
-    /// </summary>
-    public float Degrees { get; set; }
+    private float _degrees;
 
     /// <summary>
-    /// 角度をラジアンで取得または設定します。
+    /// 角度を度数法の <c>float</c> 値として返します。
     /// </summary>
-    public float Radians
-    {
-        get => Degrees * MathF.PI / 180f;
-        set => Degrees = value * 180f / MathF.PI;
-    }
+    public float ToDegrees() => _degrees;
+
+    /// <summary>
+    /// 角度をラジアンの <c>float</c> 値として返します。
+    /// </summary>
+    public float ToRadians() => _degrees * MathF.PI / 180f;
 
     private Angle(float degrees)
     {
-        Degrees = degrees;
+        _degrees = degrees;
     }
 
     /// <summary>
@@ -43,24 +41,24 @@ public struct Angle : IEquatable<Angle>
 
     // --- 算術演算子 ---
 
-    public static Angle operator +(Angle a, Angle b) => new(a.Degrees + b.Degrees);
-    public static Angle operator -(Angle a, Angle b) => new(a.Degrees - b.Degrees);
-    public static Angle operator -(Angle a) => new(-a.Degrees);
-    public static Angle operator *(Angle a, float scalar) => new(a.Degrees * scalar);
-    public static Angle operator *(float scalar, Angle a) => new(scalar * a.Degrees);
-    public static Angle operator /(Angle a, float scalar) => new(a.Degrees / scalar);
-    public static Angle operator %(Angle a, float value) => new(a.Degrees % value);
+    public static Angle operator +(Angle a, Angle b) => new(a._degrees + b._degrees);
+    public static Angle operator -(Angle a, Angle b) => new(a._degrees - b._degrees);
+    public static Angle operator -(Angle a) => new(-a._degrees);
+    public static Angle operator *(Angle a, float scalar) => new(a._degrees * scalar);
+    public static Angle operator *(float scalar, Angle a) => new(scalar * a._degrees);
+    public static Angle operator /(Angle a, float scalar) => new(a._degrees / scalar);
+    public static Angle operator %(Angle a, float value) => new(a._degrees % value);
 
     // --- 比較演算子 ---
 
-    public static bool operator ==(Angle a, Angle b) => a.Degrees == b.Degrees;
-    public static bool operator !=(Angle a, Angle b) => a.Degrees != b.Degrees;
+    public static bool operator ==(Angle a, Angle b) => a._degrees == b._degrees;
+    public static bool operator !=(Angle a, Angle b) => a._degrees != b._degrees;
 
     // --- IEquatable / Object ---
 
-    public bool Equals(Angle other) => Degrees.Equals(other.Degrees);
+    public bool Equals(Angle other) => _degrees.Equals(other._degrees);
     public override bool Equals(object? obj) => obj is Angle other && Equals(other);
-    public override int GetHashCode() => Degrees.GetHashCode();
+    public override int GetHashCode() => _degrees.GetHashCode();
 
-    public override string ToString() => $"{Degrees}°";
+    public override string ToString() => $"{_degrees}°";
 }
