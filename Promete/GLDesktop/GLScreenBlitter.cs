@@ -4,8 +4,6 @@ using Promete.Backends;
 using Promete.Backends.GL;
 using Promete.Graphics;
 using Promete.Graphics.Rendering.GL;
-using Promete.Windowing;
-using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
 namespace Promete.GLDesktop;

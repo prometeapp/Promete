@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Promete.Input.Internal;
-using Promete.Windowing;
 using Silk.NET.Input;
 
 namespace Promete.Input;

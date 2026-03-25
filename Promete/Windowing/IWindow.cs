@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Promete.Backends;
 using Promete.Graphics;
 using Silk.NET.Input;
 

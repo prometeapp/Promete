@@ -5,7 +5,6 @@ using Promete.Graphics;
 using Promete.Graphics.Rendering.GL;
 using Promete.Windowing;
 using Promete.Windowing.GLDesktop;
-using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;

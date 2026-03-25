@@ -1,10 +1,8 @@
 using Promete.Backends.GL;
-using Promete.Graphics;
 using Promete.Graphics.Rendering;
 using Promete.Graphics.Rendering.GL;
 using Promete.Graphics.Rendering.GL.Runners;
 using Promete.Windowing;
-using Promete.Windowing.GLDesktop;
 
 namespace Promete.GLDesktop;
 

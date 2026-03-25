@@ -1,8 +1,6 @@
 using System;
 using System.Numerics;
-using Promete.Backends;
 using Promete.Backends.SilkNetCommon;
-using Promete.Windowing;
 using Silk.NET.Input;
 using SilkMouseButton = Silk.NET.Input.MouseButton;
 

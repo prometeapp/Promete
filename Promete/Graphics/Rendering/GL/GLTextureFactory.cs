@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Promete.Backends;
 using Promete.Graphics;
 using Silk.NET.OpenGL;
 using SixLabors.ImageSharp;

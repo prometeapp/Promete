@@ -1,5 +1,4 @@
 using Promete.Backends;
-using Promete.Windowing;
 
 namespace Promete.Coroutines;
 

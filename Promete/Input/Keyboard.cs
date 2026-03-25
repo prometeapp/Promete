@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Promete.Backends.SilkNetCommon;
 using Promete.Input.Internal;
-using Promete.Windowing;
 using Silk.NET.Input;
 
 namespace Promete.Input;

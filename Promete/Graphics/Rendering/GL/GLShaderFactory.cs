@@ -1,6 +1,4 @@
 using System;
-using Promete.Windowing;
-using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
 namespace Promete.Graphics.Rendering.GL;

@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
-using Promete.Backends;
 using Promete.Graphics;
 using Silk.NET.Input;
 using Timer = System.Timers.Timer;

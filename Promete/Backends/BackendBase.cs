@@ -1,7 +1,6 @@
 using Promete.Backends.SilkNetCommon;
 using Promete.Graphics;
 using Promete.Windowing;
-using Silk.NET.Input;
 
 namespace Promete.Backends;
 

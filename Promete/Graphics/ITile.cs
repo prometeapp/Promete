@@ -1,5 +1,4 @@
 using Promete.Nodes;
-using Promete.Windowing;
 
 namespace Promete.Graphics;
 

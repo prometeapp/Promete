@@ -21,10 +21,9 @@ public class ScenelessRunTests
         var app = PrometeApp.Create()
             .BuildWithHeadless();
 
-        // OnStartを手動で呼び出してDefaultSceneをロード
-        var onStartMethod = typeof(PrometeApp).GetMethod("OnStart", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        var genericOnStartMethod = onStartMethod.MakeGenericMethod(GetDefaultSceneType());
-        genericOnStartMethod.Invoke(app, null);
+        // OnStartを手動で呼び出して初期化し、DefaultSceneをロード
+        app.OnStart();
+        app.LoadScene(GetDefaultSceneType());
 
         // Assert
         app.Root.Should().NotBeNull("Root container should be initialized even without explicit scene");

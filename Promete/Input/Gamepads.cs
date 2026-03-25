@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Promete.Backends.SilkNetCommon;
-using Promete.Windowing;
 using Silk.NET.Input;
 
 namespace Promete.Input;

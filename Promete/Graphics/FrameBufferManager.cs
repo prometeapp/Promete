@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Promete.Internal;
 
 namespace Promete.Graphics;
 

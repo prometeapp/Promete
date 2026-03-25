@@ -2,7 +2,7 @@
 
 namespace Promete.Test;
 
-public class StringExtension
+public class StringExtensionTest
 {
     [Fact]
     public void ReplaceAt()

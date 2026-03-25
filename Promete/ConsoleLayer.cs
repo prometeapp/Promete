@@ -5,7 +5,6 @@ using System.Linq;
 using Promete.Backends;
 using Promete.Graphics.Fonts;
 using Promete.Nodes;
-using Promete.Windowing;
 
 namespace Promete;
 
