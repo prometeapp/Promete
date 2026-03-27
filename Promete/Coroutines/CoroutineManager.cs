@@ -16,7 +16,7 @@ public class CoroutineManager
     public CoroutineManager(PrometeApp app)
     {
         app.Update += Update;
-        app.SceneWillChange += ClearAllNonKeepAliveCoroutines;
+        app.SceneWillChange += _ => ClearAllNonKeepAliveCoroutines();
     }
 
     /// <summary>

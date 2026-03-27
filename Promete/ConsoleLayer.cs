@@ -49,7 +49,7 @@ public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
 
         app.GlobalForeground.Add(_text);
 
-        app.SceneWillChange += Clear;
+        app.SceneWillChange += _ => Clear();
         app.Update += () => { _text.Update(); };
         app.PostUpdate += UpdateConsole;
         view.Resize += () => { _maxLine = CalculateMaxLine(); };

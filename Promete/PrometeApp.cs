@@ -233,9 +233,10 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
     public void LoadScene(Type typeScene)
     {
+        var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = GetScene(typeScene);
-        SceneWillChange?.Invoke();
+        SceneWillChange?.Invoke(new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene));
         _currentScene.OnStart();
     }
 
@@ -254,6 +255,7 @@ public sealed class PrometeApp : IDisposable
     /// <param name="typeScene">読み込むシーン。</param>
     public void PushScene(Type typeScene)
     {
+        var previous = _currentScene;
         if (_currentScene != null)
         {
             _sceneStack.Push(_currentScene);
@@ -261,7 +263,7 @@ public sealed class PrometeApp : IDisposable
         }
 
         _currentScene = GetScene(typeScene);
-        SceneWillChange?.Invoke();
+        SceneWillChange?.Invoke(new SceneTransitionEventArgs(SceneTransitionType.Push, previous, _currentScene));
         _currentScene.OnStart();
     }
 
@@ -273,9 +275,10 @@ public sealed class PrometeApp : IDisposable
     {
         if (_sceneStack.Count == 0) return false;
 
+        var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = _sceneStack.Pop();
-        SceneWillChange?.Invoke();
+        SceneWillChange?.Invoke(new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene));
         _currentScene.OnResume();
         return true;
     }
@@ -514,7 +517,7 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// シーンが変更される直前に呼び出されるイベントです。
     /// </summary>
-    public event Action? SceneWillChange;
+    public event Action<SceneTransitionEventArgs>? SceneWillChange;
 
     /// <summary>
     /// シーンを使用せずにアプリケーションを実行する際に使用されるデフォルトの空のシーン。
