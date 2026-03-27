@@ -5,7 +5,8 @@ sidebar:
   order: 10
 ---
 
-import { Aside, Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+import {Aside, Steps, TabItem, Tabs} from '@astrojs/starlight/components';
 
 このガイドでは、Promete v1 で作られたプロジェクトを v2 に移行する手順を解説します。
 
@@ -195,7 +196,46 @@ import { Aside, Tabs, TabItem, Steps } from '@astrojs/starlight/components';
      </TabItem>
    </Tabs>
 
-6. **ビルドエラーと警告を確認する**
+  6. **WindowOptionsの渡し方**
+
+  Promete v2では、 `PrometeApp.Run` メソッドに `WindowOptions` 型を渡せなくなりました。
+  代わりに、バックエンドの初期化時に渡す必要があります。
+
+  OpenGLバックエンドでは次のように変更してください。
+  <Tabs>
+    <TabItem label="v1">
+      ```csharp
+      var app = PrometeApp.Create()
+      .BuildWithOpenGLDesktop();
+
+      return app.Run(WindowOptions.Default with
+      {
+        Title = "Promete Demo",
+        Mode = WindowMode.Resizable,
+        TargetFps = 0,
+        TargetUps = 0,
+        IsVsyncMode = false,
+      });
+      ```
+    </TabItem>
+    <TabItem label="v2">
+      ```csharp
+      var app = PrometeApp.Create()
+      .BuildWithOpenGLDesktop(WindowOptions.Default with
+      {
+        Title = "Promete Demo",
+        Mode = WindowMode.Resizable,
+        TargetFps = 0,
+        TargetUps = 0,
+        IsVsyncMode = false,
+      });
+
+      return app.Run();
+      ```
+    </TabItem>
+  </Tabs>
+
+  7. **ビルドエラーと警告を確認する**
 
    ここまでの手順を終えたら一度ビルドしてください。`IWindow` を参照している箇所に `[Obsolete]` 警告が出ます。警告の一覧を見て、手順3・4で対応できていない箇所が残っていないか確認してください。
 

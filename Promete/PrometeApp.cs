@@ -12,6 +12,7 @@ using Promete.Graphics;
 using Promete.Graphics.Rendering;
 using Promete.Nodes;
 using Promete.Windowing;
+
 namespace Promete;
 
 /// <summary>
@@ -19,6 +20,40 @@ namespace Promete;
 /// </summary>
 public sealed class PrometeApp : IDisposable
 {
+    private readonly List<IDisposable> _disposablePlugins = [];
+    private readonly List<IInitializable> _initializablePlugins = [];
+
+    private readonly Thread _mainThread;
+    private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
+    private readonly List<Type> _pluginTypes;
+    private readonly Stack<Scene> _sceneStack = new();
+
+    private readonly ServiceCollection _services;
+    private readonly List<IUpdatable> _updatablePlugins = [];
+    private BackendBase _backend = null!;
+
+    private Scene? _currentScene;
+    private Type? _initialSceneType;
+    private ServiceProvider _provider = null!;
+    private RenderCommandQueue? _renderCommandQueue;
+
+    private IScreenBlitter _screenBlitter;
+    private int _statusCode;
+
+    private PrometeApp(ServiceCollection services, List<Type> pluginTypes)
+    {
+        _mainThread = Thread.CurrentThread;
+
+        _services = services;
+        _pluginTypes = pluginTypes;
+        RegisterAllScenes();
+        services.AddSingleton(this);
+        services.AddSingleton<FrameBufferManager>();
+#pragma warning disable CS0618 // 型またはメンバーが旧型式です
+        Window = new CompatibleWindow(this);
+        services.AddSingleton(Window);
+#pragma warning restore CS0618 // 型またはメンバーが旧型式です
+    }
 
     /// <summary>
     /// 現在読み込まれているシーンのルートコンテナを取得します。
@@ -64,40 +99,6 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public List<Material> PostProcessMaterials { get; } = [];
 
-    private Scene? _currentScene;
-    private Type? _initialSceneType;
-    private int _statusCode;
-    private ServiceProvider _provider = null!;
-    private BackendBase _backend = null!;
-
-    private readonly Thread _mainThread;
-    private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
-    private readonly Stack<Scene> _sceneStack = new();
-
-    private readonly ServiceCollection _services;
-    private readonly List<Type> _pluginTypes;
-    private readonly List<IInitializable> _initializablePlugins = [];
-    private readonly List<IUpdatable> _updatablePlugins = [];
-    private readonly List<IDisposable> _disposablePlugins = [];
-
-    private IScreenBlitter _screenBlitter;
-    private RenderCommandQueue? _renderCommandQueue;
-
-    private PrometeApp(ServiceCollection services, List<Type> pluginTypes)
-    {
-        _mainThread = Thread.CurrentThread;
-
-        _services = services;
-        _pluginTypes = pluginTypes;
-        RegisterAllScenes();
-        services.AddSingleton(this);
-        services.AddSingleton<FrameBufferManager>();
-#pragma warning disable CS0618 // 型またはメンバーが旧型式です
-        Window = new CompatibleWindow(this);
-        services.AddSingleton(Window);
-#pragma warning restore CS0618 // 型またはメンバーが旧型式です
-    }
-
     /// <summary>
     /// 実行中の <see cref="PrometeApp" /> を取得します。
     /// <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
@@ -133,17 +134,6 @@ public sealed class PrometeApp : IDisposable
     /// <returns>終了ステータスコード。</returns>
     public int Run<TScene>() where TScene : Scene
     {
-        return Run<TScene>(WindowOptions.Default);
-    }
-
-    /// <summary>
-    /// Promete アプリケーションを実行します。
-    /// </summary>
-    /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
-    /// <param name="opts">ウィンドウのオプション。</param>
-    /// <returns>終了ステータスコード。</returns>
-    public int Run<TScene>(WindowOptions opts) where TScene : Scene
-    {
         _initialSceneType = typeof(TScene);
         _backend.OnStart(this);
         return _statusCode;
@@ -155,17 +145,7 @@ public sealed class PrometeApp : IDisposable
     /// <returns>終了ステータスコード。</returns>
     public int Run()
     {
-        return Run(WindowOptions.Default);
-    }
-
-    /// <summary>
-    /// Promete アプリケーションをシーンなしで実行します。
-    /// </summary>
-    /// <param name="opts">ウィンドウのオプション。</param>
-    /// <returns>終了ステータスコード。</returns>
-    public int Run(WindowOptions opts)
-    {
-        return Run<DefaultScene>(opts);
+        return Run<DefaultScene>();
     }
 
     /// <summary>
@@ -195,7 +175,8 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="ArgumentException">指定したプラグインが登録されていない。</exception>
     public T GetPlugin<T>() where T : class
     {
-        return _provider.GetService<T>() ?? throw new ArgumentException($"The plugin \"{typeof(T)}\" is not registered.");
+        return _provider.GetService<T>() ??
+               throw new ArgumentException($"The plugin \"{typeof(T)}\" is not registered.");
     }
 
     /// <summary>
@@ -206,7 +187,9 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="ArgumentException">指定したプラグインが登録されていない。</exception>
     public object GetPlugin(Type type)
     {
-        return TryGetPlugin(type, out var plugin) ? plugin : throw new ArgumentException($"The plugin \"{type}\" is not registered.");
+        return TryGetPlugin(type, out var plugin)
+            ? plugin
+            : throw new ArgumentException($"The plugin \"{type}\" is not registered.");
     }
 
     /// <summary>
@@ -276,6 +259,7 @@ public sealed class PrometeApp : IDisposable
             _sceneStack.Push(_currentScene);
             _currentScene.OnPause();
         }
+
         _currentScene = GetScene(typeScene);
         SceneWillChange?.Invoke();
         _currentScene.OnStart();
@@ -408,7 +392,6 @@ public sealed class PrometeApp : IDisposable
 
         using (_screenBlitter.ScreenRenderTexture.BeginCapture(BackgroundColor))
         {
-
             queue.Clear();
             PreRender?.Invoke();
             CollectNode(GlobalBackground, queue, ctx);
@@ -546,15 +529,15 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public sealed class PrometeAppBuilder
     {
-        private readonly ServiceCollection _services;
-        private readonly List<Type> _pluginTypes = [];
-
         private static readonly List<Type> SpecializedPluginInterfaceTypes =
         [
             typeof(IInitializable),
             typeof(IUpdatable),
             typeof(IDisposable),
         ];
+
+        private readonly List<Type> _pluginTypes = [];
+        private readonly ServiceCollection _services;
 
         internal PrometeAppBuilder()
         {

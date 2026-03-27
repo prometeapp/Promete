@@ -13,10 +13,13 @@ var app = PrometeApp.Create()
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
     .Use<ImGuiPlugin>()
-    .BuildWithOpenGLDesktop();
+    .BuildWithOpenGLDesktop(WindowOptions.Default with
+    {
+        Title = "Promete Demo",
+        Mode = WindowMode.Resizable,
+        TargetFps = 0,
+        TargetUps = 0,
+        IsVsyncMode = false,
+    });
 
-return app.Run<MainScene>(WindowOptions.Default with
-{
-    Title = "Promete Demo",
-    Mode = WindowMode.Resizable,
-});
+return app.Run<MainScene>();

@@ -166,7 +166,45 @@ Angle angle = player.Location.Angle(mouse.Position);
 sprite.Angle = angle;
 ```
 
-### ステップ6: ビルドエラーと警告を確認する
+### ステップ6: WindowOptionsの渡し方
+
+Promete v2 では、`PrometeApp.Run` メソッドに `WindowOptions` 型を渡せなくなった。代わりに、バックエンドの初期化時に渡す必要がある。
+
+OpenGLバックエンドでは次のように変更する。
+
+**Before (v1):**
+
+```csharp
+var app = PrometeApp.Create()
+    .BuildWithOpenGLDesktop();
+
+return app.Run(WindowOptions.Default with
+{
+    Title = "Promete Demo",
+    Mode = WindowMode.Resizable,
+    TargetFps = 0,
+    TargetUps = 0,
+    IsVsyncMode = false,
+});
+```
+
+**After (v2):**
+
+```csharp
+var app = PrometeApp.Create()
+    .BuildWithOpenGLDesktop(WindowOptions.Default with
+    {
+        Title = "Promete Demo",
+        Mode = WindowMode.Resizable,
+        TargetFps = 0,
+        TargetUps = 0,
+        IsVsyncMode = false,
+    });
+
+return app.Run();
+```
+
+### ステップ7: ビルドエラーと警告を確認する
 
 ここまでの手順を終えたら一度ビルドする。`IWindow` を参照している箇所に `[Obsolete]` 警告が出るため、一覧を見て手順3・4で対応できていない箇所が残っていないか確認する。
 
@@ -178,7 +216,7 @@ sprite.Angle = angle;
 
 ゲームロジックのみ書いていて、カスタムノードやバックエンドを実装していない場合はここから先は不要。
 
-### ステップ7: `NodeRenderer` を `Collect()` に移行する
+### ステップ8: `NodeRenderer` を `Collect()` に移行する
 
 v1 では各ノードタイプに対して `NodeRendererBase` を継承したレンダラーを実装し `UseRenderer<TNode, TRenderer>()` で登録していたが、この仕組みは v2 で廃止された。
 
@@ -216,7 +254,7 @@ public class MyNode : Node
 
 登録コード（`UseRenderer<,>()`）はすべて削除する。
 
-### ステップ8: バックエンドを `BackendBase` に移行する
+### ステップ9: バックエンドを `BackendBase` に移行する
 
 v1 では `IWindow` インターフェースを直接実装してバックエンドを構成していたが、v2 では `BackendBase` 抽象クラスを継承する方式に変わった。
 
