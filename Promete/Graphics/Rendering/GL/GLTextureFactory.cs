@@ -96,8 +96,9 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
                 if (px + size.X > width) throw new ArgumentException(null, nameof(horizontalCount));
                 if (py + size.Y > height) throw new ArgumentException(null, nameof(verticalCount));
 
-                var uvStart = new Vector(px / width, py / height);
-                var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
+                // ハーフピクセル分内側にオフセットし、隣接タイルからのテクスチャブリーディングを防止
+                var uvStart = new Vector((px + 0.5f) / width, (py + 0.5f) / height);
+                var uvEnd = new Vector((px + size.X - 0.5f) / width, (py + size.Y - 0.5f) / height);
 
                 textures[y * horizontalCount + x] = new Texture2D(handle, size, DisposeTexture, uvStart, uvEnd);
             }
@@ -142,6 +143,8 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
 
             GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.ClampToEdge);
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.ClampToEdge);
             GL.TexImage2D(GLEnum.Texture2D, 0, (int)GLEnum.Rgba, width, height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, b);
             return (int)texture;
         }
