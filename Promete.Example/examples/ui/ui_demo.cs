@@ -64,21 +64,38 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
 			.Enabled(false);
 		Root.Add(disabledButton);
 
+		// --- NineSlice ボタン ---
+		var nineSliceTex = Window.TextureFactory.Load9Sliced("assets/rect.png", 16, 16, 16, 16);
+		var nineSliceStyle = new NineSliceButtonStyle
+		{
+			NormalTexture = nineSliceTex,
+			HoveredTexture = nineSliceTex,
+			PressedTexture = nineSliceTex,
+			TextColor = Color.White,
+		};
+		var nineSliceButton = new Button("9-Slice ボタン") { Style = nineSliceStyle };
+		nineSliceButton
+			.Location(30, 225)
+			.Size(180, 50)
+			.NavigationOrder(3)
+			.OnClick(() => statusText.Content = "NineSlice ボタンがクリックされた！");
+		Root.Add(nineSliceButton);
+
 		// --- チェックボックス ---
 		var checkLabel = new Text("Checkbox:", color: Color.LightGray)
-			.Location(30, 230);
+			.Location(30, 290);
 		Root.Add(checkLabel);
 
 		var checkbox1 = new Checkbox("オプション A", isChecked: true)
-			.Location(30, 255)
+			.Location(30, 315)
 			.Size(200, 24)
-			.NavigationOrder(3);
+			.NavigationOrder(4);
 		Root.Add(checkbox1);
 
 		var checkbox2 = new Checkbox("オプション B")
-			.Location(30, 285)
+			.Location(30, 345)
 			.Size(200, 24)
-			.NavigationOrder(4);
+			.NavigationOrder(5);
 		Root.Add(checkbox2);
 
 		checkbox1.CheckedChanged += v => statusText.Content = $"オプション A: {(v ? "ON" : "OFF")}";
@@ -86,22 +103,22 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
 
 		// --- スライダー ---
 		var sliderLabel = new Text("Slider:", color: Color.LightGray)
-			.Location(30, 325);
+			.Location(30, 385);
 		Root.Add(sliderLabel);
 
 		var slider = new Slider(0, 5, 3)
-			.Location(30, 350)
+			.Location(30, 410)
 			.Size(200, 28)
-			.NavigationOrder(5);
+			.NavigationOrder(6);
 		Root.Add(slider);
 
 		slider.ValueChanged += v => statusText.Content = $"スライダー値: {v:F1}";
 
 		// --- モーダルボタン ---
 		var modalButton = new Button("モーダルを開く")
-			.Location(30, 400)
+			.Location(30, 460)
 			.Size(180, 45)
-			.NavigationOrder(6)
+			.NavigationOrder(7)
 			.OnClick(() =>
 			{
 				var modal = new Modal((280, 160));
