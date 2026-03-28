@@ -59,6 +59,9 @@ public class Slider : UIElement
 	/// <summary>値を整数に丸めるかどうか。</summary>
 	public bool IntegerOnly { get; set; } = true;
 
+	/// <summary>キーボード操作時の1ステップあたりの変化量。</summary>
+	public float Step { get; set; } = 1f;
+
 	/// <summary>スタイルを取得または設定します。</summary>
 	public IUIStyle<Slider> Style
 	{
@@ -100,6 +103,18 @@ public class Slider : UIElement
 		PointerPressed += OnPointerPressed;
 		PointerMoved += OnPointerMoved;
 		PointerReleased += OnPointerReleased;
+	}
+
+	/// <summary>
+	/// フォーカス中に左右キーで値を変更します。
+	/// UIManager から呼ばれます。
+	/// </summary>
+	internal void ProcessKeyboardInput(Promete.Input.Keyboard keyboard)
+	{
+		if (keyboard.Left.IsKeyDown)
+			Value -= Step;
+		if (keyboard.Right.IsKeyDown)
+			Value += Step;
 	}
 
 	protected override void ApplyStyle(UIElementState state)
