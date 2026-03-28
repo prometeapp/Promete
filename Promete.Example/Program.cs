@@ -4,6 +4,7 @@ using Promete.Example;
 using Promete.GLDesktop;
 using Promete.ImGui;
 using Promete.Input;
+using Promete.UI;
 using Promete.Windowing;
 
 var app = PrometeApp.Create()
@@ -12,6 +13,7 @@ var app = PrometeApp.Create()
     .Use<Gamepads>()
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
+    .Use<UIManager>()
     .Use<ImGuiPlugin>()
     .BuildWithOpenGLDesktop(WindowOptions.Default with
     {

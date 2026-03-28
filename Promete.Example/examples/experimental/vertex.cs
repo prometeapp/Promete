@@ -2,7 +2,7 @@ using System.Drawing;
 using Promete.Example.Kernel;
 using Promete.ImGui;
 using Promete.Nodes;
-using UI = ImGuiNET.ImGui;
+using ImGuiUI = ImGuiNET.ImGui;
 
 namespace Promete.Example.examples.experimental;
 
@@ -59,54 +59,54 @@ public class vertex(ImGuiPlugin ui) : Scene
 
     private void RenderWindow()
     {
-        UI.Begin("Vertex Editor");
+        ImGuiUI.Begin("Vertex Editor");
         {
             Span<int> v0 = [_vertices[0].X, _vertices[0].Y];
             Span<int> v1 = [_vertices[1].X, _vertices[1].Y];
             Span<int> v2 = [_vertices[2].X, _vertices[2].Y];
 
-            if (UI.InputInt2("Vertex 1", ref v0[0]))
+            if (ImGuiUI.InputInt2("Vertex 1", ref v0[0]))
             {
                 _vertices[0] = (v0[0], v0[1]);
                 _isDirty = true;
             }
 
-            if (UI.InputInt2("Vertex 2", ref v1[0]))
+            if (ImGuiUI.InputInt2("Vertex 2", ref v1[0]))
             {
                 _vertices[1] = (v1[0], v1[1]);
                 _isDirty = true;
             }
 
-            if (UI.InputInt2("Vertex 3", ref v2[0]))
+            if (ImGuiUI.InputInt2("Vertex 3", ref v2[0]))
             {
                 _vertices[2] = (v2[0], v2[1]);
                 _isDirty = true;
             }
 
             var translate = _translate.ToNumerics();
-            if (UI.InputFloat2("Translate", ref translate))
+            if (ImGuiUI.InputFloat2("Translate", ref translate))
             {
                 _translate = translate.ToPromete();
                 _isDirty = true;
             }
 
             var scale = _scale.ToNumerics();
-            if (UI.InputFloat2("Scale", ref scale))
+            if (ImGuiUI.InputFloat2("Scale", ref scale))
             {
                 _scale = scale.ToPromete();
                 _isDirty = true;
             }
 
-            if (UI.InputFloat("Angle", ref _angle)) _isDirty = true;
+            if (ImGuiUI.InputFloat("Angle", ref _angle)) _isDirty = true;
 
             var pivot = _pivot.ToNumerics();
-            if (UI.InputFloat2("Pivot", ref pivot))
+            if (ImGuiUI.InputFloat2("Pivot", ref pivot))
             {
                 _pivot = pivot.ToPromete();
                 _isDirty = true;
             }
 
-            if (UI.Button("Reset"))
+            if (ImGuiUI.Button("Reset"))
             {
                 _pivot = (0, 0);
                 _translate = (0, 0);
@@ -115,7 +115,7 @@ public class vertex(ImGuiPlugin ui) : Scene
                 _isDirty = true;
             }
 
-            UI.End();
+            ImGuiUI.End();
         }
     }
 }

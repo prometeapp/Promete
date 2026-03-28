@@ -4,7 +4,7 @@ using Promete.ImGui;
 using Promete.Input;
 using Promete.Nodes;
 using Promete.Windowing;
-using UI = ImGuiNET.ImGui;
+using ImGuiUI = ImGuiNET.ImGui;
 
 namespace Promete.Example.examples.plugins;
 
@@ -33,24 +33,24 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
 
     private void OnRender()
     {
-        UI.Begin("ImGui Window");
+        ImGuiUI.Begin("ImGui Window");
 
-        UI.Text("Hello, ImGui from Promete!");
-        if (UI.Button($"{(ichigo == null ? "Show" : "Hide")} Ichigo")) ToggleIchigo();
+        ImGuiUI.Text("Hello, ImGui from Promete!");
+        if (ImGuiUI.Button($"{(ichigo == null ? "Show" : "Hide")} Ichigo")) ToggleIchigo();
 
         if (ichigo != null)
         {
             var alpha = (int)ichigo.TintColor.A;
-            if (UI.DragInt("alpha", ref alpha, 1, 0, 255)) ichigo.TintColor = Color.FromArgb(alpha, ichigo.TintColor);
+            if (ImGuiUI.DragInt("alpha", ref alpha, 1, 0, 255)) ichigo.TintColor = Color.FromArgb(alpha, ichigo.TintColor);
 
             var vec = ichigo.Size.ToNumerics();
-            if (UI.DragFloat2("size", ref vec)) ichigo.Size = vec.ToPrometeInt();
+            if (ImGuiUI.DragFloat2("size", ref vec)) ichigo.Size = vec.ToPrometeInt();
         }
 
-        if (UI.Button("Back")) App.LoadScene<MainScene>();
-        UI.End();
+        if (ImGuiUI.Button("Back")) App.LoadScene<MainScene>();
+        ImGuiUI.End();
 
-        UI.ShowDemoWindow();
+        ImGuiUI.ShowDemoWindow();
     }
 
     private void ToggleIchigo()

@@ -38,4 +38,8 @@
     <ItemGroup>
       <Folder Include="Windowing\GLDesktop\" />
     </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Promete.Test" />
+    </ItemGroup>
 </Project>
