@@ -75,6 +75,15 @@ public abstract class UIElement() : Container(isTrimmable: false)
 	/// <summary>要素からフォーカスが外れたときに発火します。</summary>
 	public event Action? LostFocus;
 
+	/// <summary>要素上でマウスボタンが押されたときに発火します。引数はワールド座標です。</summary>
+	public event Action<VectorInt>? PointerPressed;
+
+	/// <summary>要素上でマウスが移動したとき（ドラッグ中）に発火します。引数はワールド座標です。</summary>
+	public event Action<VectorInt>? PointerMoved;
+
+	/// <summary>要素上でマウスボタンが離されたときに発火します。引数はワールド座標です。</summary>
+	public event Action<VectorInt>? PointerReleased;
+
 	/// <summary>
 	/// ヒットテスト用の矩形を取得します。
 	/// デフォルトではノードの絶対位置とサイズに基づくAABBを返します。
@@ -134,6 +143,9 @@ public abstract class UIElement() : Container(isTrimmable: false)
 	internal void RaisePointerLeft() => PointerLeft?.Invoke();
 	internal void RaiseGotFocus() => GotFocus?.Invoke();
 	internal void RaiseLostFocus() => LostFocus?.Invoke();
+	internal void RaisePointerPressed(VectorInt position) => PointerPressed?.Invoke(position);
+	internal void RaisePointerMoved(VectorInt position) => PointerMoved?.Invoke(position);
+	internal void RaisePointerReleased(VectorInt position) => PointerReleased?.Invoke(position);
 
 	protected override void OnUpdate()
 	{
