@@ -7,6 +7,7 @@ using Promete.ImGui;
 using Promete.Input;
 using Promete.Vulkan.Validation;
 using Promete.VulkanDesktop;
+using Promete.UI;
 using Promete.Windowing;
 
 // --vulkan フラグで実験的な Vulkan バックエンドを使用する
@@ -22,6 +23,7 @@ var builder = PrometeApp
     .Use<Gamepads>()
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
+    .Use<UIManager>()
     .Use<ImGuiPlugin>();
 
 if (DemoKernel.UseVulkan && useValidation)
