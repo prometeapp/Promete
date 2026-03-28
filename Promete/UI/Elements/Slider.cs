@@ -9,32 +9,6 @@ namespace Promete.UI.Elements;
 /// </summary>
 public class Slider : UIElement
 {
-	private float _value;
-	private float _minimum;
-	private float _maximum = 1f;
-	private bool _isDragging;
-	private IUIStyle<Slider> _style;
-
-	/// <summary>
-	/// Slider の新しいインスタンスを初期化します。
-	/// </summary>
-	/// <param name="minimum">最小値。</param>
-	/// <param name="maximum">最大値。</param>
-	/// <param name="value">初期値。</param>
-	/// <param name="style">適用するスタイル。null の場合は DefaultSliderStyle が使用されます。</param>
-	public Slider(float minimum = 0f, float maximum = 1f, float value = 0f, IUIStyle<Slider>? style = null)
-	{
-		_style = style ?? new DefaultSliderStyle();
-		_minimum = minimum;
-		_maximum = maximum;
-		_value = Math.Clamp(value, minimum, maximum);
-		Size = (200, 24);
-
-		PointerPressed += OnPointerPressed;
-		PointerMoved += OnPointerMoved;
-		PointerReleased += OnPointerReleased;
-	}
-
 	/// <summary>現在の値を取得または設定します。</summary>
 	public float Value
 	{
@@ -82,6 +56,9 @@ public class Slider : UIElement
 	/// <summary>トラックの高さ。</summary>
 	public int TrackHeight { get; set; } = 6;
 
+	/// <summary>値を整数に丸めるかどうか。</summary>
+	public bool IntegerOnly { get; set; } = true;
+
 	/// <summary>スタイルを取得または設定します。</summary>
 	public IUIStyle<Slider> Style
 	{
@@ -93,11 +70,37 @@ public class Slider : UIElement
 		}
 	}
 
+	/// <summary>ドラッグ中かどうか。</summary>
+	public bool IsDragging => _isDragging;
+
 	/// <summary>値が変更されたときに発火します。</summary>
 	public event Action<float>? ValueChanged;
 
-	/// <summary>ドラッグ中かどうか。</summary>
-	public bool IsDragging => _isDragging;
+	private float _value;
+	private float _minimum;
+	private float _maximum = 1f;
+	private bool _isDragging;
+	private IUIStyle<Slider> _style;
+
+	/// <summary>
+	/// Slider の新しいインスタンスを初期化します。
+	/// </summary>
+	/// <param name="minimum">最小値。</param>
+	/// <param name="maximum">最大値。</param>
+	/// <param name="value">初期値。</param>
+	/// <param name="style">適用するスタイル。null の場合は DefaultSliderStyle が使用されます。</param>
+	public Slider(float minimum = 0f, float maximum = 1f, float value = 0f, IUIStyle<Slider>? style = null)
+	{
+		_style = style ?? new DefaultSliderStyle();
+		_minimum = minimum;
+		_maximum = maximum;
+		_value = Math.Clamp(value, minimum, maximum);
+		Size = (200, 24);
+
+		PointerPressed += OnPointerPressed;
+		PointerMoved += OnPointerMoved;
+		PointerReleased += OnPointerReleased;
+	}
 
 	protected override void ApplyStyle(UIElementState state)
 	{
@@ -107,7 +110,6 @@ public class Slider : UIElement
 	private void OnPointerPressed(VectorInt position)
 	{
 		_isDragging = true;
-		// キャプチャを要求（UIManager経由で設定される想定だが、直接イベント内で値を更新）
 		UpdateValueFromPosition(position);
 	}
 
@@ -133,6 +135,7 @@ public class Slider : UIElement
 		if (trackWidth <= 0) return;
 
 		var normalized = Math.Clamp((worldPos.X - trackStart) / trackWidth, 0f, 1f);
-		Value = _minimum + normalized * (_maximum - _minimum);
+		var raw = _minimum + normalized * (_maximum - _minimum);
+		Value = IntegerOnly ? MathF.Round(raw) : raw;
 	}
 }
