@@ -18,6 +18,7 @@ public class TextInput : UIElement
 	private int _cursorPosition;
 	private int _cursorBlinkCounter;
 	private bool _cursorVisible;
+	private bool _needsBufferFlush;
 	private IUIStyle<TextInput> _style;
 
 	/// <summary>
@@ -35,6 +36,9 @@ public class TextInput : UIElement
 		Add(_textNode);
 		Size = (200, 32);
 		IsFocusable = true;
+		_needsBufferFlush = true;
+
+		GotFocus += () => _needsBufferFlush = true;
 	}
 
 	/// <summary>入力テキストを取得または設定します。</summary>
@@ -110,6 +114,14 @@ public class TextInput : UIElement
 	internal void ProcessInput(Keyboard keyboard)
 	{
 		if (!IsFocused) return;
+
+		// フォーカス直後はバッファに溜まった入力を捨てる
+		if (_needsBufferFlush)
+		{
+			keyboard.GetString();
+			_needsBufferFlush = false;
+			return;
+		}
 
 		// カーソル点滅
 		_cursorBlinkCounter++;
