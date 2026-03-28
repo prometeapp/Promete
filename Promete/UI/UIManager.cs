@@ -17,6 +17,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 	private UIElement? _focusedElement;
 	private UIElement? _pressedElement;
 	private UIElement? _capturedElement;
+	private Vector _lastScroll;
 	private readonly Stack<UIElement> _modalStack = new();
 	private readonly List<UIElement> _elementBuffer = [];
 
@@ -212,7 +213,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 				effectiveTarget.RaisePointerPressed(mouse.Position);
 
 				// ドラッグ可能な要素はキャプチャを自動設定
-				if (effectiveTarget is Slider)
+				if (effectiveTarget is Slider or ScrollView)
 					SetCapture(effectiveTarget);
 
 				// クリックでフォーカスも移動
@@ -269,7 +270,9 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 
 	private void ProcessScroll(UIElement? hitElement)
 	{
-		var scroll = mouse.Scroll;
+		var rawScroll = mouse.Scroll;
+		var scroll = rawScroll - _lastScroll;
+		_lastScroll = rawScroll;
 		if (Math.Abs(scroll.X) < 0.001f && Math.Abs(scroll.Y) < 0.001f) return;
 
 		// ヒットした要素、またはその祖先で最も近い ScrollView を探す

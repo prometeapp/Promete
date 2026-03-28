@@ -105,7 +105,7 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
 			.OnClick(() =>
 			{
 				var modal = new Modal((280, 160));
-				modal.Size = (640, 480);
+                modal.Size = View.Size;
 
 				var label = new Text("モーダルダイアログです", color: Color.White)
 					.Location(20, 20);

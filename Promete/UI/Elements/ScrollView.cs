@@ -13,6 +13,9 @@ public class ScrollView : UIElement
 {
 	private readonly Container _content;
 	private Vector _scrollOffset;
+	private bool _isDragging;
+	private VectorInt _dragStartPos;
+	private Vector _dragStartOffset;
 	private IUIStyle<ScrollView> _style;
 
 	/// <summary>
@@ -29,6 +32,10 @@ public class ScrollView : UIElement
 		base.Add(_content);
 
 		Size = (200, 200);
+
+		PointerPressed += OnPointerPressed;
+		PointerMoved += OnPointerMoved;
+		PointerReleased += OnPointerReleased;
 	}
 
 	/// <summary>コンテンツの論理サイズ。スクロール可能な範囲を決定します。</summary>
@@ -106,9 +113,33 @@ public class ScrollView : UIElement
 		SetScrollOffset(_scrollOffset.X + dx, _scrollOffset.Y + dy);
 	}
 
+	/// <summary>ドラッグ中かどうか。</summary>
+	public bool IsDragging => _isDragging;
+
 	protected override void ApplyStyle(UIElementState state)
 	{
 		_style.Apply(this, state);
+	}
+
+	private void OnPointerPressed(VectorInt position)
+	{
+		_isDragging = true;
+		_dragStartPos = position;
+		_dragStartOffset = _scrollOffset;
+	}
+
+	private void OnPointerMoved(VectorInt position)
+	{
+		if (!_isDragging) return;
+		var delta = position - _dragStartPos;
+		var dx = HorizontalScrollEnabled ? delta.X : 0;
+		var dy = VerticalScrollEnabled ? delta.Y : 0;
+		SetScrollOffset(_dragStartOffset.X + dx, _dragStartOffset.Y + dy);
+	}
+
+	private void OnPointerReleased(VectorInt _)
+	{
+		_isDragging = false;
 	}
 
 	protected override void OnUpdate()
