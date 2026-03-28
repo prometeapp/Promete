@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Promete.Input;
 
-namespace Promete.UI;
+namespace Promete.Input;
 
 /// <summary>
 /// 入力アクションの状態を表します。

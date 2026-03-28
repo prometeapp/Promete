@@ -1,8 +1,7 @@
 using FluentAssertions;
 using Promete.Input;
-using Promete.UI;
 
-namespace Promete.Test.UI;
+namespace Promete.Test.Input;
 
 public class InputMapTests
 {
