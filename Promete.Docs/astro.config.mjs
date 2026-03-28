@@ -71,6 +71,10 @@ export default defineConfig({
             autogenerate: {directory: 'guide/math'},
           },
           {
+            label: 'UI',
+            autogenerate: {directory: 'guide/ui'},
+          },
+          {
             label: 'その他',
             autogenerate: {directory: 'guide/other'},
           },
