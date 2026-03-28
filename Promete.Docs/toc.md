@@ -28,6 +28,7 @@
     - キーボード入力 `/guide/input/keyboard`
     - マウス入力 `/guide/input/mouse`
     - ゲームパッド入力 `/guide/input/gamepad`
+    - InputMap `/guide/input/input-map`
   - オーディオ
     - オーディオプレイヤー `/guide/audio/playback`
     - オーディオソース `/guide/audio/source`
@@ -40,7 +41,6 @@
     - UI要素 `/guide/ui/elements`
     - スタイルシステム `/guide/ui/styles`
     - フォーカスとモーダル `/guide/ui/focus-and-modal`
-    - InputMap `/guide/ui/input-map`
   - その他
     - コルーチン `/guide/other/coroutine`
     - 便利な拡張メソッド `/guide/other/extensions`
