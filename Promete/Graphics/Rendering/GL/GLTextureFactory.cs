@@ -96,7 +96,6 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
                 if (px + size.X > width) throw new ArgumentException(null, nameof(horizontalCount));
                 if (py + size.Y > height) throw new ArgumentException(null, nameof(verticalCount));
 
-                // ハーフピクセル分内側にオフセットし、隣接タイルからのテクスチャブリーディングを防止
                 var uvStart = new Vector(px / width, py / height);
                 var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
 
