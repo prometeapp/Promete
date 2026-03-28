@@ -10,7 +10,7 @@
 
     <PropertyGroup>
         <PackageId>Promete</PackageId>
-        <Version>2.0.0-beta.2</Version>
+        <Version>2.0.0-beta.3</Version>
         <PackageTags>Game Engine;2D;gamedev;games;gaming;windowing;OpenGL</PackageTags>
         <Description>A 2D-specified, lightweight, extensible and easy-to-use game engine.
         </Description>
