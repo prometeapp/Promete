@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Promete.Input;
 using Promete.Nodes;
+using Promete.UI.Elements;
 
 namespace Promete.UI;
 
@@ -15,6 +16,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 	private UIElement? _hoveredElement;
 	private UIElement? _focusedElement;
 	private UIElement? _pressedElement;
+	private UIElement? _capturedElement;
 	private readonly Stack<UIElement> _modalStack = new();
 	private readonly List<UIElement> _elementBuffer = [];
 
@@ -27,8 +29,28 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 	/// <summary>現在のモーダルスタックの最上位要素。</summary>
 	public UIElement? CurrentModal => _modalStack.Count > 0 ? _modalStack.Peek() : null;
 
+	/// <summary>現在マウスキャプチャされている要素。</summary>
+	public UIElement? CapturedElement => _capturedElement;
+
 	/// <summary>モーダルのオーバーレイ領域がクリックされたときに発火します。</summary>
 	public event Action? ModalOverlayClicked;
+
+	/// <summary>
+	/// マウスキャプチャを設定します。
+	/// キャプチャ中はマウスが要素外に出てもドラッグイベントが発生し続けます。
+	/// </summary>
+	public void SetCapture(UIElement? element)
+	{
+		_capturedElement = element;
+	}
+
+	/// <summary>
+	/// マウスキャプチャを解放します。
+	/// </summary>
+	public void ReleaseCapture()
+	{
+		_capturedElement = null;
+	}
 
 	/// <summary>
 	/// モーダルをスタックにプッシュします。
@@ -144,10 +166,16 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 		var leftButton = mouse[MouseButtonType.Left];
 		ProcessMouseButton(leftButton, hitElement);
 
+		// スクロール処理
+		ProcessScroll(hitElement);
+
+		// テキスト入力処理
+		ProcessTextInput();
+
 		// キーボードによるフォーカスナビゲーション
 		ProcessKeyboardNavigation();
 
-		// Enter/Space でフォーカス中の要素をアクティベート
+		// Enter/Space でフォーカス中の要素をアクティベート（TextInput フォーカス中は除外）
 		ProcessFocusActivation();
 	}
 
@@ -172,16 +200,20 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 
 	private void ProcessMouseButton(MouseButton leftButton, UIElement? hitElement)
 	{
+		// キャプチャ中はキャプチャ先にイベントを集中させる
+		var effectiveTarget = _capturedElement ?? hitElement;
+
 		if (leftButton.IsButtonDown)
 		{
-			if (hitElement != null)
+			if (effectiveTarget != null)
 			{
-				_pressedElement = hitElement;
-				hitElement.State |= UIElementState.Pressed;
+				_pressedElement = effectiveTarget;
+				effectiveTarget.State |= UIElementState.Pressed;
+				effectiveTarget.RaisePointerPressed(mouse.Position);
 
 				// クリックでフォーカスも移動
-				if (hitElement.IsFocusable)
-					SetFocus(hitElement);
+				if (effectiveTarget.IsFocusable)
+					SetFocus(effectiveTarget);
 			}
 			else if (_modalStack.Count > 0)
 			{
@@ -195,9 +227,16 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 			}
 		}
 
+		// ドラッグ中（ボタン押下中）のマウス移動
+		if (leftButton.IsPressed && _pressedElement != null)
+		{
+			_pressedElement.RaisePointerMoved(mouse.Position);
+		}
+
 		if (leftButton.IsButtonUp && _pressedElement != null)
 		{
 			_pressedElement.State &= ~UIElementState.Pressed;
+			_pressedElement.RaisePointerReleased(mouse.Position);
 
 			// ボタンダウン時と同じ要素上でリリースされた場合のみ Click
 			if (_pressedElement == hitElement)
@@ -220,9 +259,37 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 		}
 	}
 
+	private void ProcessScroll(UIElement? hitElement)
+	{
+		var scroll = mouse.Scroll;
+		if (Math.Abs(scroll.X) < 0.001f && Math.Abs(scroll.Y) < 0.001f) return;
+
+		// ヒットした要素、またはその祖先で最も近い ScrollView を探す
+		var current = hitElement as Node;
+		while (current != null)
+		{
+			if (current is ScrollView scrollView)
+			{
+				scrollView.ProcessScroll(scroll);
+				return;
+			}
+			current = current.Parent;
+		}
+	}
+
+	private void ProcessTextInput()
+	{
+		if (_focusedElement is TextInput textInput)
+		{
+			textInput.ProcessInput(keyboard);
+		}
+	}
+
 	private void ProcessFocusActivation()
 	{
 		if (_focusedElement == null) return;
+		// TextInput フォーカス中は Enter/Space でアクティベートしない
+		if (_focusedElement is TextInput) return;
 
 		if (keyboard.Enter.IsKeyDown || keyboard.Space.IsKeyDown)
 		{
