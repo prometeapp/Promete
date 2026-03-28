@@ -169,13 +169,13 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 		// スクロール処理
 		ProcessScroll(hitElement);
 
-		// テキスト入力処理
-		ProcessTextInput();
+		// フォーカス中の要素固有の入力処理
+		ProcessFocusedElementInput();
 
 		// キーボードによるフォーカスナビゲーション
 		ProcessKeyboardNavigation();
 
-		// Enter/Space でフォーカス中の要素をアクティベート（TextInput フォーカス中は除外）
+		// Enter/Space でフォーカス中の要素をアクティベート（TextInput/Slider フォーカス中は除外）
 		ProcessFocusActivation();
 	}
 
@@ -211,6 +211,10 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 				effectiveTarget.State |= UIElementState.Pressed;
 				effectiveTarget.RaisePointerPressed(mouse.Position);
 
+				// ドラッグ可能な要素はキャプチャを自動設定
+				if (effectiveTarget is Slider)
+					SetCapture(effectiveTarget);
+
 				// クリックでフォーカスも移動
 				if (effectiveTarget.IsFocusable)
 					SetFocus(effectiveTarget);
@@ -237,6 +241,10 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 		{
 			_pressedElement.State &= ~UIElementState.Pressed;
 			_pressedElement.RaisePointerReleased(mouse.Position);
+
+			// キャプチャを解放
+			if (_capturedElement == _pressedElement)
+				ReleaseCapture();
 
 			// ボタンダウン時と同じ要素上でリリースされた場合のみ Click
 			if (_pressedElement == hitElement)
@@ -277,19 +285,24 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 		}
 	}
 
-	private void ProcessTextInput()
+	private void ProcessFocusedElementInput()
 	{
-		if (_focusedElement is TextInput textInput)
+		switch (_focusedElement)
 		{
-			textInput.ProcessInput(keyboard);
+			case TextInput textInput:
+				textInput.ProcessInput(keyboard);
+				break;
+			case Slider slider:
+				slider.ProcessKeyboardInput(keyboard);
+				break;
 		}
 	}
 
 	private void ProcessFocusActivation()
 	{
 		if (_focusedElement == null) return;
-		// TextInput フォーカス中は Enter/Space でアクティベートしない
-		if (_focusedElement is TextInput) return;
+		// TextInput/Slider フォーカス中は Enter/Space でアクティベートしない
+		if (_focusedElement is TextInput or Slider) return;
 
 		if (keyboard.Enter.IsKeyDown || keyboard.Space.IsKeyDown)
 		{

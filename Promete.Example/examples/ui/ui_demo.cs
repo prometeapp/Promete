@@ -89,7 +89,7 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
 			.Location(30, 325);
 		Root.Add(sliderLabel);
 
-		var slider = new Slider(0, 100, 50)
+		var slider = new Slider(0, 5, 3)
 			.Location(30, 350)
 			.Size(200, 28)
 			.NavigationOrder(5);
