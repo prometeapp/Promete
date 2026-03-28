@@ -97,6 +97,31 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
 
 		slider.ValueChanged += v => statusText.Content = $"スライダー値: {v:F1}";
 
+		// --- モーダルボタン ---
+		var modalButton = new Button("モーダルを開く")
+			.Location(30, 400)
+			.Size(180, 45)
+			.NavigationOrder(6)
+			.OnClick(() =>
+			{
+				var modal = new Modal((280, 160));
+				modal.Size = (640, 480);
+
+				var label = new Text("モーダルダイアログです", color: Color.White)
+					.Location(20, 20);
+				modal.Body.Add(label);
+
+				var closeBtn = new Button("閉じる")
+					.Location(90, 100)
+					.Size(100, 40)
+					.OnClick(() => modal.Close());
+				modal.Body.Add(closeBtn);
+
+				modal.Show(uiManager, Root);
+				statusText.Content = "モーダルが開きました (外側クリックでも閉じます)";
+			});
+		Root.Add(modalButton);
+
 		// ========== 右カラム ==========
 
 		// --- テキスト入力 ---
