@@ -1,4 +1,4 @@
-﻿using ImGuiNET;
+using ImGuiNET;
 using Promete.Backends.GL;
 using Promete.Backends.SilkNetCommon;
 using Silk.NET.OpenGL.Extensions.ImGui;
@@ -13,6 +13,13 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
 {
     private ImGuiController _controller;
 
+    public event Action? Render;
+
+    /// <summary>
+    /// ウィンドウのスケーリング値と同期するかどうかを取得または設定します。
+    /// </summary>
+    public bool IsSyncronizeWithWindowScaling { get; set; }
+
     public void OnStart()
     {
         // PrometeがOpenGLバックエンドでなければ例外をスローする
@@ -24,11 +31,6 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
         app.Destroy += OnWindowDestroy;
         app.PostRender += OnWindowRender;
     }
-
-    /// <summary>
-    /// ウィンドウのスケーリング値と同期するかどうかを取得または設定します。
-    /// </summary>
-    public bool IsSyncronizeWithWindowScaling { get; set; }
 
     /// <summary>
     /// ImGUIの初期設定を行います。
@@ -57,6 +59,4 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
     {
         _controller.Dispose();
     }
-
-    public event Action? Render;
 }

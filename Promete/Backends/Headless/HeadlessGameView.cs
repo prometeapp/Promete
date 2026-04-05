@@ -26,10 +26,10 @@ public class HeadlessGameView : IGameView
     public string Title { get; set; } = "";
     public WindowMode Mode { get; set; }
 
+    public event Action<FileDroppedEventArgs>? FileDropped;
+    public event Action? Resize;
+
     public Texture2D TakeScreenshot() => default;
 
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default) => Task.CompletedTask;
-
-    public event Action<FileDroppedEventArgs>? FileDropped;
-    public event Action? Resize;
 }

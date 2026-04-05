@@ -16,10 +16,6 @@ namespace Promete.Backends.GL;
 
 public class OpenGLDesktopGameView : IGameView
 {
-    public Silk.NET.OpenGL.GL GL { get; set; } = null!;
-
-    public IWindow NativeWindow { get; }
-
     private byte[] _screenshotBuffer = [];
     private readonly PrometeApp _app;
     private readonly TextureFactoryBase _textureFactory;
@@ -34,6 +30,10 @@ public class OpenGLDesktopGameView : IGameView
         NativeWindow.FileDrop += OnFileDrop;
         window.FocusChanged += v => IsFocused = v;
     }
+
+    public Silk.NET.OpenGL.GL GL { get; set; } = null!;
+
+    public IWindow NativeWindow { get; }
 
     public VectorInt Location
     {
@@ -147,6 +147,9 @@ public class OpenGLDesktopGameView : IGameView
         };
     }
 
+    public event Action<FileDroppedEventArgs>? FileDropped;
+    public event Action? Resize;
+
     public Texture2D TakeScreenshot()
     {
         return _textureFactory.LoadFromImageSharpImage(TakeScreenshotAsImage());
@@ -197,7 +200,4 @@ public class OpenGLDesktopGameView : IGameView
     {
         FileDropped?.Invoke(new FileDroppedEventArgs(files));
     }
-
-    public event Action<FileDroppedEventArgs>? FileDropped;
-    public event Action? Resize;
 }

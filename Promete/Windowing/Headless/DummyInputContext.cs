@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Silk.NET.Input;
 
@@ -6,6 +6,8 @@ namespace Promete.Windowing.Headless;
 
 public class DummyInputContext : IInputContext
 {
+    public event Action<IInputDevice, bool>? ConnectionChanged;
+
     public IntPtr Handle => IntPtr.Zero;
     public IReadOnlyList<IGamepad> Gamepads { get; } = [];
     public IReadOnlyList<IJoystick> Joysticks { get; } = [];
@@ -17,6 +19,4 @@ public class DummyInputContext : IInputContext
     {
         GC.SuppressFinalize(this);
     }
-
-    public event Action<IInputDevice, bool>? ConnectionChanged;
 }

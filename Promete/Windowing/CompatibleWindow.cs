@@ -12,6 +12,54 @@ namespace Promete.Windowing;
 /// </summary>
 public class CompatibleWindow(PrometeApp app) : IWindow
 {
+    public event Action? Start
+    {
+        add => app.Start += value;
+        remove => app.Start -= value;
+    }
+
+    public event Action? Update
+    {
+        add => app.Update += value;
+        remove => app.Update -= value;
+    }
+
+    public event Action? Render
+    {
+        add => app.Render += value;
+        remove => app.Render -= value;
+    }
+
+    public event Action? Destroy
+    {
+        add => app.Destroy += value;
+        remove => app.Destroy -= value;
+    }
+
+    public event Action? PreUpdate
+    {
+        add => app.PreUpdate += value;
+        remove => app.PreUpdate -= value;
+    }
+
+    public event Action? PostUpdate
+    {
+        add => app.PostUpdate += value;
+        remove => app.PostUpdate -= value;
+    }
+
+    public event Action<FileDroppedEventArgs>? FileDropped
+    {
+        add => app.View.FileDropped += value;
+        remove => app.View.FileDropped -= value;
+    }
+
+    public event Action? Resize
+    {
+        add => app.View.Resize += value;
+        remove => app.View.Resize -= value;
+    }
+
     public VectorInt Location
     {
         get => app.View.Location;
@@ -136,52 +184,4 @@ public class CompatibleWindow(PrometeApp app) : IWindow
 
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default) =>
         app.View.SaveScreenshotAsync(path, ct);
-
-    public event Action? Start
-    {
-        add => app.Start += value;
-        remove => app.Start -= value;
-    }
-
-    public event Action? Update
-    {
-        add => app.Update += value;
-        remove => app.Update -= value;
-    }
-
-    public event Action? Render
-    {
-        add => app.Render += value;
-        remove => app.Render -= value;
-    }
-
-    public event Action? Destroy
-    {
-        add => app.Destroy += value;
-        remove => app.Destroy -= value;
-    }
-
-    public event Action? PreUpdate
-    {
-        add => app.PreUpdate += value;
-        remove => app.PreUpdate -= value;
-    }
-
-    public event Action? PostUpdate
-    {
-        add => app.PostUpdate += value;
-        remove => app.PostUpdate -= value;
-    }
-
-    public event Action<FileDroppedEventArgs>? FileDropped
-    {
-        add => app.View.FileDropped += value;
-        remove => app.View.FileDropped -= value;
-    }
-
-    public event Action? Resize
-    {
-        add => app.View.Resize += value;
-        remove => app.View.Resize -= value;
-    }
 }

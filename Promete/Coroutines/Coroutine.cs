@@ -15,6 +15,11 @@ public class Coroutine : YieldInstruction
 
     internal bool IsKeepAlive;
 
+    internal Coroutine(IEnumerator runningAction)
+    {
+        _runningAction = runningAction;
+    }
+
     /// <summary>
     /// コルーチンが実行中かどうかを示す値を取得します。
     /// </summary>
@@ -34,11 +39,6 @@ public class Coroutine : YieldInstruction
     public Action<Exception>? ErrorAction { get; private set; }
 
     internal object? Current => _runningAction.Current;
-
-    internal Coroutine(IEnumerator runningAction)
-    {
-        _runningAction = runningAction;
-    }
 
     internal void Start()
     {

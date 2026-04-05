@@ -21,6 +21,19 @@ namespace Promete.Nodes;
 public class MaskedContainer : Container
 {
     /// <summary>
+    /// MaskedContainer の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="maskTexture">マスクに使用するテクスチャ。nullの場合は通常のContainerとして動作します。</param>
+    /// <param name="useAlphaMask">アルファブレンディングを使用するかどうか。デフォルトはfalse（ステンシルバッファ方式）。</param>
+    /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
+    public MaskedContainer(Texture2D? maskTexture = null, bool useAlphaMask = false, bool isTrimmable = false)
+        : base(isTrimmable)
+    {
+        MaskTexture = maskTexture;
+        UseAlphaMask = useAlphaMask;
+    }
+
+    /// <summary>
     /// マスクに使用するテクスチャを取得または設定します。
     /// </summary>
     /// <remarks>
@@ -41,19 +54,6 @@ public class MaskedContainer : Container
     /// </para>
     /// </remarks>
     public bool UseAlphaMask { get; set; } = false;
-
-    /// <summary>
-    /// MaskedContainer の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="maskTexture">マスクに使用するテクスチャ。nullの場合は通常のContainerとして動作します。</param>
-    /// <param name="useAlphaMask">アルファブレンディングを使用するかどうか。デフォルトはfalse（ステンシルバッファ方式）。</param>
-    /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
-    public MaskedContainer(Texture2D? maskTexture = null, bool useAlphaMask = false, bool isTrimmable = false)
-        : base(isTrimmable)
-    {
-        MaskTexture = maskTexture;
-        UseAlphaMask = useAlphaMask;
-    }
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {

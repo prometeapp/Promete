@@ -1,4 +1,4 @@
-﻿using MeltySynth;
+using MeltySynth;
 using Promete.Audio;
 
 namespace Promete.MeltySynth;

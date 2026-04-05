@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -15,6 +15,16 @@ public class HeadlessWindow : IWindow
     private bool _isExitRequested;
 
     private int _scale = 1;
+
+    public event Action? Start;
+    public event Action? Update;
+    public event Action? Render;
+    public event Action? Destroy;
+    public event Action? PreUpdate;
+    public event Action? PostUpdate;
+    public event Action<FileDroppedEventArgs>? FileDropped;
+    public event Action? Resize;
+
     public VectorInt Location { get; set; }
 
     public VectorInt Size { get; set; }
@@ -128,15 +138,6 @@ public class HeadlessWindow : IWindow
     {
         return Task.Delay(0, ct);
     }
-
-    public event Action? Start;
-    public event Action? Update;
-    public event Action? Render;
-    public event Action? Destroy;
-    public event Action? PreUpdate;
-    public event Action? PostUpdate;
-    public event Action<FileDroppedEventArgs>? FileDropped;
-    public event Action? Resize;
 
     private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
     {

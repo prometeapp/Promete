@@ -20,21 +20,6 @@ namespace Promete.Graphics.Fonts;
 /// </summary>
 public class Font : IFont
 {
-    /// <summary>
-    /// フォントサイズを取得します。
-    /// </summary>
-    public float Size { get; }
-
-    /// <summary>
-    /// フォントスタイルを取得します。
-    /// </summary>
-    public FontStyle Style { get; }
-
-    /// <summary>
-    /// アンチエイリアスが有効かどうかを取得します。
-    /// </summary>
-    public bool IsAntialiased { get; }
-
     private const char ZeroWidthSpace = '\u200B';
 
     private static readonly Dictionary<object, FontFamily> FontCache = new();
@@ -74,6 +59,21 @@ public class Font : IFont
         Style = style;
         IsAntialiased = isAntialiased;
     }
+
+    /// <summary>
+    /// フォントサイズを取得します。
+    /// </summary>
+    public float Size { get; }
+
+    /// <summary>
+    /// フォントスタイルを取得します。
+    /// </summary>
+    public FontStyle Style { get; }
+
+    /// <summary>
+    /// アンチエイリアスが有効かどうかを取得します。
+    /// </summary>
+    public bool IsAntialiased { get; }
 
     /// <inheritdoc />
     public Rect GetTextBounds(string text, TextRenderingOptions options)
