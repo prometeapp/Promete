@@ -7,7 +7,18 @@ namespace Promete;
 /// </summary>
 public struct Angle : IEquatable<Angle>
 {
+    /// <summary>
+    /// 0度を表す <see cref="Angle"/> です。
+    /// </summary>
+    public static readonly Angle Zero = new(0);
+
     private float _degrees;
+
+    private Angle(float degrees)
+    {
+        _degrees = degrees;
+    }
+
 
     /// <summary>
     /// 角度を度数法の <c>float</c> 値として返します。
@@ -19,11 +30,6 @@ public struct Angle : IEquatable<Angle>
     /// </summary>
     public float ToRadians() => _degrees * MathF.PI / 180f;
 
-    private Angle(float degrees)
-    {
-        _degrees = degrees;
-    }
-
     /// <summary>
     /// 度数法の値から <see cref="Angle"/> を生成します。
     /// </summary>
@@ -33,11 +39,6 @@ public struct Angle : IEquatable<Angle>
     /// ラジアンの値から <see cref="Angle"/> を生成します。
     /// </summary>
     public static Angle FromRadians(float radians) => new(radians * 180f / MathF.PI);
-
-    /// <summary>
-    /// 0度を表す <see cref="Angle"/> です。
-    /// </summary>
-    public static readonly Angle Zero = new(0);
 
     // --- 算術演算子 ---
 

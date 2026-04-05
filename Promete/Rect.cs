@@ -6,6 +6,29 @@ namespace Promete;
 public struct Rect
 {
     /// <summary>
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="location">位置。</param>
+    /// <param name="size">サイズ。</param>
+    public Rect(Vector location, Vector size)
+    {
+        Location = location;
+        Size = size;
+    }
+
+    /// <summary>
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="left">左の位置。</param>
+    /// <param name="top">上の位置。</param>
+    /// <param name="width">幅。</param>
+    /// <param name="height">高さ。</param>
+    public Rect(float left, float top, float width, float height)
+        : this(new Vector(left, top), new Vector(width, height))
+    {
+    }
+
+    /// <summary>
     /// この矩形の位置を取得または設定します。
     /// </summary>
     public Vector Location { get; set; }
@@ -73,29 +96,6 @@ public struct Rect
     /// この矩形の中心の座標を取得します。
     /// </summary>
     public Vector Center => Location + (Size / 2);
-
-    /// <summary>
-    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="location">位置。</param>
-    /// <param name="size">サイズ。</param>
-    public Rect(Vector location, Vector size)
-    {
-        Location = location;
-        Size = size;
-    }
-
-    /// <summary>
-    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="left">左の位置。</param>
-    /// <param name="top">上の位置。</param>
-    /// <param name="width">幅。</param>
-    /// <param name="height">高さ。</param>
-    public Rect(float left, float top, float width, float height)
-        : this(new Vector(left, top), new Vector(width, height))
-    {
-    }
 
     public void Deconstruct(out float x, out float y, out float width, out float height)
     {
