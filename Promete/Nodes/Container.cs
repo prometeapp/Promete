@@ -26,12 +26,6 @@ public class Container : ContainableNode, IEnumerable<Node>
     public int Count => children.Count;
 
     /// <summary>
-    /// 指定されたインデックスの子ノードを取得します。
-    /// </summary>
-    /// <param name="index">取得する子ノードのインデックス</param>
-    public Node this[int index] => children[index];
-
-    /// <summary>
     /// 範囲外に出た子ノードを描画するかどうかを取得または設定します。
     /// </summary>
     public bool IsTrimmable
@@ -39,6 +33,12 @@ public class Container : ContainableNode, IEnumerable<Node>
         get => isTrimmable;
         set => isTrimmable = value;
     }
+
+    /// <summary>
+    /// 指定されたインデックスの子ノードを取得します。
+    /// </summary>
+    /// <param name="index">取得する子ノードのインデックス</param>
+    public Node this[int index] => children[index];
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {

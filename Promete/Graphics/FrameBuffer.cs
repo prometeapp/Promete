@@ -53,11 +53,6 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     public int Count => _children.Count;
 
     /// <summary>
-    /// このフレームバッファの子ノードを取得または設定します。
-    /// </summary>
-    public Node this[int index] => _children[index];
-
-    /// <summary>
     /// このフレームバッファのサイズを取得します。
     /// </summary>
     public VectorInt Size
@@ -102,6 +97,11 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// ソート済みの子ノードのリストを取得します。
     /// </summary>
     public IReadOnlyList<Node> SortedChildren => _children.sortedChildren;
+
+    /// <summary>
+    /// このフレームバッファの子ノードを取得または設定します。
+    /// </summary>
+    public Node this[int index] => _children[index];
 
     internal void BeforeRender()
     {
