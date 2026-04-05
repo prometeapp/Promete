@@ -8,8 +8,11 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="BeginStencilMaskCommand"/> でステンシルマスクの書き込みフェーズを開始するランナーです。
 /// </summary>
-public class GLBeginStencilMaskCommandRunner(IGameView view, GLMaskedContainerHelper maskHelper, GLRenderState state)
-    : CommandRunner<BeginStencilMaskCommand>
+public class GLBeginStencilMaskCommandRunner(
+    IGameView view,
+    GLMaskedContainerHelper maskHelper,
+    GLRenderState state
+) : CommandRunner<BeginStencilMaskCommand>
 {
     private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
 

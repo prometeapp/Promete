@@ -1,4 +1,3 @@
-
 namespace Promete.Backends.SilkNetCommon;
 
 public class SilkNetCommonTimeProvider : ITimeProvider

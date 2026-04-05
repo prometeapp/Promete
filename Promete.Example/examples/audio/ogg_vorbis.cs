@@ -22,23 +22,25 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
     public override void OnUpdate()
     {
         console.Clear();
-        console.Print($"""
-                       Location: {_audio.Time / 1000f:0.000} / {_audio.Length / 1000f:0.000}
-                       Location in Samples: {_audio.TimeInSamples} / {_audio.LengthInSamples}
-                       Loaded: {_bgm.LoadedSize} / {_bgm.Samples}
-                       Volume: {_audio.Gain}
-                       Pitch: {_audio.Pitch}
-                       Pan: {_audio.Pan}
-                       Is Playing: {_audio.IsPlaying}
-                       Is Pausing: {_audio.IsPausing}
-                       [↑] Volume Up
-                       [↓] Volume Down
-                       [←] Pitch Down
-                       [→] Pitch Up
-                       [A] Pan Left
-                       [D] Pan Right
-                       PRESS ESC TO RETURN
-                       """);
+        console.Print(
+            $"""
+            Location: {_audio.Time / 1000f:0.000} / {_audio.Length / 1000f:0.000}
+            Location in Samples: {_audio.TimeInSamples} / {_audio.LengthInSamples}
+            Loaded: {_bgm.LoadedSize} / {_bgm.Samples}
+            Volume: {_audio.Gain}
+            Pitch: {_audio.Pitch}
+            Pan: {_audio.Pan}
+            Is Playing: {_audio.IsPlaying}
+            Is Pausing: {_audio.IsPausing}
+            [↑] Volume Up
+            [↓] Volume Down
+            [←] Pitch Down
+            [→] Pitch Up
+            [A] Pan Left
+            [D] Pan Right
+            PRESS ESC TO RETURN
+            """
+        );
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
@@ -89,7 +91,8 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
     private void WindowOnFileDropped(FileDroppedEventArgs e)
     {
         var path = e.Path;
-        if (!path.EndsWith(".ogg")) return;
+        if (!path.EndsWith(".ogg"))
+            return;
 
         _audio.Stop();
         _bgm = new VorbisAudioSource(path);

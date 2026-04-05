@@ -46,13 +46,15 @@ public class OpenGLDesktopGameView : IGameView
         get;
         set
         {
-            if (field == value) return;
+            if (field == value)
+                return;
             field = value;
             UpdateWindowSize();
         }
     } = (640, 480);
 
-    public VectorInt ActualSize => new VectorInt(NativeWindow.FramebufferSize.X, NativeWindow.FramebufferSize.Y) / Scale;
+    public VectorInt ActualSize =>
+        new VectorInt(NativeWindow.FramebufferSize.X, NativeWindow.FramebufferSize.Y) / Scale;
 
     public int Scale
     {
@@ -60,7 +62,10 @@ public class OpenGLDesktopGameView : IGameView
         set
         {
             if (value is not 1 and not 2 and not 4 and not 8)
-                throw new ArgumentOutOfRangeException(nameof(value), "Scale must be 1, 2, 4, or 8.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "Scale must be 1, 2, 4, or 8."
+                );
             field = value;
             UpdateWindowSize();
         }
@@ -114,16 +119,16 @@ public class OpenGLDesktopGameView : IGameView
         set => NativeWindow.TopMost = value;
     }
 
-    public float PixelRatio => NativeWindow.Size.X == 0
-        ? 1
-        : NativeWindow.FramebufferSize.X / NativeWindow.Size.X;
+    public float PixelRatio =>
+        NativeWindow.Size.X == 0 ? 1 : NativeWindow.FramebufferSize.X / NativeWindow.Size.X;
 
     public string Title
     {
         get => NativeWindow.Title;
         set
         {
-            if (NativeWindow.Title == value) return;
+            if (NativeWindow.Title == value)
+                return;
             NativeWindow.Title = value;
             MacNativeHelper.SetMenuBarTitle(value);
         }
@@ -131,20 +136,22 @@ public class OpenGLDesktopGameView : IGameView
 
     public WindowMode Mode
     {
-        get => NativeWindow.WindowBorder switch
-        {
-            WindowBorder.Fixed => WindowMode.Fixed,
-            WindowBorder.Hidden => WindowMode.NoFrame,
-            WindowBorder.Resizable => WindowMode.Resizable,
-            _ => throw new InvalidOperationException("unexpected window state")
-        };
-        set => NativeWindow.WindowBorder = value switch
-        {
-            WindowMode.Fixed => WindowBorder.Fixed,
-            WindowMode.NoFrame => WindowBorder.Hidden,
-            WindowMode.Resizable => WindowBorder.Resizable,
-            _ => throw new ArgumentException(null, nameof(value))
-        };
+        get =>
+            NativeWindow.WindowBorder switch
+            {
+                WindowBorder.Fixed => WindowMode.Fixed,
+                WindowBorder.Hidden => WindowMode.NoFrame,
+                WindowBorder.Resizable => WindowMode.Resizable,
+                _ => throw new InvalidOperationException("unexpected window state"),
+            };
+        set =>
+            NativeWindow.WindowBorder = value switch
+            {
+                WindowMode.Fixed => WindowBorder.Fixed,
+                WindowMode.NoFrame => WindowBorder.Hidden,
+                WindowMode.Resizable => WindowBorder.Resizable,
+                _ => throw new ArgumentException(null, nameof(value)),
+            };
     }
 
     public event Action<FileDroppedEventArgs>? FileDropped;
@@ -173,11 +180,22 @@ public class OpenGLDesktopGameView : IGameView
     {
         fixed (byte* buffer = _screenshotBuffer)
         {
-            GL?.ReadPixels(0, 0, (uint)(ActualWidth * Scale), (uint)(ActualHeight * Scale), PixelFormat.Rgba,
-                PixelType.UnsignedByte, buffer);
+            GL?.ReadPixels(
+                0,
+                0,
+                (uint)(ActualWidth * Scale),
+                (uint)(ActualHeight * Scale),
+                PixelFormat.Rgba,
+                PixelType.UnsignedByte,
+                buffer
+            );
         }
 
-        var img = Image.LoadPixelData<Rgba32>(_screenshotBuffer, ActualWidth * Scale, ActualHeight * Scale);
+        var img = Image.LoadPixelData<Rgba32>(
+            _screenshotBuffer,
+            ActualWidth * Scale,
+            ActualHeight * Scale
+        );
         img.Mutate(i => i.Flip(FlipMode.Vertical));
         return img;
     }

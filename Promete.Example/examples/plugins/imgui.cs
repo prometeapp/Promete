@@ -21,7 +21,8 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyUp) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyUp)
+            App.LoadScene<MainScene>();
     }
 
     public override void OnDestroy()
@@ -36,18 +37,22 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
         UI.Begin("ImGui Window");
 
         UI.Text("Hello, ImGui from Promete!");
-        if (UI.Button($"{(ichigo == null ? "Show" : "Hide")} Ichigo")) ToggleIchigo();
+        if (UI.Button($"{(ichigo == null ? "Show" : "Hide")} Ichigo"))
+            ToggleIchigo();
 
         if (ichigo != null)
         {
             var alpha = (int)ichigo.TintColor.A;
-            if (UI.DragInt("alpha", ref alpha, 1, 0, 255)) ichigo.TintColor = Color.FromArgb(alpha, ichigo.TintColor);
+            if (UI.DragInt("alpha", ref alpha, 1, 0, 255))
+                ichigo.TintColor = Color.FromArgb(alpha, ichigo.TintColor);
 
             var vec = ichigo.Size.ToNumerics();
-            if (UI.DragFloat2("size", ref vec)) ichigo.Size = vec.ToPrometeInt();
+            if (UI.DragFloat2("size", ref vec))
+                ichigo.Size = vec.ToPrometeInt();
         }
 
-        if (UI.Button("Back")) App.LoadScene<MainScene>();
+        if (UI.Button("Back"))
+            App.LoadScene<MainScene>();
         UI.End();
 
         UI.ShowDemoWindow();
@@ -58,9 +63,7 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
         if (ichigo == null)
         {
             var texture = App.Window.TextureFactory.Load("./assets/ichigo.png");
-            ichigo = new Sprite(texture)
-                .Location(16, 16)
-                .Scale(4, 4);
+            ichigo = new Sprite(texture).Location(16, 16).Scale(4, 4);
             Root.Add(ichigo);
         }
         else

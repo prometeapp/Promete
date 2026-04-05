@@ -144,8 +144,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// </summary>
     public bool Equals(VectorInt other)
     {
-        return X == other.X &&
-               Y == other.Y;
+        return X == other.X && Y == other.Y;
     }
 
     /// <summary>
@@ -187,8 +186,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     {
         var topLeft = rect.Location;
         var bottomRight = rect.Location + rect.Size - One;
-        return X >= topLeft.X && X <= bottomRight.X &&
-               Y >= topLeft.Y && Y <= bottomRight.Y;
+        return X >= topLeft.X && X <= bottomRight.X && Y >= topLeft.Y && Y <= bottomRight.Y;
     }
 
     /// <summary>

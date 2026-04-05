@@ -20,7 +20,8 @@ public class FrameBufferManager
         foreach (var frameBuffer in ActiveFrameBuffers)
         {
             frameBuffer.BeforeRender();
-            if (frameBuffer.AutoRender) frameBuffer.Render();
+            if (frameBuffer.AutoRender)
+                frameBuffer.Render();
         }
     }
 

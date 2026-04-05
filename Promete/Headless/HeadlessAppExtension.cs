@@ -14,7 +14,10 @@ public static class HeadlessAppExtension
     /// <param name="builder">Prometeアプリケーションビルダー</param>
     /// <param name="opts">ウィンドウオプション</param>
     /// <returns>構築されたPrometeアプリケーション</returns>
-    public static PrometeApp BuildWithHeadless(this PrometeApp.PrometeAppBuilder builder, WindowOptions? opts = null)
+    public static PrometeApp BuildWithHeadless(
+        this PrometeApp.PrometeAppBuilder builder,
+        WindowOptions? opts = null
+    )
     {
         return builder.Build<HeadlessBackend>(opts);
     }

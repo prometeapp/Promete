@@ -24,7 +24,14 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
 
     public override void Execute(DrawPrimitiveCommand command)
     {
-        Draw(command.WorldVertices, command.ShapeType, command.Color, command.LineWidth, command.LineColor, command.Material);
+        Draw(
+            command.WorldVertices,
+            command.ShapeType,
+            command.Color,
+            command.LineWidth,
+            command.LineColor,
+            command.Material
+        );
     }
 
     /// <summary>
@@ -36,8 +43,14 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
     /// <param name="lineWidth">線の幅。GPUによってはサポートされません。</param>
     /// <param name="lineColor">線の色。</param>
     /// <param name="material">適用するマテリアル。null の場合はデフォルトシェーダーを使用します。</param>
-    public unsafe void Draw(Span<Vector> worldVertices, ShapeType type, Color color, int lineWidth = 0,
-        Color? lineColor = null, Material? material = null)
+    public unsafe void Draw(
+        Span<Vector> worldVertices,
+        ShapeType type,
+        Color color,
+        int lineWidth = 0,
+        Color? lineColor = null,
+        Material? material = null
+    )
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         if (worldVertices.Length == 0)
@@ -64,8 +77,10 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
         // 描画開始
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, // RGB
-            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
+            BlendingFactor.SrcAlpha,
+            BlendingFactor.OneMinusSrcAlpha, // RGB
+            BlendingFactor.One,
+            BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
         DrawFill(vertices, type, color, lineWidth, program, material);
@@ -77,9 +92,16 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
     /// <summary>
     /// 図形の線を描画します。
     /// </summary>
-    private unsafe void DrawStroke(Span<float> vertices, int lineWidth, Color? lineColor, uint program, Material? material)
+    private unsafe void DrawStroke(
+        Span<float> vertices,
+        int lineWidth,
+        Color? lineColor,
+        uint program,
+        Material? material
+    )
     {
-        if (lineWidth <= 0 || lineColor is not { } lc) return;
+        if (lineWidth <= 0 || lineColor is not { } lc)
+            return;
         var gl = _view.GL;
 
         gl.LineWidth(lineWidth);
@@ -93,11 +115,20 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
         gl.UseProgram(program);
 
         // 頂点属性を設定
-        gl.VertexAttribPointer(0, 2, GLEnum.Float, false, 2 * sizeof(float), (void*)(0 * sizeof(float)));
+        gl.VertexAttribPointer(
+            0,
+            2,
+            GLEnum.Float,
+            false,
+            2 * sizeof(float),
+            (void*)(0 * sizeof(float))
+        );
         gl.EnableVertexAttribArray(0);
 
         // シェーダーに線の色を渡す
-        var tintLoc = material is not null ? GLMaterialApplier.GetLocation(gl, program, "uTintColor") : _uTintColor;
+        var tintLoc = material is not null
+            ? GLMaterialApplier.GetLocation(gl, program, "uTintColor")
+            : _uTintColor;
         if (tintLoc >= 0)
             gl.Uniform4(tintLoc, new Vector4(lc.R / 255f, lc.G / 255f, lc.B / 255f, lc.A / 255f));
 
@@ -111,13 +142,22 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
     /// <summary>
     /// 図形の塗りつぶし領域を描画します。
     /// </summary>
-    private unsafe void DrawFill(Span<float> vertices, ShapeType type, Color color, int lineWidth, uint program, Material? material)
+    private unsafe void DrawFill(
+        Span<float> vertices,
+        ShapeType type,
+        Color color,
+        int lineWidth,
+        uint program,
+        Material? material
+    )
     {
         // 透明度が0未満の場合は、塗りつぶし領域の描画をスキップする
-        if (color.A <= 0) return;
+        if (color.A <= 0)
+            return;
 
         var gl = _view.GL;
-        if (type == ShapeType.Line) gl.LineWidth(lineWidth);
+        if (type == ShapeType.Line)
+            gl.LineWidth(lineWidth);
 
         // すべての頂点データをバッファに書き込む
         gl.BindVertexArray(_vao);
@@ -128,13 +168,25 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
         gl.UseProgram(program);
 
         // 頂点属性を設定
-        gl.VertexAttribPointer(0, 2, GLEnum.Float, false, 2 * sizeof(float), (void*)(0 * sizeof(float)));
+        gl.VertexAttribPointer(
+            0,
+            2,
+            GLEnum.Float,
+            false,
+            2 * sizeof(float),
+            (void*)(0 * sizeof(float))
+        );
         gl.EnableVertexAttribArray(0);
 
         // シェーダーに色データを渡す
-        var tintLoc = material is not null ? GLMaterialApplier.GetLocation(gl, program, "uTintColor") : _uTintColor;
+        var tintLoc = material is not null
+            ? GLMaterialApplier.GetLocation(gl, program, "uTintColor")
+            : _uTintColor;
         if (tintLoc >= 0)
-            gl.Uniform4(tintLoc, new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
+            gl.Uniform4(
+                tintLoc,
+                new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f)
+            );
 
         if (material is not null)
             GLMaterialApplier.Apply(gl, program, material);
@@ -144,11 +196,7 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
         if (type == ShapeType.Rect)
         {
             gl.BindBuffer(GLEnum.ElementArrayBuffer, _ebo);
-            Span<uint> indices =
-            [
-                0, 1, 2,
-                0, 2, 3
-            ];
+            Span<uint> indices = [0, 1, 2, 0, 2, 3];
             gl.BufferData<uint>(GLEnum.ElementArrayBuffer, indices, GLEnum.StaticDraw);
             gl.DrawElements(GLEnum.Triangles, (uint)indices.Length, GLEnum.UnsignedInt, null);
             return;
@@ -160,7 +208,8 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
 
     private void EnsureInitialized()
     {
-        if (_initialized) return;
+        if (_initialized)
+            return;
         Initialize();
         _initialized = true;
     }
@@ -171,12 +220,18 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
         var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.vert"));
+        gl.ShaderSource(
+            vsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.vert")
+        );
         gl.CompileShader(vsh);
 
         // フラグメントシェーダーをリソースから読み込んでコンパイルする
         var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(fsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.frag"));
+        gl.ShaderSource(
+            fsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.frag")
+        );
         gl.CompileShader(fsh);
 
         // コンパイルした2つのシェーダーをリンクする
@@ -212,7 +267,7 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
             ShapeType.Rect => PrimitiveType.TriangleStrip,
             ShapeType.Triangle => PrimitiveType.Triangles,
             ShapeType.Polygon => PrimitiveType.TriangleStrip,
-            _ => throw new ArgumentException(null, nameof(type))
+            _ => throw new ArgumentException(null, nameof(type)),
         };
     }
 }

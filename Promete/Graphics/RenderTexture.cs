@@ -34,8 +34,8 @@ public sealed class RenderTexture : IDisposable
     /// </summary>
     /// <param name="clearColor">クリアする色。null の場合はクリアしない。</param>
     /// <returns>Dispose() でキャプチャを終了するスコープ。</returns>
-    public IDisposable BeginCapture(Color? clearColor = null)
-        => _provider.BeginCapture(this, clearColor);
+    public IDisposable BeginCapture(Color? clearColor = null) =>
+        _provider.BeginCapture(this, clearColor);
 
     /// <summary>
     /// サイズを変更します。
@@ -51,7 +51,8 @@ public sealed class RenderTexture : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
         _provider.Release(this);
     }

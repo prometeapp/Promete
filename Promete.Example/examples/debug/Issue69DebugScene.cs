@@ -18,9 +18,7 @@ public class Issue69DebugScene : Scene
 
     private readonly Sprite _obj = new();
 
-    private readonly Container _container = new Container()
-        .Location(32, 32)
-        .Size(32, 32);
+    private readonly Container _container = new Container().Location(32, 32).Size(32, 32);
 
     public Issue69DebugScene(Keyboard keyboard)
     {
@@ -45,10 +43,14 @@ public class Issue69DebugScene : Scene
         }
 
         // キャラを動かす
-        if (_keyboard.Up) _obj.Location += Vector.Up;
-        if (_keyboard.Down) _obj.Location += Vector.Down;
-        if (_keyboard.Left) _obj.Location += Vector.Left;
-        if (_keyboard.Right) _obj.Location += Vector.Right;
+        if (_keyboard.Up)
+            _obj.Location += Vector.Up;
+        if (_keyboard.Down)
+            _obj.Location += Vector.Down;
+        if (_keyboard.Left)
+            _obj.Location += Vector.Left;
+        if (_keyboard.Right)
+            _obj.Location += Vector.Right;
 
         // 戻る
         if (_keyboard.Escape.IsKeyDown)

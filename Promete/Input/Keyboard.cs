@@ -12,7 +12,9 @@ namespace Promete.Input;
 /// <summary>
 /// キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider) : IInitializable, IUpdatable
+public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider)
+    : IInitializable,
+        IUpdatable
 {
     /// <summary>
     /// 存在する全てのキーコードを列挙します。
@@ -42,7 +44,8 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
         get => _currentKeyboard?.ClipboardText;
         set
         {
-            if (value == null || _currentKeyboard == null) return;
+            if (value == null || _currentKeyboard == null)
+                return;
             _currentKeyboard.ClipboardText = value;
         }
     }
@@ -58,7 +61,8 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
     /// </summary>
     public string GetString()
     {
-        if (!HasChar()) return "";
+        if (!HasChar())
+            return "";
 
         var buf = new StringBuilder();
         while (HasChar())
@@ -120,29 +124,38 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
             _currentKeyboard = null;
         }
 
-        if (_currentKeyboard == null) TryFindKeyboard();
-        if (_currentKeyboard == null) return;
+        if (_currentKeyboard == null)
+            TryFindKeyboard();
+        if (_currentKeyboard == null)
+            return;
 
-        Parallel.ForEach(_allCodes, keyCode =>
-        {
-            var silkKey = keyCode.ToSilk();
-            if (silkKey < 0) return;
-            var isPressed = _currentKeyboard.IsKeyPressed(silkKey);
-            var key = KeyOf(keyCode);
-            key.IsPressed = isPressed;
-            key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
-            key.ElapsedTime = isPressed ? key.ElapsedTime + app.Time.DeltaTime : 0;
-        });
+        Parallel.ForEach(
+            _allCodes,
+            keyCode =>
+            {
+                var silkKey = keyCode.ToSilk();
+                if (silkKey < 0)
+                    return;
+                var isPressed = _currentKeyboard.IsKeyPressed(silkKey);
+                var key = KeyOf(keyCode);
+                key.IsPressed = isPressed;
+                key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
+                key.ElapsedTime = isPressed ? key.ElapsedTime + app.Time.DeltaTime : 0;
+            }
+        );
     }
 
     private void OnPostUpdate()
     {
-        Parallel.ForEach(_allCodes, keyCode =>
-        {
-            var key = KeyOf(keyCode);
-            key.IsKeyDown = false;
-            key.IsKeyUp = false;
-        });
+        Parallel.ForEach(
+            _allCodes,
+            keyCode =>
+            {
+                var key = KeyOf(keyCode);
+                key.IsKeyDown = false;
+                key.IsKeyUp = false;
+            }
+        );
     }
 
     private void OnDestroy()
@@ -153,7 +166,8 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
 
     private void TryFindKeyboard()
     {
-        if (_ctx.Keyboards.Count == 0) return;
+        if (_ctx.Keyboards.Count == 0)
+            return;
 
         _currentKeyboard = _ctx.Keyboards[0];
         _currentKeyboard.KeyDown += OnKeyDown;

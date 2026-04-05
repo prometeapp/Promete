@@ -37,7 +37,7 @@ public class OpenGLDesktopBackend : BackendBase
             WindowMode.Fixed => WindowBorder.Fixed,
             WindowMode.NoFrame => WindowBorder.Hidden,
             WindowMode.Resizable => WindowBorder.Resizable,
-            _ => throw new ArgumentException(null, nameof(opts))
+            _ => throw new ArgumentException(null, nameof(opts)),
         };
         silkOptions.WindowState = opts.IsFullScreen ? WindowState.Fullscreen : WindowState.Normal;
         silkOptions.FramesPerSecond = opts.TargetFps;

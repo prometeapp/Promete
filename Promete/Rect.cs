@@ -24,9 +24,7 @@ public struct Rect
     /// <param name="width">幅。</param>
     /// <param name="height">高さ。</param>
     public Rect(float left, float top, float width, float height)
-        : this(new Vector(left, top), new Vector(width, height))
-    {
-    }
+        : this(new Vector(left, top), new Vector(width, height)) { }
 
     /// <summary>
     /// この矩形の位置を取得または設定します。

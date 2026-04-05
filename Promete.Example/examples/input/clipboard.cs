@@ -33,7 +33,8 @@ public class clipboard(Keyboard keyboard, ConsoleLayer console) : Scene
 
         if (isCtrlPressed && keyboard.V.IsKeyDown)
         {
-            var text = keyboard.ClipboardText ?? "(クリップボードが空または、テキスト以外のデータです)";
+            var text =
+                keyboard.ClipboardText ?? "(クリップボードが空または、テキスト以外のデータです)";
             console.Print($"貼り付け: {text}");
         }
     }

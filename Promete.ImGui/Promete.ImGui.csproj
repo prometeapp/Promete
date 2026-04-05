@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>14</LangVersion>
@@ -13,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Promete\Promete.csproj"/>
+        <ProjectReference Include="..\Promete\Promete.csproj" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -29,5 +28,4 @@
         <RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     </PropertyGroup>
-
 </Project>

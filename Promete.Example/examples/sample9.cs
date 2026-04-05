@@ -27,15 +27,13 @@ public class SpriteZTestScene : Scene
         for (var i = 1; i < 255; i++)
         {
             var pos = Random.Shared.NextVectorInt(Window.Width, Window.Height);
-            var ichigo = new Sprite(tIchigo)
-                .Location(pos);
+            var ichigo = new Sprite(tIchigo).Location(pos);
             ichigo.ZIndex = pos.Y;
 
             Root.Add(ichigo);
         }
 
-        _mainIchigo = new Sprite(tIchigo)
-            .Scale(2, 2);
+        _mainIchigo = new Sprite(tIchigo).Scale(2, 2);
         Root.Add(_mainIchigo);
     }
 
@@ -50,6 +48,7 @@ public class SpriteZTestScene : Scene
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
 
-        if (_keyboard.Space.IsKeyDown) isPlaying ^= true;
+        if (_keyboard.Space.IsKeyDown)
+            isPlaying ^= true;
     }
 }

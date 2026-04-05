@@ -18,12 +18,28 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
 
     private bool _initialized;
     private uint _shader;
-    private int _uModel, _uProjection, _uTexture0, _uTintColor, _uStartAngle, _uEndAngle;
-    private uint _vbo, _vao, _ebo;
+    private int _uModel,
+        _uProjection,
+        _uTexture0,
+        _uTintColor,
+        _uStartAngle,
+        _uEndAngle;
+    private uint _vbo,
+        _vao,
+        _ebo;
 
     public override void Execute(DrawPieTextureCommand command)
     {
-        Draw(command.Texture, command.ModelMatrix, command.TintColor, command.Width, command.Height, command.StartPercent, command.Percent, command.Material);
+        Draw(
+            command.Texture,
+            command.ModelMatrix,
+            command.TintColor,
+            command.Width,
+            command.Height,
+            command.StartPercent,
+            command.Percent,
+            command.Material
+        );
     }
 
     /// <summary>
@@ -37,7 +53,16 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
     /// <param name="startPercent">描画開始位置のパーセント（0.0 ~ 100.0）。</param>
     /// <param name="percent">描画終了位置のパーセント（0.0 ~ 100.0）。</param>
     /// <param name="material">適用するマテリアル。null の場合はデフォルトシェーダーを使用します。</param>
-    public unsafe void Draw(Texture2D texture, Matrix4x4 modelMatrix, Color color, float width, float height, float startPercent, float percent, Material? material = null)
+    public unsafe void Draw(
+        Texture2D texture,
+        Matrix4x4 modelMatrix,
+        Color color,
+        float width,
+        float height,
+        float startPercent,
+        float percent,
+        Material? material = null
+    )
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
@@ -54,7 +79,14 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
         var viewport = GLHelper.GetViewport(gl);
 
         // プロジェクション行列を計算
-        var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
+        var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(
+            0,
+            viewport.X,
+            viewport.Y,
+            0,
+            0.1f,
+            100f
+        );
 
         // パーセント→ラジアン変換（12時方向を0%にするため-90度オフセット）
         var startAngle = (startPercent / 100.0f * 360.0f - 90.0f) * MathF.PI / 180.0f;
@@ -63,8 +95,10 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
         // 描画開始
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, // RGB
-            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
+            BlendingFactor.SrcAlpha,
+            BlendingFactor.OneMinusSrcAlpha, // RGB
+            BlendingFactor.One,
+            BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
         // シェーダー選択: カスタムマテリアルがある場合はそのプログラムを使用
@@ -83,12 +117,18 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
             var uTint = GLMaterialApplier.GetLocation(gl, program, "uTintColor");
             var uStart = GLMaterialApplier.GetLocation(gl, program, "uStartAngle");
             var uEnd = GLMaterialApplier.GetLocation(gl, program, "uEndAngle");
-            if (uModel >= 0) gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
-            if (uProj >= 0) gl.UniformMatrix4(uProj, 1, false, (float*)&projectionMatrix);
-            if (uTex >= 0) gl.Uniform1(uTex, 0);
-            if (uTint >= 0) gl.Uniform4(uTint, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
-            if (uStart >= 0) gl.Uniform1(uStart, startAngle);
-            if (uEnd >= 0) gl.Uniform1(uEnd, endAngle);
+            if (uModel >= 0)
+                gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
+            if (uProj >= 0)
+                gl.UniformMatrix4(uProj, 1, false, (float*)&projectionMatrix);
+            if (uTex >= 0)
+                gl.Uniform1(uTex, 0);
+            if (uTint >= 0)
+                gl.Uniform4(uTint, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
+            if (uStart >= 0)
+                gl.Uniform1(uStart, startAngle);
+            if (uEnd >= 0)
+                gl.Uniform1(uEnd, endAngle);
             GLMaterialApplier.Apply(gl, program, material);
         }
         else
@@ -112,7 +152,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
 
     private void EnsureInitialized()
     {
-        if (_initialized) return;
+        if (_initialized)
+            return;
         Initialize();
         _initialized = true;
     }
@@ -123,12 +164,18 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
         var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.vert"));
+        gl.ShaderSource(
+            vsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.vert")
+        );
         gl.CompileShader(vsh);
 
         // フラグメントシェーダーをリソースから読み込んでコンパイルする
         var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(fsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.frag"));
+        gl.ShaderSource(
+            fsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.frag")
+        );
         gl.CompileShader(fsh);
 
         // コンパイルした2つのシェーダーをリンクする
@@ -146,10 +193,23 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
         // スプライトは基本のポリゴンが四角形に決まっているので、あらかじめ頂点情報を用意しておく
         Span<float> vertices =
         [
-            1.0f, 0.0f, 1.0f, 0.0f, // 右下
-            1.0f, 1.0f, 1.0f, 1.0f, // 右上
-            0.0f, 1.0f, 0.0f, 1.0f, // 左上
-            0.0f, 0.0f, 0.0f, 0.0f  // 左下
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f, // 右下
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f, // 右上
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f, // 左上
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f // 左下
+            ,
         ];
 
         // バッファに頂点情報を書き込む
@@ -164,7 +224,14 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
         gl.EnableVertexAttribArray(0);
 
         // 4つのfloat値のうち、次の2つをテクスチャ座標として登録する
-        gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+        gl.VertexAttribPointer(
+            1,
+            2,
+            VertexAttribPointerType.Float,
+            false,
+            4 * sizeof(float),
+            2 * sizeof(float)
+        );
         gl.EnableVertexAttribArray(1);
 
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);

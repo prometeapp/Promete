@@ -276,7 +276,7 @@ public partial class Keyboard
             KeyCode.BackSlash => BackSlash,
             KeyCode.NonUSBackSlash => NonUSBackSlash,
             KeyCode.LastKey => LastKey,
-            _ => throw new ArgumentOutOfRangeException(nameof(code))
+            _ => throw new ArgumentOutOfRangeException(nameof(code)),
         };
     }
 }

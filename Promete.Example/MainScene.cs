@@ -6,9 +6,7 @@ namespace Promete.Example;
 
 public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
-    public override void OnStart()
-    {
-    }
+    public override void OnStart() { }
 
     public override void OnUpdate()
     {
@@ -38,18 +36,21 @@ public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
         if (keyboard.Up.IsKeyDown)
         {
             CurrentIndex--;
-            if (CurrentIndex < 0) CurrentIndex = 0;
+            if (CurrentIndex < 0)
+                CurrentIndex = 0;
         }
         else if (keyboard.Down.IsKeyDown)
         {
             CurrentIndex++;
-            if (CurrentIndex > CurrentFolder.Files.Count) CurrentIndex = CurrentFolder.Files.Count;
+            if (CurrentIndex > CurrentFolder.Files.Count)
+                CurrentIndex = CurrentFolder.Files.Count;
         }
         else if (keyboard.Enter.IsKeyDown)
         {
             if (CurrentIndex == CurrentFolder.Files.Count)
             {
-                if (CurrentFolder.Parent == null) return;
+                if (CurrentFolder.Parent == null)
+                    return;
 
                 CurrentFolder = CurrentFolder.Parent;
                 CurrentIndex = 0;
@@ -71,7 +72,8 @@ public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
         }
         else if (keyboard.Escape.IsKeyDown)
         {
-            if (CurrentFolder.Parent == null) return;
+            if (CurrentFolder.Parent == null)
+                return;
 
             CurrentFolder = CurrentFolder.Parent;
             CurrentIndex = 0;

@@ -12,10 +12,7 @@ public static class PtmlUtility
     /// <returns>エスケープされたPTMl文字列。</returns>
     public static string Encode(string ptml)
     {
-        return ptml
-            .Replace("&", "&amp;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;");
+        return ptml.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
     }
 
     /// <summary>
@@ -25,9 +22,6 @@ public static class PtmlUtility
     /// <returns>デコードされたPTML文字列。</returns>
     public static string Decode(string ptml)
     {
-        return ptml
-            .Replace("&lt;", "<")
-            .Replace("&gt;", ">")
-            .Replace("&amp;", "&");
+        return ptml.Replace("&lt;", "<").Replace("&gt;", ">").Replace("&amp;", "&");
     }
 }

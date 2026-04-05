@@ -12,7 +12,9 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="DrawTextureBatchedCommand"/> をインスタンシングで描画するランナーです。
 /// </summary>
-internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner<DrawTextureBatchedCommand>, IDisposable
+internal class GLDrawTextureBatchedCommandRunner(IGameView view)
+    : CommandRunner<DrawTextureBatchedCommand>,
+        IDisposable
 {
     private const int InitialInstanceCapacity = 512;
 
@@ -24,12 +26,17 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
     private uint _shader;
-    private int _uProjection, _uTexture0;
-    private uint _vao, _vbo, _ebo, _instanceVbo;
+    private int _uProjection,
+        _uTexture0;
+    private uint _vao,
+        _vbo,
+        _ebo,
+        _instanceVbo;
 
     public void Dispose()
     {
-        if (!_initialized) return;
+        if (!_initialized)
+            return;
         var gl = _view.GL;
         gl.DeleteProgram(_shader);
         gl.DeleteVertexArray(_vao);
@@ -49,7 +56,8 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
     /// </summary>
     private unsafe void DrawInstanced(List<DrawTextureCommand> items, Material? material)
     {
-        if (items.Count == 0) return;
+        if (items.Count == 0)
+            return;
         PrometeApp.Current.ThrowIfNotMainThread();
 
         EnsureInitialized();
@@ -61,7 +69,14 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
 
         // プロジェクション行列を計算
         var viewport = GLHelper.GetViewport(gl);
-        var projection = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
+        var projection = Matrix4x4.CreateOrthographicOffCenter(
+            0,
+            viewport.X,
+            viewport.Y,
+            0,
+            0.1f,
+            100f
+        );
 
         // per-instanceデータを構築
         for (var i = 0; i < count; i++)
@@ -106,15 +121,21 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
 
         // インスタンスデータをGPUに転送
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _instanceVbo);
-        gl.BufferSubData<float>(BufferTargetARB.ArrayBuffer, 0,
-            new ReadOnlySpan<float>(_instanceData, 0, count * InstanceStride));
+        gl.BufferSubData<float>(
+            BufferTargetARB.ArrayBuffer,
+            0,
+            new ReadOnlySpan<float>(_instanceData, 0, count * InstanceStride)
+        );
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
 
         // 描画
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha,
-            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
+            BlendingFactor.SrcAlpha,
+            BlendingFactor.OneMinusSrcAlpha,
+            BlendingFactor.One,
+            BlendingFactor.OneMinusSrcAlpha
+        );
 
         // シェーダー選択: カスタムマテリアルがある場合はそのプログラムを使用
         var program = material is { } mat ? (uint)mat.Shader.Handle : _shader;
@@ -128,8 +149,10 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
             // カスタムシェーダー: ロケーションをキャッシュ付きで取得 (-1 はスキップ)
             var uProj = GLMaterialApplier.GetLocation(gl, program, "uProjection");
             var uTex = GLMaterialApplier.GetLocation(gl, program, "uTexture0");
-            if (uProj >= 0) gl.UniformMatrix4(uProj, 1, false, (float*)&projection);
-            if (uTex >= 0) gl.Uniform1(uTex, 0);
+            if (uProj >= 0)
+                gl.UniformMatrix4(uProj, 1, false, (float*)&projection);
+            if (uTex >= 0)
+                gl.Uniform1(uTex, 0);
             GLMaterialApplier.Apply(gl, program, material);
         }
         else
@@ -141,13 +164,20 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
 
         gl.BindVertexArray(_vao);
         gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
-        gl.DrawElementsInstanced(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, null, (uint)count);
+        gl.DrawElementsInstanced(
+            PrimitiveType.Triangles,
+            6,
+            DrawElementsType.UnsignedInt,
+            null,
+            (uint)count
+        );
         gl.BindVertexArray(0);
     }
 
     private void EnsureInitialized()
     {
-        if (_initialized) return;
+        if (_initialized)
+            return;
         Initialize();
         _initialized = true;
     }
@@ -158,11 +188,17 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
 
         // シェーダーをコンパイル・リンク
         var vsh = gl.CreateShader(ShaderType.VertexShader);
-        gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.vert"));
+        gl.ShaderSource(
+            vsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.vert")
+        );
         gl.CompileShader(vsh);
 
         var fsh = gl.CreateShader(ShaderType.FragmentShader);
-        gl.ShaderSource(fsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.frag"));
+        gl.ShaderSource(
+            fsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.frag")
+        );
         gl.CompileShader(fsh);
 
         _shader = gl.CreateProgram();
@@ -178,10 +214,22 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
         // 単位クワッドの頂点データ（位置 + UV）
         Span<float> vertices =
         [
-            1.0f, 0.0f, 1.0f, 0.0f, // 右下
-            1.0f, 1.0f, 1.0f, 1.0f, // 右上
-            0.0f, 1.0f, 0.0f, 1.0f, // 左上
-            0.0f, 0.0f, 0.0f, 0.0f, // 左下
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f, // 右下
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f, // 右上
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f, // 左上
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f, // 左下
         ];
         Span<uint> indices = [0, 1, 3, 1, 2, 3];
 
@@ -194,33 +242,62 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
         gl.BufferData<float>(BufferTargetARB.ArrayBuffer, vertices, BufferUsageARB.StaticDraw);
         gl.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
         gl.EnableVertexAttribArray(0);
-        gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+        gl.VertexAttribPointer(
+            1,
+            2,
+            VertexAttribPointerType.Float,
+            false,
+            4 * sizeof(float),
+            2 * sizeof(float)
+        );
         gl.EnableVertexAttribArray(1);
 
         // インスタンスVBO（per-instance: mat4 + vec4）
         _instanceVbo = gl.GenBuffer();
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _instanceVbo);
-        gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(_instanceData.Length * sizeof(float)), null,
-            BufferUsageARB.DynamicDraw);
+        gl.BufferData(
+            BufferTargetARB.ArrayBuffer,
+            (nuint)(_instanceData.Length * sizeof(float)),
+            null,
+            BufferUsageARB.DynamicDraw
+        );
 
         for (uint i = 0; i < 4; i++)
         {
             var loc = 2 + i;
-            gl.VertexAttribPointer(loc, 4, VertexAttribPointerType.Float, false,
-                (uint)(InstanceStride * sizeof(float)), (int)(i * 4 * sizeof(float)));
+            gl.VertexAttribPointer(
+                loc,
+                4,
+                VertexAttribPointerType.Float,
+                false,
+                (uint)(InstanceStride * sizeof(float)),
+                (int)(i * 4 * sizeof(float))
+            );
             gl.EnableVertexAttribArray(loc);
             gl.VertexAttribDivisor(loc, 1);
         }
 
         // TintColor (location 6)
-        gl.VertexAttribPointer(6, 4, VertexAttribPointerType.Float, false,
-            (uint)(InstanceStride * sizeof(float)), 16 * sizeof(float));
+        gl.VertexAttribPointer(
+            6,
+            4,
+            VertexAttribPointerType.Float,
+            false,
+            (uint)(InstanceStride * sizeof(float)),
+            16 * sizeof(float)
+        );
         gl.EnableVertexAttribArray(6);
         gl.VertexAttribDivisor(6, 1);
 
         // UvRect (location 7): xy = uvStart, zw = uvEnd
-        gl.VertexAttribPointer(7, 4, VertexAttribPointerType.Float, false,
-            (uint)(InstanceStride * sizeof(float)), 20 * sizeof(float));
+        gl.VertexAttribPointer(
+            7,
+            4,
+            VertexAttribPointerType.Float,
+            false,
+            (uint)(InstanceStride * sizeof(float)),
+            20 * sizeof(float)
+        );
         gl.EnableVertexAttribArray(7);
         gl.VertexAttribDivisor(7, 1);
 
@@ -241,15 +318,22 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view) : CommandRunner
     private unsafe void EnsureInstanceBufferCapacity(int count)
     {
         var required = count * InstanceStride;
-        if (_instanceData.Length >= required) return;
+        if (_instanceData.Length >= required)
+            return;
 
         var newSize = _instanceData.Length;
-        while (newSize < required) newSize *= 2;
+        while (newSize < required)
+            newSize *= 2;
         _instanceData = new float[newSize];
 
         var gl = _view.GL;
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, _instanceVbo);
-        gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(newSize * sizeof(float)), null, BufferUsageARB.DynamicDraw);
+        gl.BufferData(
+            BufferTargetARB.ArrayBuffer,
+            (nuint)(newSize * sizeof(float)),
+            null,
+            BufferUsageARB.DynamicDraw
+        );
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
     }
 }

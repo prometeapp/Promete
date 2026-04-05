@@ -26,7 +26,12 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
         if (app.View is not OpenGLDesktopGameView glView)
             throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
 
-        _controller = new ImGuiController(glView.GL, glView.NativeWindow, provider.CreateInput(), OnConfigure);
+        _controller = new ImGuiController(
+            glView.GL,
+            glView.NativeWindow,
+            provider.CreateInput(),
+            OnConfigure
+        );
 
         app.Destroy += OnWindowDestroy;
         app.PostRender += OnWindowRender;
@@ -36,9 +41,7 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
     /// ImGUIの初期設定を行います。
     /// </summary>
     /// <param name="io"></param>
-    protected virtual void OnConfigure(ImGuiIOPtr io)
-    {
-    }
+    protected virtual void OnConfigure(ImGuiIOPtr io) { }
 
     private unsafe void OnConfigure()
     {
@@ -50,7 +53,8 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
     private void OnWindowRender()
     {
         _controller.Update(app.Time.DeltaTime);
-        if (IsSyncronizeWithWindowScaling) ImGuiNET.ImGui.GetIO().FontGlobalScale = app.View.Scale * app.View.PixelRatio;
+        if (IsSyncronizeWithWindowScaling)
+            ImGuiNET.ImGui.GetIO().FontGlobalScale = app.View.Scale * app.View.PixelRatio;
         Render?.Invoke();
         _controller.Render();
     }

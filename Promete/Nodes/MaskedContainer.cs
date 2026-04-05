@@ -26,7 +26,11 @@ public class MaskedContainer : Container
     /// <param name="maskTexture">マスクに使用するテクスチャ。nullの場合は通常のContainerとして動作します。</param>
     /// <param name="useAlphaMask">アルファブレンディングを使用するかどうか。デフォルトはfalse（ステンシルバッファ方式）。</param>
     /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
-    public MaskedContainer(Texture2D? maskTexture = null, bool useAlphaMask = false, bool isTrimmable = false)
+    public MaskedContainer(
+        Texture2D? maskTexture = null,
+        bool useAlphaMask = false,
+        bool isTrimmable = false
+    )
         : base(isTrimmable)
     {
         MaskTexture = maskTexture;
@@ -66,21 +70,21 @@ public class MaskedContainer : Container
 
         if (UseAlphaMask)
         {
-            queue.Enqueue(new BeginAlphaMaskCommand
-            {
-                Container = this,
-                MaskTexture = maskTexture,
-                Context = ctx,
-            });
+            queue.Enqueue(
+                new BeginAlphaMaskCommand
+                {
+                    Container = this,
+                    MaskTexture = maskTexture,
+                    Context = ctx,
+                }
+            );
             // BeginAlphaMaskCommandRunner が内部で子要素のレンダリングまで完結させる
         }
         else
         {
-            queue.Enqueue(new BeginStencilMaskCommand
-            {
-                Container = this,
-                MaskTexture = maskTexture,
-            });
+            queue.Enqueue(
+                new BeginStencilMaskCommand { Container = this, MaskTexture = maskTexture }
+            );
 
             if (IsTrimmable)
             {
@@ -101,7 +105,8 @@ public class MaskedContainer : Container
     {
         foreach (var child in sortedChildren)
         {
-            if (!child.IsVisible || child.IsDestroyed) continue;
+            if (!child.IsVisible || child.IsDestroyed)
+                continue;
             child.Collect(queue, ctx);
         }
     }

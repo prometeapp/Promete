@@ -6,8 +6,7 @@ using Promete.Audio;
 using Promete.GLDesktop;
 using Promete.MeltySynth;
 
-var app = PrometeApp.Create()
-    .BuildWithOpenGLDesktop();
+var app = PrometeApp.Create().BuildWithOpenGLDesktop();
 
 return app.Run<MainScene>();
 

@@ -11,7 +11,8 @@ namespace Promete.Graphics.Rendering.GL;
 /// </summary>
 internal static class GLMaterialApplier
 {
-    private static readonly Dictionary<(int programHandle, string name), int> _locationCache = new();
+    private static readonly Dictionary<(int programHandle, string name), int> _locationCache =
+        new();
 
     /// <summary>
     /// Uniform のロケーションをキャッシュ付きで取得します。
@@ -38,13 +39,19 @@ internal static class GLMaterialApplier
     /// Texture2D Uniform に使用を開始するテクスチャスロット番号。
     /// スロット 0 はメインテクスチャ（<c>uTexture0</c>）用に予約されているため、デフォルトは 1 です。
     /// </param>
-    public static unsafe void Apply(Silk.NET.OpenGL.GL gl, uint program, Material material, int firstTextureSlot = 1)
+    public static unsafe void Apply(
+        Silk.NET.OpenGL.GL gl,
+        uint program,
+        Material material,
+        int firstTextureSlot = 1
+    )
     {
         var textureSlot = firstTextureSlot;
         foreach (var (name, value) in material.Uniforms)
         {
             var loc = GetLocation(gl, program, name);
-            if (loc < 0) continue;
+            if (loc < 0)
+                continue;
             switch (value)
             {
                 case float f:

@@ -30,7 +30,8 @@ public class RenderCommandQueue
     /// <summary>
     /// コマンド型に対応するランナーを登録します。
     /// </summary>
-    public void RegisterRunner<T>(CommandRunner<T> runner) where T : IRenderCommand
+    public void RegisterRunner<T>(CommandRunner<T> runner)
+        where T : IRenderCommand
     {
         _runners[typeof(T)] = runner;
     }
@@ -50,10 +51,12 @@ public class RenderCommandQueue
     /// </summary>
     public void Enqueue(DrawTextureCommand texCmd)
     {
-        if (_commands.Count > 0
+        if (
+            _commands.Count > 0
             && _commands[^1] is DrawTextureBatchedCommand batch
             && batch.Texture.Handle == texCmd.Texture.Handle
-            && MaterialEquals(batch.Material, texCmd.Material))
+            && MaterialEquals(batch.Material, texCmd.Material)
+        )
         {
             batch.Add(texCmd);
             return;
@@ -66,8 +69,10 @@ public class RenderCommandQueue
 
     private static bool MaterialEquals(Material? a, Material? b)
     {
-        if (a is null && b is null) return true;
-        if (a is null || b is null) return false;
+        if (a is null && b is null)
+            return true;
+        if (a is null || b is null)
+            return false;
         return a.Equals(b);
     }
 
@@ -91,8 +96,10 @@ public class RenderCommandQueue
         var left = (VectorInt)node.AbsoluteLocation;
         var size = (VectorInt)(node.Size * node.AbsoluteScale);
 
-        if (left.X < 0) left.X = 0;
-        if (left.Y < 0) left.Y = 0;
+        if (left.X < 0)
+            left.X = 0;
+        if (left.Y < 0)
+            left.Y = 0;
 
         if (left.X + size.X > ctx.WindowSize.X)
             size.X = ctx.WindowSize.X - left.X;
@@ -122,13 +129,15 @@ public class RenderCommandQueue
         var newState = new TrimState((int)sx, (int)sy, (int)sw, (int)sh, true);
         _trimStack.Push(newState);
 
-        Enqueue(new BeginTrimCommand
-        {
-            X = newState.X,
-            Y = newState.Y,
-            Width = newState.Width,
-            Height = newState.Height,
-        });
+        Enqueue(
+            new BeginTrimCommand
+            {
+                X = newState.X,
+                Y = newState.Y,
+                Width = newState.Width,
+                Height = newState.Height,
+            }
+        );
     }
 
     /// <summary>
@@ -136,17 +145,20 @@ public class RenderCommandQueue
     /// </summary>
     public void PopTrim()
     {
-        if (_trimStack.Count > 0) _trimStack.Pop();
+        if (_trimStack.Count > 0)
+            _trimStack.Pop();
 
         var parent = _trimStack.TryPeek(out var p) ? p : new TrimState(0, 0, 0, 0, false);
-        Enqueue(new EndTrimCommand
-        {
-            X = parent.X,
-            Y = parent.Y,
-            Width = parent.Width,
-            Height = parent.Height,
-            WasEnabled = parent.Enabled,
-        });
+        Enqueue(
+            new EndTrimCommand
+            {
+                X = parent.X,
+                Y = parent.Y,
+                Width = parent.Width,
+                Height = parent.Height,
+                WasEnabled = parent.Enabled,
+            }
+        );
     }
 
     /// <summary>
@@ -198,7 +210,8 @@ public class RenderCommandQueue
         var commands = _commands;
         foreach (var cmd in commands)
         {
-            if (DryRun) continue;
+            if (DryRun)
+                continue;
             if (_runners.TryGetValue(cmd.GetType(), out var runner))
                 runner.ExecuteUntyped(cmd);
         }

@@ -18,7 +18,8 @@ public abstract class CommandRunner
 /// 特定のコマンド型 <typeparamref name="T"/> を実行するランナーの基底クラスです。
 /// </summary>
 /// <typeparam name="T">処理対象のコマンド型。</typeparam>
-public abstract class CommandRunner<T> : CommandRunner where T : IRenderCommand
+public abstract class CommandRunner<T> : CommandRunner
+    where T : IRenderCommand
 {
     public override Type CommandType => typeof(T);
 

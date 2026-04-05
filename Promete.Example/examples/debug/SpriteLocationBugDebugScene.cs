@@ -8,7 +8,10 @@ namespace Promete.Example.examples.debug;
 /// <summary>
 /// スプライト等が0, 0に描画されるバグのデバッグシーンです。
 /// </summary>
-[Demo("debug/SpriteLocationBugDebugScene.demo", "スプライト等が0, 0に描画されるバグのデバッグシーン")]
+[Demo(
+    "debug/SpriteLocationBugDebugScene.demo",
+    "スプライト等が0, 0に描画されるバグのデバッグシーン"
+)]
 public class SpriteLocationBugDebugScene(Keyboard keyboard) : Scene
 {
     private readonly Container _container = new();
@@ -24,6 +27,7 @@ public class SpriteLocationBugDebugScene(Keyboard keyboard) : Scene
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape) App.LoadScene<MainScene>();
+        if (keyboard.Escape)
+            App.LoadScene<MainScene>();
     }
 }

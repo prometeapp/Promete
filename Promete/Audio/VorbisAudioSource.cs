@@ -19,9 +19,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// 指定されたパスからVorbisオーディオソースを初期化します。
     /// </summary>
     public VorbisAudioSource(string path)
-        : this(File.OpenRead(path))
-    {
-    }
+        : this(File.OpenRead(path)) { }
 
     /// <summary>
     /// 指定されたストリームからVorbisオーディオソースを初期化します。
@@ -44,23 +42,28 @@ public class VorbisAudioSource : IAudioSource, IDisposable
             {
                 while (true)
                 {
-                    if (_cts.Token.IsCancellationRequested) break;
+                    if (_cts.Token.IsCancellationRequested)
+                        break;
                     // 1000サンプルずつ読み込む
                     var readSamples = reader.ReadSamples(temp.AsSpan());
-                    if (readSamples == 0) break;
+                    if (readSamples == 0)
+                        break;
 
                     // 各サンプルを16bit shortに変換
                     for (var i = 0; i < temp.Length; i++)
                     {
-                        if (_cts.Token.IsCancellationRequested) break;
-                        if (loadedSize >= _store.Length) goto exit;
+                        if (_cts.Token.IsCancellationRequested)
+                            break;
+                        if (loadedSize >= _store.Length)
+                            goto exit;
 
                         _store[loadedSize++] = (short)(temp[i] * short.MaxValue);
                         LoadedSize = loadedSize;
                     }
                 }
 
-                exit: ;
+                exit:
+                ;
                 Samples = LoadedSize;
                 reader.Dispose();
                 IsLoadingFinished = true;

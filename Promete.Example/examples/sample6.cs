@@ -31,20 +31,22 @@ public class SpriteRotateTestScene : Scene
                     Shape.CreateLine(-32, 0, 32, 0, Color.Red),
                     Shape.CreateLine(0, -32, 0, 32, Color.Blue),
                     sprite = new Sprite(tSolid)
-                )
+                ),
         ];
     }
 
     public override void OnUpdate()
     {
         angle += Window.DeltaTime * 90;
-        if (angle > 360) angle -= 360;
+        if (angle > 360)
+            angle -= 360;
         sprite.Angle = angle.Degrees;
 
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
 
-        if (_keyboard.Space.IsKeyDown) wrapper.Scale = wrapper.Scale.X == 1 ? (2, 2) : (1, 1);
+        if (_keyboard.Space.IsKeyDown)
+            wrapper.Scale = wrapper.Scale.X == 1 ? (2, 2) : (1, 1);
 
         wrapper.Location = _mouse.Position;
     }

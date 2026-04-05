@@ -39,5 +39,3 @@ public class Issue74DebugScene(CoroutineManager coroutine, ConsoleLayer console)
         }
     }
 }
-
-

@@ -32,26 +32,28 @@ public class NineSliceSprite(Texture9Sliced texture, Color? tintColor = default)
 
         void Enqueue(Texture2D tex, Vector pivot, float? width = null, float? height = null)
         {
-            queue.Enqueue(new DrawTextureCommand
-            {
-                Texture = tex,
-                ModelMatrix = ModelMatrix,
-                TintColor = TintColor,
-                Width = width ?? tex.Size.X,
-                Height = height ?? tex.Size.Y,
-                Pivot = pivot,
-                Material = Material,
-            });
+            queue.Enqueue(
+                new DrawTextureCommand
+                {
+                    Texture = tex,
+                    ModelMatrix = ModelMatrix,
+                    TintColor = TintColor,
+                    Width = width ?? tex.Size.X,
+                    Height = height ?? tex.Size.Y,
+                    Pivot = pivot,
+                    Material = Material,
+                }
+            );
         }
 
-        Enqueue(Texture.TopLeft,     (0, 0));
-        Enqueue(Texture.TopCenter,    Vector.Right * left,             xSpan);
-        Enqueue(Texture.TopRight,     Vector.Right * (left + xSpan));
-        Enqueue(Texture.MiddleLeft,   Vector.Down * top,               null, ySpan);
-        Enqueue(Texture.MiddleCenter, (left, top),                     xSpan, ySpan);
-        Enqueue(Texture.MiddleRight,  (left + xSpan, top),             null, ySpan);
-        Enqueue(Texture.BottomLeft,   (0, top + ySpan));
-        Enqueue(Texture.BottomCenter, (left, top + ySpan),             xSpan);
-        Enqueue(Texture.BottomRight,  (left + xSpan, top + ySpan));
+        Enqueue(Texture.TopLeft, (0, 0));
+        Enqueue(Texture.TopCenter, Vector.Right * left, xSpan);
+        Enqueue(Texture.TopRight, Vector.Right * (left + xSpan));
+        Enqueue(Texture.MiddleLeft, Vector.Down * top, null, ySpan);
+        Enqueue(Texture.MiddleCenter, (left, top), xSpan, ySpan);
+        Enqueue(Texture.MiddleRight, (left + xSpan, top), null, ySpan);
+        Enqueue(Texture.BottomLeft, (0, top + ySpan));
+        Enqueue(Texture.BottomCenter, (left, top + ySpan), xSpan);
+        Enqueue(Texture.BottomRight, (left + xSpan, top + ySpan));
     }
 }

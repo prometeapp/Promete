@@ -90,7 +90,8 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// フレームバッファがサポートされているかどうかを取得します。
     /// </summary>
-    public bool IsFrameBufferSupported => _provider.GetService<IRenderTextureProvider>() is not null;
+    public bool IsFrameBufferSupported =>
+        _provider.GetService<IRenderTextureProvider>() is not null;
 
     /// <summary>
     /// スクリーン全体に適用するポストプロセスマテリアルのリストを取得します。
@@ -132,7 +133,8 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <returns>終了ステータスコード。</returns>
-    public int Run<TScene>() where TScene : Scene
+    public int Run<TScene>()
+        where TScene : Scene
     {
         _initialSceneType = typeof(TScene);
         _backend.OnStart(this);
@@ -173,10 +175,11 @@ public sealed class PrometeApp : IDisposable
     /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
     /// <returns>プラグインのインスタンス。</returns>
     /// <exception cref="ArgumentException">指定したプラグインが登録されていない。</exception>
-    public T GetPlugin<T>() where T : class
+    public T GetPlugin<T>()
+        where T : class
     {
-        return _provider.GetService<T>() ??
-               throw new ArgumentException($"The plugin \"{typeof(T)}\" is not registered.");
+        return _provider.GetService<T>()
+            ?? throw new ArgumentException($"The plugin \"{typeof(T)}\" is not registered.");
     }
 
     /// <summary>
@@ -198,7 +201,8 @@ public sealed class PrometeApp : IDisposable
     /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
     /// <param name="plugin">取得したプラグインのインスタンス。</param>
     /// <returns>プラグインが取得できた場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
-    public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin) where T : class
+    public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin)
+        where T : class
     {
         plugin = _provider.GetService<T>();
         return plugin is not null;
@@ -221,7 +225,8 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">読み込むシーン。</typeparam>
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
-    public void LoadScene<TScene>() where TScene : Scene
+    public void LoadScene<TScene>()
+        where TScene : Scene
     {
         LoadScene(typeof(TScene));
     }
@@ -236,7 +241,9 @@ public sealed class PrometeApp : IDisposable
         var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = GetScene(typeScene);
-        SceneWillChange?.Invoke(new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene));
+        SceneWillChange?.Invoke(
+            new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
+        );
         _currentScene.OnStart();
     }
 
@@ -263,7 +270,9 @@ public sealed class PrometeApp : IDisposable
         }
 
         _currentScene = GetScene(typeScene);
-        SceneWillChange?.Invoke(new SceneTransitionEventArgs(SceneTransitionType.Push, previous, _currentScene));
+        SceneWillChange?.Invoke(
+            new SceneTransitionEventArgs(SceneTransitionType.Push, previous, _currentScene)
+        );
         _currentScene.OnStart();
     }
 
@@ -273,12 +282,15 @@ public sealed class PrometeApp : IDisposable
     /// <returns>スタックからシーンをポップできた場合は <see langword="true" />。それ以外の場合は <see langword="false" />。</returns>
     public bool PopScene()
     {
-        if (_sceneStack.Count == 0) return false;
+        if (_sceneStack.Count == 0)
+            return false;
 
         var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = _sceneStack.Pop();
-        SceneWillChange?.Invoke(new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene));
+        SceneWillChange?.Invoke(
+            new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene)
+        );
         _currentScene.OnResume();
         return true;
     }
@@ -302,7 +314,8 @@ public sealed class PrometeApp : IDisposable
     /// <param name="ctx">レンダリングコンテキスト。</param>
     public void CollectNode(Node node, RenderCommandQueue queue, RenderContext ctx)
     {
-        if (!node.IsVisible || node.IsDestroyed) return;
+        if (!node.IsVisible || node.IsDestroyed)
+            return;
         node.BeforeRender();
         node.Collect(queue, ctx);
     }
@@ -331,19 +344,24 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="InvalidOperationException">メインスレッド以外から呼び出された場合。</exception>
     public void ThrowIfNotMainThread()
     {
-        if (IsMainThread()) return;
+        if (IsMainThread())
+            return;
         throw new InvalidOperationException("This method must be called from the main thread.");
     }
-
 
     public void OnStart()
     {
         // プラグインのインスタンスを取得し、インターフェース実装によって分類
-        foreach (var instance in _pluginTypes.Select(type => _provider.GetService(type)).OfType<object>())
+        foreach (
+            var instance in _pluginTypes.Select(type => _provider.GetService(type)).OfType<object>()
+        )
         {
-            if (instance is IInitializable initializable) _initializablePlugins.Add(initializable);
-            if (instance is IUpdatable updatable) _updatablePlugins.Add(updatable);
-            if (instance is IDisposable disposable) _disposablePlugins.Add(disposable);
+            if (instance is IInitializable initializable)
+                _initializablePlugins.Add(initializable);
+            if (instance is IUpdatable updatable)
+                _updatablePlugins.Add(updatable);
+            if (instance is IDisposable disposable)
+                _disposablePlugins.Add(disposable);
         }
 
         // レンダリングキューをキャッシュ
@@ -353,7 +371,8 @@ public sealed class PrometeApp : IDisposable
         foreach (var plugin in _initializablePlugins)
             plugin.OnStart();
 
-        if (_initialSceneType != null) LoadScene(_initialSceneType);
+        if (_initialSceneType != null)
+            LoadScene(_initialSceneType);
         Start?.Invoke();
     }
 
@@ -369,7 +388,8 @@ public sealed class PrometeApp : IDisposable
             plugin.OnUpdate();
 
         UpdateNode(GlobalBackground);
-        if (Root != null) UpdateNode(Root);
+        if (Root != null)
+            UpdateNode(Root);
         UpdateNode(GlobalForeground);
         _currentScene?.OnUpdate();
         Update?.Invoke();
@@ -398,7 +418,8 @@ public sealed class PrometeApp : IDisposable
             queue.Clear();
             PreRender?.Invoke();
             CollectNode(GlobalBackground, queue, ctx);
-            if (Root != null) CollectNode(Root, queue, ctx);
+            if (Root != null)
+                CollectNode(Root, queue, ctx);
             CollectNode(GlobalForeground, queue, ctx);
             Render?.Invoke();
 
@@ -445,7 +466,8 @@ public sealed class PrometeApp : IDisposable
     {
         while (!_nextFrameQueue.IsEmpty)
         {
-            if (!_nextFrameQueue.TryDequeue(out var task)) return;
+            if (!_nextFrameQueue.TryDequeue(out var task))
+                return;
             task();
         }
     }
@@ -455,13 +477,16 @@ public sealed class PrometeApp : IDisposable
         // DefaultScene を明示的に登録
         _services.AddTransient<DefaultScene>();
 
-        var asm = Assembly.GetEntryAssembly() ?? throw new InvalidOperationException("There is no entry assembly.");
+        var asm =
+            Assembly.GetEntryAssembly()
+            ?? throw new InvalidOperationException("There is no entry assembly.");
         // Scene 派生クラスを全て取得する
         var types = asm.GetTypes();
         foreach (var type in types.Where(t => t.IsSubclassOf(typeof(Scene))))
         {
             // IgnoredSceneAttribute が付与されている場合は無視する
-            if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null) continue;
+            if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null)
+                continue;
 
             // Scene 派生クラスを登録する
             _services.AddTransient(type);
@@ -470,8 +495,8 @@ public sealed class PrometeApp : IDisposable
 
     private Scene GetScene(Type scene)
     {
-        return _provider.GetService(scene) as Scene ??
-               throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
+        return _provider.GetService(scene) as Scene
+            ?? throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
     }
 
     /// <summary>
@@ -523,9 +548,7 @@ public sealed class PrometeApp : IDisposable
     /// シーンを使用せずにアプリケーションを実行する際に使用されるデフォルトの空のシーン。
     /// </summary>
     [IgnoredScene]
-    private sealed class DefaultScene : Scene
-    {
-    }
+    private sealed class DefaultScene : Scene { }
 
     /// <summary>
     /// Promete アプリケーションを構築するためのビルダークラスです。
@@ -552,7 +575,8 @@ public sealed class PrometeApp : IDisposable
         /// </summary>
         /// <typeparam name="T">追加するプラグインの型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<T>() where T : class
+        public PrometeAppBuilder Use<T>()
+            where T : class
         {
             _services.AddSingleton<T>();
             CheckAndAddPluginTypes(typeof(T));
@@ -565,14 +589,17 @@ public sealed class PrometeApp : IDisposable
         /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
         /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<TPlugin, TImpl>() where TPlugin : class where TImpl : class, TPlugin
+        public PrometeAppBuilder Use<TPlugin, TImpl>()
+            where TPlugin : class
+            where TImpl : class, TPlugin
         {
             _services.AddSingleton<TPlugin, TImpl>();
             CheckAndAddPluginTypes(typeof(TImpl));
             return this;
         }
 
-        public PrometeApp Build<T>(WindowOptions? opts) where T : BackendBase, new()
+        public PrometeApp Build<T>(WindowOptions? opts)
+            where T : BackendBase, new()
         {
             var app = new PrometeApp(_services, _pluginTypes);
             app.RegisterBackend(new T(), opts ?? WindowOptions.Default);

@@ -17,9 +17,7 @@ public class sprite_sheet : Scene
         _textures = Window.TextureFactory.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32));
         for (int i = 0; i < _textures.Length; i++)
         {
-            var sprite = new Sprite(_textures[i])
-                .Location(64 * i + 16, 16)
-                .Scale(2, 2);
+            var sprite = new Sprite(_textures[i]).Location(64 * i + 16, 16).Scale(2, 2);
             Root.Add(sprite);
         }
     }

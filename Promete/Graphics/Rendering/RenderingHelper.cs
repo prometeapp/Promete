@@ -14,10 +14,7 @@ public static class RenderingHelper
         var parent = node.Parent;
         while (parent != null)
         {
-            vertex = vertex
-                .Rotate(parent.Angle)
-                .Scale(parent.Scale)
-                .Translate(parent.Location);
+            vertex = vertex.Rotate(parent.Angle).Scale(parent.Scale).Translate(parent.Location);
             parent = parent.Parent;
         }
 

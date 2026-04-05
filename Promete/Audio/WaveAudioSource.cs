@@ -19,9 +19,7 @@ public class WaveAudioSource : IAudioSource
     /// 指定されたパスからWaveオーディオソースを初期化します。
     /// </summary>
     public WaveAudioSource(string path)
-        : this(File.OpenRead(path))
-    {
-    }
+        : this(File.OpenRead(path)) { }
 
     /// <summary>
     /// 指定されたストリームからWaveオーディオソースを初期化します。
@@ -126,14 +124,15 @@ public class WaveAudioSource : IAudioSource
 
         var rawData = reader.ReadBytes(size);
 
-        if (bits != 8) return MemoryMarshal.Cast<byte, short>(rawData).ToArray();
+        if (bits != 8)
+            return MemoryMarshal.Cast<byte, short>(rawData).ToArray();
 
         var shortData = new short[rawData.Length / (bitsPerSample / 8)];
         var span = rawData.AsSpan();
-
         unchecked
         {
-            for (var i = 0; i < shortData.Length; i++) shortData[i] = (short)((span[i] - 128) * 256);
+            for (var i = 0; i < shortData.Length; i++)
+                shortData[i] = (short)((span[i] - 128) * 256);
         }
 
         return shortData;

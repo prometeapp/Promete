@@ -42,7 +42,6 @@ public class Coroutine : YieldInstruction
 
     internal void Start()
     {
-
         IsRunning = true;
     }
 
@@ -68,7 +67,6 @@ public class Coroutine : YieldInstruction
         ThenAction = callback;
         return this;
     }
-
 
     /// <summary>
     /// コルーチンが例外をスローした場合に実行されるコールバックを設定します。

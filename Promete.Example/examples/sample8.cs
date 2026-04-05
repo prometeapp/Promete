@@ -48,7 +48,8 @@ public class SpriteRotateTest3Scene : Scene
         if (isPlaying)
         {
             angle += Window.DeltaTime * 30;
-            if (angle > 360) angle -= 360;
+            if (angle > 360)
+                angle -= 360;
         }
 
         allIchigos.ForEach(i => i.Angle = angle.Degrees);
@@ -56,27 +57,26 @@ public class SpriteRotateTest3Scene : Scene
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
 
-        if (_keyboard.Space.IsKeyDown) isPlaying ^= true;
+        if (_keyboard.Space.IsKeyDown)
+            isPlaying ^= true;
 
         if (_keyboard.Left.IsKeyDown)
         {
             angle = (int)(angle - 1);
-            if (angle < 0) angle = 360;
+            if (angle < 0)
+                angle = 360;
         }
 
         if (_keyboard.Right.IsKeyDown)
         {
             angle = (int)(angle + 1);
-            if (angle > 360) angle = 0;
+            if (angle > 360)
+                angle = 0;
         }
     }
 
     private Container CreateIchigo(Vector location)
     {
-        return new Container()
-            .Location(location)
-            .Children(
-                new Sprite(tIchigo)
-            );
+        return new Container().Location(location).Children(new Sprite(tIchigo));
     }
 }

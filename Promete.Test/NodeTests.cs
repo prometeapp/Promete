@@ -13,8 +13,7 @@ public class NodeTests
 
         // Act & Assert
         var act = () => container.Add(container);
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("*自分自身*");
+        act.Should().Throw<ArgumentException>().WithMessage("*自分自身*");
     }
 
     [Fact]
@@ -25,8 +24,7 @@ public class NodeTests
 
         // Act & Assert
         var act = () => container.Insert(0, container);
-        act.Should().Throw<ArgumentException>()
-            .WithMessage("*自分自身*");
+        act.Should().Throw<ArgumentException>().WithMessage("*自分自身*");
     }
 
     [Fact]
@@ -66,7 +64,7 @@ public class NodeTests
         var oldParent = new Container();
         var newParent = new Container();
         var child = new Container();
-        
+
         oldParent.Add(child);
 
         // Act

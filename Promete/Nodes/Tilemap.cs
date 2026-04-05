@@ -10,7 +10,8 @@ namespace Promete.Nodes;
 public class Tilemap(
     VectorInt tileSize,
     Color? defaultColor = null,
-    TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto) : Node
+    TilemapRenderingMode renderingMode = TilemapRenderingMode.Auto
+) : Node
 {
     private readonly Dictionary<VectorInt, (ITile tile, Color? color)> _tiles = [];
 
@@ -54,9 +55,8 @@ public class Tilemap(
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        var mode = RenderingMode == TilemapRenderingMode.Auto
-            ? GetPreferredMode(ctx)
-            : RenderingMode;
+        var mode =
+            RenderingMode == TilemapRenderingMode.Auto ? GetPreferredMode(ctx) : RenderingMode;
         if (mode == TilemapRenderingMode.Scan)
             ScanAndCollect(queue, ctx);
         else
@@ -70,7 +70,9 @@ public class Tilemap(
         var maxTilesX = ww / tileSize.X + 2;
         var maxTilesY = wh / tileSize.Y + 2;
         var maxTilesInWindow = maxTilesX * maxTilesY;
-        return maxTilesInWindow < Tiles.Count ? TilemapRenderingMode.Scan : TilemapRenderingMode.RenderAll;
+        return maxTilesInWindow < Tiles.Count
+            ? TilemapRenderingMode.Scan
+            : TilemapRenderingMode.RenderAll;
     }
 
     private void ScanAndCollect(RenderCommandQueue queue, RenderContext ctx)
@@ -81,8 +83,10 @@ public class Tilemap(
         var maxTilesY = wh / tileSize.Y + 2;
 
         var tl = -AbsoluteLocation / tileSize;
-        if (tl.X < 0) tl.X--;
-        if (tl.Y < 0) tl.Y--;
+        if (tl.X < 0)
+            tl.X--;
+        if (tl.Y < 0)
+            tl.Y--;
         var (tx, ty) = (VectorInt)tl;
 
         for (var y = ty; y < ty + maxTilesY; y++)
@@ -90,17 +94,20 @@ public class Tilemap(
         {
             var offset = (x, y) * TileSize;
             var tile = this[x, y];
-            if (tile == null) continue;
+            if (tile == null)
+                continue;
 
-            queue.Enqueue(new DrawTextureCommand
-            {
-                Texture = tile.GetTexture(this, (x, y)),
-                ModelMatrix = ModelMatrix,
-                TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
-                Width = TileSize.X,
-                Height = TileSize.Y,
-                Pivot = offset,
-            });
+            queue.Enqueue(
+                new DrawTextureCommand
+                {
+                    Texture = tile.GetTexture(this, (x, y)),
+                    ModelMatrix = ModelMatrix,
+                    TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
+                    Width = TileSize.X,
+                    Height = TileSize.Y,
+                    Pivot = offset,
+                }
+            );
         }
     }
 
@@ -109,15 +116,17 @@ public class Tilemap(
         foreach (var (tileLocation, (tile, color)) in Tiles)
         {
             var offset = tileLocation * TileSize;
-            queue.Enqueue(new DrawTextureCommand
-            {
-                Texture = tile.GetTexture(this, tileLocation),
-                ModelMatrix = ModelMatrix,
-                TintColor = color.GetValueOrDefault(Color.White),
-                Width = TileSize.X,
-                Height = TileSize.Y,
-                Pivot = offset,
-            });
+            queue.Enqueue(
+                new DrawTextureCommand
+                {
+                    Texture = tile.GetTexture(this, tileLocation),
+                    ModelMatrix = ModelMatrix,
+                    TintColor = color.GetValueOrDefault(Color.White),
+                    Width = TileSize.X,
+                    Height = TileSize.Y,
+                    Pivot = offset,
+                }
+            );
         }
     }
 
@@ -131,9 +140,7 @@ public class Tilemap(
     /// </summary>
     public ITile? GetTileAt(VectorInt point)
     {
-        return _tiles.TryGetValue(point, out var tile)
-            ? tile.tile
-            : null;
+        return _tiles.TryGetValue(point, out var tile) ? tile.tile : null;
     }
 
     /// <summary>

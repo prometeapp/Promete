@@ -30,21 +30,23 @@ public class HeadlessBackend : BackendBase
             IsFullScreen = opts.IsFullScreen,
             Mode = opts.Mode,
         };
-        _time = new HeadlessTimeProvider
-        {
-            TargetFps = opts.TargetFps,
-            TargetUps = opts.TargetUps,
-        };
+        _time = new HeadlessTimeProvider { TargetFps = opts.TargetFps, TargetUps = opts.TargetUps };
         _renderTextureProvider = new HeadlessRenderTextureProvider();
         _screenBlitter = new HeadlessScreenBlitter(_renderTextureProvider, _gameView);
     }
 
     public override ITimeProvider SetupTimeProvider() => _time;
+
     public override IGameView SetupGameView() => _gameView;
+
     public override InputProvider SetupInputProvider() => new HeadlessInputProvider();
+
     public override IScreenBlitter SetupScreenBlitter() => _screenBlitter;
+
     public override TextureFactoryBase SetupTextureFactory() => new HeadlessTextureFactory();
+
     public override IRenderTextureProvider SetupRenderTextureProvider() => _renderTextureProvider;
+
     public override IShaderFactory SetupShaderFactory() => new HeadlessShaderFactory();
 
     public override void OnStart(PrometeApp app)
@@ -54,7 +56,8 @@ public class HeadlessBackend : BackendBase
         _timer.Elapsed += OnTimerElapsed;
         app.OnStart();
         _timer.Start();
-        while (!_isExitRequested) Thread.Sleep(1000);
+        while (!_isExitRequested)
+            Thread.Sleep(1000);
         _timer.Stop();
     }
 
@@ -68,6 +71,7 @@ public class HeadlessBackend : BackendBase
         var delta = 1.0 / _time.TargetUps;
         _time.Tick(delta);
         _app.OnUpdate();
-        if (_isExitRequested) _timer?.Stop();
+        if (_isExitRequested)
+            _timer?.Stop();
     }
 }

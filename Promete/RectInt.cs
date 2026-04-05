@@ -24,9 +24,7 @@ public struct RectInt
     /// <param name="width"></param>
     /// <param name="height"></param>
     public RectInt(int left, int top, int width, int height)
-        : this(new VectorInt(left, top), new VectorInt(width, height))
-    {
-    }
+        : this(new VectorInt(left, top), new VectorInt(width, height)) { }
 
     /// <summary>
     /// この矩形の位置を取得または設定します。

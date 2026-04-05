@@ -33,7 +33,8 @@ public abstract class Node
         get => _location;
         set
         {
-            if (_location == value) return;
+            if (_location == value)
+                return;
             _location = value;
             _isModelMatrixDirty = true;
         }
@@ -47,7 +48,8 @@ public abstract class Node
         get => _scale;
         set
         {
-            if (_scale == value) return;
+            if (_scale == value)
+                return;
             _scale = value;
             _isModelMatrixDirty = true;
         }
@@ -61,7 +63,8 @@ public abstract class Node
         get => _size;
         set
         {
-            if (_size == value) return;
+            if (_size == value)
+                return;
             _size = value;
             _isModelMatrixDirty = true;
         }
@@ -75,7 +78,8 @@ public abstract class Node
         get => _angle;
         set
         {
-            if (_angle == value) return;
+            if (_angle == value)
+                return;
             _angle = value;
             _isModelMatrixDirty = true;
         }
@@ -119,7 +123,8 @@ public abstract class Node
         get => _zIndex;
         set
         {
-            if (_zIndex == value) return;
+            if (_zIndex == value)
+                return;
             _zIndex = value;
             Parent?.RequestSorting();
         }
@@ -137,7 +142,8 @@ public abstract class Node
         get => _pivot;
         set
         {
-            if (_pivot == value) return;
+            if (_pivot == value)
+                return;
             _pivot = value;
             _isModelMatrixDirty = true;
         }
@@ -176,20 +182,23 @@ public abstract class Node
     /// </summary>
     public void Destroy()
     {
-        if (IsDestroyed) return;
+        if (IsDestroyed)
+            return;
         IsDestroyed = true;
         OnDestroy();
     }
 
     internal virtual void Update()
     {
-        if (IsDestroyed) return;
+        if (IsDestroyed)
+            return;
         OnUpdate();
     }
 
     internal virtual void BeforeRender()
     {
-        if (_isModelMatrixDirty) UpdateModelMatrix();
+        if (_isModelMatrixDirty)
+            UpdateModelMatrix();
         OnPreRender();
         OnRender();
     }
@@ -199,34 +208,25 @@ public abstract class Node
     /// </summary>
     /// <param name="queue">コマンドの収集先キュー。</param>
     /// <param name="ctx">レンダリングコンテキスト。</param>
-    public virtual void Collect(RenderCommandQueue queue, RenderContext ctx)
-    {
-    }
+    public virtual void Collect(RenderCommandQueue queue, RenderContext ctx) { }
 
     protected internal virtual void UpdateModelMatrix()
     {
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
-        ModelMatrix = Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0) *
-                      Matrix4x4.CreateScale(Scale.X, Scale.Y, 1) *
-                      Matrix4x4.CreateRotationZ(Angle.ToRadians()) *
-                      Matrix4x4.CreateTranslation(Location.X, Location.Y, 0) *
-                      parentMatrix;
+        ModelMatrix =
+            Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0)
+            * Matrix4x4.CreateScale(Scale.X, Scale.Y, 1)
+            * Matrix4x4.CreateRotationZ(Angle.ToRadians())
+            * Matrix4x4.CreateTranslation(Location.X, Location.Y, 0)
+            * parentMatrix;
         _isModelMatrixDirty = false;
     }
 
-    protected virtual void OnUpdate()
-    {
-    }
+    protected virtual void OnUpdate() { }
 
-    protected virtual void OnRender()
-    {
-    }
+    protected virtual void OnRender() { }
 
-    protected virtual void OnPreRender()
-    {
-    }
+    protected virtual void OnPreRender() { }
 
-    protected virtual void OnDestroy()
-    {
-    }
+    protected virtual void OnDestroy() { }
 }

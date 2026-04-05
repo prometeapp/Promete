@@ -28,5 +28,5 @@ public enum MouseButtonType
     /// <summary>
     /// サイドボタン2。
     /// </summary>
-    Side2 = 4
+    Side2 = 4,
 }

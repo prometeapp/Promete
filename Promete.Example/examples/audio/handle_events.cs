@@ -49,7 +49,8 @@ public class HandleEventsExampleScene(Keyboard keyboard, ConsoleLayer console) :
     private void WindowOnFileDropped(FileDroppedEventArgs e)
     {
         var path = e.Path;
-        if (!path.EndsWith(".ogg")) return;
+        if (!path.EndsWith(".ogg"))
+            return;
 
         _audio.Stop();
         _bgm = new VorbisAudioSource(path);

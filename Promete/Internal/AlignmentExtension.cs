@@ -17,18 +17,20 @@ internal static class ImageSharpConverterExtension
             VerticalAlignment.Top => SixLabors.Fonts.VerticalAlignment.Top,
             VerticalAlignment.Center => SixLabors.Fonts.VerticalAlignment.Center,
             VerticalAlignment.Bottom => SixLabors.Fonts.VerticalAlignment.Bottom,
-            _ => throw new ArgumentOutOfRangeException(nameof(alignment), alignment, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(alignment), alignment, null),
         };
     }
 
-    internal static SixLabors.Fonts.HorizontalAlignment ToSixLabors(this HorizontalAlignment alignment)
+    internal static SixLabors.Fonts.HorizontalAlignment ToSixLabors(
+        this HorizontalAlignment alignment
+    )
     {
         return alignment switch
         {
             HorizontalAlignment.Left => SixLabors.Fonts.HorizontalAlignment.Left,
             HorizontalAlignment.Center => SixLabors.Fonts.HorizontalAlignment.Center,
             HorizontalAlignment.Right => SixLabors.Fonts.HorizontalAlignment.Right,
-            _ => throw new ArgumentOutOfRangeException(nameof(alignment), alignment, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(alignment), alignment, null),
         };
     }
 }

@@ -138,7 +138,8 @@ public class AudioPlayer : IDisposable
     /// <param name="loop">ループ開始位置（サンプル単位）。ループ再生を行わない場合は<c>null</c>を指定します。</param>
     public async void Play(IAudioSource source, int? loop = null)
     {
-        if (IsPlaying) Stop();
+        if (IsPlaying)
+            Stop();
 
         _currentTokenSource = new CancellationTokenSource();
         await PlayAsync(source, loop, _currentTokenSource.Token);
@@ -149,7 +150,8 @@ public class AudioPlayer : IDisposable
     /// </summary>
     public void Pause()
     {
-        if (!IsPlaying) return;
+        if (!IsPlaying)
+            return;
         IsPausing = true;
     }
 
@@ -158,7 +160,8 @@ public class AudioPlayer : IDisposable
     /// </summary>
     public void Resume()
     {
-        if (!IsPausing) return;
+        if (!IsPausing)
+            return;
         IsPausing = false;
     }
 
@@ -206,7 +209,12 @@ public class AudioPlayer : IDisposable
     /// <param name="gain">再生する音量。</param>
     /// <param name="pitch">再生時のピッチ。</param>
     /// <param name="pan">再生時のパン。</param>
-    public async void PlayOneShot(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0)
+    public async void PlayOneShot(
+        IAudioSource source,
+        float gain = 1,
+        float pitch = 1,
+        float pan = 0
+    )
     {
         await PlayOneShotAsync(source, gain, pitch, pan);
     }
@@ -219,10 +227,17 @@ public class AudioPlayer : IDisposable
     /// <param name="pitch">再生時のピッチ。</param>
     /// <param name="pan">再生時のパン。</param>
     /// <returns>非同期操作を表すタスク。</returns>
-    public async ValueTask PlayOneShotAsync(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0)
+    public async ValueTask PlayOneShotAsync(
+        IAudioSource source,
+        float gain = 1,
+        float pitch = 1,
+        float pan = 0
+    )
     {
         if (source.Samples is null)
-            throw new ArgumentException("PlayOneShot requires AudioSource which has determined length.");
+            throw new ArgumentException(
+                "PlayOneShot requires AudioSource which has determined length."
+            );
         var buffer = new short[source.Samples.Value];
         source.FillSamples(buffer, 0);
         using var alSrc = new ALSource(_al);
@@ -245,7 +260,11 @@ public class AudioPlayer : IDisposable
         int buffersProcessed;
         do
         {
-            _al.GetSourceProperty(alSrc.Handle, GetSourceInteger.BuffersProcessed, out buffersProcessed);
+            _al.GetSourceProperty(
+                alSrc.Handle,
+                GetSourceInteger.BuffersProcessed,
+                out buffersProcessed
+            );
             await Task.Delay(1);
         } while (buffersProcessed < 1);
     }
@@ -263,7 +282,8 @@ public class AudioPlayer : IDisposable
             using var alSource = new ALSource(_al);
             using var buffer1 = new ALBuffer(_al);
             using var buffer2 = new ALBuffer(_al);
-            int bufferSampleIndex1 = 0, bufferSampleIndex2 = 0;
+            int bufferSampleIndex1 = 0,
+                bufferSampleIndex2 = 0;
             var currentSample = 0;
             var nextBufferIndex = 0;
             var bufferFormat = GetBufferFormat(source);
@@ -294,12 +314,25 @@ public class AudioPlayer : IDisposable
                 var x = _pan;
                 var z = MathF.Abs(_pan) < 1.0f ? -MathF.Sqrt(1.0f - _pan * _pan) : 0.0f;
                 _al.SetSourceProperty(alSource.Handle, SourceVector3.Position, x, 0, z);
-                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out var processedCount);
+                _al.GetSourceProperty(
+                    alSource.Handle,
+                    GetSourceInteger.BuffersProcessed,
+                    out var processedCount
+                );
 
                 // ソースが現在再生しているバッファのサンプル位置を取得し、TimeInSamplesを更新
-                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.Buffer, out var currentBuffer);
-                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.SampleOffset, out var offset);
-                var sampleOffset = currentBuffer == buffer1.Handle ? bufferSampleIndex1 : bufferSampleIndex2;
+                _al.GetSourceProperty(
+                    alSource.Handle,
+                    GetSourceInteger.Buffer,
+                    out var currentBuffer
+                );
+                _al.GetSourceProperty(
+                    alSource.Handle,
+                    GetSourceInteger.SampleOffset,
+                    out var offset
+                );
+                var sampleOffset =
+                    currentBuffer == buffer1.Handle ? bufferSampleIndex1 : bufferSampleIndex2;
                 TimeInSamples = (sampleOffset + offset) / source.Channels;
                 Time = (int)(TimeInSamples * 1000L / source.SampleRate);
 
@@ -310,12 +343,14 @@ public class AudioPlayer : IDisposable
                 if (IsPausing)
                 {
                     _al.SourcePause(alSource.Handle);
-                    while (IsPausing) await Task.Delay(1, token).ConfigureAwait(false);
+                    while (IsPausing)
+                        await Task.Delay(1, token).ConfigureAwait(false);
                     _al.SourcePlay(alSource.Handle);
                 }
 
                 // バッファが全て処理されるまで待機
-                if (processedCount == 0) continue;
+                if (processedCount == 0)
+                    continue;
 
                 // 処理中のバッファがなくなった場合、キューへの詰め直しを行う
                 DequeueBuffer(nextBufferIndex == 0 ? buffer1 : buffer2);
@@ -327,10 +362,12 @@ public class AudioPlayer : IDisposable
                     _al.SourcePlay(alSource.Handle);
 
                 // まだ再生が終了していない場合は処理を続行
-                if (!isFinished) continue;
+                if (!isFinished)
+                    continue;
 
                 // ループ再生が無効の場合、再生を終了する
-                if (loop is not { } loopStartSample) break;
+                if (loop is not { } loopStartSample)
+                    break;
 
                 // ループ再生の開始位置にシーク
                 currentSample = loopStartSample * source.Channels;
@@ -344,7 +381,11 @@ public class AudioPlayer : IDisposable
             int processed;
             do
             {
-                _al.GetSourceProperty(alSource.Handle, GetSourceInteger.BuffersProcessed, out processed);
+                _al.GetSourceProperty(
+                    alSource.Handle,
+                    GetSourceInteger.BuffersProcessed,
+                    out processed
+                );
                 await Task.Yield();
             } while (processed < 2);
 
@@ -378,7 +419,8 @@ public class AudioPlayer : IDisposable
 
                 if (isFinished)
                 {
-                    if (sampleSize == 0) return;
+                    if (sampleSize == 0)
+                        return;
                     BufferExactSizeDataUnsafely();
                 }
                 else
@@ -395,8 +437,13 @@ public class AudioPlayer : IDisposable
                 {
                     fixed (short* samplePtr = samples)
                     {
-                        _al.BufferData(nextBuffer.Handle, bufferFormat, samplePtr, sampleSize * sizeof(short),
-                            source.SampleRate);
+                        _al.BufferData(
+                            nextBuffer.Handle,
+                            bufferFormat,
+                            samplePtr,
+                            sampleSize * sizeof(short),
+                            source.SampleRate
+                        );
                     }
                 }
             }
@@ -416,7 +463,7 @@ public class AudioPlayer : IDisposable
             (1, 16) => BufferFormat.Mono16,
             (2, 8) => BufferFormat.Stereo8,
             (2, 16) => BufferFormat.Stereo16,
-            _ => throw new NotSupportedException("Unsupported format.")
+            _ => throw new NotSupportedException("Unsupported format."),
         };
     }
 

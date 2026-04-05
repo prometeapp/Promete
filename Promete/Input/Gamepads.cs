@@ -28,13 +28,15 @@ public sealed class Gamepads(PrometeApp app, InputProvider inputProvider) : IIni
 
     private void OnConnectionChanged(IInputDevice device, bool isConnected)
     {
-        if (device is IGamepad) UpdateGamepads();
+        if (device is IGamepad)
+            UpdateGamepads();
     }
 
     private void UpdateGamepads()
     {
         _pads.ForEach(p => p.Dispose());
         _pads.Clear();
-        foreach (var silkGamepad in _ctx.Gamepads) _pads.Add(new Gamepad(silkGamepad, app));
+        foreach (var silkGamepad in _ctx.Gamepads)
+            _pads.Add(new Gamepad(silkGamepad, app));
     }
 }

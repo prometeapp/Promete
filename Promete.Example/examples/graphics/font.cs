@@ -15,22 +15,26 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
         ("Default (w/o antialiasing)", null, 16, false),
         ("美咲ゴシック", "assets/MisakiGothic.ttf", 8, false),
         ("JF-Dot-Shinonome14", "assets/JfDotShinonome14.ttf", 14, false),
-        ("Koruri", "assets/Koruri.ttf", 16, true)
+        ("Koruri", "assets/Koruri.ttf", 16, true),
     ];
 
     private readonly List<Text> _menuItems = [];
 
-    private readonly Text _preview = new("""
-                                         あのイーハトーヴォのすきとおった風、
-                                         夏でも底に冷たさをもつ青いそら、
-                                         うつくしい森で飾られたモリーオ市、
-                                         郊外のぎらぎらひかる草の波。
+    private readonly Text _preview = new(
+        """
+        あのイーハトーヴォのすきとおった風、
+        夏でも底に冷たさをもつ青いそら、
+        うつくしい森で飾られたモリーオ市、
+        郊外のぎらぎらひかる草の波。
 
-                                         [↑][↓]キーでフォントを選択
-                                         [Enter]キーでコンソールのフォントを変更
-                                         [D]キーでダークモード/ライトモード切替
-                                         [ESC]キーでメニューに戻る
-                                         """, Font.GetDefault(), Color.White);
+        [↑][↓]キーでフォントを選択
+        [Enter]キーでコンソールのフォントを変更
+        [D]キーでダークモード/ライトモード切替
+        [ESC]キーでメニューに戻る
+        """,
+        Font.GetDefault(),
+        Color.White
+    );
 
     private int _index;
     private bool _isDarkMode = true;
@@ -40,11 +44,11 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
         var i = 0;
         foreach (var (name, path, size, antialias) in _fontDefinitions)
         {
-            var font = path == null
-                ? Font.GetDefault(size, FontStyle.Normal, antialias)
-                : Font.FromFile(path, size, isAntialiased: antialias);
-            var text = new Text(name, font, Color.White)
-                .Location(16, 24 + i * 24);
+            var font =
+                path == null
+                    ? Font.GetDefault(size, FontStyle.Normal, antialias)
+                    : Font.FromFile(path, size, isAntialiased: antialias);
+            var text = new Text(name, font, Color.White).Location(16, 24 + i * 24);
 
             _menuItems.Add(text);
             i++;
@@ -61,13 +65,15 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
         if (keyboard.Up.IsKeyDown)
         {
             _index--;
-            if (_index < 0) _index = _menuItems.Count - 1;
+            if (_index < 0)
+                _index = _menuItems.Count - 1;
             Choose();
         }
         else if (keyboard.Down.IsKeyDown)
         {
             _index++;
-            if (_index >= _menuItems.Count) _index = 0;
+            if (_index >= _menuItems.Count)
+                _index = 0;
             Choose();
         }
         else if (keyboard.Escape.IsKeyDown)

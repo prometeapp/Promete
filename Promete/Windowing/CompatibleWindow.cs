@@ -169,13 +169,16 @@ public class CompatibleWindow(PrometeApp app) : IWindow
         set => app.View.Mode = value;
     }
 
-    public IInputContext? _RawInputContext => app.TryGetPlugin<IInputContext>(out var ctx) ? ctx : null;
+    public IInputContext? _RawInputContext =>
+        app.TryGetPlugin<IInputContext>(out var ctx) ? ctx : null;
 
     public TextureFactoryBase TextureFactory => app.TextureFactory;
 
     public void Run(WindowOptions opts)
     {
-        throw new NotSupportedException("CompatibleWindow.Run() はサポートされていません。app.Run() を使用してください。");
+        throw new NotSupportedException(
+            "CompatibleWindow.Run() はサポートされていません。app.Run() を使用してください。"
+        );
     }
 
     public void Exit() => app.Exit();

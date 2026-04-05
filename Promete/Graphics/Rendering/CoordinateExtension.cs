@@ -16,7 +16,11 @@ public static class CoordinateExtension
     /// <summary>
     /// スクリーン座標をViewport座標に変換します。
     /// </summary>
-    public static (float, float) ToViewportPoint(this (float, float) dp, float halfWidth, float halfHeight)
+    public static (float, float) ToViewportPoint(
+        this (float, float) dp,
+        float halfWidth,
+        float halfHeight
+    )
     {
         return ((dp.Item1 - halfWidth) / halfWidth, -(dp.Item2 - halfHeight) / halfHeight);
     }

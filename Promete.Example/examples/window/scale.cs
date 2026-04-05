@@ -16,11 +16,16 @@ public class WindowScaleDemoScene(Keyboard keyboard, ConsoleLayer console) : Sce
         console.Print("[3]: Scale 4x");
         console.Print("[4]: Scale 8x");
 
-        if (keyboard.Number1.IsKeyDown) Window.Scale = 1;
-        if (keyboard.Number2.IsKeyDown) Window.Scale = 2;
-        if (keyboard.Number3.IsKeyDown) Window.Scale = 4;
-        if (keyboard.Number4.IsKeyDown) Window.Scale = 8;
+        if (keyboard.Number1.IsKeyDown)
+            Window.Scale = 1;
+        if (keyboard.Number2.IsKeyDown)
+            Window.Scale = 2;
+        if (keyboard.Number3.IsKeyDown)
+            Window.Scale = 4;
+        if (keyboard.Number4.IsKeyDown)
+            Window.Scale = 8;
 
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 }

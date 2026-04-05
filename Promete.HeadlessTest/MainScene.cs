@@ -9,11 +9,13 @@ public class MainScene(CoroutineManager coroutine) : Scene
     {
         Console.WriteLine("初期化したよ～ん");
 
-        coroutine.Start(Task1())
-            .Then(() => Console.WriteLine("タスク1が終わった"));
+        coroutine.Start(Task1()).Then(() => Console.WriteLine("タスク1が終わった"));
 
-        coroutine.Start(Task2())
-            .Error(e => Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}\n{e.StackTrace}"));
+        coroutine
+            .Start(Task2())
+            .Error(e =>
+                Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}\n{e.StackTrace}")
+            );
     }
 
     public override void OnDestroy()

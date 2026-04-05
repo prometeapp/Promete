@@ -59,7 +59,10 @@ public class HeadlessWindow : IWindow
         set
         {
             if (value is not 1 and not 2 and not 4 and not 8)
-                throw new ArgumentOutOfRangeException(nameof(value), "Scale must be 1, 2, 4, or 8.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "Scale must be 1, 2, 4, or 8."
+                );
             _scale = value;
         }
     }
@@ -107,7 +110,8 @@ public class HeadlessWindow : IWindow
         _timer.Elapsed += TimerOnElapsed;
         Start?.Invoke();
         _timer.Start();
-        while (!_isExitRequested) Thread.Sleep(1000);
+        while (!_isExitRequested)
+            Thread.Sleep(1000);
     }
 
     /// <summary>
@@ -148,6 +152,7 @@ public class HeadlessWindow : IWindow
         Update?.Invoke();
         PostUpdate?.Invoke();
         Render?.Invoke();
-        if (_isExitRequested) _timer.Stop();
+        if (_isExitRequested)
+            _timer.Stop();
     }
 }

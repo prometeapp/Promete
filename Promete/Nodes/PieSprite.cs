@@ -9,7 +9,8 @@ namespace Promete.Nodes;
 /// <summary>
 /// テクスチャを扇状（円グラフ状）に描画するスプライトクラスです。
 /// </summary>
-public class PieSprite(Texture2D? texture = null, Color? tintColor = default) : Sprite(texture, tintColor)
+public class PieSprite(Texture2D? texture = null, Color? tintColor = default)
+    : Sprite(texture, tintColor)
 {
     private float _startPercent = 0.0f;
     private float _percent = 0.0f;
@@ -36,18 +37,21 @@ public class PieSprite(Texture2D? texture = null, Color? tintColor = default) : 
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        if (Texture is not { } tex) return;
+        if (Texture is not { } tex)
+            return;
 
-        queue.Enqueue(new DrawPieTextureCommand
-        {
-            Texture = tex,
-            ModelMatrix = ModelMatrix,
-            TintColor = TintColor,
-            Width = Size.X,
-            Height = Size.Y,
-            StartPercent = StartPercent,
-            Percent = Percent,
-            Material = Material,
-        });
+        queue.Enqueue(
+            new DrawPieTextureCommand
+            {
+                Texture = tex,
+                ModelMatrix = ModelMatrix,
+                TintColor = TintColor,
+                Width = Size.X,
+                Height = Size.Y,
+                StartPercent = StartPercent,
+                Percent = Percent,
+                Material = Material,
+            }
+        );
     }
 }

@@ -12,5 +12,5 @@ public enum WindowMode
     Fixed,
 
     /// <summary>ウィンドウ枠なしのモード。</summary>
-    NoFrame
+    NoFrame,
 }

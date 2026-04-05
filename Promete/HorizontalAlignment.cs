@@ -9,12 +9,14 @@ public enum HorizontalAlignment
     /// 左に整列します。
     /// </summary>
     Left,
+
     /// <summary>
     /// 右に整列します。
     /// </summary>
     Right,
+
     /// <summary>
     /// 中央に整列します。
     /// </summary>
-    Center
+    Center,
 }

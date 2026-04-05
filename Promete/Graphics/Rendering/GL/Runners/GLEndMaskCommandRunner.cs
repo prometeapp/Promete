@@ -8,7 +8,8 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// <summary>
 /// <see cref="EndMaskCommand"/> でステンシルマスクの後処理を行うランナーです。
 /// </summary>
-public class GLEndMaskCommandRunner(IGameView view, GLRenderState state) : CommandRunner<EndMaskCommand>
+public class GLEndMaskCommandRunner(IGameView view, GLRenderState state)
+    : CommandRunner<EndMaskCommand>
 {
     private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
 

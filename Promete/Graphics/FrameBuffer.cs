@@ -32,7 +32,9 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
 
         var provider = PrometeApp.Current.TryGetPlugin<IRenderTextureProvider>(out var p)
             ? p
-            : throw new InvalidOperationException("Current backend does not support RenderTexture.");
+            : throw new InvalidOperationException(
+                "Current backend does not support RenderTexture."
+            );
 
         _renderTexture = provider.Create((width, height));
         _frameBufferManager = PrometeApp.Current.GetPlugin<FrameBufferManager>();
@@ -60,7 +62,8 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         get => _size;
         set
         {
-            if (_size == value) return;
+            if (_size == value)
+                return;
 
             _size = value;
             _renderTexture.Resize(value);
@@ -110,7 +113,8 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
 
     internal void Update()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         _children.Update();
     }
