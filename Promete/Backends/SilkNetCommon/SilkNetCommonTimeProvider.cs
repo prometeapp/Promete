@@ -1,8 +1,16 @@
-
 namespace Promete.Backends.SilkNetCommon;
 
 public class SilkNetCommonTimeProvider : ITimeProvider
 {
+    private readonly Silk.NET.Windowing.IWindow _window;
+
+    public SilkNetCommonTimeProvider(Silk.NET.Windowing.IWindow window)
+    {
+        _window = window;
+        _window.Render += OnRender;
+        _window.Update += OnUpdate;
+    }
+
     public float TotalTime { get; private set; }
     public float TotalTimeWithoutScale { get; private set; }
     public float DeltaTime { get; private set; }
@@ -23,15 +31,6 @@ public class SilkNetCommonTimeProvider : ITimeProvider
     }
 
     public float TimeScale { get; set; } = 1;
-
-    private readonly Silk.NET.Windowing.IWindow _window;
-
-    public SilkNetCommonTimeProvider(Silk.NET.Windowing.IWindow window)
-    {
-        _window = window;
-        _window.Render += OnRender;
-        _window.Update += OnUpdate;
-    }
 
     private void OnRender(double delta)
     {

@@ -19,9 +19,7 @@ public class Tile : ITile
     /// </summary>
     /// <param name="texture">タイルとして描画されるテクスチャ。</param>
     public Tile(Texture2D texture)
-        : this(texture, false)
-    {
-    }
+        : this(texture, false) { }
 
     /// <summary>
     /// <see cref="Tile" /> クラスの新しいインスタンスを初期化します。

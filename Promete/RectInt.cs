@@ -6,6 +6,27 @@ namespace Promete;
 public struct RectInt
 {
     /// <summary>
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="location"></param>
+    /// <param name="size"></param>
+    public RectInt(VectorInt location, VectorInt size)
+    {
+        Location = location;
+        Size = size;
+    }
+
+    /// <summary>
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="left"></param>
+    /// <param name="top"></param>
+    /// <param name="width"></param>
+    /// <param name="height"></param>
+    public RectInt(int left, int top, int width, int height)
+        : this(new VectorInt(left, top), new VectorInt(width, height)) { }
+
+    /// <summary>
     /// この矩形の位置を取得または設定します。
     /// </summary>
     public VectorInt Location { get; set; }
@@ -73,30 +94,6 @@ public struct RectInt
     /// この矩形の中心の座標を取得します。
     /// </summary>
     public VectorInt Center => Location + (Size / 2);
-
-    /// <summary>
-    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="location"></param>
-    /// <param name="size"></param>
-    public RectInt(VectorInt location, VectorInt size)
-    {
-        Location = location;
-        Size = size;
-    }
-
-    /// <summary>
-    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="left"></param>
-    /// <param name="top"></param>
-    /// <param name="width"></param>
-    /// <param name="height"></param>
-    public RectInt(int left, int top, int width, int height)
-        : this(new VectorInt(left, top), new VectorInt(width, height))
-    {
-    }
-
 
     /// <summary>
     /// この矩形と指定された矩形が重なっているかどうかを判定します。

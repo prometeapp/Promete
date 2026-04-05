@@ -14,11 +14,7 @@ public class TextNodeMemoryLeakDebugScene : Scene
 
     public TextNodeMemoryLeakDebugScene(Keyboard keyboard)
     {
-        Root =
-        [
-            _textNode = new Text("")
-                .Location(32, 32)
-        ];
+        Root = [_textNode = new Text("").Location(32, 32)];
 
         _keyboard = keyboard;
         _process = Process.GetCurrentProcess();

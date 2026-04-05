@@ -14,7 +14,8 @@ public static class MacNativeHelper
     /// <param name="name">タイトルに設定する文字列</param>
     public static void SetMenuBarTitle(string name)
     {
-        if (!OperatingSystem.IsMacOS()) return;
+        if (!OperatingSystem.IsMacOS())
+            return;
         var nsStringClass = GetClass("NSString");
         var nsStr = ObjcMsgSendStr(
             ObjcMsgSend(nsStringClass, GetSelector("alloc")),
@@ -24,7 +25,7 @@ public static class MacNativeHelper
 
         var app = ObjcMsgSend(GetClass("NSApplication"), GetSelector("sharedApplication"));
         var mainMenu = ObjcMsgSend(app, GetSelector("mainMenu"));
-        var firstItem = ObjcMsgSendInt(mainMenu, GetSelector("itemAtIndex:"), 0 );
+        var firstItem = ObjcMsgSendInt(mainMenu, GetSelector("itemAtIndex:"), 0);
         ObjcMsgSendVoid(firstItem, GetSelector("setTitle:"), nsStr);
     }
 

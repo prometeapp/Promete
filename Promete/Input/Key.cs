@@ -5,9 +5,7 @@ namespace Promete.Input;
 /// </summary>
 public class Key
 {
-    internal Key()
-    {
-    }
+    internal Key() { }
 
     /// <summary>
     /// キーが現在押されているかどうかを取得します。

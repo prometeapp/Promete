@@ -14,6 +14,7 @@ public class Sample1ExampleScene(ConsoleLayer console, Keyboard keyboard) : Scen
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 }

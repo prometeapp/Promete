@@ -51,14 +51,20 @@ public class CoroutineManager
 
     private void Update()
     {
-        foreach (var (coroutine, instruction) in _coroutines.Select(c => (c.Key, c.Value)).ToArray())
+        foreach (
+            var (coroutine, instruction) in _coroutines.Select(c => (c.Key, c.Value)).ToArray()
+        )
         {
-            if (instruction is { KeepWaiting: true }) continue;
+            if (instruction is { KeepWaiting: true })
+                continue;
             try
             {
                 if (coroutine.MoveNext())
                 {
-                    _coroutines[coroutine] = ToYieldInstruction(coroutine.Current, coroutine.IsKeepAlive);
+                    _coroutines[coroutine] = ToYieldInstruction(
+                        coroutine.Current,
+                        coroutine.IsKeepAlive
+                    );
                 }
                 else
                 {
@@ -69,7 +75,8 @@ public class CoroutineManager
             catch (Exception ex)
             {
                 Stop(coroutine);
-                if (coroutine.ErrorAction == null) throw;
+                if (coroutine.ErrorAction == null)
+                    throw;
                 coroutine.ErrorAction.Invoke(ex);
             }
         }
@@ -83,7 +90,7 @@ public class CoroutineManager
             IEnumerator ie => Start(ie).KeepAlive(isKeepAlive),
             Task t => new WaitForTask(t),
             ValueTask t => new WaitForTask(t),
-            _ => new WaitUntilNextFrame()
+            _ => new WaitUntilNextFrame(),
         };
     }
 

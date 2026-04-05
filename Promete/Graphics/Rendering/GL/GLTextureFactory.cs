@@ -26,19 +26,33 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         return LoadFromImageSharpImage(Image.Load(stream));
     }
 
-    public override Texture2D[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size)
+    public override Texture2D[] LoadSpriteSheet(
+        string path,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         return LoadSpriteSheet(Image.Load(path), horizontalCount, verticalCount, size);
     }
 
-    public override Texture2D[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size)
+    public override Texture2D[] LoadSpriteSheet(
+        Stream stream,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         return LoadSpriteSheet(Image.Load(stream), horizontalCount, verticalCount, size);
     }
 
     public override Texture2D Create(byte[] bitmap, VectorInt size)
     {
-        return new Texture2D(GenerateTexture(bitmap, (uint)size.X, (uint)size.Y), size, DisposeTexture);
+        return new Texture2D(
+            GenerateTexture(bitmap, (uint)size.X, (uint)size.Y),
+            size,
+            DisposeTexture
+        );
     }
 
     public override Texture2D Create(byte[,,] bitmap)
@@ -74,12 +88,19 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
     {
         using var img = image.CloneAs<Rgba32>();
 
-        var rgbaBytes = MemoryMarshal.AsBytes(img.GetPixelMemoryGroup().ToArray()[0].Span).ToArray();
+        var rgbaBytes = MemoryMarshal
+            .AsBytes(img.GetPixelMemoryGroup().ToArray()[0].Span)
+            .ToArray();
         image.Dispose();
         return Create(rgbaBytes, (img.Width, img.Height));
     }
 
-    private Texture2D[] LoadSpriteSheet(Image bmp, int horizontalCount, int verticalCount, VectorInt size)
+    private Texture2D[] LoadSpriteSheet(
+        Image bmp,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         var width = (float)bmp.Width;
         var height = (float)bmp.Height;
@@ -93,13 +114,21 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
                 var px = x * size.X;
                 var py = y * size.Y;
 
-                if (px + size.X > width) throw new ArgumentException(null, nameof(horizontalCount));
-                if (py + size.Y > height) throw new ArgumentException(null, nameof(verticalCount));
+                if (px + size.X > width)
+                    throw new ArgumentException(null, nameof(horizontalCount));
+                if (py + size.Y > height)
+                    throw new ArgumentException(null, nameof(verticalCount));
 
                 var uvStart = new Vector(px / width, py / height);
                 var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
 
-                textures[y * horizontalCount + x] = new Texture2D(handle, size, DisposeTexture, uvStart, uvEnd);
+                textures[y * horizontalCount + x] = new Texture2D(
+                    handle,
+                    size,
+                    DisposeTexture,
+                    uvStart,
+                    uvEnd
+                );
             }
         }
 
@@ -107,7 +136,12 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         return textures;
     }
 
-    private Texture2D[] LoadSpriteSheetLegacy(Image bmp, int horizontalCount, int verticalCount, VectorInt size)
+    private Texture2D[] LoadSpriteSheetLegacy(
+        Image bmp,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         using (bmp)
         {
@@ -118,12 +152,15 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
             for (var x = 0; x < horizontalCount; x++)
             {
                 var (px, py) = (x * size.X, y * size.Y);
-                if (px + size.X > img.Width) throw new ArgumentException(null, nameof(horizontalCount));
+                if (px + size.X > img.Width)
+                    throw new ArgumentException(null, nameof(horizontalCount));
 
-                if (py + size.Y > img.Height) throw new ArgumentException(null, nameof(verticalCount));
+                if (py + size.Y > img.Height)
+                    throw new ArgumentException(null, nameof(verticalCount));
 
                 using var cropped = img.Clone(ctx =>
-                    ctx.Crop(new Rectangle(px, py, size.X, size.Y)));
+                    ctx.Crop(new Rectangle(px, py, size.X, size.Y))
+                );
                 textures[y * horizontalCount + x] = LoadFromImageSharpImage(cropped);
             }
 
@@ -140,11 +177,37 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
             GL.ActiveTexture(GLEnum.Texture0);
             GL.BindTexture(GLEnum.Texture2D, texture);
 
-            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureWrapS, (int)GLEnum.ClampToEdge);
-            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureWrapT, (int)GLEnum.ClampToEdge);
-            GL.TexImage2D(GLEnum.Texture2D, 0, (int)GLEnum.Rgba, width, height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, b);
+            GL.TexParameter(
+                GLEnum.Texture2D,
+                TextureParameterName.TextureMinFilter,
+                (int)TextureMinFilter.Nearest
+            );
+            GL.TexParameter(
+                GLEnum.Texture2D,
+                TextureParameterName.TextureMagFilter,
+                (int)TextureMagFilter.Nearest
+            );
+            GL.TexParameter(
+                GLEnum.Texture2D,
+                TextureParameterName.TextureWrapS,
+                (int)GLEnum.ClampToEdge
+            );
+            GL.TexParameter(
+                GLEnum.Texture2D,
+                TextureParameterName.TextureWrapT,
+                (int)GLEnum.ClampToEdge
+            );
+            GL.TexImage2D(
+                GLEnum.Texture2D,
+                0,
+                (int)GLEnum.Rgba,
+                width,
+                height,
+                0,
+                GLEnum.Rgba,
+                GLEnum.UnsignedByte,
+                b
+            );
             return (int)texture;
         }
     }

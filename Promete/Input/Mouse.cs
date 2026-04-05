@@ -46,13 +46,15 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         _ctx = inputProvider.CreateInput();
 
         _buttons = new MouseButton[12];
-        for (var i = 0; i < _buttons.Length; i++) _buttons[i] = new MouseButton();
+        for (var i = 0; i < _buttons.Length; i++)
+            _buttons[i] = new MouseButton();
     }
 
     public void OnUpdate()
     {
         UpdateMouseDevice();
-        if (_mouse == null) return;
+        if (_mouse == null)
+            return;
         var wheel = _mouse.ScrollWheels[0];
         Scroll = (wheel.X, wheel.Y);
         Position = VectorInt.From(_mouse.Position / app.View.Scale);
@@ -80,7 +82,8 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         app.PostUpdate -= OnPostUpdate;
         app.Destroy -= OnDestroy;
 
-        if (_mouse == null) return;
+        if (_mouse == null)
+            return;
         _mouse.Click -= OnMouseClick;
         _mouse.MouseDown -= OnMouseDown;
         _mouse.MouseUp -= OnMouseUp;
@@ -100,12 +103,14 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         }
 
         // マウスが存在しない場合、取得を試みる
-        if (_mouse == null) TryFindMouse();
+        if (_mouse == null)
+            TryFindMouse();
     }
 
     private void TryFindMouse()
     {
-        if (_ctx.Mice.Count == 0) return;
+        if (_ctx.Mice.Count == 0)
+            return;
 
         _mouse = _ctx.Mice[0];
         _mouse.Click += OnMouseClick;
@@ -117,27 +122,45 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
     private void OnMouseClick(IMouse mouse, SilkMouseButton btn, Vector2 pos)
     {
         var id = (int)btn;
-        if (id < 0 || _buttons.Length <= id) return;
+        if (id < 0 || _buttons.Length <= id)
+            return;
 
-        Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos / (app.View.Scale * app.View.PixelRatio))));
+        Click?.Invoke(
+            new MouseButtonEventArgs(
+                id,
+                (VectorInt)Vector.From(pos / (app.View.Scale * app.View.PixelRatio))
+            )
+        );
     }
 
     private void OnMouseDown(IMouse mouse, SilkMouseButton btn)
     {
         var id = (int)btn;
-        if (id < 0 || _buttons.Length <= id) return;
+        if (id < 0 || _buttons.Length <= id)
+            return;
 
         _buttons[id].IsButtonDown = true;
-        ButtonDown?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))));
+        ButtonDown?.Invoke(
+            new MouseButtonEventArgs(
+                id,
+                VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))
+            )
+        );
     }
 
     private void OnMouseUp(IMouse mouse, SilkMouseButton btn)
     {
         var id = (int)btn;
-        if (id < 0 || _buttons.Length <= id) return;
+        if (id < 0 || _buttons.Length <= id)
+            return;
 
         _buttons[id].IsButtonUp = true;
-        ButtonUp?.Invoke(new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))));
+        ButtonUp?.Invoke(
+            new MouseButtonEventArgs(
+                id,
+                VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))
+            )
+        );
     }
 
     private void OnMouseMove(IMouse mouse, Vector2 pos)
@@ -149,13 +172,15 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         if (pos is { X: >= 0, Y: >= 0 } && pos.X <= app.View.Width && pos.Y <= app.View.Height)
         {
             // 画面内
-            if (!_isMouseOnWindow) Enter?.Invoke();
+            if (!_isMouseOnWindow)
+                Enter?.Invoke();
             _isMouseOnWindow = true;
         }
         else
         {
             // 画面外
-            if (_isMouseOnWindow) Leave?.Invoke();
+            if (_isMouseOnWindow)
+                Leave?.Invoke();
             _isMouseOnWindow = false;
         }
     }

@@ -93,5 +93,5 @@ public enum GamepadButtonType
     /// <summary>
     /// 不明なボタン
     /// </summary>
-    Unknown
+    Unknown,
 }

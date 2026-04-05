@@ -52,9 +52,17 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
     {
         // テクスチャを同一ハンドルで再割り当て（既存の Texture2D 参照を維持）
         GL.BindTexture(GLEnum.Texture2D, (uint)rt.Texture.Handle);
-        GL.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba,
-            (uint)newSize.X, (uint)newSize.Y, 0,
-            PixelFormat.Rgba, PixelType.UnsignedByte, null);
+        GL.TexImage2D(
+            GLEnum.Texture2D,
+            0,
+            (int)InternalFormat.Rgba,
+            (uint)newSize.X,
+            (uint)newSize.Y,
+            0,
+            PixelFormat.Rgba,
+            PixelType.UnsignedByte,
+            null
+        );
         GL.BindTexture(GLEnum.Texture2D, 0);
 
         // RBO を作り直す
@@ -63,7 +71,12 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
         var newRbo = CreateRBO(newSize);
 
         GL.BindFramebuffer(GLEnum.Framebuffer, fbo);
-        GL.FramebufferRenderbuffer(GLEnum.Framebuffer, GLEnum.DepthStencilAttachment, GLEnum.Renderbuffer, newRbo);
+        GL.FramebufferRenderbuffer(
+            GLEnum.Framebuffer,
+            GLEnum.DepthStencilAttachment,
+            GLEnum.Renderbuffer,
+            newRbo
+        );
         GL.BindFramebuffer(GLEnum.Framebuffer, 0);
 
         _cache[rt] = (fbo, newRbo);
@@ -74,7 +87,8 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
 
     public void Release(RenderTexture rt)
     {
-        if (!_cache.TryGetValue(rt, out var cached)) return;
+        if (!_cache.TryGetValue(rt, out var cached))
+            return;
         GL.DeleteFramebuffer(cached.fbo);
         GL.DeleteRenderbuffer(cached.rbo);
         GL.DeleteTexture((uint)rt.Texture.Handle);
@@ -88,11 +102,27 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
         var handle = GL.GenTexture();
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(GLEnum.Texture2D, handle);
-        GL.TexImage2D(GLEnum.Texture2D, 0, (int)InternalFormat.Rgba,
-            (uint)size.X, (uint)size.Y, 0,
-            PixelFormat.Rgba, PixelType.UnsignedByte, null);
-        GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)GLEnum.Nearest);
-        GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)GLEnum.Nearest);
+        GL.TexImage2D(
+            GLEnum.Texture2D,
+            0,
+            (int)InternalFormat.Rgba,
+            (uint)size.X,
+            (uint)size.Y,
+            0,
+            PixelFormat.Rgba,
+            PixelType.UnsignedByte,
+            null
+        );
+        GL.TexParameter(
+            GLEnum.Texture2D,
+            TextureParameterName.TextureMinFilter,
+            (int)GLEnum.Nearest
+        );
+        GL.TexParameter(
+            GLEnum.Texture2D,
+            TextureParameterName.TextureMagFilter,
+            (int)GLEnum.Nearest
+        );
         GL.BindTexture(GLEnum.Texture2D, 0);
         return new Texture2D((int)handle, size, _ => { });
     }
@@ -102,7 +132,12 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
         var rbo = GL.GenRenderbuffer();
         GL.BindRenderbuffer(GLEnum.Renderbuffer, rbo);
         // ステンシルバッファも確保する（DepthComponent24のみだとステンシルテストが機能しない）
-        GL.RenderbufferStorage(GLEnum.Renderbuffer, GLEnum.Depth24Stencil8, (uint)size.X, (uint)size.Y);
+        GL.RenderbufferStorage(
+            GLEnum.Renderbuffer,
+            GLEnum.Depth24Stencil8,
+            (uint)size.X,
+            (uint)size.Y
+        );
         GL.BindRenderbuffer(GLEnum.Renderbuffer, 0);
         return rbo;
     }
@@ -112,8 +147,19 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
         var rbo = CreateRBO(size);
         var fbo = GL.GenFramebuffer();
         GL.BindFramebuffer(GLEnum.Framebuffer, fbo);
-        GL.FramebufferTexture2D(GLEnum.Framebuffer, GLEnum.ColorAttachment0, GLEnum.Texture2D, textureHandle, 0);
-        GL.FramebufferRenderbuffer(GLEnum.Framebuffer, GLEnum.DepthStencilAttachment, GLEnum.Renderbuffer, rbo);
+        GL.FramebufferTexture2D(
+            GLEnum.Framebuffer,
+            GLEnum.ColorAttachment0,
+            GLEnum.Texture2D,
+            textureHandle,
+            0
+        );
+        GL.FramebufferRenderbuffer(
+            GLEnum.Framebuffer,
+            GLEnum.DepthStencilAttachment,
+            GLEnum.Renderbuffer,
+            rbo
+        );
 
         var status = GL.CheckFramebufferStatus(GLEnum.Framebuffer);
         GL.BindFramebuffer(GLEnum.Framebuffer, 0);

@@ -19,7 +19,6 @@ public class property(ConsoleLayer console, Keyboard keyboard) : Scene
         console.Print($"FPS: {Window.FramePerSeconds}");
         console.Print($"Mode: {Window.Mode}");
 
-
         console.Print($"[1]: Set WindowMode to {nameof(WindowMode.Resizable)}");
         console.Print($"[2]: Set WindowMode to {nameof(WindowMode.Fixed)}");
         console.Print($"[3]: Set WindowMode to {nameof(WindowMode.NoFrame)}");
@@ -28,12 +27,19 @@ public class property(ConsoleLayer console, Keyboard keyboard) : Scene
         console.Print("[6]: Toggle TopMost: " + Window.TopMost);
         console.Print("[ESC]: Exit");
 
-        if (keyboard.Number1.IsKeyDown) Window.Mode = WindowMode.Resizable;
-        if (keyboard.Number2.IsKeyDown) Window.Mode = WindowMode.Fixed;
-        if (keyboard.Number3.IsKeyDown) Window.Mode = WindowMode.NoFrame;
-        if (keyboard.Number4.IsKeyDown) Window.IsFullScreen = !Window.IsFullScreen;
-        if (keyboard.Number5.IsKeyDown) Window.IsVsyncMode = !Window.IsVsyncMode;
-        if (keyboard.Number6.IsKeyDown) Window.TopMost = !Window.TopMost;
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Number1.IsKeyDown)
+            Window.Mode = WindowMode.Resizable;
+        if (keyboard.Number2.IsKeyDown)
+            Window.Mode = WindowMode.Fixed;
+        if (keyboard.Number3.IsKeyDown)
+            Window.Mode = WindowMode.NoFrame;
+        if (keyboard.Number4.IsKeyDown)
+            Window.IsFullScreen = !Window.IsFullScreen;
+        if (keyboard.Number5.IsKeyDown)
+            Window.IsVsyncMode = !Window.IsVsyncMode;
+        if (keyboard.Number6.IsKeyDown)
+            Window.TopMost = !Window.TopMost;
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 }

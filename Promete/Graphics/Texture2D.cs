@@ -30,11 +30,15 @@ public readonly struct Texture2D : IDisposable
     private readonly Action<Texture2D> _onDispose;
 
     internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose)
-        : this(handle, size, onDispose, (0, 0), (1, 1))
-    {
-    }
+        : this(handle, size, onDispose, (0, 0), (1, 1)) { }
 
-    internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose, Vector uvStart, Vector uvEnd)
+    internal Texture2D(
+        int handle,
+        VectorInt size,
+        Action<Texture2D> onDispose,
+        Vector uvStart,
+        Vector uvEnd
+    )
     {
         Handle = handle;
         Size = size;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -15,6 +15,16 @@ public class HeadlessWindow : IWindow
     private bool _isExitRequested;
 
     private int _scale = 1;
+
+    public event Action? Start;
+    public event Action? Update;
+    public event Action? Render;
+    public event Action? Destroy;
+    public event Action? PreUpdate;
+    public event Action? PostUpdate;
+    public event Action<FileDroppedEventArgs>? FileDropped;
+    public event Action? Resize;
+
     public VectorInt Location { get; set; }
 
     public VectorInt Size { get; set; }
@@ -49,7 +59,10 @@ public class HeadlessWindow : IWindow
         set
         {
             if (value is not 1 and not 2 and not 4 and not 8)
-                throw new ArgumentOutOfRangeException(nameof(value), "Scale must be 1, 2, 4, or 8.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "Scale must be 1, 2, 4, or 8."
+                );
             _scale = value;
         }
     }
@@ -97,7 +110,8 @@ public class HeadlessWindow : IWindow
         _timer.Elapsed += TimerOnElapsed;
         Start?.Invoke();
         _timer.Start();
-        while (!_isExitRequested) Thread.Sleep(1000);
+        while (!_isExitRequested)
+            Thread.Sleep(1000);
     }
 
     /// <summary>
@@ -129,15 +143,6 @@ public class HeadlessWindow : IWindow
         return Task.Delay(0, ct);
     }
 
-    public event Action? Start;
-    public event Action? Update;
-    public event Action? Render;
-    public event Action? Destroy;
-    public event Action? PreUpdate;
-    public event Action? PostUpdate;
-    public event Action<FileDroppedEventArgs>? FileDropped;
-    public event Action? Resize;
-
     private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
     {
         TotalTime += 1f / TargetFps * TimeScale;
@@ -147,6 +152,7 @@ public class HeadlessWindow : IWindow
         Update?.Invoke();
         PostUpdate?.Invoke();
         Render?.Invoke();
-        if (_isExitRequested) _timer.Stop();
+        if (_isExitRequested)
+            _timer.Stop();
     }
 }

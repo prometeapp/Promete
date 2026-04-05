@@ -13,10 +13,12 @@ namespace Promete.Example.examples.debug;
 /// https://github.com/prometeapp/Promete/issues/43
 /// </summary>
 [Demo("/debug/issue43", "Issue43: Debug Scene")]
-public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console, Keyboard keyboard) : Scene
+public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console, Keyboard keyboard)
+    : Scene
 {
     private AudioPlayer _audioPlayer;
     private VorbisAudioSource _source;
+
     public override void OnStart()
     {
         coroutine.Start(Debug());
@@ -37,7 +39,6 @@ public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console,
 
         Assert(_audioPlayer.IsPlaying, "問題は修正されました", "問題は修正されていません");
     }
-
 
     public override void OnUpdate()
     {

@@ -17,12 +17,22 @@ public class HeadlessTextureFactory : TextureFactoryBase
         return default;
     }
 
-    public override Texture2D[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size)
+    public override Texture2D[] LoadSpriteSheet(
+        string path,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         return new Texture2D[horizontalCount * verticalCount];
     }
 
-    public override Texture2D[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size)
+    public override Texture2D[] LoadSpriteSheet(
+        Stream stream,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         return new Texture2D[horizontalCount * verticalCount];
     }

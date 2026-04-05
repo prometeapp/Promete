@@ -16,8 +16,10 @@ public static class PtmlParser
     /// <param name="throwsIfError">エラーがあったときに例外をスローするかどうか。</param>
     /// <returns></returns>
     /// <exception cref="PtmlParserException"><paramref name="throwsIfError" />が<c>true</c>であれば、エラーがあったときにスローされます。</exception>
-    public static (string plainText, IReadOnlyList<PtmlDecoration> decorations) Parse(string ptml,
-        bool throwsIfError = false)
+    public static (string plainText, IReadOnlyList<PtmlDecoration> decorations) Parse(
+        string ptml,
+        bool throwsIfError = false
+    )
     {
         // プレーンテキストの部分を格納。最終的にreturnする。
         var plainTextBuilder = new StringBuilder();
@@ -93,7 +95,10 @@ public static class PtmlParser
                         if (c == '/')
                         {
                             if (tagNameBuilder.Length > 0)
-                                throw new PtmlParserException("Invalid token /. Expected tag name.", i);
+                                throw new PtmlParserException(
+                                    "Invalid token /. Expected tag name.",
+                                    i
+                                );
 
                             // 終了タグの場合、先にpushしたrangeStartを破棄する
                             _ = rangeStartStack.Pop();
@@ -104,7 +109,10 @@ public static class PtmlParser
                         if (c == '=')
                         {
                             if (tagNameBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token =. Expected tag name.", i);
+                                throw new PtmlParserException(
+                                    "Invalid token =. Expected tag name.",
+                                    i
+                                );
                             state = State.Attribute;
                             continue;
                         }
@@ -112,9 +120,14 @@ public static class PtmlParser
                         if (c == '>')
                         {
                             if (tagNameBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token >. Expected tag name.", i);
+                                throw new PtmlParserException(
+                                    "Invalid token >. Expected tag name.",
+                                    i
+                                );
 
-                            decorationStack.Push(new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString()));
+                            decorationStack.Push(
+                                new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString())
+                            );
                             tagNameBuilder.Clear();
                             attributeBuilder.Clear();
                             state = State.PlainText;
@@ -129,8 +142,13 @@ public static class PtmlParser
                         if (c == '>')
                         {
                             if (attributeBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token >. Expected attribute.", i);
-                            decorationStack.Push(new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString()));
+                                throw new PtmlParserException(
+                                    "Invalid token >. Expected attribute.",
+                                    i
+                                );
+                            decorationStack.Push(
+                                new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString())
+                            );
                             tagNameBuilder.Clear();
                             attributeBuilder.Clear();
                             state = State.PlainText;
@@ -143,11 +161,21 @@ public static class PtmlParser
                         if (c == '>')
                         {
                             if (tagNameBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token >. Expected tag name.", i);
-                            if (!decorationStack.TryPop(out var startTag) ||
-                                !startTag.TagName.Equals(tagName, StringComparison.OrdinalIgnoreCase))
                                 throw new PtmlParserException(
-                                    $"End tag \"{tagName}\" does not match to \"{startTag.TagName}\"", i);
+                                    "Invalid token >. Expected tag name.",
+                                    i
+                                );
+                            if (
+                                !decorationStack.TryPop(out var startTag)
+                                || !startTag.TagName.Equals(
+                                    tagName,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                                throw new PtmlParserException(
+                                    $"End tag \"{tagName}\" does not match to \"{startTag.TagName}\"",
+                                    i
+                                );
                             startTag.Start = rangeStartStack.Pop();
                             startTag.End = plainTextBuilder.Length;
                             decorations.Add(startTag);
@@ -185,11 +213,18 @@ public static class PtmlParser
 
             // 閉じられていないタグを順番に末尾に追加する
             while (decorationStack.TryPop(out var startTag))
-                decorations.Add(startTag with { Start = rangeStartStack.Pop(), End = plainTextBuilder.Length });
+                decorations.Add(
+                    startTag with
+                    {
+                        Start = rangeStartStack.Pop(),
+                        End = plainTextBuilder.Length,
+                    }
+                );
         }
         catch (PtmlParserException)
         {
-            if (throwsIfError) throw;
+            if (throwsIfError)
+                throw;
             return (ptml, []);
         }
 
@@ -202,6 +237,6 @@ public static class PtmlParser
         StartTagName,
         Attribute,
         EndTagName,
-        EscapeSequence
+        EscapeSequence,
     }
 }

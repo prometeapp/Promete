@@ -6,18 +6,22 @@ using Promete.Input;
 namespace Promete.Example.examples.coroutine;
 
 [Demo("/coroutine/keep-alive.demo", "シーンを切り替えても動き続けるコルーチンを定義します。")]
-public class CoroutineKeepAliveDemoScene(Keyboard keyboard, ConsoleLayer console, CoroutineManager coroutine) : Scene
+public class CoroutineKeepAliveDemoScene(
+    Keyboard keyboard,
+    ConsoleLayer console,
+    CoroutineManager coroutine
+) : Scene
 {
     public override void OnStart()
     {
-        coroutine.Start(Task())
-            .KeepAlive();
+        coroutine.Start(Task()).KeepAlive();
         console.Print("Press [ESC] to return");
     }
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 
     private IEnumerator Task()
@@ -29,7 +33,5 @@ public class CoroutineKeepAliveDemoScene(Keyboard keyboard, ConsoleLayer console
         }
     }
 
-    public override void OnDestroy()
-    {
-    }
+    public override void OnDestroy() { }
 }

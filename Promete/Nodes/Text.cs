@@ -15,7 +15,6 @@ public class Text : Node
     private Font _font;
     private bool _isUpdateRequested;
 
-
     /// <summary>
     /// テキストノードのコンストラクタ
     /// </summary>
@@ -53,7 +52,8 @@ public class Text : Node
         get => Options.Size;
         set
         {
-            if (Options.Size == value) return;
+            if (Options.Size == value)
+                return;
             Options.Size = value;
             _isUpdateRequested = true;
         }
@@ -67,7 +67,8 @@ public class Text : Node
         get => _content;
         set
         {
-            if (_content == value) return;
+            if (_content == value)
+                return;
             _content = value;
             _isUpdateRequested = true;
         }
@@ -81,7 +82,8 @@ public class Text : Node
         get => Options.TextColor;
         set
         {
-            if (Options.TextColor == value) return;
+            if (Options.TextColor == value)
+                return;
             Options.TextColor = value;
             _isUpdateRequested = true;
         }
@@ -95,7 +97,8 @@ public class Text : Node
         get => Options.BorderColor;
         set
         {
-            if (Options.BorderColor == value) return;
+            if (Options.BorderColor == value)
+                return;
             Options.BorderColor = value;
             _isUpdateRequested = true;
         }
@@ -109,7 +112,8 @@ public class Text : Node
         get => Options.BorderThickness;
         set
         {
-            if (Options.BorderThickness == value) return;
+            if (Options.BorderThickness == value)
+                return;
             Options.BorderThickness = value;
             _isUpdateRequested = true;
         }
@@ -123,7 +127,8 @@ public class Text : Node
         get => _font;
         set
         {
-            if (_font.Equals(value)) return;
+            if (_font.Equals(value))
+                return;
             _font = value;
             _isUpdateRequested = true;
         }
@@ -137,7 +142,8 @@ public class Text : Node
         get => Options.LineSpacing;
         set
         {
-            if (Options.LineSpacing.Equals(value)) return;
+            if (Options.LineSpacing.Equals(value))
+                return;
             Options.LineSpacing = value;
             _isUpdateRequested = true;
         }
@@ -151,7 +157,8 @@ public class Text : Node
         get => Options.WordWrap;
         set
         {
-            if (Options.WordWrap == value) return;
+            if (Options.WordWrap == value)
+                return;
             Options.WordWrap = value;
             _isUpdateRequested = true;
         }
@@ -165,7 +172,8 @@ public class Text : Node
         get => Options.VerticalAlignment;
         set
         {
-            if (Options.VerticalAlignment == value) return;
+            if (Options.VerticalAlignment == value)
+                return;
             Options.VerticalAlignment = value;
             _isUpdateRequested = true;
         }
@@ -179,7 +187,8 @@ public class Text : Node
         get => Options.HorizontalAlignment;
         set
         {
-            if (Options.HorizontalAlignment == value) return;
+            if (Options.HorizontalAlignment == value)
+                return;
             Options.HorizontalAlignment = value;
             _isUpdateRequested = true;
         }
@@ -193,7 +202,8 @@ public class Text : Node
         get => Options.UseRichText;
         set
         {
-            if (Options.UseRichText == value) return;
+            if (Options.UseRichText == value)
+                return;
             Options.UseRichText = value;
             _isUpdateRequested = true;
         }
@@ -211,21 +221,25 @@ public class Text : Node
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        if (RenderedTexture is not { } tex) return;
+        if (RenderedTexture is not { } tex)
+            return;
 
-        queue.Enqueue(new DrawTextureCommand
-        {
-            Texture = tex,
-            ModelMatrix = ModelMatrix,
-            TintColor = Color.White,
-            Width = Size.X,
-            Height = Size.Y,
-        });
+        queue.Enqueue(
+            new DrawTextureCommand
+            {
+                Texture = tex,
+                ModelMatrix = ModelMatrix,
+                TintColor = Color.White,
+                Width = Size.X,
+                Height = Size.Y,
+            }
+        );
     }
 
     protected override void OnPreRender()
     {
-        if (!_isUpdateRequested) return;
+        if (!_isUpdateRequested)
+            return;
         RenderTexture();
         _isUpdateRequested = false;
     }
@@ -241,7 +255,11 @@ public class Text : Node
     public void RenderTexture()
     {
         var oldTexture = RenderedTexture;
-        RenderedTexture = _font.GenerateTexture(PrometeApp.Current.TextureFactory, Content, Options);
+        RenderedTexture = _font.GenerateTexture(
+            PrometeApp.Current.TextureFactory,
+            Content,
+            Options
+        );
         UpdateModelMatrix();
         oldTexture?.Dispose();
     }

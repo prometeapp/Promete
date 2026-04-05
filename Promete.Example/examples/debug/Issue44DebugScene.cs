@@ -30,7 +30,8 @@ public class Issue44DebugScene : Scene
         Root = [_sprite];
 
         var textureFactory = Window.TextureFactory;
-        _textures = [
+        _textures =
+        [
             textureFactory.Load("./assets/anim1.png"),
             textureFactory.Load("./assets/anim2.png"),
             textureFactory.Load("./assets/anim3.png"),

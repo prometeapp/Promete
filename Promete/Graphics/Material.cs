@@ -32,14 +32,20 @@ public sealed class Material : IEquatable<Material>
     /// <inheritdoc/>
     public bool Equals(Material? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-        if (!ReferenceEquals(Shader, other.Shader)) return false;
-        if (_uniforms.Count != other._uniforms.Count) return false;
+        if (other is null)
+            return false;
+        if (ReferenceEquals(this, other))
+            return true;
+        if (!ReferenceEquals(Shader, other.Shader))
+            return false;
+        if (_uniforms.Count != other._uniforms.Count)
+            return false;
         foreach (var (k, v) in _uniforms)
         {
-            if (!other._uniforms.TryGetValue(k, out var ov)) return false;
-            if (!v.Equals(ov)) return false;
+            if (!other._uniforms.TryGetValue(k, out var ov))
+                return false;
+            if (!v.Equals(ov))
+                return false;
         }
         return true;
     }

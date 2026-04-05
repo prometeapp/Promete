@@ -17,11 +17,7 @@ public class time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManage
     public override void OnStart()
     {
         _ichigo = Window.TextureFactory.Load("assets/ichigo.png");
-        _sprite = new Sprite(_ichigo)
-            .Name("ichigo")
-            .Size(32, 32)
-            .Location(120, 120);
-
+        _sprite = new Sprite(_ichigo).Name("ichigo").Size(32, 32).Location(120, 120);
 
         Root.Add(_sprite);
 

@@ -26,12 +26,22 @@ public abstract class TextureFactoryBase
     /// <summary>
     /// 指定したパスからテクスチャを読み込み、切り抜きます。
     /// </summary>
-    public abstract Texture2D[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size);
+    public abstract Texture2D[] LoadSpriteSheet(
+        string path,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    );
 
     /// <summary>
     /// 指定したストリームからテクスチャを読み込み、切り抜きます。
     /// </summary>
-    public abstract Texture2D[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size);
+    public abstract Texture2D[] LoadSpriteSheet(
+        Stream stream,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    );
 
     /// <summary>
     /// ビットマップのデータからテクスチャを生成します。
@@ -64,12 +74,24 @@ public abstract class TextureFactoryBase
     /// <summary>
     /// 指定したストリームから 9 スライステクスチャを読み込みます。
     /// </summary>
-    public virtual Texture9Sliced Load9Sliced(Stream stream, int left, int top, int right, int bottom)
+    public virtual Texture9Sliced Load9Sliced(
+        Stream stream,
+        int left,
+        int top,
+        int right,
+        int bottom
+    )
     {
         return Load9Sliced(Image.Load(stream), left, top, right, bottom);
     }
 
-    protected virtual Texture9Sliced Load9Sliced(Image bitmap, int left, int top, int right, int bottom)
+    protected virtual Texture9Sliced Load9Sliced(
+        Image bitmap,
+        int left,
+        int top,
+        int right,
+        int bottom
+    )
     {
         using var img = bitmap.CloneAs<Rgba32>();
         bitmap.Dispose();
@@ -95,14 +117,16 @@ public abstract class TextureFactoryBase
             new Rectangle(img.Width - right, top, right, img.Height - top - bottom),
             new Rectangle(0, img.Height - bottom, left, bottom),
             new Rectangle(left, img.Height - bottom, img.Width - left - right, bottom),
-            new Rectangle(img.Width - right, img.Height - bottom, right, bottom)
+            new Rectangle(img.Width - right, img.Height - bottom, right, bottom),
         };
 
-        var texture = atlas.Select(rect =>
-        {
-            using var locked = img.Clone(ctx => ctx.Crop(rect));
-            return LoadFromImageSharpImage(locked);
-        }).ToArray();
+        var texture = atlas
+            .Select(rect =>
+            {
+                using var locked = img.Clone(ctx => ctx.Crop(rect));
+                return LoadFromImageSharpImage(locked);
+            })
+            .ToArray();
 
         return new Texture9Sliced(texture, size);
     }

@@ -9,15 +9,9 @@ namespace Promete.Example.examples.experimental;
 [Demo("/experimental/vertex", "")]
 public class vertex(ImGuiPlugin ui) : Scene
 {
-    private readonly Container _container = new Container()
-        .Location(64, 64);
+    private readonly Container _container = new Container().Location(64, 64);
 
-    private readonly VectorInt[] _vertices =
-    [
-        (0, 0),
-        (64, 0),
-        (0, 64)
-    ];
+    private readonly VectorInt[] _vertices = [(0, 0), (64, 0), (0, 64)];
 
     private float _angle;
 
@@ -41,7 +35,8 @@ public class vertex(ImGuiPlugin ui) : Scene
 
     public override void OnUpdate()
     {
-        if (_isDirty) DrawVertices();
+        if (_isDirty)
+            DrawVertices();
     }
 
     private void DrawVertices()
@@ -97,7 +92,8 @@ public class vertex(ImGuiPlugin ui) : Scene
                 _isDirty = true;
             }
 
-            if (UI.InputFloat("Angle", ref _angle)) _isDirty = true;
+            if (UI.InputFloat("Angle", ref _angle))
+                _isDirty = true;
 
             var pivot = _pivot.ToNumerics();
             if (UI.InputFloat2("Pivot", ref pivot))

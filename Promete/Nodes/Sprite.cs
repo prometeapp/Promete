@@ -43,17 +43,20 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        if (Texture is not { } tex) return;
+        if (Texture is not { } tex)
+            return;
 
-        queue.Enqueue(new DrawTextureCommand
-        {
-            Texture = tex,
-            ModelMatrix = ModelMatrix,
-            TintColor = TintColor,
-            Width = Size.X,
-            Height = Size.Y,
-            Material = Material,
-        });
+        queue.Enqueue(
+            new DrawTextureCommand
+            {
+                Texture = tex,
+                ModelMatrix = ModelMatrix,
+                TintColor = TintColor,
+                Width = Size.X,
+                Height = Size.Y,
+                Material = Material,
+            }
+        );
     }
 
     /// <summary>

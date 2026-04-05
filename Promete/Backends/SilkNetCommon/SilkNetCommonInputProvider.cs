@@ -17,7 +17,8 @@ public class InputProvider
 
     public virtual IInputContext CreateInput()
     {
-        if (_cache != null) return _cache;
+        if (_cache != null)
+            return _cache;
         return _cache = _window.CreateInput();
     }
 }

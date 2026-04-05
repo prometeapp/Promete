@@ -8,11 +8,21 @@ using Promete.Windowing;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/tilemap2.demo", "タイルマップを作成し動かします")]
-public class Tilemap2ExampleScene(PrometeApp app, IWindow window, Keyboard keyboard, Mouse mouse, ConsoleLayer console)
-    : Scene
+public class Tilemap2ExampleScene(
+    PrometeApp app,
+    IWindow window,
+    Keyboard keyboard,
+    Mouse mouse,
+    ConsoleLayer console
+) : Scene
 {
     private readonly Random random = new();
-    private readonly Texture2D[] _textures = window.TextureFactory.LoadSpriteSheet("assets/tiles.png", 4, 1, (16, 16));
+    private readonly Texture2D[] _textures = window.TextureFactory.LoadSpriteSheet(
+        "assets/tiles.png",
+        4,
+        1,
+        (16, 16)
+    );
     private bool hudVisible = true;
     private Tilemap map;
     private VectorInt previousMousePosition;
@@ -32,7 +42,8 @@ public class Tilemap2ExampleScene(PrometeApp app, IWindow window, Keyboard keybo
         for (var i = 0; i < 32768; i++)
             map.SetTile(
                 // Determine the random position
-                random.NextVectorInt(window.Width * 8 / 16, window.Height * 8 / 16) - window.Size / 4 / 16,
+                random.NextVectorInt(window.Width * 8 / 16, window.Height * 8 / 16)
+                    - window.Size / 4 / 16,
                 tiles[Random.Shared.Next(tiles.Length)]
             );
 
@@ -63,16 +74,22 @@ public class Tilemap2ExampleScene(PrometeApp app, IWindow window, Keyboard keybo
         if (keyboard.Escape.IsKeyUp)
             app.LoadScene<MainScene>();
 
-        if (mouse[MouseButtonType.Left]) Root.Location += mouse.Position - previousMousePosition;
+        if (mouse[MouseButtonType.Left])
+            Root.Location += mouse.Position - previousMousePosition;
 
         window.Title = window.FramePerSeconds + "FPS";
 
         var delta = 128 * Time.DeltaTime;
-        if (keyboard.W) Root.Location += Vector.Up * delta;
-        if (keyboard.A) Root.Location += Vector.Left * delta;
-        if (keyboard.S) Root.Location += Vector.Down * delta;
-        if (keyboard.D) Root.Location += Vector.Right * delta;
-        if (keyboard.H.IsKeyDown) hudVisible = !hudVisible;
+        if (keyboard.W)
+            Root.Location += Vector.Up * delta;
+        if (keyboard.A)
+            Root.Location += Vector.Left * delta;
+        if (keyboard.S)
+            Root.Location += Vector.Down * delta;
+        if (keyboard.D)
+            Root.Location += Vector.Right * delta;
+        if (keyboard.H.IsKeyDown)
+            hudVisible = !hudVisible;
         if (keyboard.R.IsKeyDown)
         {
             map.RenderingMode = map.RenderingMode switch
@@ -80,12 +97,18 @@ public class Tilemap2ExampleScene(PrometeApp app, IWindow window, Keyboard keybo
                 TilemapRenderingMode.Auto => TilemapRenderingMode.RenderAll,
                 TilemapRenderingMode.RenderAll => TilemapRenderingMode.Scan,
                 TilemapRenderingMode.Scan => TilemapRenderingMode.Auto,
-                _ => throw new InvalidOperationException()
+                _ => throw new InvalidOperationException(),
             };
         }
-        if (keyboard.Z.IsKeyDown) Root.Scale *= 2.0f;
-        if (keyboard.X.IsKeyDown) Root.Scale *= 0.5f;
-        map.Angle += (mouse.Scroll.Y > 0 ? 1 : mouse.Scroll.Y < 0 ? -1 : 0).Degrees;
+        if (keyboard.Z.IsKeyDown)
+            Root.Scale *= 2.0f;
+        if (keyboard.X.IsKeyDown)
+            Root.Scale *= 0.5f;
+        map.Angle += (
+            mouse.Scroll.Y > 0 ? 1
+            : mouse.Scroll.Y < 0 ? -1
+            : 0
+        ).Degrees;
 
         previousMousePosition = mouse.Position;
     }

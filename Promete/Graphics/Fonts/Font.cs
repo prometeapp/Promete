@@ -20,6 +20,61 @@ namespace Promete.Graphics.Fonts;
 /// </summary>
 public class Font : IFont
 {
+    private const char ZeroWidthSpace = '\u200B';
+
+    private static readonly Dictionary<object, FontFamily> FontCache = new();
+    private static readonly FontCollection FontCollection = new();
+
+    private static readonly Lazy<FontFamily> DefaultFontFamily = new(() =>
+    {
+        if (!SystemFonts.Families.Any())
+            throw new NotSupportedException("No font families found.");
+        Span<string> families =
+            OperatingSystem.IsWindows()
+                ? ["BIZ UDGothic", "Yu Gothic", "Meiryo", "MS Gothic", "Arial"]
+            : OperatingSystem.IsMacOS()
+            || OperatingSystem.IsIOS()
+            || OperatingSystem.IsWatchOS()
+            || OperatingSystem.IsTvOS()
+            || OperatingSystem.IsMacCatalyst()
+                ? ["BIZ UDGothic", "Hiragino Sans", "Helvetica", "Arial"]
+            : OperatingSystem.IsLinux()
+            || OperatingSystem.IsFreeBSD()
+            || OperatingSystem.IsAndroid()
+                ?
+                [
+                    "Noto Sans CJK JP Regular",
+                    "Noto Sans CJK JP",
+                    "Droid Sans Fallback",
+                    "DejaVu Sans",
+                    "Liberation Sans",
+                    "Arial",
+                ]
+            : throw new NotSupportedException("Unsupported platform.");
+
+        foreach (var family in families)
+            if (SystemFonts.TryGet(family, out var f))
+                return f;
+
+        // どれも見つからなかった場合は最初のフォントを返す
+        return SystemFonts.Families.First();
+    });
+
+    private readonly SixLabors.Fonts.Font _internalFont;
+
+    protected Font(
+        SixLabors.Fonts.Font internalFont,
+        float size,
+        FontStyle style,
+        bool isAntialiased
+    )
+    {
+        _internalFont = internalFont;
+        Size = size;
+        Style = style;
+        IsAntialiased = isAntialiased;
+    }
+
     /// <summary>
     /// フォントサイズを取得します。
     /// </summary>
@@ -35,46 +90,6 @@ public class Font : IFont
     /// </summary>
     public bool IsAntialiased { get; }
 
-    private const char ZeroWidthSpace = '\u200B';
-
-    private static readonly Dictionary<object, FontFamily> FontCache = new();
-    private static readonly FontCollection FontCollection = new();
-
-    private static readonly Lazy<FontFamily> DefaultFontFamily = new(() =>
-    {
-        if (!SystemFonts.Families.Any()) throw new NotSupportedException("No font families found.");
-        Span<string> families =
-            OperatingSystem.IsWindows()
-                ? ["BIZ UDGothic", "Yu Gothic", "Meiryo", "MS Gothic", "Arial"]
-                : OperatingSystem.IsMacOS() || OperatingSystem.IsIOS() || OperatingSystem.IsWatchOS() ||
-                  OperatingSystem.IsTvOS() || OperatingSystem.IsMacCatalyst()
-                    ? ["BIZ UDGothic", "Hiragino Sans", "Helvetica", "Arial"]
-                    : OperatingSystem.IsLinux() || OperatingSystem.IsFreeBSD() || OperatingSystem.IsAndroid()
-                        ?
-                        [
-                            "Noto Sans CJK JP Regular", "Noto Sans CJK JP", "Droid Sans Fallback", "DejaVu Sans",
-                            "Liberation Sans", "Arial"
-                        ]
-                        : throw new NotSupportedException("Unsupported platform.");
-
-        foreach (var family in families)
-            if (SystemFonts.TryGet(family, out var f))
-                return f;
-
-        // どれも見つからなかった場合は最初のフォントを返す
-        return SystemFonts.Families.First();
-    });
-
-    private readonly SixLabors.Fonts.Font _internalFont;
-
-    protected Font(SixLabors.Fonts.Font internalFont, float size, FontStyle style, bool isAntialiased)
-    {
-        _internalFont = internalFont;
-        Size = size;
-        Style = style;
-        IsAntialiased = isAntialiased;
-    }
-
     /// <inheritdoc />
     public Rect GetTextBounds(string text, TextRenderingOptions options)
     {
@@ -84,14 +99,19 @@ public class Font : IFont
     }
 
     /// <inheritdoc />
-    public Texture2D GenerateTexture(TextureFactoryBase factory, string text, TextRenderingOptions options)
+    public Texture2D GenerateTexture(
+        TextureFactoryBase factory,
+        string text,
+        TextRenderingOptions options
+    )
     {
         (text, var textOptions) = CreateTextOptions(options, text);
         var drawingOptions = CreateDrawingOptions(options);
 
         var size = TextMeasurer.MeasureBounds(text, textOptions);
         var imageSize = new VectorInt((int)size.Right, (int)size.Bottom) + VectorInt.One;
-        if (imageSize.X == 0 || imageSize.Y == 0) return default;
+        if (imageSize.X == 0 || imageSize.Y == 0)
+            return default;
 
         using var img = new Image<Rgba32>(imageSize.X, imageSize.Y);
 
@@ -107,7 +127,11 @@ public class Font : IFont
     /// <inheritdoc />
     public override bool Equals(object? obj)
     {
-        return obj is Font f && f._internalFont == _internalFont && f.Size.Equals(Size) && f.Style == Style && f.IsAntialiased == IsAntialiased;
+        return obj is Font f
+            && f._internalFont == _internalFont
+            && f.Size.Equals(Size)
+            && f.Style == Style
+            && f.IsAntialiased == IsAntialiased;
     }
 
     /// <inheritdoc />
@@ -168,11 +192,18 @@ public class Font : IFont
     /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
     /// <exception cref="FileNotFoundException">フォントファイルが見つからない場合。</exception>
-    public static Font FromFile(string path, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
+    public static Font FromFile(
+        string path,
+        float size = 16,
+        FontStyle style = FontStyle.Normal,
+        bool isAntialiased = true
+    )
     {
-        if (FontCache.TryGetValue(path, out var f)) return FromFontFamily(f, size, style, isAntialiased);
+        if (FontCache.TryGetValue(path, out var f))
+            return FromFontFamily(f, size, style, isAntialiased);
 
-        if (!File.Exists(path)) throw new FileNotFoundException("Font file not found.", path);
+        if (!File.Exists(path))
+            throw new FileNotFoundException("Font file not found.", path);
         var family = FontCollection.Add(path);
         FontCache[path] = family;
 
@@ -187,9 +218,15 @@ public class Font : IFont
     /// <param name="style">フォントスタイル。</param>
     /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
-    public static Font FromFile(Stream stream, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
+    public static Font FromFile(
+        Stream stream,
+        float size = 16,
+        FontStyle style = FontStyle.Normal,
+        bool isAntialiased = true
+    )
     {
-        if (FontCache.TryGetValue(stream, out var f)) return FromFontFamily(f, size, style, isAntialiased);
+        if (FontCache.TryGetValue(stream, out var f))
+            return FromFontFamily(f, size, style, isAntialiased);
         stream.Position = 0;
         var family = FontCollection.Add(stream);
         FontCache[stream] = family;
@@ -204,7 +241,12 @@ public class Font : IFont
     /// <param name="style">フォントスタイル。</param>
     /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
-    public static Font FromSystem(string fontFamily, float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
+    public static Font FromSystem(
+        string fontFamily,
+        float size = 16,
+        FontStyle style = FontStyle.Normal,
+        bool isAntialiased = true
+    )
     {
         return FromSystem(fontFamily, CultureInfo.CurrentCulture, size, style, isAntialiased);
     }
@@ -218,10 +260,16 @@ public class Font : IFont
     /// <param name="style">フォントスタイル。</param>
     /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
-    public static Font FromSystem(string fontFamily, CultureInfo culture, float size = 16,
-        FontStyle style = FontStyle.Normal, bool isAntialiased = true)
+    public static Font FromSystem(
+        string fontFamily,
+        CultureInfo culture,
+        float size = 16,
+        FontStyle style = FontStyle.Normal,
+        bool isAntialiased = true
+    )
     {
-        if (FontCache.TryGetValue(fontFamily, out var f)) return FromFontFamily(f, size, style, isAntialiased);
+        if (FontCache.TryGetValue(fontFamily, out var f))
+            return FromFontFamily(f, size, style, isAntialiased);
 
         var family = SystemFonts.Get(fontFamily, culture);
         FontCache[fontFamily] = family;
@@ -235,18 +283,30 @@ public class Font : IFont
     /// <param name="style">フォントスタイル。</param>
     /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
     /// <returns>生成されたフォント。</returns>
-    public static Font GetDefault(float size = 16, FontStyle style = FontStyle.Normal, bool isAntialiased = true)
+    public static Font GetDefault(
+        float size = 16,
+        FontStyle style = FontStyle.Normal,
+        bool isAntialiased = true
+    )
     {
         return FromFontFamily(DefaultFontFamily.Value, size, style, isAntialiased);
     }
 
-    private static Font FromFontFamily(FontFamily family, float size, FontStyle style, bool isAntialiased)
+    private static Font FromFontFamily(
+        FontFamily family,
+        float size,
+        FontStyle style,
+        bool isAntialiased
+    )
     {
         var internalFont = new SixLabors.Fonts.Font(family, size, (SixLabors.Fonts.FontStyle)style);
         return new Font(internalFont, size, style, isAntialiased);
     }
 
-    private (string plainText, RichTextOptions options) CreateTextOptions(TextRenderingOptions options, string text)
+    private (string plainText, RichTextOptions options) CreateTextOptions(
+        TextRenderingOptions options,
+        string text
+    )
     {
         var textOptions = new RichTextOptions(_internalFont)
         {
@@ -255,9 +315,10 @@ public class Font : IFont
             HorizontalAlignment = options.HorizontalAlignment.ToSixLabors(),
             LineSpacing = options.LineSpacing,
             KerningMode = IsAntialiased ? default : KerningMode.None,
-            TextAlignment = IsAntialiased ? default : TextAlignment.Start
+            TextAlignment = IsAntialiased ? default : TextAlignment.Start,
         };
-        if (!options.UseRichText) return (text, textOptions);
+        if (!options.UseRichText)
+            return (text, textOptions);
 
         var (t, decorations) = PtmlParser.Parse(text);
         // Note: ImageSharpの不具合により、TextRun.Endが文字列の末尾インデックスと同じのときに挙動がおかしくなるため、workaroundとしてZeroWidthSpaceを追加する
@@ -279,25 +340,16 @@ public class Font : IFont
 
     private DrawingOptions CreateDrawingOptions(TextRenderingOptions options)
     {
-        return new DrawingOptions
-        {
-            GraphicsOptions =
-            {
-                Antialias = IsAntialiased
-            }
-        };
+        return new DrawingOptions { GraphicsOptions = { Antialias = IsAntialiased } };
     }
 
     private RichTextRun? CreateRunFromDecoration(PtmlDecoration decoration)
     {
         // Start == Endの場合は無視
-        if (decoration.Start == decoration.End) return null;
+        if (decoration.Start == decoration.End)
+            return null;
 
-        var run = new RichTextRun
-        {
-            Start = decoration.Start,
-            End = decoration.End
-        };
+        var run = new RichTextRun { Start = decoration.Start, End = decoration.End };
 
         switch (decoration.TagName.ToLowerInvariant())
         {
@@ -308,12 +360,16 @@ public class Font : IFont
             }
             case "i":
             {
-                run.Font = new SixLabors.Fonts.Font(_internalFont, SixLabors.Fonts.FontStyle.Italic);
+                run.Font = new SixLabors.Fonts.Font(
+                    _internalFont,
+                    SixLabors.Fonts.FontStyle.Italic
+                );
                 break;
             }
             case "color":
             {
-                if (string.IsNullOrEmpty(decoration.Attribute)) break;
+                if (string.IsNullOrEmpty(decoration.Attribute))
+                    break;
                 var color = FromHtml(decoration.Attribute);
                 run.Brush = new SolidBrush(color.ToSixLabors());
                 break;

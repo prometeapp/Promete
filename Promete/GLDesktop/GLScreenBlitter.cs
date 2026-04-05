@@ -25,7 +25,8 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
     private Material _defaultMaterial = null!;
 
     // フルスクリーンクワッド
-    private uint _vao, _vbo;
+    private uint _vao,
+        _vbo;
 
     // ピンポンバッファ（複数パス時に遅延生成）
     private RenderTexture? _pingPong0;
@@ -85,7 +86,8 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
 
         _view.Resize -= OnViewResize;
@@ -113,7 +115,8 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
         gl.BindTexture(GLEnum.Texture2D, (uint)src.Texture.Handle);
 
         var uLoc = GLMaterialApplier.GetLocation(gl, program, "uScreenTexture");
-        if (uLoc >= 0) gl.Uniform1(uLoc, 0);
+        if (uLoc >= 0)
+            gl.Uniform1(uLoc, 0);
 
         GLMaterialApplier.Apply(gl, program, material, firstTextureSlot: 1);
 
@@ -141,7 +144,8 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
 
     private void EnsureInitialized()
     {
-        if (_initialized) return;
+        if (_initialized)
+            return;
         Initialize();
         _initialized = true;
     }
@@ -150,21 +154,33 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
     {
         var gl = _view.GL;
 
-        var shader = ShaderProgram.Create()
+        var shader = ShaderProgram
+            .Create()
             .Vertex(EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.blit.vert"))
             .Fragment(EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.blit.frag"))
             .Compile();
 
         _defaultMaterial = new Material(shader);
 
-
         // NDC フルスクリーンクワッド (TriangleStrip): pos(x,y) + uv(u,v)
         Span<float> vertices =
         [
-            -1.0f,  1.0f, 0.0f, 1.0f, // 左上
-            -1.0f, -1.0f, 0.0f, 0.0f, // 左下
-             1.0f,  1.0f, 1.0f, 1.0f, // 右上
-             1.0f, -1.0f, 1.0f, 0.0f, // 右下
+            -1.0f,
+            1.0f,
+            0.0f,
+            1.0f, // 左上
+            -1.0f,
+            -1.0f,
+            0.0f,
+            0.0f, // 左下
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f, // 右上
+            1.0f,
+            -1.0f,
+            1.0f,
+            0.0f, // 右下
         ];
 
         _vao = gl.GenVertexArray();
@@ -177,7 +193,14 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
         gl.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 0);
         gl.EnableVertexAttribArray(0);
 
-        gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+        gl.VertexAttribPointer(
+            1,
+            2,
+            VertexAttribPointerType.Float,
+            false,
+            4 * sizeof(float),
+            2 * sizeof(float)
+        );
         gl.EnableVertexAttribArray(1);
 
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);

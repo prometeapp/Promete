@@ -18,8 +18,7 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
         ichigo = Window.TextureFactory.Load("assets/ichigo.png");
         Root.Add(container);
 
-        var canvas = new Container()
-            .Location(400, 200);
+        var canvas = new Container().Location(400, 200);
 
         var random = new Random(300);
 
@@ -37,18 +36,33 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
                     canvas.Add(Shape.CreateLine(v1, v2, random.NextColor()));
                     break;
                 case 1:
-                    canvas.Add(Shape.CreateRect(v1, v2, random.NextColor(), random.Next(4), random.NextColor()));
+                    canvas.Add(
+                        Shape.CreateRect(
+                            v1,
+                            v2,
+                            random.NextColor(),
+                            random.Next(4),
+                            random.NextColor()
+                        )
+                    );
                     break;
                 case 2:
                     canvas.Add(Shape.CreatePixel(v1, random.NextColor()));
                     break;
                 case 3:
-                    canvas.Add(Shape.CreateTriangle(v1, v2, v3, random.NextColor(), random.Next(4),
-                        random.NextColor()));
+                    canvas.Add(
+                        Shape.CreateTriangle(
+                            v1,
+                            v2,
+                            v3,
+                            random.NextColor(),
+                            random.Next(4),
+                            random.NextColor()
+                        )
+                    );
                     break;
             }
         }
-
         ;
 
         container.Add(new Text("O", Font.GetDefault(32), Color.White));
@@ -56,12 +70,14 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
         container.Add(canvas);
 
         for (var i = 0; i < 8; i++)
-            container.Add(new Sprite(ichigo)
-            {
-                Location = random.NextVector(Window.Width, Window.Height),
-                Scale = Vector.One + random.NextVectorFloat() * 7,
-                TintColor = random.NextColor()
-            });
+            container.Add(
+                new Sprite(ichigo)
+                {
+                    Location = random.NextVector(Window.Width, Window.Height),
+                    Scale = Vector.One + random.NextVectorFloat() * 7,
+                    TintColor = random.NextColor(),
+                }
+            );
 
         console.Print("Scroll to move");
         console.Print("Press ↑ to scale up");
@@ -71,8 +87,10 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
 
     public override void OnUpdate()
     {
-        if (keyboard.Up) container.Scale += Vector.One * 0.25f * Window.DeltaTime;
-        if (keyboard.Down) container.Scale -= Vector.One * 0.25f * Window.DeltaTime;
+        if (keyboard.Up)
+            container.Scale += Vector.One * 0.25f * Window.DeltaTime;
+        if (keyboard.Down)
+            container.Scale -= Vector.One * 0.25f * Window.DeltaTime;
         container.Location += mouse.Scroll * (-1, 1);
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

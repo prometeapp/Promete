@@ -28,5 +28,5 @@ public enum ShapeType
     /// <summary>
     /// 多角形
     /// </summary>
-    Polygon
+    Polygon,
 }

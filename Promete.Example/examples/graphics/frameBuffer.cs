@@ -15,8 +15,7 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
 
     private readonly Sprite _editorSprite = new();
 
-    private readonly Sprite _previewSprite = new Sprite()
-        .Location(200, 200);
+    private readonly Sprite _previewSprite = new Sprite().Location(200, 200);
 
     private VectorInt _previousPosition = VectorInt.Zero;
 
@@ -53,8 +52,10 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
             App.LoadScene<MainScene>();
             return;
         }
-        if (!_isSupported) return;
-        if (_frameBuffer == null) return;
+        if (!_isSupported)
+            return;
+        if (_frameBuffer == null)
+            return;
         _previewSprite.Angle = (_previewSprite.Angle + (45 * Window.DeltaTime).Degrees) % 360f;
 
         if (keyboard.Enter.IsKeyDown)

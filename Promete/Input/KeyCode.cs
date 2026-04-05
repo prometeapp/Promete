@@ -136,5 +136,5 @@ public enum KeyCode
     Slash = 128,
     BackSlash = 129,
     NonUSBackSlash = 130,
-    LastKey = 131
+    LastKey = 131,
 }

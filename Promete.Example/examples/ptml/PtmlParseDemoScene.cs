@@ -21,12 +21,9 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
         console.Print("Promete Text Editor");
         console.Print("Press [ESC] to exit");
 
-        editorView = new Text("", Font.GetDefault(), Color.White)
-            .Location(8, 64);
-        ptmlView = new Text("", Font.GetDefault(), Color.White)
-            .Location(8, 84);
-        dumpView = new Text("", Font.GetDefault(), Color.White)
-            .Location(8, 140);
+        editorView = new Text("", Font.GetDefault(), Color.White).Location(8, 64);
+        ptmlView = new Text("", Font.GetDefault(), Color.White).Location(8, 84);
+        dumpView = new Text("", Font.GetDefault(), Color.White).Location(8, 140);
 
         ptmlView.UseRichText = true;
 
@@ -39,16 +36,25 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
     public override void OnUpdate()
     {
         editorView!.Content = buf.ToString();
-        if ((keyboard.BackSpace.ElapsedFrameCount == 1 ||
-             (keyboard.BackSpace.ElapsedTime > 0.5f && keyboard.BackSpace.ElapsedFrameCount % 3 == 0)) &&
-            buf.Length > 0)
+        if (
+            (
+                keyboard.BackSpace.ElapsedFrameCount == 1
+                || (
+                    keyboard.BackSpace.ElapsedTime > 0.5f
+                    && keyboard.BackSpace.ElapsedFrameCount % 3 == 0
+                )
+            )
+            && buf.Length > 0
+        )
         {
             buf.Length--;
             DumpPtml();
         }
 
-        if (keyboard.Enter.ElapsedFrameCount == 1 ||
-            (keyboard.Enter.ElapsedTime > 0.5f && keyboard.Enter.ElapsedFrameCount % 3 == 0))
+        if (
+            keyboard.Enter.ElapsedFrameCount == 1
+            || (keyboard.Enter.ElapsedTime > 0.5f && keyboard.Enter.ElapsedFrameCount % 3 == 0)
+        )
         {
             buf.Append('\n');
             DumpPtml();
@@ -66,8 +72,10 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
 
     private void DumpPtml()
     {
-        if (ptmlView == null) return;
-        if (dumpView == null) return;
+        if (ptmlView == null)
+            return;
+        if (dumpView == null)
+            return;
 
         ptmlView.Content = buf.ToString();
 
@@ -75,12 +83,12 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
         {
             var (plainText, decorations) = PtmlParser.Parse(buf.ToString(), true);
             dumpView.Content = $"""
-                                （デバッグビュー）
-                                プレーンテキスト：{plainText}
+                （デバッグビュー）
+                プレーンテキスト：{plainText}
 
-                                ダンプ：
-                                {string.Join('\n', decorations)}
-                                """;
+                ダンプ：
+                {string.Join('\n', decorations)}
+                """;
             dumpView.Color = Color.Lime;
         }
         catch (PtmlParserException e)

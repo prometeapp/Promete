@@ -25,15 +25,19 @@ public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
             .Location(Window.Width / 4f - 64, Window.Height / 2f - 64)
             .Size(128, 128);
 
-        _label1 = new Text("通常の例", font, Color.Lime)
-            .Location(_progressBar.Location.X, _progressBar.Location.Y - 30);
+        _label1 = new Text("通常の例", font, Color.Lime).Location(
+            _progressBar.Location.X,
+            _progressBar.Location.Y - 30
+        );
 
         _progressBar2 = new PieSprite(texture, Color.Cyan)
             .Location(Window.Width * 3f / 4 - 64, Window.Height / 2f - 64)
             .Size(128, 128);
 
-        _label2 = new Text("StartPercentを併用する例", font, Color.Lime)
-            .Location(_progressBar2.Location.X, _progressBar2.Location.Y - 30);
+        _label2 = new Text("StartPercentを併用する例", font, Color.Lime).Location(
+            _progressBar2.Location.X,
+            _progressBar2.Location.Y - 30
+        );
 
         Root.AddRange(_progressBar, _progressBar2, _label1, _label2);
     }

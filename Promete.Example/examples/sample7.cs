@@ -36,17 +36,18 @@ public class SpriteRotateTest2Scene : Scene
                 .Children(
                     spriteParent = new Sprite(tParent).Location(0, 0),
                     spriteChild = new Sprite(tChild).Location(32, 32)
-                )
+                ),
         ];
     }
 
-    private string ModeText => mode switch
-    {
-        0 => "Rotate Parent",
-        1 => "Rotate Child",
-        2 => "Rotate Both",
-        _ => "Unknown"
-    };
+    private string ModeText =>
+        mode switch
+        {
+            0 => "Rotate Parent",
+            1 => "Rotate Child",
+            2 => "Rotate Both",
+            _ => "Unknown",
+        };
 
     public override void OnUpdate()
     {
@@ -60,7 +61,8 @@ public class SpriteRotateTest2Scene : Scene
         if (isPlaying)
         {
             angle += Window.DeltaTime * 90;
-            if (angle > 360) angle -= 360;
+            if (angle > 360)
+                angle -= 360;
         }
 
         switch (mode)
@@ -86,18 +88,21 @@ public class SpriteRotateTest2Scene : Scene
             mode = (mode + 1) % 3;
         }
 
-        if (_keyboard.Space.IsKeyDown) isPlaying ^= true;
+        if (_keyboard.Space.IsKeyDown)
+            isPlaying ^= true;
 
         if (_keyboard.Left.IsKeyDown)
         {
             angle = (int)(angle - 1);
-            if (angle < 0) angle = 360;
+            if (angle < 0)
+                angle = 360;
         }
 
         if (_keyboard.Right.IsKeyDown)
         {
             angle = (int)(angle + 1);
-            if (angle > 360) angle = 0;
+            if (angle > 360)
+                angle = 0;
         }
     }
 }

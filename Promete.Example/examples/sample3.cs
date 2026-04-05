@@ -27,6 +27,7 @@ public class Sample3ExampleScene(ConsoleLayer console, Keyboard keyboard) : Scen
 
     private void OnFileDrop(FileDroppedEventArgs e)
     {
-        foreach (var path in e.Pathes) console.Print($"Dropped file is {path}");
+        foreach (var path in e.Pathes)
+            console.Print($"Dropped file is {path}");
     }
 }

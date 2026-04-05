@@ -16,7 +16,10 @@ public static class OpenGLDesktopAppExtension
     /// </summary>
     /// <param name="builder">PrometeAppのビルダー</param>
     /// <returns>構築されたPrometeAppインスタンス</returns>
-    public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder, WindowOptions? opts = null)
+    public static PrometeApp BuildWithOpenGLDesktop(
+        this PrometeApp.PrometeAppBuilder builder,
+        WindowOptions? opts = null
+    )
     {
         var app = builder
             .Use<GLMaskedContainerHelper>()
@@ -34,16 +37,17 @@ public static class OpenGLDesktopAppExtension
             .Build<OpenGLDesktopBackend>(opts);
 
         // ビルド後にランナーをキューへ一括紐付け
-        app.GetPlugin<RenderCommandQueue>().RegisterRunnerRange(
-            app.GetPlugin<GLDrawTextureBatchedCommandRunner>(),
-            app.GetPlugin<GLDrawPrimitiveCommandRunner>(),
-            app.GetPlugin<GLBeginTrimCommandRunner>(),
-            app.GetPlugin<GLEndTrimCommandRunner>(),
-            app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
-            app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
-            app.GetPlugin<GLEndMaskCommandRunner>(),
-            app.GetPlugin<GLDrawPieTextureCommandRunner>()
-        );
+        app.GetPlugin<RenderCommandQueue>()
+            .RegisterRunnerRange(
+                app.GetPlugin<GLDrawTextureBatchedCommandRunner>(),
+                app.GetPlugin<GLDrawPrimitiveCommandRunner>(),
+                app.GetPlugin<GLBeginTrimCommandRunner>(),
+                app.GetPlugin<GLEndTrimCommandRunner>(),
+                app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
+                app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
+                app.GetPlugin<GLEndMaskCommandRunner>(),
+                app.GetPlugin<GLDrawPieTextureCommandRunner>()
+            );
 
         return app;
     }

@@ -13,8 +13,7 @@ public class NextFrameTests
 
         var executionOrder = new List<string>();
 
-        var app = PrometeApp.Create()
-            .BuildWithHeadless();
+        var app = PrometeApp.Create().BuildWithHeadless();
 
         // フレーム1: NextFrameを呼び出す
         executionOrder.Add("Frame1_Start");
@@ -22,7 +21,9 @@ public class NextFrameTests
         executionOrder.Add("Frame1_End");
 
         // この時点でNextFrameActionはまだ実行されていないはず
-        executionOrder.Should().NotContain("NextFrame_Action", "NextFrame should not execute in the same frame");
+        executionOrder
+            .Should()
+            .NotContain("NextFrame_Action", "NextFrame should not execute in the same frame");
 
         // フレーム2: OnUpdateを呼び出す（NextFrameのアクションが実行される）
         executionOrder.Add("Frame2_BeforeUpdate");
@@ -30,15 +31,18 @@ public class NextFrameTests
         executionOrder.Add("Frame2_AfterUpdate");
 
         // フレーム2でNextFrameアクションが実行されたはず
-        executionOrder.Should().Contain("NextFrame_Action", "NextFrame should execute in the next frame");
+        executionOrder
+            .Should()
+            .Contain("NextFrame_Action", "NextFrame should execute in the next frame");
 
         // 実行順序を確認
-        string[] expectedOrder = [
+        string[] expectedOrder =
+        [
             "Frame1_Start",
             "Frame1_End",
             "Frame2_BeforeUpdate",
-            "NextFrame_Action",    // OnUpdateの最初に実行される
-            "Frame2_AfterUpdate"
+            "NextFrame_Action", // OnUpdateの最初に実行される
+            "Frame2_AfterUpdate",
         ];
 
         executionOrder.Should().Equal(expectedOrder);
@@ -51,8 +55,7 @@ public class NextFrameTests
 
         var executionOrder = new List<string>();
 
-        var app = PrometeApp.Create()
-            .BuildWithHeadless();
+        var app = PrometeApp.Create().BuildWithHeadless();
 
         // 複数のNextFrameアクションをエンキュー
         app.NextFrame(() => executionOrder.Add("Action1"));

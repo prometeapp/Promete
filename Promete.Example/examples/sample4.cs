@@ -18,8 +18,7 @@ public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
         console.Print("Promete Text Editor");
         console.Print("Press [ESC] to exit");
 
-        editorView = new Text("", Font.GetDefault(), Color.White)
-            .Location(8, 64);
+        editorView = new Text("", Font.GetDefault(), Color.White).Location(8, 64);
         Root.Add(editorView);
 
         // 実行前に残ったキー入力をクリア
@@ -29,13 +28,25 @@ public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
     public override void OnUpdate()
     {
         editorView!.Content = buf.ToString() + '_';
-        if ((keyboard.BackSpace.ElapsedFrameCount == 1 ||
-             (keyboard.BackSpace.ElapsedTime > 0.5f && keyboard.BackSpace.ElapsedFrameCount % 3 == 0)) &&
-            buf.Length > 0) buf.Length--;
-        if (keyboard.Enter.ElapsedFrameCount == 1 ||
-            (keyboard.Enter.ElapsedTime > 0.5f && keyboard.Enter.ElapsedFrameCount % 3 == 0)) buf.Append('\n');
+        if (
+            (
+                keyboard.BackSpace.ElapsedFrameCount == 1
+                || (
+                    keyboard.BackSpace.ElapsedTime > 0.5f
+                    && keyboard.BackSpace.ElapsedFrameCount % 3 == 0
+                )
+            )
+            && buf.Length > 0
+        )
+            buf.Length--;
+        if (
+            keyboard.Enter.ElapsedFrameCount == 1
+            || (keyboard.Enter.ElapsedTime > 0.5f && keyboard.Enter.ElapsedFrameCount % 3 == 0)
+        )
+            buf.Append('\n');
 
-        if (keyboard.HasChar()) buf.Append(keyboard.GetString());
+        if (keyboard.HasChar())
+            buf.Append(keyboard.GetString());
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

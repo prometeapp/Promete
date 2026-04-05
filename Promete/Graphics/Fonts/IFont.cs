@@ -20,5 +20,9 @@ public interface IFont
     /// <param name="text">描画するテキスト。</param>
     /// <param name="options">テキストの描画オプション。</param>
     /// <returns>生成されたテクスチャ。</returns>
-    public Texture2D GenerateTexture(TextureFactoryBase factory, string text, TextRenderingOptions options);
+    public Texture2D GenerateTexture(
+        TextureFactoryBase factory,
+        string text,
+        TextRenderingOptions options
+    );
 }

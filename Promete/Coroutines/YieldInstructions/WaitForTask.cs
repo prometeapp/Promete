@@ -26,12 +26,24 @@ public class WaitForTask : YieldInstruction
         get
         {
             if (_task != null)
-                return !(_task.IsCanceled || _task.IsCompleted || _task.IsCompletedSuccessfully || _task.IsFaulted);
+                return !(
+                    _task.IsCanceled
+                    || _task.IsCompleted
+                    || _task.IsCompletedSuccessfully
+                    || _task.IsFaulted
+                );
 
             if (_valueTask is { } v)
-                return !(v.IsCanceled || v.IsCompletedSuccessfully || v.IsCompletedSuccessfully || v.IsFaulted);
+                return !(
+                    v.IsCanceled
+                    || v.IsCompletedSuccessfully
+                    || v.IsCompletedSuccessfully
+                    || v.IsFaulted
+                );
 
-            throw new InvalidOperationException("BUG: A WaitForTask yield instruction has no task.");
+            throw new InvalidOperationException(
+                "BUG: A WaitForTask yield instruction has no task."
+            );
         }
     }
 }

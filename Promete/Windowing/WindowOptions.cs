@@ -12,9 +12,5 @@ public readonly record struct WindowOptions(
     bool IsVsyncMode = false
 )
 {
-    public static WindowOptions Default { get; } = new(
-        (50, 50),
-        (640, 480),
-        "Promete Window"
-    );
+    public static WindowOptions Default { get; } = new((50, 50), (640, 480), "Promete Window");
 }

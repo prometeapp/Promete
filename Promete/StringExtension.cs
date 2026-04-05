@@ -23,6 +23,6 @@ public static class StringExtension
         }
 
         return str.Remove(index, Math.Min(replace.Length, str.Length - index))
-                  .Insert(index, replace);
+            .Insert(index, replace);
     }
 }

@@ -1,4 +1,4 @@
-﻿using ImGuiNET;
+using ImGuiNET;
 using Promete.Backends.GL;
 using Promete.Backends.SilkNetCommon;
 using Silk.NET.OpenGL.Extensions.ImGui;
@@ -13,30 +13,35 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
 {
     private ImGuiController _controller;
 
-    public void OnStart()
-    {
-        // PrometeがOpenGLバックエンドでなければ例外をスローする
-        if (app.View is not OpenGLDesktopGameView glView)
-            throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
-
-        _controller = new ImGuiController(glView.GL, glView.NativeWindow, provider.CreateInput(), OnConfigure);
-
-        app.Destroy += OnWindowDestroy;
-        app.PostRender += OnWindowRender;
-    }
+    public event Action? Render;
 
     /// <summary>
     /// ウィンドウのスケーリング値と同期するかどうかを取得または設定します。
     /// </summary>
     public bool IsSyncronizeWithWindowScaling { get; set; }
 
+    public void OnStart()
+    {
+        // PrometeがOpenGLバックエンドでなければ例外をスローする
+        if (app.View is not OpenGLDesktopGameView glView)
+            throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
+
+        _controller = new ImGuiController(
+            glView.GL,
+            glView.NativeWindow,
+            provider.CreateInput(),
+            OnConfigure
+        );
+
+        app.Destroy += OnWindowDestroy;
+        app.PostRender += OnWindowRender;
+    }
+
     /// <summary>
     /// ImGUIの初期設定を行います。
     /// </summary>
     /// <param name="io"></param>
-    protected virtual void OnConfigure(ImGuiIOPtr io)
-    {
-    }
+    protected virtual void OnConfigure(ImGuiIOPtr io) { }
 
     private unsafe void OnConfigure()
     {
@@ -48,7 +53,8 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
     private void OnWindowRender()
     {
         _controller.Update(app.Time.DeltaTime);
-        if (IsSyncronizeWithWindowScaling) ImGuiNET.ImGui.GetIO().FontGlobalScale = app.View.Scale * app.View.PixelRatio;
+        if (IsSyncronizeWithWindowScaling)
+            ImGuiNET.ImGui.GetIO().FontGlobalScale = app.View.Scale * app.View.PixelRatio;
         Render?.Invoke();
         _controller.Render();
     }
@@ -57,6 +63,4 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
     {
         _controller.Dispose();
     }
-
-    public event Action? Render;
 }

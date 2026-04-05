@@ -6,7 +6,10 @@ using Promete.Nodes;
 
 namespace Promete.Example.examples.debug;
 
-[Demo("/debug/container_trim_mode_with_nesting", "コンテナをネストした状態でトリムモードにしたときの挙動確認")]
+[Demo(
+    "/debug/container_trim_mode_with_nesting",
+    "コンテナをネストした状態でトリムモードにしたときの挙動確認"
+)]
 public class ContainerTrimModeWithNestingTestScene : Scene
 {
     private readonly Keyboard _keyboard;
@@ -14,13 +17,9 @@ public class ContainerTrimModeWithNestingTestScene : Scene
 
     private readonly Sprite _obj = new();
 
-    private readonly Container _container = new Container()
-        .Location(32, 32)
-        .Size(200, 150);
+    private readonly Container _container = new Container().Location(32, 32).Size(200, 150);
 
-    private readonly Container _container2 = new Container()
-        .Location(32, 32)
-        .Size(32, 32);
+    private readonly Container _container2 = new Container().Location(32, 32).Size(32, 32);
 
     public ContainerTrimModeWithNestingTestScene(Keyboard keyboard)
     {
@@ -54,16 +53,24 @@ public class ContainerTrimModeWithNestingTestScene : Scene
         }
 
         // キャラを動かす
-        if (_keyboard.Up) _obj.Location += Vector.Up;
-        if (_keyboard.Down) _obj.Location += Vector.Down;
-        if (_keyboard.Left) _obj.Location += Vector.Left;
-        if (_keyboard.Right) _obj.Location += Vector.Right;
+        if (_keyboard.Up)
+            _obj.Location += Vector.Up;
+        if (_keyboard.Down)
+            _obj.Location += Vector.Down;
+        if (_keyboard.Left)
+            _obj.Location += Vector.Left;
+        if (_keyboard.Right)
+            _obj.Location += Vector.Right;
 
         // コンテナを動かす
-        if (_keyboard.W) _container2.Location += Vector.Up;
-        if (_keyboard.S) _container2.Location += Vector.Down;
-        if (_keyboard.A) _container2.Location += Vector.Left;
-        if (_keyboard.D) _container2.Location += Vector.Right;
+        if (_keyboard.W)
+            _container2.Location += Vector.Up;
+        if (_keyboard.S)
+            _container2.Location += Vector.Down;
+        if (_keyboard.A)
+            _container2.Location += Vector.Left;
+        if (_keyboard.D)
+            _container2.Location += Vector.Right;
 
         // 戻る
         if (_keyboard.Escape.IsKeyDown)

@@ -15,10 +15,16 @@ internal class GLShaderFactory : IShaderFactory
     {
         PrometeApp.Current.ThrowIfNotMainThread();
 
-        var vSrc = program.VertexShaderSource
-            ?? throw new InvalidOperationException("頂点シェーダーのソースコードが設定されていません。");
-        var fSrc = program.FragmentShaderSource
-            ?? throw new InvalidOperationException("フラグメントシェーダーのソースコードが設定されていません。");
+        var vSrc =
+            program.VertexShaderSource
+            ?? throw new InvalidOperationException(
+                "頂点シェーダーのソースコードが設定されていません。"
+            );
+        var fSrc =
+            program.FragmentShaderSource
+            ?? throw new InvalidOperationException(
+                "フラグメントシェーダーのソースコードが設定されていません。"
+            );
 
         var vsh = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vsh, vSrc);
@@ -47,7 +53,8 @@ internal class GLShaderFactory : IShaderFactory
     private static void CheckShaderCompile(Silk.NET.OpenGL.GL gl, uint shader, string stage)
     {
         gl.GetShader(shader, ShaderParameterName.CompileStatus, out var status);
-        if (status != 0) return;
+        if (status != 0)
+            return;
         var log = gl.GetShaderInfoLog(shader);
         throw new InvalidOperationException($"シェーダーのコンパイルエラー ({stage}): {log}");
     }
@@ -55,7 +62,8 @@ internal class GLShaderFactory : IShaderFactory
     private static void CheckProgramLink(Silk.NET.OpenGL.GL gl, uint program)
     {
         gl.GetProgram(program, ProgramPropertyARB.LinkStatus, out var status);
-        if (status != 0) return;
+        if (status != 0)
+            return;
         var log = gl.GetProgramInfoLog(program);
         throw new InvalidOperationException($"シェーダーのリンクエラー: {log}");
     }

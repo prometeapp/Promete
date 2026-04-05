@@ -51,7 +51,11 @@ public class NineSliceSpriteTest(ConsoleLayer console, Keyboard keyboard) : Scen
         _t1.Location = (_sprite.Location.X, _sprite.Location.Y - 24);
         _t2.Location = (_nineSlice.Location.X, _nineSlice.Location.Y - 24);
 
-        _sprite.Width = _nineSlice.Width = (int)(64 + 64 * Math.Abs(Math.Sin(Window.TotalTime * 2)));
-        _sprite.Height = _nineSlice.Height = (int)(64 + 256 * Math.Abs(Math.Sin(Window.TotalTime * 2)));
+        _sprite.Width = _nineSlice.Width = (int)(
+            64 + 64 * Math.Abs(Math.Sin(Window.TotalTime * 2))
+        );
+        _sprite.Height = _nineSlice.Height = (int)(
+            64 + 256 * Math.Abs(Math.Sin(Window.TotalTime * 2))
+        );
     }
 }

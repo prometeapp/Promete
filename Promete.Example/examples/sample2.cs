@@ -10,9 +10,7 @@ public class Sample2ExampleScene(ConsoleLayer console, Mouse mouse, Keyboard key
 {
     private VectorInt previousPosition;
 
-    public override void OnStart()
-    {
-    }
+    public override void OnStart() { }
 
     public override void OnUpdate()
     {

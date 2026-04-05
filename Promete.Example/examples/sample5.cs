@@ -21,7 +21,8 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
 
     public override void OnUpdate()
     {
-        if (!initialized) return;
+        if (!initialized)
+            return;
         Window.Title = $"{Window.FramePerSeconds} FPS";
 
         if (keyboard.Escape.IsKeyUp)
@@ -39,8 +40,9 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
         {
             for (var i = 0; i < 10000; i++)
             {
-                var sprite = new Sprite(strawberry)
-                    .Location(rnd.NextVector(Window.Width, Window.Height));
+                var sprite = new Sprite(strawberry).Location(
+                    rnd.NextVector(Window.Width, Window.Height)
+                );
                 App.NextFrame(() => Root.Add(sprite));
             }
 

@@ -5,9 +5,7 @@
 /// </summary>
 public class MouseButton
 {
-    internal MouseButton()
-    {
-    }
+    internal MouseButton() { }
 
     /// <summary>
     /// このボタンが押されているかどうかを取得します。

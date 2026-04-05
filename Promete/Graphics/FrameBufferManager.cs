@@ -7,20 +7,21 @@ namespace Promete.Graphics;
 /// </summary>
 public class FrameBufferManager
 {
-    internal HashSet<FrameBuffer> ActiveFrameBuffers { get; } = [];
-
     public FrameBufferManager(PrometeApp app)
     {
         app.Render += RenderAll;
         app.Update += UpdateAll;
     }
 
+    internal HashSet<FrameBuffer> ActiveFrameBuffers { get; } = [];
+
     private void RenderAll()
     {
         foreach (var frameBuffer in ActiveFrameBuffers)
         {
             frameBuffer.BeforeRender();
-            if (frameBuffer.AutoRender) frameBuffer.Render();
+            if (frameBuffer.AutoRender)
+                frameBuffer.Render();
         }
     }
 

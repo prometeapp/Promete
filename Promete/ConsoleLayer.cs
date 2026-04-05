@@ -50,9 +50,15 @@ public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
         app.GlobalForeground.Add(_text);
 
         app.SceneWillChange += _ => Clear();
-        app.Update += () => { _text.Update(); };
+        app.Update += () =>
+        {
+            _text.Update();
+        };
         app.PostUpdate += UpdateConsole;
-        view.Resize += () => { _maxLine = CalculateMaxLine(); };
+        view.Resize += () =>
+        {
+            _maxLine = CalculateMaxLine();
+        };
     }
 
     /// <summary>
@@ -91,9 +97,10 @@ public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
 
     private void UpdateConsole()
     {
-        var buf = _consoleBuffer.Count > _maxLine
-            ? _consoleBuffer.Skip(_consoleBuffer.Count - _maxLine)
-            : _consoleBuffer;
+        var buf =
+            _consoleBuffer.Count > _maxLine
+                ? _consoleBuffer.Skip(_consoleBuffer.Count - _maxLine)
+                : _consoleBuffer;
 
         _text.Color = TextColor;
         _text.Content = string.Join('\n', buf);

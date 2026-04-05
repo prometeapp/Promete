@@ -12,6 +12,38 @@ namespace Promete.Graphics;
 /// </summary>
 public class FrameBuffer : IEnumerable<Node>, IDisposable
 {
+    private bool _disposed;
+
+    private VectorInt _size;
+
+    private readonly Container _children = [];
+
+    private readonly FrameBufferManager _frameBufferManager;
+    private readonly RenderTexture _renderTexture;
+
+    /// <summary>
+    /// 指定したサイズの <see cref="FrameBuffer"/> の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="width">フレームバッファの幅。</param>
+    /// <param name="height">フレームバッファの高さ。</param>
+    public FrameBuffer(int width, int height)
+    {
+        _size = (width, height);
+
+        var provider = PrometeApp.Current.TryGetPlugin<IRenderTextureProvider>(out var p)
+            ? p
+            : throw new InvalidOperationException(
+                "Current backend does not support RenderTexture."
+            );
+
+        _renderTexture = provider.Create((width, height));
+        _frameBufferManager = PrometeApp.Current.GetPlugin<FrameBufferManager>();
+        _frameBufferManager.ActiveFrameBuffers.Add(this);
+
+        _children.Location = (0, height);
+        _children.Scale = (1, -1);
+    }
+
     /// <summary>
     /// レンダリングされたテクスチャを取得します。
     /// </summary>
@@ -23,11 +55,6 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     public int Count => _children.Count;
 
     /// <summary>
-    /// このフレームバッファの子ノードを取得または設定します。
-    /// </summary>
-    public Node this[int index] => _children[index];
-
-    /// <summary>
     /// このフレームバッファのサイズを取得します。
     /// </summary>
     public VectorInt Size
@@ -35,7 +62,8 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         get => _size;
         set
         {
-            if (_size == value) return;
+            if (_size == value)
+                return;
 
             _size = value;
             _renderTexture.Resize(value);
@@ -73,35 +101,10 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// </summary>
     public IReadOnlyList<Node> SortedChildren => _children.sortedChildren;
 
-    private bool _disposed;
-
-    private VectorInt _size;
-
-    private readonly Container _children = [];
-
-    private readonly FrameBufferManager _frameBufferManager;
-    private readonly RenderTexture _renderTexture;
-
     /// <summary>
-    /// 指定したサイズの <see cref="FrameBuffer"/> の新しいインスタンスを初期化します。
+    /// このフレームバッファの子ノードを取得または設定します。
     /// </summary>
-    /// <param name="width">フレームバッファの幅。</param>
-    /// <param name="height">フレームバッファの高さ。</param>
-    public FrameBuffer(int width, int height)
-    {
-        _size = (width, height);
-
-        var provider = PrometeApp.Current.TryGetPlugin<IRenderTextureProvider>(out var p)
-            ? p
-            : throw new InvalidOperationException("Current backend does not support RenderTexture.");
-
-        _renderTexture = provider.Create((width, height));
-        _frameBufferManager = PrometeApp.Current.GetPlugin<FrameBufferManager>();
-        _frameBufferManager.ActiveFrameBuffers.Add(this);
-
-        _children.Location = (0, height);
-        _children.Scale = (1, -1);
-    }
+    public Node this[int index] => _children[index];
 
     internal void BeforeRender()
     {
@@ -110,7 +113,8 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
 
     internal void Update()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         _children.Update();
     }

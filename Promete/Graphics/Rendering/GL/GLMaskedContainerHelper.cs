@@ -12,7 +12,11 @@ namespace Promete.Graphics.Rendering.GL;
 /// <summary>
 /// <see cref="MaskedContainer"/> のアルファブレンディング方式でのレンダリングを支援するヘルパークラスです。
 /// </summary>
-public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, IRenderTextureProvider renderTextureProvider) : IDisposable
+public class GLMaskedContainerHelper(
+    PrometeApp app,
+    RenderCommandQueue queue,
+    IRenderTextureProvider renderTextureProvider
+) : IDisposable
 {
     // MaskedContainer ごとの RenderTexture キャッシュ
     private readonly Dictionary<MaskedContainer, RenderTexture> _renderTextureCache = [];
@@ -20,9 +24,18 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
     private bool _initialized;
     private uint _maskShader;
     private uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
-    private int _uMaskModel, _uMaskProjection, _uContent, _uMask, _uMaskTintColor;
-    private int _uStencilModel, _uStencilProjection, _uStencilTexture0, _uStencilTintColor;
-    private uint _vao, _vbo, _ebo;
+    private int _uMaskModel,
+        _uMaskProjection,
+        _uContent,
+        _uMask,
+        _uMaskTintColor;
+    private int _uStencilModel,
+        _uStencilProjection,
+        _uStencilTexture0,
+        _uStencilTintColor;
+    private uint _vao,
+        _vbo,
+        _ebo;
 
     /// <summary>
     /// 全てのキャッシュをクリアします。
@@ -34,7 +47,8 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
             rt.Dispose();
         _renderTextureCache.Clear();
 
-        if (!_initialized) return;
+        if (!_initialized)
+            return;
         var gl = ((OpenGLDesktopGameView)app.View).GL;
 
         // シェーダーとバッファを削除
@@ -47,7 +61,8 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
 
     private void EnsureInitialized()
     {
-        if (_initialized) return;
+        if (_initialized)
+            return;
         Initialize();
         _initialized = true;
     }
@@ -58,7 +73,10 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
 
         // マスク適用用のシェーダーをコンパイル
         var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(vsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.vert"));
+        gl.ShaderSource(
+            vsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.vert")
+        );
         gl.CompileShader(vsh);
 
         // コンパイルエラーチェック
@@ -69,7 +87,10 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
         }
 
         var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(fsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.frag"));
+        gl.ShaderSource(
+            fsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.frag")
+        );
         gl.CompileShader(fsh);
 
         // コンパイルエラーチェック
@@ -98,7 +119,10 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
 
         // ステンシル書き込み用のシェーダーをコンパイル
         var svsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(svsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture.vert"));
+        gl.ShaderSource(
+            svsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture.vert")
+        );
         gl.CompileShader(svsh);
 
         var svshLog = gl.GetShaderInfoLog(svsh);
@@ -108,7 +132,10 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
         }
 
         var sfsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(sfsh, EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.stencil_mask.frag"));
+        gl.ShaderSource(
+            sfsh,
+            EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.stencil_mask.frag")
+        );
         gl.CompileShader(sfsh);
 
         var sfshLog = gl.GetShaderInfoLog(sfsh);
@@ -136,10 +163,22 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
         // 四角形の頂点データを準備
         Span<float> vertices =
         [
-            1.0f, 0.0f, 1.0f, 0.0f, // 右下
-            1.0f, 1.0f, 1.0f, 1.0f, // 右上
-            0.0f, 1.0f, 0.0f, 1.0f, // 左上
-            0.0f, 0.0f, 0.0f, 0.0f, // 左下
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f, // 右下
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f, // 右上
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f, // 左上
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f, // 左下
         ];
 
         _vao = gl.GenVertexArray();
@@ -153,7 +192,14 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
         gl.EnableVertexAttribArray(0);
 
         // テクスチャ座標属性
-        gl.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 4 * sizeof(float), 2 * sizeof(float));
+        gl.VertexAttribPointer(
+            1,
+            2,
+            VertexAttribPointerType.Float,
+            false,
+            4 * sizeof(float),
+            2 * sizeof(float)
+        );
         gl.EnableVertexAttribArray(1);
 
         gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
@@ -260,15 +306,20 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
 
         // モデル行列を計算
         var size = node.Size;
-        var modelMatrix =
-            Matrix4x4.CreateScale(new Vector3(size.X, size.Y, 1))
-            * node.ModelMatrix;
+        var modelMatrix = Matrix4x4.CreateScale(new Vector3(size.X, size.Y, 1)) * node.ModelMatrix;
 
         // ビューポートの大きさを取得する
         var viewport = GLHelper.GetViewport(gl);
 
         // プロジェクション行列を計算
-        var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
+        var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(
+            0,
+            viewport.X,
+            viewport.Y,
+            0,
+            0.1f,
+            100f
+        );
 
         // ステンシル書き込み用シェーダーを使用
         gl.UseProgram(_stencilShader);
@@ -305,21 +356,28 @@ public class GLMaskedContainerHelper(PrometeApp app, RenderCommandQueue queue, I
 
         // モデル行列を計算
         var size = node.Size;
-        var modelMatrix =
-            Matrix4x4.CreateScale(new Vector3(size.X, size.Y, 1))
-            * node.ModelMatrix;
+        var modelMatrix = Matrix4x4.CreateScale(new Vector3(size.X, size.Y, 1)) * node.ModelMatrix;
 
         // ビューポートの大きさを取得する
         var viewport = GLHelper.GetViewport(gl);
 
         // プロジェクション行列を計算
-        var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(0, viewport.X, viewport.Y, 0, 0.1f, 100f);
+        var projectionMatrix = Matrix4x4.CreateOrthographicOffCenter(
+            0,
+            viewport.X,
+            viewport.Y,
+            0,
+            0.1f,
+            100f
+        );
 
         // ブレンド設定
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
-            BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, // RGB
-            BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha // Alpha
+            BlendingFactor.SrcAlpha,
+            BlendingFactor.OneMinusSrcAlpha, // RGB
+            BlendingFactor.One,
+            BlendingFactor.OneMinusSrcAlpha // Alpha
         );
 
         // シェーダーを使用
