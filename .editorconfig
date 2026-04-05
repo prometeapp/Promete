@@ -16,5 +16,57 @@ indent_size = 2
 tab_width = 2
 
 [*.cs]
-dotnet_style_require_accessibility_modifiers = always
+#### Roslyn スタイルルール ####
 
+# アクセス修飾子は必ず明示する (error)
+dotnet_style_require_accessibility_modifiers = always:error
+
+# file-scoped namespace を強制 (error)
+csharp_style_namespace_declarations = file_scoped:error
+
+# null チェックはパターンマッチングを使用する
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:warning
+
+#### 命名規則 ####
+
+# private フィールドは _camelCase
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel_case_style
+dotnet_naming_rule.private_fields_underscore.severity = warning
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.underscore_camel_case_style.capitalization = camel_case
+dotnet_naming_style.underscore_camel_case_style.required_prefix = _
+
+# private 以外のフィールドは PascalCase（SA1401 と組み合わせて二重抑止）
+dotnet_naming_rule.non_private_fields_pascal.symbols = non_private_fields
+dotnet_naming_rule.non_private_fields_pascal.style = pascal_case_style
+dotnet_naming_rule.non_private_fields_pascal.severity = warning
+
+dotnet_naming_symbols.non_private_fields.applicable_kinds = field
+dotnet_naming_symbols.non_private_fields.applicable_accessibilities = public, internal, protected, protected_internal, private_protected
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+#### StyleCop 診断の重大度設定 ####
+
+## CONTRIBUTING.md の必須ルール → error
+dotnet_diagnostic.SA1401.severity = error   # フィールドを public にしない
+dotnet_diagnostic.SA1400.severity = error   # アクセス修飾子の省略禁止
+dotnet_diagnostic.SA1201.severity = error   # メンバー順序の強制
+
+## 不要・プロジェクト方針と合わないルール → none
+dotnet_diagnostic.SA1101.severity = none    # this. プレフィックス不要
+dotnet_diagnostic.SA1633.severity = none    # ファイルヘッダー不要
+dotnet_diagnostic.SA1200.severity = none    # using 配置（file-scoped namespace と競合）
+dotnet_diagnostic.SA1210.severity = none    # using の並び順（CSharpier に委譲）
+dotnet_diagnostic.SA1208.severity = none    # System using 優先（CSharpier に委譲）
+dotnet_diagnostic.SA1309.severity = none    # フィールド名のアンダースコアプレフィックス禁止（本プロジェクトはプレフィックスを使用）
+dotnet_diagnostic.SX1309.severity = warning # アンダースコアプレフィックス必須（SA1309 の逆ルール）
+
+## ドキュメントルール → warning（公開 API のみ）
+dotnet_diagnostic.SA1600.severity = warning # public メンバーに XML ドキュメント必須
+dotnet_diagnostic.SA1601.severity = warning # partial クラスにドキュメント必須
+dotnet_diagnostic.SA1602.severity = warning # 列挙値にドキュメント必須

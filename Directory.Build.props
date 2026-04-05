@@ -1,0 +1,13 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556"
+      PrivateAssets="all"
+      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+  <PropertyGroup>
+    <!-- IDE スタイルルールをビルド時にも適用する -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- StyleCop 設定ファイルをすべてのプロジェクトに適用 -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" />
+  </PropertyGroup>
+</Project>
