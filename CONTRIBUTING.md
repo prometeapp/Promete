@@ -36,9 +36,17 @@ masterブランチへのpushをトリガーとして、https://promete.app に�
 Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは  `.github/workflow` にあります。
 
 ## コーディング規則
+コードフォーマットは [CSharpier](https://csharpier.com/) で管理しています。手動でスタイルを調整する必要はありません。
+
+```bash
+dotnet tool restore
+dotnet csharpier .
+```
+
 基本的には [C# のコーディング規則(公式)](https://docs.microsoft.com/ja-jp/dotnet/csharp/programming-guide/inside-a-program/coding-conventions) に従います。その上で、次の規約に従うこと
 
 - インデントは4文字の空白文字を用いる。
+- ブレーススタイルは K&R スタイル（開き括弧を同一行に置く）とする。CSharpier が自動的に整形する。
 - フィールドを `public` にしないこと。
 - アクセス修飾子は必ず省略しないこと。
 - クラスや構造体のメンバーは次の順番で定義すること（StyleCop SA1201 に準拠）。
