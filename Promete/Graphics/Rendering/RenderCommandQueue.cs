@@ -12,8 +12,6 @@ namespace Promete.Graphics.Rendering;
 /// </summary>
 public class RenderCommandQueue
 {
-    private readonly record struct TrimState(int X, int Y, int Width, int Height, bool Enabled);
-
     private readonly Stack<DrawTextureBatchedCommand> _batchPool = new();
     private readonly Stack<List<IRenderCommand>> _listPool = new();
     private readonly Dictionary<Type, CommandRunner> _runners = new();
@@ -226,4 +224,6 @@ public class RenderCommandQueue
             if (cmd is DrawTextureBatchedCommand batch)
                 _batchPool.Push(batch);
     }
+
+    private readonly record struct TrimState(int X, int Y, int Width, int Height, bool Enabled);
 }

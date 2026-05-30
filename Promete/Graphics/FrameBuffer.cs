@@ -45,6 +45,14 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     }
 
     /// <summary>
+    /// ファイナライザー
+    /// </summary>
+    ~FrameBuffer()
+    {
+        Dispose(false);
+    }
+
+    /// <summary>
     /// レンダリングされたテクスチャを取得します。
     /// </summary>
     public Texture2D Texture => _renderTexture.Texture;
@@ -266,14 +274,6 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         }
 
         _disposed = true;
-    }
-
-    /// <summary>
-    /// ファイナライザー
-    /// </summary>
-    ~FrameBuffer()
-    {
-        Dispose(false);
     }
     #endregion
 }

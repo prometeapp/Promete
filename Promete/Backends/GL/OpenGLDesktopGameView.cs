@@ -31,6 +31,9 @@ public class OpenGLDesktopGameView : IGameView
         window.FocusChanged += v => IsFocused = v;
     }
 
+    public event Action<FileDroppedEventArgs>? FileDropped;
+    public event Action? Resize;
+
     public Silk.NET.OpenGL.GL GL { get; set; } = null!;
 
     public IWindow NativeWindow { get; }
@@ -153,9 +156,6 @@ public class OpenGLDesktopGameView : IGameView
                 _ => throw new ArgumentException(null, nameof(value)),
             };
     }
-
-    public event Action<FileDroppedEventArgs>? FileDropped;
-    public event Action? Resize;
 
     public Texture2D TakeScreenshot()
     {

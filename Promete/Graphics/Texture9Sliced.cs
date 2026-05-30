@@ -7,6 +7,20 @@ namespace Promete.Graphics;
 /// </summary>
 public readonly struct Texture9Sliced : IDisposable
 {
+    internal Texture9Sliced(Texture2D[] textures, VectorInt size)
+    {
+        TopLeft = textures[0];
+        TopCenter = textures[1];
+        TopRight = textures[2];
+        MiddleLeft = textures[3];
+        MiddleCenter = textures[4];
+        MiddleRight = textures[5];
+        BottomLeft = textures[6];
+        BottomCenter = textures[7];
+        BottomRight = textures[8];
+        Size = size;
+    }
+
     /// <summary>
     /// 左上部分のテクスチャを取得します。
     /// </summary>
@@ -56,20 +70,6 @@ public readonly struct Texture9Sliced : IDisposable
     /// このテクスチャのサイズを取得します。
     /// </summary>
     public VectorInt Size { get; }
-
-    internal Texture9Sliced(Texture2D[] textures, VectorInt size)
-    {
-        TopLeft = textures[0];
-        TopCenter = textures[1];
-        TopRight = textures[2];
-        MiddleLeft = textures[3];
-        MiddleCenter = textures[4];
-        MiddleRight = textures[5];
-        BottomLeft = textures[6];
-        BottomCenter = textures[7];
-        BottomRight = textures[8];
-        Size = size;
-    }
 
     /// <summary>
     /// この <see cref="Texture9Sliced" /> を破棄します。

@@ -12,6 +12,16 @@ namespace Promete.Backends;
 public interface IGameView
 {
     /// <summary>
+    /// ユーザーがウィンドウにファイルをドロップしたときに発生します。
+    /// </summary>
+    public event Action<FileDroppedEventArgs>? FileDropped;
+
+    /// <summary>
+    /// ゲームウィンドウがリサイズされたときに発生します。
+    /// </summary>
+    public event Action? Resize;
+
+    /// <summary>
     /// ゲームウィンドウの位置を取得または設定します。
     /// </summary>
     public VectorInt Location { get; set; }
@@ -111,14 +121,4 @@ public interface IGameView
     /// <param name="path">パス</param>
     /// <param name="ct">このタスクのキャンセレーショントークン</param>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default);
-
-    /// <summary>
-    /// ユーザーがウィンドウにファイルをドロップしたときに発生します。
-    /// </summary>
-    public event Action<FileDroppedEventArgs>? FileDropped;
-
-    /// <summary>
-    /// ゲームウィンドウがリサイズされたときに発生します。
-    /// </summary>
-    public event Action? Resize;
 }

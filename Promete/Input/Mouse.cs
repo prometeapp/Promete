@@ -17,6 +17,13 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
     private IMouse? _mouse;
     private IInputContext _ctx;
 
+    public event Action<MouseButtonEventArgs>? Click;
+    public event Action<MouseButtonEventArgs>? ButtonUp;
+    public event Action<MouseButtonEventArgs>? ButtonDown;
+    public event Action<MouseEventArgs>? Move;
+    public event Action? Enter;
+    public event Action? Leave;
+
     /// <summary>
     /// マウスカーソルの位置を取得します。
     /// </summary>
@@ -184,11 +191,4 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
             _isMouseOnWindow = false;
         }
     }
-
-    public event Action<MouseButtonEventArgs>? Click;
-    public event Action<MouseButtonEventArgs>? ButtonUp;
-    public event Action<MouseButtonEventArgs>? ButtonDown;
-    public event Action<MouseEventArgs>? Move;
-    public event Action? Enter;
-    public event Action? Leave;
 }

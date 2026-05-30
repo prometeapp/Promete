@@ -56,6 +56,51 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
+    /// ゲームが開始されたときに発生します。
+    /// </summary>
+    public event Action? Start;
+
+    /// <summary>
+    /// ゲームがフレームを更新するときに発生します。
+    /// </summary>
+    public event Action? Update;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングするときに発生します。
+    /// </summary>
+    public event Action? Render;
+
+    /// <summary>
+    /// ゲームが終了したときに発生します。
+    /// </summary>
+    public event Action? Destroy;
+
+    /// <summary>
+    /// ゲームがフレームを更新する前に発生します。
+    /// </summary>
+    public event Action? PreUpdate;
+
+    /// <summary>
+    /// ゲームがフレームを更新した後に発生します。
+    /// </summary>
+    public event Action? PostUpdate;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングする前に発生します。
+    /// </summary>
+    public event Action? PreRender;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングした後に発生します。
+    /// </summary>
+    public event Action? PostRender;
+
+    /// <summary>
+    /// シーンが変更される直前に呼び出されるイベントです。
+    /// </summary>
+    public event Action<SceneTransitionEventArgs>? SceneWillChange;
+
+    /// <summary>
     /// 現在読み込まれているシーンのルートコンテナを取得します。
     /// </summary>
     public Container? Root => _currentScene?.Root;
@@ -498,51 +543,6 @@ public sealed class PrometeApp : IDisposable
         return _provider.GetService(scene) as Scene
             ?? throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
     }
-
-    /// <summary>
-    /// ゲームが開始されたときに発生します。
-    /// </summary>
-    public event Action? Start;
-
-    /// <summary>
-    /// ゲームがフレームを更新するときに発生します。
-    /// </summary>
-    public event Action? Update;
-
-    /// <summary>
-    /// ゲームがフレームをレンダリングするときに発生します。
-    /// </summary>
-    public event Action? Render;
-
-    /// <summary>
-    /// ゲームが終了したときに発生します。
-    /// </summary>
-    public event Action? Destroy;
-
-    /// <summary>
-    /// ゲームがフレームを更新する前に発生します。
-    /// </summary>
-    public event Action? PreUpdate;
-
-    /// <summary>
-    /// ゲームがフレームを更新した後に発生します。
-    /// </summary>
-    public event Action? PostUpdate;
-
-    /// <summary>
-    /// ゲームがフレームをレンダリングする前に発生します。
-    /// </summary>
-    public event Action? PreRender;
-
-    /// <summary>
-    /// ゲームがフレームをレンダリングした後に発生します。
-    /// </summary>
-    public event Action? PostRender;
-
-    /// <summary>
-    /// シーンが変更される直前に呼び出されるイベントです。
-    /// </summary>
-    public event Action<SceneTransitionEventArgs>? SceneWillChange;
 
     /// <summary>
     /// シーンを使用せずにアプリケーションを実行する際に使用されるデフォルトの空のシーン。

@@ -12,19 +12,19 @@ public sealed class Gamepads(PrometeApp app, InputProvider inputProvider) : IIni
     private readonly List<Gamepad> _pads = [];
     private IInputContext _ctx;
 
-    public void OnStart()
-    {
-        _ctx = inputProvider.CreateInput();
-        UpdateGamepads();
-        _ctx.ConnectionChanged += OnConnectionChanged;
-    }
-
     /// <summary>
     /// 指定されたインデックスのゲームパッドを取得します。
     /// </summary>
     /// <param name="index">取得するゲームパッドのインデックス</param>
     /// <returns>ゲームパッドのインスタンス。存在しない場合は null</returns>
     public Gamepad? this[int index] => index < _pads.Count ? _pads[index] : null;
+
+    public void OnStart()
+    {
+        _ctx = inputProvider.CreateInput();
+        UpdateGamepads();
+        _ctx.ConnectionChanged += OnConnectionChanged;
+    }
 
     private void OnConnectionChanged(IInputDevice device, bool isConnected)
     {

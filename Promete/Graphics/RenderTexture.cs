@@ -9,16 +9,6 @@ namespace Promete.Graphics;
 /// </summary>
 public sealed class RenderTexture : IDisposable
 {
-    /// <summary>
-    /// レンダリング結果のテクスチャを取得します。
-    /// </summary>
-    public Texture2D Texture { get; internal set; }
-
-    /// <summary>
-    /// このテクスチャのサイズを取得します。
-    /// </summary>
-    public VectorInt Size { get; internal set; }
-
     private readonly IRenderTextureProvider _provider;
     private bool _disposed;
 
@@ -28,6 +18,16 @@ public sealed class RenderTexture : IDisposable
         Texture = texture;
         _provider = provider;
     }
+
+    /// <summary>
+    /// レンダリング結果のテクスチャを取得します。
+    /// </summary>
+    public Texture2D Texture { get; internal set; }
+
+    /// <summary>
+    /// このテクスチャのサイズを取得します。
+    /// </summary>
+    public VectorInt Size { get; internal set; }
 
     /// <summary>
     /// このテクスチャへのキャプチャを開始します。

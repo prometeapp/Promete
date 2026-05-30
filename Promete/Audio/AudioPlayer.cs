@@ -42,6 +42,28 @@ public class AudioPlayer : IDisposable
     }
 
     /// <summary>
+    /// オーディオソースが終端に達したことにより、再生が終了したときに発生します。
+    /// <see cref="Stop"/> メソッド等を呼んでも、このイベントは発生しません。その場合は <see cref="StopPlaying"/> イベントを購読してください。
+    /// </summary>
+    public event EventHandler? FinishPlaying;
+
+    /// <summary>
+    /// オーディオの再生が開始したときに発生します。
+    /// </summary>
+    public event EventHandler? StartPlaying;
+
+    /// <summary>
+    /// オーディオの再生が停止したときに発生します。<see cref="Stop"/> メソッドを呼ばれた場合などに発生します。
+    /// ソースが終端に達した場合は、代わりに <see cref="FinishPlaying"/> イベントが発生します。
+    /// </summary>
+    public event EventHandler? StopPlaying;
+
+    /// <summary>
+    /// オーディオソースが終端に達し、ループ再生が行われた瞬間に発生します。
+    /// </summary>
+    public event EventHandler? Loop;
+
+    /// <summary>
     ///     音量を取得または設定します。
     /// </summary>
     /// <value>音量の範囲は 0.0 ～ 1.0 です。</value>
@@ -466,26 +488,4 @@ public class AudioPlayer : IDisposable
             _ => throw new NotSupportedException("Unsupported format."),
         };
     }
-
-    /// <summary>
-    /// オーディオソースが終端に達したことにより、再生が終了したときに発生します。
-    /// <see cref="Stop"/> メソッド等を呼んでも、このイベントは発生しません。その場合は <see cref="StopPlaying"/> イベントを購読してください。
-    /// </summary>
-    public event EventHandler? FinishPlaying;
-
-    /// <summary>
-    /// オーディオの再生が開始したときに発生します。
-    /// </summary>
-    public event EventHandler? StartPlaying;
-
-    /// <summary>
-    /// オーディオの再生が停止したときに発生します。<see cref="Stop"/> メソッドを呼ばれた場合などに発生します。
-    /// ソースが終端に達した場合は、代わりに <see cref="FinishPlaying"/> イベントが発生します。
-    /// </summary>
-    public event EventHandler? StopPlaying;
-
-    /// <summary>
-    /// オーディオソースが終端に達し、ループ再生が行われた瞬間に発生します。
-    /// </summary>
-    public event EventHandler? Loop;
 }

@@ -42,6 +42,11 @@ public sealed class Gamepad : IDisposable
         app.PostUpdate += OnPostUpdate;
     }
 
+    ~Gamepad()
+    {
+        ReleaseUnmanagedResources();
+    }
+
     /// <summary>
     /// ゲームパッドが接続されているかどうかを取得します。
     /// </summary>
@@ -70,18 +75,6 @@ public sealed class Gamepad : IDisposable
         _pad.Thumbsticks.Count >= 2 ? (_pad.Thumbsticks[1].X, _pad.Thumbsticks[1].Y) : (0, 0);
 
     /// <summary>
-    /// インデックスを指定してボタンを取得します。
-    /// </summary>
-    /// <param name="index">ボタンのインデックス</param>
-    public GamepadButton this[int index] => _buttons[index];
-
-    /// <summary>
-    /// ボタンの種類を指定してボタンを取得します。
-    /// </summary>
-    /// <param name="type">ボタンの種類</param>
-    public GamepadButton this[GamepadButtonType type] => _buttonMap[type];
-
-    /// <summary>
     /// 全てのボタンを取得します。
     /// </summary>
     public IEnumerable<GamepadButton> AllButtons => _buttons.AsEnumerable();
@@ -100,6 +93,18 @@ public sealed class Gamepad : IDisposable
     /// このフレームで離された全てのボタンを列挙します。
     /// </summary>
     public IEnumerable<GamepadButton> AllUpButtons => _buttons.Where(c => c.IsButtonUp);
+
+    /// <summary>
+    /// インデックスを指定してボタンを取得します。
+    /// </summary>
+    /// <param name="index">ボタンのインデックス</param>
+    public GamepadButton this[int index] => _buttons[index];
+
+    /// <summary>
+    /// ボタンの種類を指定してボタンを取得します。
+    /// </summary>
+    /// <param name="type">ボタンの種類</param>
+    public GamepadButton this[GamepadButtonType type] => _buttonMap[type];
 
     /// <summary>
     /// リソースを解放します。
@@ -174,10 +179,5 @@ public sealed class Gamepad : IDisposable
         _pad.TriggerMoved -= OnTriggerMove;
         _app.PreUpdate -= OnPreUpdate;
         _app.PostUpdate -= OnPostUpdate;
-    }
-
-    ~Gamepad()
-    {
-        ReleaseUnmanagedResources();
     }
 }

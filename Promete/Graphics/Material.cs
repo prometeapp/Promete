@@ -9,19 +9,19 @@ namespace Promete.Graphics;
 /// </summary>
 public sealed class Material : IEquatable<Material>
 {
-    /// <summary>このマテリアルが使用するシェーダープログラムを取得します。</summary>
-    public ShaderProgram Shader { get; }
-
     private readonly Dictionary<string, object> _uniforms = new();
-
-    /// <summary>Uniform 値の読み取り専用ビュー（バックエンドのランナーが使用）。</summary>
-    internal IReadOnlyDictionary<string, object> Uniforms => _uniforms;
 
     /// <param name="shader">使用するシェーダープログラム。</param>
     public Material(ShaderProgram shader)
     {
         Shader = shader;
     }
+
+    /// <summary>このマテリアルが使用するシェーダープログラムを取得します。</summary>
+    public ShaderProgram Shader { get; }
+
+    /// <summary>Uniform 値の読み取り専用ビュー（バックエンドのランナーが使用）。</summary>
+    internal IReadOnlyDictionary<string, object> Uniforms => _uniforms;
 
     public object this[string key]
     {

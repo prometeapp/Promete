@@ -11,6 +11,7 @@ namespace Promete.Nodes;
 public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Node
 {
     private VectorInt? _size;
+    private Texture2D? _texture = texture;
 
     /// <summary>
     /// スプライトに使用するテクスチャを取得または設定します。
@@ -38,8 +39,6 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
         get => _size ?? Texture?.Size ?? (0, 0);
         set => _size = value;
     }
-
-    private Texture2D? _texture = texture;
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {

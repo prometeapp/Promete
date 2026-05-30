@@ -16,6 +16,15 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
     : IInitializable,
         IUpdatable
 {
+    private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
+    private readonly Queue<char> _keyChars = new();
+    private IKeyboard? _currentKeyboard;
+    private IInputContext _ctx;
+
+    public event Action<KeyEventArgs>? KeyDown;
+    public event Action<KeyPressEventArgs>? KeyPress;
+    public event Action<KeyEventArgs>? KeyUp;
+
     /// <summary>
     /// 存在する全てのキーコードを列挙します。
     /// </summary>
@@ -49,11 +58,6 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
             _currentKeyboard.ClipboardText = value;
         }
     }
-
-    private IKeyboard? _currentKeyboard;
-    private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
-    private readonly Queue<char> _keyChars = new();
-    private IInputContext _ctx;
 
     /// <summary>
     /// キーボードバッファに蓄積されている、入力された文字列を取得します。
@@ -192,8 +196,4 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
         _keyChars.Enqueue(e);
         KeyPress?.Invoke(new KeyPressEventArgs(e));
     }
-
-    public event Action<KeyEventArgs>? KeyDown;
-    public event Action<KeyPressEventArgs>? KeyPress;
-    public event Action<KeyEventArgs>? KeyUp;
 }

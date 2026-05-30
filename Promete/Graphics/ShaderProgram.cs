@@ -13,6 +13,10 @@ namespace Promete.Graphics;
 /// </remarks>
 public sealed class ShaderProgram : IDisposable
 {
+    private Action<ShaderProgram>? _onDispose;
+
+    private ShaderProgram() { }
+
     /// <summary>頂点シェーダーのソースコードを取得します。</summary>
     public string? VertexShaderSource { get; private set; }
 
@@ -21,10 +25,6 @@ public sealed class ShaderProgram : IDisposable
 
     /// <summary>コンパイル済みシェーダープログラムのバックエンドハンドルを取得します。</summary>
     public int Handle { get; private set; }
-
-    private Action<ShaderProgram>? _onDispose;
-
-    private ShaderProgram() { }
 
     /// <summary>新しい <see cref="ShaderProgram"/> ビルダーを生成します。</summary>
     public static ShaderProgram Create() => new();

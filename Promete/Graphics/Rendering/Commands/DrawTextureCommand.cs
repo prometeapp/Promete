@@ -8,6 +8,8 @@ namespace Promete.Graphics.Rendering.Commands;
 /// </summary>
 public readonly struct DrawTextureCommand : IRenderCommand
 {
+    public DrawTextureCommand() { }
+
     public required Texture2D Texture { get; init; }
     public required Matrix4x4 ModelMatrix { get; init; }
     public required Color TintColor { get; init; }
@@ -19,6 +21,4 @@ public readonly struct DrawTextureCommand : IRenderCommand
 
     /// <summary>適用するマテリアル。null の場合はデフォルトシェーダーを使用します。</summary>
     public Material? Material { get; init; }
-
-    public DrawTextureCommand() { }
 }

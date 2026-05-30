@@ -9,6 +9,15 @@ namespace Promete.Markup;
 /// </summary>
 public static class PtmlParser
 {
+    private enum State
+    {
+        PlainText,
+        StartTagName,
+        Attribute,
+        EndTagName,
+        EscapeSequence,
+    }
+
     /// <summary>
     /// PTMLを解析します。
     /// </summary>
@@ -229,14 +238,5 @@ public static class PtmlParser
         }
 
         return (plainTextBuilder.ToString(), decorations.AsReadOnly());
-    }
-
-    private enum State
-    {
-        PlainText,
-        StartTagName,
-        Attribute,
-        EndTagName,
-        EscapeSequence,
     }
 }

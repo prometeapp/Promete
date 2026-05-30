@@ -8,6 +8,9 @@ namespace Promete.Backends.Headless;
 
 public class HeadlessGameView : IGameView
 {
+    public event Action<FileDroppedEventArgs>? FileDropped;
+    public event Action? Resize;
+
     public VectorInt Location { get; set; }
     public VectorInt Size { get; set; }
     public VectorInt ActualSize => Size;
@@ -41,9 +44,6 @@ public class HeadlessGameView : IGameView
     public float PixelRatio => 1f;
     public string Title { get; set; } = "";
     public WindowMode Mode { get; set; }
-
-    public event Action<FileDroppedEventArgs>? FileDropped;
-    public event Action? Resize;
 
     public Texture2D TakeScreenshot() => default;
 

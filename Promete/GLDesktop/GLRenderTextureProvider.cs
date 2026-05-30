@@ -15,12 +15,13 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
 {
     // RenderTexture ごとの GL リソースキャッシュ
     private readonly Dictionary<RenderTexture, (uint fbo, uint rbo)> _cache = [];
-    internal GL GL { get; set; }
 
     public GLRenderTextureProvider(PrometeApp app)
     {
         app.Destroy += ClearAll;
     }
+
+    internal GL GL { get; set; }
 
     public RenderTexture Create(VectorInt size)
     {

@@ -9,6 +9,36 @@ namespace Promete;
 public struct Vector(float x, float y) : IEquatable<Vector>
 {
     /// <summary>
+    /// <c>new Vector(0, 0)</c> を取得します。
+    /// </summary>
+    public static readonly Vector Zero = (0, 0);
+
+    /// <summary>
+    /// <c>new Vector(1, 1)</c> を取得します。
+    /// </summary>
+    public static readonly Vector One = (1, 1);
+
+    /// <summary>
+    /// <c>new Vector(-1, 0)</c> を取得します。
+    /// </summary>
+    public static readonly Vector Left = (-1, 0);
+
+    /// <summary>
+    /// <c>new Vector(0, -1)</c> を取得します。
+    /// </summary>
+    public static readonly Vector Up = (0, -1);
+
+    /// <summary>
+    /// <c>new Vector(1, 0)</c> を取得します。
+    /// </summary>
+    public static readonly Vector Right = (1, 0);
+
+    /// <summary>
+    /// <c>new Vector(0, 1)</c> を取得します。
+    /// </summary>
+    public static readonly Vector Down = (0, 1);
+
+    /// <summary>
     /// このベクトルのX座標を取得または設定します。
     /// </summary>
     public float X { get; set; } = x;
@@ -27,6 +57,30 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// このベクトルの単位ベクトルを取得します。
     /// </summary>
     public Vector Normalized => (X / Magnitude, Y / Magnitude);
+
+    /// <summary>
+    /// VectorをVectorIntに明示的に変換します。
+    /// </summary>
+    public static explicit operator VectorInt(Vector v1)
+    {
+        return new VectorInt((int)v1.X, (int)v1.Y);
+    }
+
+    /// <summary>
+    /// タプルからVectorに変換します。
+    /// </summary>
+    public static implicit operator Vector((float x, float y) v1)
+    {
+        return new Vector(v1.x, v1.y);
+    }
+
+    /// <summary>
+    /// VectorをVector2に明示的に変換します。
+    /// </summary>
+    public static explicit operator Vector2(Vector v)
+    {
+        return new Vector2(v.X, v.Y);
+    }
 
     /// <summary>
     /// 2つのベクトルを加算します。
@@ -101,30 +155,6 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     }
 
     /// <summary>
-    /// VectorをVectorIntに明示的に変換します。
-    /// </summary>
-    public static explicit operator VectorInt(Vector v1)
-    {
-        return new VectorInt((int)v1.X, (int)v1.Y);
-    }
-
-    /// <summary>
-    /// タプルからVectorに変換します。
-    /// </summary>
-    public static implicit operator Vector((float x, float y) v1)
-    {
-        return new Vector(v1.x, v1.y);
-    }
-
-    /// <summary>
-    /// VectorをVector2に明示的に変換します。
-    /// </summary>
-    public static explicit operator Vector2(Vector v)
-    {
-        return new Vector2(v.X, v.Y);
-    }
-
-    /// <summary>
     /// 2つのベクトルがなす角を取得します。
     /// </summary>
     public static Angle Angle(Vector from, Vector to)
@@ -148,6 +178,11 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     public static float Dot(Vector v1, Vector v2)
     {
         return v1.X * v2.X + v1.Y * v2.Y;
+    }
+
+    public static Vector From(Vector2 vec)
+    {
+        return (vec.X, vec.Y);
     }
 
     /// <summary>
@@ -238,40 +273,5 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     public override string ToString()
     {
         return $"({X}, {Y})";
-    }
-
-    /// <summary>
-    /// <c>new Vector(0, 0)</c> を取得します。
-    /// </summary>
-    public static readonly Vector Zero = (0, 0);
-
-    /// <summary>
-    /// <c>new Vector(1, 1)</c> を取得します。
-    /// </summary>
-    public static readonly Vector One = (1, 1);
-
-    /// <summary>
-    /// <c>new Vector(-1, 0)</c> を取得します。
-    /// </summary>
-    public static readonly Vector Left = (-1, 0);
-
-    /// <summary>
-    /// <c>new Vector(0, -1)</c> を取得します。
-    /// </summary>
-    public static readonly Vector Up = (0, -1);
-
-    /// <summary>
-    /// <c>new Vector(1, 0)</c> を取得します。
-    /// </summary>
-    public static readonly Vector Right = (1, 0);
-
-    /// <summary>
-    /// <c>new Vector(0, 1)</c> を取得します。
-    /// </summary>
-    public static readonly Vector Down = (0, 1);
-
-    public static Vector From(Vector2 vec)
-    {
-        return (vec.X, vec.Y);
     }
 }

@@ -9,6 +9,36 @@ namespace Promete;
 public struct VectorInt(int x, int y) : IEquatable<VectorInt>
 {
     /// <summary>
+    /// <c>new VectorInt(0, 0)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Zero = (0, 0);
+
+    /// <summary>
+    /// <c>new VectorInt(1, 1)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt One = (1, 1);
+
+    /// <summary>
+    /// <c>new VectorInt(-1, 0)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Left = (-1, 0);
+
+    /// <summary>
+    /// <c>new VectorInt(0, -1)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Up = (0, -1);
+
+    /// <summary>
+    /// <c>new VectorInt(1, 0)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Right = (1, 0);
+
+    /// <summary>
+    /// <c>new VectorInt(0, 1)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Down = (0, 1);
+
+    /// <summary>
     /// このベクトルのX座標を取得または設定します。
     /// </summary>
     public int X { get; set; } = x;
@@ -27,6 +57,19 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// このベクトルの単位ベクトルを取得します。
     /// </summary>
     public Vector Normalized => (X / Magnitude, Y / Magnitude);
+
+    public static implicit operator Vector(VectorInt v1)
+    {
+        return new Vector(v1.X, v1.Y);
+    }
+
+    /// <summary>
+    /// タプルからVectorIntに変換します。
+    /// </summary>
+    public static implicit operator VectorInt((int x, int y) v1)
+    {
+        return new VectorInt(v1.x, v1.y);
+    }
 
     public static VectorInt operator +(VectorInt v1, VectorInt v2)
     {
@@ -63,11 +106,6 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
         return (-v1.X, -v1.Y);
     }
 
-    public static implicit operator Vector(VectorInt v1)
-    {
-        return new Vector(v1.X, v1.Y);
-    }
-
     /// <summary>
     /// 2つのベクトルが等しいかどうかを確認します。
     /// </summary>
@@ -82,14 +120,6 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     public static bool operator !=(VectorInt v1, VectorInt v2)
     {
         return v1.X != v2.X || v1.Y != v2.Y;
-    }
-
-    /// <summary>
-    /// タプルからVectorIntに変換します。
-    /// </summary>
-    public static implicit operator VectorInt((int x, int y) v1)
-    {
-        return new VectorInt(v1.x, v1.y);
     }
 
     /// <summary>
@@ -121,6 +151,11 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     public static int Dot(VectorInt v1, VectorInt v2)
     {
         return v1.X * v2.X + v1.Y * v2.Y;
+    }
+
+    public static VectorInt From(Vector2 vec)
+    {
+        return ((int)vec.X, (int)vec.Y);
     }
 
     /// <summary>
@@ -211,40 +246,5 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     public override string ToString()
     {
         return $"({X}, {Y})";
-    }
-
-    /// <summary>
-    /// <c>new VectorInt(0, 0)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Zero = (0, 0);
-
-    /// <summary>
-    /// <c>new VectorInt(1, 1)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt One = (1, 1);
-
-    /// <summary>
-    /// <c>new VectorInt(-1, 0)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Left = (-1, 0);
-
-    /// <summary>
-    /// <c>new VectorInt(0, -1)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Up = (0, -1);
-
-    /// <summary>
-    /// <c>new VectorInt(1, 0)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Right = (1, 0);
-
-    /// <summary>
-    /// <c>new VectorInt(0, 1)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Down = (0, 1);
-
-    public static VectorInt From(Vector2 vec)
-    {
-        return ((int)vec.X, (int)vec.Y);
     }
 }

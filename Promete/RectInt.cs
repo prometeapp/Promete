@@ -96,26 +96,6 @@ public struct RectInt
     public VectorInt Center => Location + (Size / 2);
 
     /// <summary>
-    /// この矩形と指定された矩形が重なっているかどうかを判定します。
-    /// </summary>
-    /// <param name="rect">判定する矩形。</param>
-    /// <returns>重なっている場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
-    public bool Intersect(RectInt rect)
-    {
-        return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
-    }
-
-    /// <summary>
-    /// この矩形を指定されたオフセットで平行移動します。
-    /// </summary>
-    /// <param name="offset">平行移動するオフセット。</param>
-    /// <returns>平行移動後の新しい <see cref="Rect" />。</returns>
-    public Rect Translate(Vector offset)
-    {
-        return new Rect(Location + offset, Size);
-    }
-
-    /// <summary>
     /// <see cref="RectInt" /> を、<see cref="Rect" /> に変換します。
     /// </summary>
     public static implicit operator Rect(RectInt rect)
@@ -137,5 +117,25 @@ public struct RectInt
     public static implicit operator RectInt((VectorInt location, VectorInt size) tuple)
     {
         return new RectInt(tuple.location, tuple.size);
+    }
+
+    /// <summary>
+    /// この矩形と指定された矩形が重なっているかどうかを判定します。
+    /// </summary>
+    /// <param name="rect">判定する矩形。</param>
+    /// <returns>重なっている場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
+    public bool Intersect(RectInt rect)
+    {
+        return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
+    }
+
+    /// <summary>
+    /// この矩形を指定されたオフセットで平行移動します。
+    /// </summary>
+    /// <param name="offset">平行移動するオフセット。</param>
+    /// <returns>平行移動後の新しい <see cref="Rect" />。</returns>
+    public Rect Translate(Vector offset)
+    {
+        return new Rect(Location + offset, Size);
     }
 }
