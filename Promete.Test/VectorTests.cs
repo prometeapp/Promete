@@ -117,10 +117,11 @@ public class VectorTests
     [Fact]
     public void Dot()
     {
-        var v1 = new Vector(2, 5);
-        var v2 = new Vector(5, 5);
+        var v1 = new Vector(1, 2);
+        var v2 = new Vector(3, 4);
 
-        v1.Dot(v2).Should().Be(35);
+        v1.Dot(v2).Should().Be(11);
+        Vector.Dot(v1, v2).Should().Be(11);
     }
 
     [Fact]

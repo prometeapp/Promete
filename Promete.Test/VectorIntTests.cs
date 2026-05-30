@@ -117,10 +117,11 @@ public class VectorIntTests
     [Fact]
     public void Dot()
     {
-        var v1 = new VectorInt(2, 5);
-        var v2 = new VectorInt(5, 5);
+        var v1 = new VectorInt(1, 2);
+        var v2 = new VectorInt(3, 4);
 
-        v1.Dot(v2).Should().Be(35);
+        v1.Dot(v2).Should().Be(11);
+        VectorInt.Dot(v1, v2).Should().Be(11);
     }
 
     [Fact]

@@ -147,7 +147,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// </summary>
     public static float Dot(Vector v1, Vector v2)
     {
-        return v1.X * v1.Y + v2.X * v2.Y;
+        return v1.X * v2.X + v1.Y * v2.Y;
     }
 
     /// <summary>

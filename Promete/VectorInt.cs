@@ -120,7 +120,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// </summary>
     public static int Dot(VectorInt v1, VectorInt v2)
     {
-        return v1.X * v1.Y + v2.X * v2.Y;
+        return v1.X * v2.X + v1.Y * v2.Y;
     }
 
     /// <summary>
