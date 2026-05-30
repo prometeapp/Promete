@@ -10,5 +10,5 @@ public interface IShaderFactory
     /// <paramref name="program"/> のソースコードをコンパイルし、
     /// <see cref="ShaderProgram.SetCompiledData"/> でハンドルと破棄デリゲートを設定します。
     /// </summary>
-    void Compile(ShaderProgram program);
+    public void Compile(ShaderProgram program);
 }

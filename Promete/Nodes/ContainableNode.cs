@@ -12,6 +12,7 @@ namespace Promete.Nodes;
 /// </summary>
 public abstract class ContainableNode : Node
 {
+#pragma warning disable SA1401 // Fields should be private (legacy non-private fields; see code review backlog)
     [Obsolete(
         "直接このフィールドは操作しないでください。代わりにAdd, Remove, Clear, Insertを使用してください。"
     )]
@@ -20,6 +21,7 @@ public abstract class ContainableNode : Node
     private bool _isSortingRequested = true;
     protected internal bool isTrimmable;
     protected internal Node[] sortedChildren = [];
+#pragma warning restore SA1401
 
     protected ContainableNode()
     {

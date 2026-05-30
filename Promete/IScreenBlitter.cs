@@ -11,7 +11,7 @@ public interface IScreenBlitter
     /// <summary>
     /// 全描画のキャプチャ先 RenderTexture を取得します。
     /// </summary>
-    RenderTexture ScreenRenderTexture { get; }
+    public RenderTexture ScreenRenderTexture { get; }
 
     /// <summary>
     /// ポストプロセスマテリアルを順番に適用してスクリーンへブリットします。
@@ -19,5 +19,5 @@ public interface IScreenBlitter
     /// <param name="materials">
     /// 適用するマテリアルのリスト。空の場合はデフォルトシェーダーで直接ブリットします。
     /// </param>
-    void BlitToScreen(IReadOnlyList<Material> materials);
+    public void BlitToScreen(IReadOnlyList<Material> materials);
 }

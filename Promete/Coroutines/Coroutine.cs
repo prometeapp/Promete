@@ -13,7 +13,9 @@ public class Coroutine : YieldInstruction
     private bool _isExecuting;
     private bool _needsDisposal;
 
+#pragma warning disable SA1401 // Fields should be private (internal field is intentionally exposed; see code review backlog)
     internal bool IsKeepAlive;
+#pragma warning restore SA1401
 
     internal Coroutine(IEnumerator runningAction)
     {
