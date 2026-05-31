@@ -119,10 +119,8 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
                 if (py + size.Y > height)
                     throw new ArgumentException(null, nameof(verticalCount));
 
-                // テクセル中央を指すようにハーフテクセル分オフセットし、
-                // 隣接タイルへのUVブリーディングを防ぐ
-                var uvStart = new Vector((px + 0.5f) / width, (py + 0.5f) / height);
-                var uvEnd = new Vector((px + size.X - 0.5f) / width, (py + size.Y - 0.5f) / height);
+                var uvStart = new Vector(px / width, py / height);
+                var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
 
                 textures[y * horizontalCount + x] = new Texture2D(
                     handle,
@@ -134,6 +132,7 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
             }
         }
 
+        bmp.Dispose();
         return textures;
     }
 
