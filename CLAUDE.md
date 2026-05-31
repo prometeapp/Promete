@@ -48,7 +48,8 @@ Promete/                    - メインゲームエンジンライブラリ
 ├── Graphics/               - テクスチャ、フォント、フレームバッファ管理
 ├── Input/                  - キーボード、マウス、ゲームパッド入力
 ├── Nodes/                  - 描画可能なノード階層 (Sprite, Text等)
-│   └── Renderer/           - OpenGLレンダリング実装
+├── Graphics/Rendering/     - レンダリングコマンドキューと CommandRunner 実装
+│   └── GL/                 - OpenGL固有のランナー・ファクトリ実装
 ├── Windowing/              - ウィンドウ管理抽象化
 │   ├── GLDesktop/          - OpenGLデスクトップバックエンド
 │   └── Headless/           - ヘッドレスバックエンド (テスト用)
@@ -131,15 +132,22 @@ parent.Add(child);
 // child.AbsoluteLocation は親の変形を反映した結果になる
 ```
 
-### 4. レンダラーシステム
+### 4. レンダリングシステム
 
-各ノードタイプには対応する `NodeRenderer` があり、OpenGL描画を処理します。レンダラーはアプリ初期化時に登録されます:
+描画はコマンドキューパターンで実装されています。各ノードは `Collect(RenderCommandQueue, RenderContext)` をオーバーライドしてレンダリングコマンドを発行し、`CommandRunner<T>` がコマンドを受け取って実際のOpenGL呼び出しを実行します。
 
 ```csharp
-app.UseRenderer<CustomNode, CustomNodeRenderer>();
+// ノード側: Collect でコマンドをキューに積む
+public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+{
+    queue.Enqueue(new DrawTextureCommand { Texture = ..., ModelMatrix = ModelMatrix, ... });
+}
+
+// ランナーの登録は RenderCommandQueue に対して行う
+queue.RegisterRunner<DrawTextureBatchedCommand>(new GLDrawTextureBatchedCommandRunner(view));
 ```
 
-標準レンダラーはバックエンド (例: `BuildWithOpenGLDesktop()`) によって自動的に登録されます。
+`DrawTextureCommand` は同一テクスチャハンドル・同一マテリアルの連続するコマンドが自動的に `DrawTextureBatchedCommand` にバッチ化され、インスタンシング描画されます。標準ランナーはバックエンド (例: `BuildWithOpenGLDesktop()`) によって自動的に登録されます。
 
 ## 重要な実装パターン
 
@@ -155,6 +163,10 @@ var sprite = new Sprite(texture)
 ```
 
 すべての Setup API メソッドはノードインスタンスを返すため、チェーンできます。
+
+### LoadSpriteSheet の挙動
+
+`TextureFactory.LoadSpriteSheet` は画像ファイルを**1枚のGLテクスチャ（アトラス）**としてアップロードし、各セルに対応する `Texture2D` を `UvStart`/`UvEnd` だけ異なる形で返します。全セルが同じ `Handle` を共有するため、Tilemapで使用すると同一バッチにまとめてインスタンシング描画されます。UV 境界の浮動小数点誤差による隣接タイルへのブリーディングを防ぐため、ハーフテクセルインセットが適用されています。
 
 ### リソース管理
 
@@ -227,6 +239,6 @@ public class MyDemo(Keyboard keyboard) : Scene
 - `PrometeApp.cs` - アプリケーションのエントリポイント、DIコンテナ、シーン管理
 - `Scene.cs` - ライフサイクルメソッドを持つシーン基底クラス
 - `Nodes/Node.cs` - 変形階層を持つノード基底クラス
-- `Graphics/TextureFactory.cs` - テクスチャ読み込みファサード
+- `Graphics/TextureFactoryBase.cs` - テクスチャ読み込み基底クラス (実装は `Graphics/Rendering/GL/GLTextureFactory.cs`)
 - `Windowing/IWindow.cs` - ウィンドウ抽象化インターフェース
 
