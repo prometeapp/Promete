@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Promete.Backends.SilkNetCommon;
 using Promete.Input.Internal;
 using Silk.NET.Input;
@@ -133,33 +132,27 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
         if (_currentKeyboard == null)
             return;
 
-        Parallel.ForEach(
-            _allCodes,
-            keyCode =>
-            {
-                var silkKey = keyCode.ToSilk();
-                if (silkKey < 0)
-                    return;
-                var isPressed = _currentKeyboard.IsKeyPressed(silkKey);
-                var key = KeyOf(keyCode);
-                key.IsPressed = isPressed;
-                key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
-                key.ElapsedTime = isPressed ? key.ElapsedTime + app.Time.DeltaTime : 0;
-            }
-        );
+        foreach (var keyCode in _allCodes)
+        {
+            var silkKey = keyCode.ToSilk();
+            if (silkKey < 0)
+                continue;
+            var isPressed = _currentKeyboard.IsKeyPressed(silkKey);
+            var key = KeyOf(keyCode);
+            key.IsPressed = isPressed;
+            key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
+            key.ElapsedTime = isPressed ? key.ElapsedTime + app.Time.DeltaTime : 0;
+        }
     }
 
     private void OnPostUpdate()
     {
-        Parallel.ForEach(
-            _allCodes,
-            keyCode =>
-            {
-                var key = KeyOf(keyCode);
-                key.IsKeyDown = false;
-                key.IsKeyUp = false;
-            }
-        );
+        foreach (var keyCode in _allCodes)
+        {
+            var key = KeyOf(keyCode);
+            key.IsKeyDown = false;
+            key.IsKeyUp = false;
+        }
     }
 
     private void OnDestroy()
