@@ -15,6 +15,11 @@ public class Tilemap(
 {
     private readonly Dictionary<VectorInt, (ITile tile, Color? color)> _tiles = [];
 
+    private int _minTileX = int.MaxValue;
+    private int _maxTileX = int.MinValue;
+    private int _minTileY = int.MaxValue;
+    private int _maxTileY = int.MinValue;
+
     /// <summary>
     /// グリッドのサイズを取得または設定します。
     /// </summary>
@@ -65,14 +70,23 @@ public class Tilemap(
 
     private TilemapRenderingMode GetPreferredMode(RenderContext ctx)
     {
+        if (_tiles.Count == 0)
+            return TilemapRenderingMode.RenderAll;
+
+        // タイルマップの空間的広がり（タイル単位）
+        var mapW = _maxTileX - _minTileX + 1;
+        var mapH = _maxTileY - _minTileY + 1;
+
+        // ビューポートに収まるタイル数（ScanAndCollect と同じ計算式）
         var tileSize = TileSize * AbsoluteScale;
         var (ww, wh) = ctx.WindowSize;
         var maxTilesX = ww / tileSize.X + 2;
         var maxTilesY = wh / tileSize.Y + 2;
-        var maxTilesInWindow = maxTilesX * maxTilesY;
-        return maxTilesInWindow < Tiles.Count
-            ? TilemapRenderingMode.Scan
-            : TilemapRenderingMode.RenderAll;
+
+        // マップ全体がビューポートに収まる場合のみ RenderAll、それ以外は Scan
+        return (mapW <= maxTilesX && mapH <= maxTilesY)
+            ? TilemapRenderingMode.RenderAll
+            : TilemapRenderingMode.Scan;
     }
 
     private void ScanAndCollect(RenderCommandQueue queue, RenderContext ctx)
@@ -173,9 +187,19 @@ public class Tilemap(
     public void SetTile(VectorInt point, ITile? tile, Color? color = null)
     {
         if (tile == null)
+        {
             _tiles.Remove(point);
+            // バウンディングボックスの縮小は O(n) スキャンが必要なため省略。
+            // 保守的に大きめに保つことで Scan が過剰選択されることがあるが常に安全。
+        }
         else
+        {
             _tiles[point] = (tile, color ?? DefaultColor);
+            if (point.X < _minTileX) _minTileX = point.X;
+            if (point.X > _maxTileX) _maxTileX = point.X;
+            if (point.Y < _minTileY) _minTileY = point.Y;
+            if (point.Y > _maxTileY) _maxTileY = point.Y;
+        }
     }
 
     /// <summary>
@@ -192,6 +216,10 @@ public class Tilemap(
     public void Clear()
     {
         _tiles.Clear();
+        _minTileX = int.MaxValue;
+        _maxTileX = int.MinValue;
+        _minTileY = int.MaxValue;
+        _maxTileY = int.MinValue;
     }
 
     /// <summary>
