@@ -164,4 +164,18 @@ public static class SetupApiExtension
         node.Pivot = (x, y);
         return node;
     }
+
+    /// <summary>
+    /// ノードの描画位置をピクセル単位にスナップするかどうかを設定します。
+    /// </summary>
+    /// <param name="node">対象の<see cref="Node"/>。</param>
+    /// <param name="enabled">値。</param>
+    /// <typeparam name="T"><see cref="Node"/>の具象型。</typeparam>
+    /// <returns><see cref="Node"/></returns>
+    public static T PixelSnap<T>(this T node, bool enabled)
+        where T : Node
+    {
+        node.IsPixelSnapEnabled = enabled;
+        return node;
+    }
 }

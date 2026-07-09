@@ -23,6 +23,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Promete.Test" />
+    </ItemGroup>
+
+    <ItemGroup>
         <EmbeddedResource Include="Resources\shaders\*.vert" />
         <EmbeddedResource Include="Resources\shaders\*.frag" />
     </ItemGroup>

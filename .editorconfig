@@ -59,6 +59,7 @@ dotnet_diagnostic.SA1201.severity = error   # メンバー順序の強制
 
 ## 不要・プロジェクト方針と合わないルール → none
 dotnet_diagnostic.SA1101.severity = none    # this. プレフィックス不要
+dotnet_diagnostic.SA1629.severity = none    # ドキュメントコメントの末尾「。」を許容
 dotnet_diagnostic.SA1633.severity = none    # ファイルヘッダー不要
 dotnet_diagnostic.SA1200.severity = none    # using 配置（file-scoped namespace と競合）
 dotnet_diagnostic.SA1210.severity = none    # using の並び順（CSharpier に委譲）

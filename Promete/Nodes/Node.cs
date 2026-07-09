@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Promete.Graphics;
 using Promete.Graphics.Rendering;
@@ -12,6 +13,8 @@ public abstract class Node
     private Angle _angle;
 
     private bool _isModelMatrixDirty = true;
+
+    private bool _isPixelSnapEnabled = true;
 
     private Vector _location;
     private Vector _pivot = Vector.Zero;
@@ -150,6 +153,25 @@ public abstract class Node
     }
 
     /// <summary>
+    /// このノードの描画位置をピクセル単位にスナップするかどうかを取得または設定します。
+    /// </summary>
+    /// <remarks>
+    /// 有効の場合、モデル行列の平行移動成分が整数に丸められ、ピボットや位置の端数によるにじみを防ぎます。<br />
+    /// 回転や非整数スケールを伴うアニメーションでガタつきが生じる場合は、無効にしてください。
+    /// </remarks>
+    public bool IsPixelSnapEnabled
+    {
+        get => _isPixelSnapEnabled;
+        set
+        {
+            if (_isPixelSnapEnabled == value)
+                return;
+            _isPixelSnapEnabled = value;
+            _isModelMatrixDirty = true;
+        }
+    }
+
+    /// <summary>
     /// このノードを描画するかどうかを取得または設定します。
     /// </summary>
     public bool IsVisible { get; set; } = true;
@@ -213,12 +235,20 @@ public abstract class Node
     protected internal virtual void UpdateModelMatrix()
     {
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
-        ModelMatrix =
+        var matrix =
             Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0)
             * Matrix4x4.CreateScale(Scale.X, Scale.Y, 1)
             * Matrix4x4.CreateRotationZ(Angle.ToRadians())
             * Matrix4x4.CreateTranslation(Location.X, Location.Y, 0)
             * parentMatrix;
+
+        if (IsPixelSnapEnabled)
+        {
+            matrix.M41 = MathF.Round(matrix.M41);
+            matrix.M42 = MathF.Round(matrix.M42);
+        }
+
+        ModelMatrix = matrix;
         _isModelMatrixDirty = false;
     }
 
