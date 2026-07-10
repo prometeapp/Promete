@@ -19,6 +19,9 @@ public class AudioPlayer : IDisposable
 
     private float _gain;
     private float _pan;
+    private int _time;
+    private int _timeInSamples;
+    private (int value, bool isMs)? _seekRequest;
     private CancellationTokenSource? _currentTokenSource;
 
     private readonly PrometeApp _app = PrometeApp.Current;
@@ -95,14 +98,38 @@ public class AudioPlayer : IDisposable
     public bool IsPlaying { get; private set; }
 
     /// <summary>
-    ///     再生中の音源の現在の再生位置をミリ秒単位で取得します。
+    ///     再生中の音源の現在の再生位置をミリ秒単位で取得または設定します。
+    ///     設定すると、その位置へシークします。範囲外の値は音源の長さにクランプされます。
+    ///     再生していないときに設定した場合、次回再生時の開始位置になります。この値は <see cref="Stop"/> によって 0 にリセットされます。
+    ///     一時停止中に設定した場合、シークは一時停止の解除後に反映されます。
     /// </summary>
-    public int Time { get; private set; }
+    public int Time
+    {
+        get => _time;
+        set
+        {
+            var clamped = Math.Max(0, value);
+            _seekRequest = (clamped, true);
+            _time = clamped;
+        }
+    }
 
     /// <summary>
-    ///     再生中の音源の現在の再生位置をサンプル単位で取得します。
+    ///     再生中の音源の現在の再生位置をサンプル単位で取得または設定します。
+    ///     設定すると、その位置へシークします。範囲外の値は音源の長さにクランプされます。
+    ///     再生していないときに設定した場合、次回再生時の開始位置になります。この値は <see cref="Stop"/> によって 0 にリセットされます。
+    ///     一時停止中に設定した場合、シークは一時停止の解除後に反映されます。
     /// </summary>
-    public int TimeInSamples { get; private set; }
+    public int TimeInSamples
+    {
+        get => _timeInSamples;
+        set
+        {
+            var clamped = Math.Max(0, value);
+            _seekRequest = (clamped, false);
+            _timeInSamples = clamped;
+        }
+    }
 
     /// <summary>
     ///     再生中の音源の長さをミリ秒単位で取得します。
@@ -219,7 +246,8 @@ public class AudioPlayer : IDisposable
                 Gain = 1;
             });
 
-        Time = TimeInSamples = 0;
+        _time = _timeInSamples = 0;
+        _seekRequest = null;
         IsPlaying = false;
         IsPausing = false;
     }
@@ -296,17 +324,21 @@ public class AudioPlayer : IDisposable
         try
         {
             var samples = new short[BufferSize];
-            TimeInSamples = Time = 0;
 
             LengthInSamples = source.Samples / source.Channels ?? 0;
             Length = (int)(LengthInSamples / (float)source.SampleRate * 1000);
+
+            // 再生開始前にシークリクエストがあれば、それを開始位置とする
+            var startSample = ConsumeSeekRequest(source) ?? 0;
+            _timeInSamples = startSample;
+            _time = (int)(startSample * 1000L / source.SampleRate);
 
             using var alSource = new ALSource(_al);
             using var buffer1 = new ALBuffer(_al);
             using var buffer2 = new ALBuffer(_al);
             int bufferSampleIndex1 = 0,
                 bufferSampleIndex2 = 0;
-            var currentSample = 0;
+            var currentSample = startSample * source.Channels;
             var nextBufferIndex = 0;
             var bufferFormat = GetBufferFormat(source);
 
@@ -355,11 +387,36 @@ public class AudioPlayer : IDisposable
                 );
                 var sampleOffset =
                     currentBuffer == buffer1.Handle ? bufferSampleIndex1 : bufferSampleIndex2;
-                TimeInSamples = (sampleOffset + offset) / source.Channels;
-                Time = (int)(TimeInSamples * 1000L / source.SampleRate);
+                _timeInSamples = (sampleOffset + offset) / source.Channels;
+                _time = (int)(_timeInSamples * 1000L / source.SampleRate);
 
                 // このスレッドがCPUを占有しないように待ち時間を挟む
                 await Task.Delay(1, token).ConfigureAwait(false);
+
+                // シークリクエストがある場合、読み出し位置を差し替えてバッファを詰め直す
+                if (_seekRequest is not null)
+                {
+                    var seekTo = ConsumeSeekRequest(source)!.Value;
+
+                    _al.SourceStop(alSource.Handle);
+                    _al.GetSourceProperty(
+                        alSource.Handle,
+                        GetSourceInteger.BuffersQueued,
+                        out var queuedCount
+                    );
+                    for (var i = 0; i < queuedCount; i++)
+                        _al.SourceUnqueueBuffers(alSource.Handle, singleArray);
+
+                    currentSample = seekTo * source.Channels;
+                    nextBufferIndex = 0;
+                    QueueData();
+                    QueueData();
+                    _al.SourcePlay(alSource.Handle);
+
+                    _timeInSamples = seekTo;
+                    _time = (int)(seekTo * 1000L / source.SampleRate);
+                    continue;
+                }
 
                 // ポーズ中の場合、再生を一時停止する
                 if (IsPausing)
@@ -393,8 +450,8 @@ public class AudioPlayer : IDisposable
 
                 // ループ再生の開始位置にシーク
                 currentSample = loopStartSample * source.Channels;
-                TimeInSamples = loopStartSample;
-                Time = TimeInSamples * 1000 / source.SampleRate;
+                _timeInSamples = loopStartSample;
+                _time = (int)(loopStartSample * 1000L / source.SampleRate);
 
                 _app.NextFrame(() => Loop?.Invoke(this, EventArgs.Empty));
             }
@@ -477,7 +534,21 @@ public class AudioPlayer : IDisposable
         }
     }
 
-    private static BufferFormat GetBufferFormat(IAudioSource source)
+    /// <summary>
+    /// 未消費のシークリクエストをサンプル単位に換算して取り出します。リクエストがなければ <c>null</c> を返します。
+    /// </summary>
+    private int? ConsumeSeekRequest(IAudioSource source)
+    {
+        if (_seekRequest is not { } request)
+            return null;
+        _seekRequest = null;
+        var samples = request.isMs
+            ? (int)((long)request.value * source.SampleRate / 1000)
+            : request.value;
+        return Math.Clamp(samples, 0, Math.Max(0, LengthInSamples - 1));
+    }
+
+    private BufferFormat GetBufferFormat(IAudioSource source)
     {
         return (source.Channels, source.Bits) switch
         {

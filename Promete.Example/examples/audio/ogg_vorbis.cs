@@ -38,6 +38,8 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
             [→] Pitch Up
             [A] Pan Left
             [D] Pan Right
+            [Q] Seek -5s
+            [E] Seek +5s
             PRESS ESC TO RETURN
             """
         );
@@ -62,6 +64,12 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
         if (keyboard.D.IsKeyDown)
             _audio.Pan = MathF.Min(1, (int)((_audio.Pan + 0.1f) * 10) / 10f);
+
+        if (keyboard.Q.IsKeyDown)
+            _audio.Time -= 5000;
+
+        if (keyboard.E.IsKeyDown)
+            _audio.Time += 5000;
 
         if (keyboard.Space.IsKeyDown)
         {

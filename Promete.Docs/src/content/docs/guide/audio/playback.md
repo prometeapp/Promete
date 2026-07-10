@@ -39,7 +39,8 @@ audio.Resume();
 - `audio.Pitch`<br/>ピッチ比率
 - `audio.IsPlaying`<br/>再生中かどうか
 - `audio.IsPausing`<br/>一時停止中かどうか
-- `audio.Time`<br/>再生位置（ミリ秒）
+- `audio.Time`<br/>再生位置（ミリ秒）。値を設定するとその位置へシークします
+- `audio.TimeInSamples`<br/>再生位置（サンプル単位）。値を設定するとその位置へシークします
 - `audio.Length`<br/>音源の長さ（ミリ秒）
 - `audio.StartPlaying`<br/>再生開始イベント
 - `audio.StopPlaying`<br/>停止イベント
@@ -61,6 +62,19 @@ public override void OnStart()
     _audio.Play(_bgm, 0);
 }
 ```
+
+## シーク
+
+`Time` または `TimeInSamples` に値を設定すると、再生位置を変更できます。
+
+```csharp
+// 30秒地点へシーク
+audio.Time = 30000;
+```
+
+- 再生していないときに設定した値は、次に `Play` したときの開始位置になります
+- `Stop` を呼ぶと再生位置は 0 にリセットされます
+- 範囲外の値を設定した場合は、音源の長さの範囲内にクランプされます
 
 ## ノート
 

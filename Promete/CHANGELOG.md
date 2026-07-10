@@ -34,6 +34,10 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
 - `Angle` 構造体を新規追加しました
 - `Texture2D`: UV座標を追加しました
 - `OpenGLTextureFactory`: `LoadSpriteSheet` で、同じハンドルのUV違いの `Texture2D` を生成するように
+- `AudioPlayer`: シーク機能を追加しました
+    - `Time` / `TimeInSamples` プロパティに値を設定すると、その位置へシークします
+    - 再生していないときに設定した値は、次回再生時の開始位置になります（`Stop()` で 0 にリセット）
+    - 範囲外の値は音源の長さの範囲内にクランプされます
 
 ### Enhancements
 - フレームバッファシステムをリファクタリングしました

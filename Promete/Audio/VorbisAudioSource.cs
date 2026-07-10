@@ -106,7 +106,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// </summary>
     public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
     {
-        var actualReadSize = Math.Min(buffer.Length, LoadedSize - offset);
+        var actualReadSize = Math.Max(0, Math.Min(buffer.Length, LoadedSize - offset));
         Buffer.BlockCopy(_store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
         return (actualReadSize, IsLoadingFinished && actualReadSize < buffer.Length);
     }
