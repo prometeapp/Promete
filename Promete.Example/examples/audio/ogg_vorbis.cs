@@ -26,7 +26,7 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
             $"""
             Location: {_audio.Time / 1000f:0.000} / {_audio.Length / 1000f:0.000}
             Location in Samples: {_audio.TimeInSamples} / {_audio.LengthInSamples}
-            Loaded: {_bgm.LoadedSize} / {_bgm.Samples}
+            Loaded: {_bgm.LoadedSize} / {_bgm.Frames}
             Volume: {_audio.Gain}
             Pitch: {_audio.Pitch}
             Pan: {_audio.Pan}

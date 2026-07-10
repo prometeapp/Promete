@@ -284,12 +284,13 @@ public class AudioPlayer : IDisposable
         float pan = 0
     )
     {
-        if (source.Samples is null)
+        if (source.Frames is null)
             throw new ArgumentException(
                 "PlayOneShot requires AudioSource which has determined length."
             );
-        var buffer = new short[source.Samples.Value];
-        source.FillSamples(buffer, 0);
+        var floatBuffer = new float[source.Frames.Value * source.Channels];
+        source.FillSamples(floatBuffer, 0);
+        var buffer = ToInt16Buffer(floatBuffer);
         using var alSrc = new ALSource(_al);
         using var alBuf = new ALBuffer(_al);
         var bufferFormat = GetBufferFormat(source);
@@ -324,8 +325,9 @@ public class AudioPlayer : IDisposable
         try
         {
             var samples = new short[BufferSize];
+            var floatSamples = new float[BufferSize];
 
-            LengthInSamples = source.Samples / source.Channels ?? 0;
+            LengthInSamples = source.Frames ?? 0;
             Length = (int)(LengthInSamples / (float)source.SampleRate * 1000);
 
             // 再生開始前にシークリクエストがあれば、それを開始位置とする
@@ -488,7 +490,14 @@ public class AudioPlayer : IDisposable
 
             void QueueData()
             {
-                (sampleSize, isFinished) = source.FillSamples(samples, currentSample);
+                int filledFrames;
+                (filledFrames, isFinished) = source.FillSamples(
+                    floatSamples,
+                    currentSample / source.Channels
+                );
+                sampleSize = filledFrames * source.Channels;
+                ToInt16Buffer(floatSamples.AsSpan(0, sampleSize), samples);
+
                 if (nextBufferIndex == 0)
                     bufferSampleIndex1 = currentSample;
                 else
@@ -550,13 +559,34 @@ public class AudioPlayer : IDisposable
 
     private BufferFormat GetBufferFormat(IAudioSource source)
     {
-        return (source.Channels, source.Bits) switch
+        return source.Channels switch
         {
-            (1, 8) => BufferFormat.Mono8,
-            (1, 16) => BufferFormat.Mono16,
-            (2, 8) => BufferFormat.Stereo8,
-            (2, 16) => BufferFormat.Stereo16,
+            1 => BufferFormat.Mono16,
+            2 => BufferFormat.Stereo16,
             _ => throw new NotSupportedException("Unsupported format."),
         };
+    }
+
+    /// <summary>
+    /// float PCM (-1.0～1.0) を16bit整数PCMへクランプ付きで変換します。
+    /// AudioPlayerの内部処理は暫定的にshortバッファを使い続けているための橋渡し用です（フェーズ3で置き換え予定）。
+    /// </summary>
+    private static void ToInt16Buffer(ReadOnlySpan<float> source, Span<short> destination)
+    {
+        for (var i = 0; i < source.Length; i++)
+        {
+            var clamped = Math.Clamp(source[i], -1f, 1f);
+            destination[i] = (short)(clamped * short.MaxValue);
+        }
+    }
+
+    /// <summary>
+    /// float PCM (-1.0～1.0) を16bit整数PCMの新しい配列へクランプ付きで変換します。
+    /// </summary>
+    private static short[] ToInt16Buffer(ReadOnlySpan<float> source)
+    {
+        var result = new short[source.Length];
+        ToInt16Buffer(source, result);
+        return result;
     }
 }
