@@ -18,7 +18,7 @@ public class ScenelessRunTests
     public void Run_WithoutScene_ShouldHaveValidRoot()
     {
         // Arrange
-        var app = PrometeApp.Create().BuildWithHeadless();
+        using var app = PrometeApp.Create().BuildWithHeadless();
 
         // OnStartを手動で呼び出して初期化し、DefaultSceneをロード
         app.OnStart();
@@ -33,7 +33,7 @@ public class ScenelessRunTests
     public void GetPlugin_ShouldWork_WhenRunningWithoutScene()
     {
         // Arrange
-        var app = PrometeApp.Create().Use<ConsoleLayer>().BuildWithHeadless();
+        using var app = PrometeApp.Create().Use<ConsoleLayer>().BuildWithHeadless();
 
         // Act
         var console = app.GetPlugin<ConsoleLayer>();
@@ -48,7 +48,7 @@ public class ScenelessRunTests
     public void DefaultScene_ShouldBeRegistered()
     {
         // Arrange
-        var app = PrometeApp.Create().BuildWithHeadless();
+        using var app = PrometeApp.Create().BuildWithHeadless();
 
         // Act - DefaultSceneのロードを試みる
         var loadSceneMethod = typeof(PrometeApp).GetMethod(

@@ -101,6 +101,16 @@ public sealed class PrometeApp : IDisposable
     public event Action<SceneTransitionEventArgs>? SceneWillChange;
 
     /// <summary>
+    /// 実行中の <see cref="PrometeApp" /> を取得します。
+    /// <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
+    /// </summary>
+    public static PrometeApp Current
+    {
+        get => field ?? throw new InvalidOperationException("Promete is not initialized.");
+        private set;
+    }
+
+    /// <summary>
     /// 現在読み込まれているシーンのルートコンテナを取得します。
     /// </summary>
     public Container? Root => _currentScene?.Root;
@@ -146,13 +156,11 @@ public sealed class PrometeApp : IDisposable
     public List<Material> PostProcessMaterials { get; } = [];
 
     /// <summary>
-    /// 実行中の <see cref="PrometeApp" /> を取得します。
-    /// <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
+    /// Promete アプリケーションを作成します。
     /// </summary>
-    public static PrometeApp Current
+    public static PrometeAppBuilder Create()
     {
-        get => field ?? throw new InvalidOperationException("Promete is not initialized.");
-        private set;
+        return new PrometeAppBuilder();
     }
 
     /// <summary>
@@ -163,14 +171,10 @@ public sealed class PrometeApp : IDisposable
         foreach (var plugin in _disposablePlugins)
             plugin.Dispose();
         _provider.Dispose();
-    }
 
-    /// <summary>
-    /// Promete アプリケーションを作成します。
-    /// </summary>
-    public static PrometeAppBuilder Create()
-    {
-        return new PrometeAppBuilder();
+        // 破棄済みのインスタンスが Current として参照され続けないようにする
+        if (Current == this)
+            Current = null!;
     }
 
     /// <summary>

@@ -15,7 +15,7 @@ public class ScenelessExampleTests
     public void Example_ScenelessHelloWorld_ShouldHaveRequiredMethods()
     {
         // Arrange - Issue で示されたコード例と同様のパターン
-        var app = PrometeApp.Create().Use<Keyboard>().Use<ConsoleLayer>().BuildWithHeadless();
+        using var app = PrometeApp.Create().Use<Keyboard>().Use<ConsoleLayer>().BuildWithHeadless();
 
         var keyboard = app.GetPlugin<Keyboard>();
         var console = app.GetPlugin<ConsoleLayer>();

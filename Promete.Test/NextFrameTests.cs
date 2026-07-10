@@ -13,7 +13,7 @@ public class NextFrameTests
 
         var executionOrder = new List<string>();
 
-        var app = PrometeApp.Create().BuildWithHeadless();
+        using var app = PrometeApp.Create().BuildWithHeadless();
 
         // フレーム1: NextFrameを呼び出す
         executionOrder.Add("Frame1_Start");
@@ -55,7 +55,7 @@ public class NextFrameTests
 
         var executionOrder = new List<string>();
 
-        var app = PrometeApp.Create().BuildWithHeadless();
+        using var app = PrometeApp.Create().BuildWithHeadless();
 
         // 複数のNextFrameアクションをエンキュー
         app.NextFrame(() => executionOrder.Add("Action1"));

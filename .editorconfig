@@ -58,7 +58,10 @@ dotnet_diagnostic.SA1400.severity = error   # アクセス修飾子の省略禁�
 dotnet_diagnostic.SA1201.severity = error   # メンバー順序の強制
 
 ## 不要・プロジェクト方針と合わないルール → none
+dotnet_diagnostic.SA1009.severity = none
 dotnet_diagnostic.SA1101.severity = none    # this. プレフィックス不要
+dotnet_diagnostic.SA1111.severity = none
+dotnet_diagnostic.SA1122.severity = none    # 空文字列の表現として "" 許容
 dotnet_diagnostic.SA1629.severity = none    # ドキュメントコメントの末尾「。」を許容
 dotnet_diagnostic.SA1633.severity = none    # ファイルヘッダー不要
 dotnet_diagnostic.SA1200.severity = none    # using 配置（file-scoped namespace と競合）
@@ -66,6 +69,10 @@ dotnet_diagnostic.SA1210.severity = none    # using の並び順（CSharpier に
 dotnet_diagnostic.SA1208.severity = none    # System using 優先（CSharpier に委譲）
 dotnet_diagnostic.SA1309.severity = none    # フィールド名のアンダースコアプレフィックス禁止（本プロジェクトはプレフィックスを使用）
 dotnet_diagnostic.SX1309.severity = warning # アンダースコアプレフィックス必須（SA1309 の逆ルール）
+dotnet_diagnostic.SA1503.severity = none    # ブロックなしifなどを許容
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1519.severity = none
+dotnet_diagnostic.SA1623.severity = none    # XMLコメントのルールを無視
 
 ## ドキュメントルール → warning（公開 API のみ）
 dotnet_diagnostic.SA1600.severity = warning # public メンバーに XML ドキュメント必須
