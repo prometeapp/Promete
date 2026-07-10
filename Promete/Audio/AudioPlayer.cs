@@ -12,10 +12,8 @@ namespace Promete.Audio;
 /// </summary>
 public class AudioPlayer : IDisposable
 {
+    private readonly AudioDevice _audioDevice;
     private readonly AL _al;
-    private readonly ALContext _alc;
-    private readonly nint _context;
-    private readonly nint _device;
 
     private float _gain;
     private float _pan;
@@ -23,24 +21,17 @@ public class AudioPlayer : IDisposable
     private int _timeInSamples;
     private (int value, bool isMs)? _seekRequest;
     private CancellationTokenSource? _currentTokenSource;
+    private bool _isDisposed;
 
     private readonly PrometeApp _app = PrometeApp.Current;
 
     /// <summary>
-    ///     この <see cref="AudioPlayer" /> の新しいインスタンスを初期化します。
+    /// この <see cref="AudioPlayer" /> の新しいインスタンスを初期化します。
     /// </summary>
-    public unsafe AudioPlayer()
+    public AudioPlayer()
     {
-        _al = AL.GetApi(true);
-        _alc = ALContext.GetApi(true);
-
-        _al.DistanceModel(DistanceModel.None);
-
-        var d = _alc.OpenDevice("");
-        var c = _alc.CreateContext(d, null);
-        _alc.MakeContextCurrent(c);
-        _device = (nint)d;
-        _context = (nint)c;
+        _audioDevice = AudioDevice.Acquire();
+        _al = _audioDevice.Al;
         Gain = 1;
     }
 
@@ -154,13 +145,14 @@ public class AudioPlayer : IDisposable
     /// <summary>
     ///     リソースを解放します。
     /// </summary>
-    public unsafe void Dispose()
+    public void Dispose()
     {
+        if (_isDisposed)
+            return;
+        _isDisposed = true;
+
         Stop();
-        _alc.DestroyContext((Context*)_context);
-        _alc.CloseDevice((Device*)_device);
-        _al.Dispose();
-        _alc.Dispose();
+        _audioDevice.Dispose();
 
         GC.SuppressFinalize(this);
     }
