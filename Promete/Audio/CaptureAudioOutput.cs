@@ -25,6 +25,11 @@ public class CaptureAudioOutput : IAudioOutput
     public IReadOnlyList<float[]> CapturedBuffers => _capturedBuffers;
 
     /// <summary>
+    /// このプレイヤーのピッチを取得または設定します。実際の出力には影響しません。
+    /// </summary>
+    public float Pitch { get; set; } = 1;
+
+    /// <summary>
     /// 出力を開始します。実際には音声を出力せず、以後の <see cref="RenderNext"/> 呼び出しに備えて
     /// コールバックとバッファ形状を保持します。
     /// </summary>
@@ -32,11 +37,13 @@ public class CaptureAudioOutput : IAudioOutput
     /// <param name="channels">出力するチャンネル数。</param>
     /// <param name="sampleRate">出力するサンプリング周波数。</param>
     /// <param name="bufferSizeInFrames">1回のコールバックで生成するフレーム数。</param>
+    /// <param name="getSampleRate">現在のサンプリング周波数を取得するコールバック。この実装では使用しません。</param>
     public void Start(
         AudioRenderCallback render,
         int channels,
         int sampleRate,
-        int bufferSizeInFrames
+        int bufferSizeInFrames,
+        Func<int>? getSampleRate = null
     )
     {
         _render = render;
