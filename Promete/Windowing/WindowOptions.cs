@@ -1,4 +1,4 @@
-﻿namespace Promete.Windowing;
+namespace Promete.Windowing;
 
 public readonly record struct WindowOptions(
     VectorInt Location,

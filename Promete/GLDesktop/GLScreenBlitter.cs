@@ -20,8 +20,10 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
     private Material _defaultMaterial = null!;
 
     // フルスクリーンクワッド
-    private uint _vao,
-        _vbo;
+    private uint _vao;
+
+    // フルスクリーンクワッド
+    private uint _vbo;
 
     // ピンポンバッファ（複数パス時に遅延生成）
     private RenderTexture? _pingPong0;
@@ -105,7 +107,6 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
     }
 
     // --- private ---
-
     private void BlitQuad(GL gl, RenderTexture src, Material material)
     {
         var program = (uint)material.Shader.Handle;

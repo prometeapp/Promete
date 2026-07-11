@@ -8,6 +8,7 @@ using Timer = System.Timers.Timer;
 
 namespace Promete.Windowing.Headless;
 
+[Obsolete]
 public class HeadlessWindow : IWindow
 {
     private readonly Timer _timer = new(1000 / 60f);
@@ -86,9 +87,9 @@ public class HeadlessWindow : IWindow
     public int TargetUps { get; set; }
     public float TimeScale { get; set; } = 1;
     public float PixelRatio => 1;
-    public string Title { get; set; }
+    public string Title { get; set; } = "";
     public WindowMode Mode { get; set; }
-    public IInputContext? _RawInputContext { get; } = new DummyInputContext();
+    public IInputContext? RawInputContext { get; } = new DummyInputContext();
     public TextureFactoryBase TextureFactory { get; } = new HeadlessTextureFactory();
 
     /// <summary>
@@ -138,6 +139,7 @@ public class HeadlessWindow : IWindow
     /// </summary>
     /// <param name="path">保存先のパス</param>
     /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns></returns>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default)
     {
         return Task.Delay(0, ct);

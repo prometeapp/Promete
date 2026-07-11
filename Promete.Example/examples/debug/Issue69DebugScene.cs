@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -23,7 +23,7 @@ public class Issue69DebugScene : Scene
     public Issue69DebugScene(Keyboard keyboard)
     {
         _keyboard = keyboard;
-        _texture = Window.TextureFactory.Load("assets/ichigo2.png");
+        _texture = App.TextureFactory.Load("assets/ichigo2.png");
         _obj.Texture = _texture;
     }
 
@@ -60,7 +60,7 @@ public class Issue69DebugScene : Scene
 
         if (_keyboard.C.IsKeyDown)
         {
-            Window.Scale = Window.Scale == 1 ? 2 : 1;
+            View.Scale = View.Scale == 1 ? 2 : 1;
         }
     }
 

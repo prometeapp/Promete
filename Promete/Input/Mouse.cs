@@ -15,7 +15,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
 
     private bool _isMouseOnWindow;
     private IMouse? _mouse;
-    private IInputContext _ctx;
+    private IInputContext? _ctx;
 
     public event Action<MouseButtonEventArgs>? Click;
     public event Action<MouseButtonEventArgs>? ButtonUp;

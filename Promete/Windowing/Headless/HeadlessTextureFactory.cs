@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Promete.Graphics;
 using SixLabors.ImageSharp;
 using Color = System.Drawing.Color;

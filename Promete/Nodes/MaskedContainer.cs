@@ -21,6 +21,7 @@ namespace Promete.Nodes;
 public class MaskedContainer : Container
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="MaskedContainer"/> class.
     /// MaskedContainer の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="maskTexture">マスクに使用するテクスチャ。nullの場合は通常のContainerとして動作します。</param>
@@ -78,6 +79,7 @@ public class MaskedContainer : Container
                     Context = ctx,
                 }
             );
+
             // BeginAlphaMaskCommandRunner が内部で子要素のレンダリングまで完結させる
         }
         else
@@ -103,7 +105,7 @@ public class MaskedContainer : Container
 
     private void CollectChildren(RenderCommandQueue queue, RenderContext ctx)
     {
-        foreach (var child in sortedChildren)
+        foreach (var child in SortedChildren)
         {
             if (!child.IsVisible || child.IsDestroyed)
                 continue;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -14,7 +14,7 @@ namespace Promete.Windowing.GLDesktop;
 
 public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
 {
-    public GL GL { get; set; }
+    public GL? GL { get; set; }
 
     public override Texture2D Load(string path)
     {
@@ -61,9 +61,9 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         var height = bitmap.GetLength(1);
         var arr = new byte[width * height * 4];
         for (int y = 0, i = 0; y < height; y++)
-        for (var x = 0; x < width; x++)
-        for (var j = 0; j < 4; j++)
-            arr[i++] = bitmap[x, y, j];
+            for (var x = 0; x < width; x++)
+                for (var j = 0; j < 4; j++)
+                    arr[i++] = bitmap[x, y, j];
 
         return Create(arr, (width, height));
     }
@@ -73,13 +73,13 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         var arr = new byte[size.X, size.Y, 4];
 
         for (var y = 0; y < size.Y; y++)
-        for (var x = 0; x < size.X; x++)
-        {
-            arr[x, y, 0] = color.R;
-            arr[x, y, 1] = color.G;
-            arr[x, y, 2] = color.B;
-            arr[x, y, 3] = color.A;
-        }
+            for (var x = 0; x < size.X; x++)
+            {
+                arr[x, y, 0] = color.R;
+                arr[x, y, 1] = color.G;
+                arr[x, y, 2] = color.B;
+                arr[x, y, 3] = color.A;
+            }
 
         return Create(arr);
     }
@@ -122,7 +122,7 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
                 var uvStart = new Vector(px / width, py / height);
                 var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
 
-                textures[y * horizontalCount + x] = new Texture2D(
+                textures[(y * horizontalCount) + x] = new Texture2D(
                     handle,
                     size,
                     DisposeTexture,
@@ -149,20 +149,20 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
             var textures = new Texture2D[verticalCount * horizontalCount];
 
             for (var y = 0; y < verticalCount; y++)
-            for (var x = 0; x < horizontalCount; x++)
-            {
-                var (px, py) = (x * size.X, y * size.Y);
-                if (px + size.X > img.Width)
-                    throw new ArgumentException(null, nameof(horizontalCount));
+                for (var x = 0; x < horizontalCount; x++)
+                {
+                    var (px, py) = (x * size.X, y * size.Y);
+                    if (px + size.X > img.Width)
+                        throw new ArgumentException(null, nameof(horizontalCount));
 
-                if (py + size.Y > img.Height)
-                    throw new ArgumentException(null, nameof(verticalCount));
+                    if (py + size.Y > img.Height)
+                        throw new ArgumentException(null, nameof(verticalCount));
 
-                using var cropped = img.Clone(ctx =>
-                    ctx.Crop(new Rectangle(px, py, size.X, size.Y))
-                );
-                textures[y * horizontalCount + x] = LoadFromImageSharpImage(cropped);
-            }
+                    using var cropped = img.Clone(ctx =>
+                        ctx.Crop(new Rectangle(px, py, size.X, size.Y))
+                    );
+                    textures[(y * horizontalCount) + x] = LoadFromImageSharpImage(cropped);
+                }
 
             return textures.ToArray();
         }

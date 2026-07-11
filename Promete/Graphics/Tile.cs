@@ -15,6 +15,7 @@ public class Tile : ITile
     private double _timer;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Tile"/> class.
     /// テクスチャを指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="texture">タイルとして描画されるテクスチャ。</param>
@@ -22,6 +23,7 @@ public class Tile : ITile
         : this(texture, false) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Tile"/> class.
     /// <see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     protected Tile(Texture2D texture, bool b1)
@@ -31,6 +33,7 @@ public class Tile : ITile
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Tile"/> class.
     /// テクスチャの配列とアニメーション時間を指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="animations">アニメーション描画されるテクスチャの配列。</param>

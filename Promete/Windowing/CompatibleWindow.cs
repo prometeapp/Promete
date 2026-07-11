@@ -169,7 +169,7 @@ public class CompatibleWindow(PrometeApp app) : IWindow
         set => app.View.Mode = value;
     }
 
-    public IInputContext? _RawInputContext =>
+    public IInputContext? RawInputContext =>
         app.TryGetPlugin<IInputContext>(out var ctx) ? ctx : null;
 
     public TextureFactoryBase TextureFactory => app.TextureFactory;

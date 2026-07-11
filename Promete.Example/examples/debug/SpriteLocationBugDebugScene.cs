@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
 using Promete.Nodes;
@@ -20,7 +20,7 @@ public class SpriteLocationBugDebugScene(Keyboard keyboard) : Scene
     public override void OnStart()
     {
         Root.Add(_container);
-        _texture = Window.TextureFactory.Load("./assets/ichigo.png");
+        _texture = App.TextureFactory.Load("./assets/ichigo.png");
         _container.Location = (100, 100);
         _container.Add(new Sprite(_texture));
     }

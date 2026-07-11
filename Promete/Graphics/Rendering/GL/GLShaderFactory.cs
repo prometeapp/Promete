@@ -8,7 +8,7 @@ namespace Promete.Graphics.Rendering.GL;
 /// </summary>
 internal class GLShaderFactory : IShaderFactory
 {
-    public Silk.NET.OpenGL.GL GL { get; set; }
+    public Silk.NET.OpenGL.GL? GL { get; set; }
 
     /// <inheritdoc/>
     public void Compile(ShaderProgram program)

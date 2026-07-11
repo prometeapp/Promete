@@ -1,4 +1,4 @@
-﻿using Promete.Audio;
+using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
 using Promete.Windowing;
@@ -13,10 +13,10 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
     public override void OnStart()
     {
-        Window.Title = "Ogg Vorbis playback example";
+        View.Title = "Ogg Vorbis playback example";
         console.Print("Ogg Vorbis playback Example");
 
-        Window.FileDropped += WindowOnFileDropped;
+        View.FileDropped += WindowOnFileDropped;
     }
 
     public override void OnUpdate()
@@ -93,7 +93,7 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
         _audio.Stop();
         _audio.Dispose();
         _bgm.Dispose();
-        Window.FileDropped -= WindowOnFileDropped;
+        View.FileDropped -= WindowOnFileDropped;
     }
 
     private void WindowOnFileDropped(FileDroppedEventArgs e)

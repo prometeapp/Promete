@@ -16,8 +16,8 @@ public class MaskedContainerExampleScene(ConsoleLayer console, Keyboard keyboard
 
     public override void OnStart()
     {
-        _backgroundTexture = Window.TextureFactory.Load("assets/ichigo2.png");
-        _circleMaskTexture = Window.TextureFactory.Load("assets/circle_mask.png");
+        _backgroundTexture = App.TextureFactory.Load("assets/ichigo2.png");
+        _circleMaskTexture = App.TextureFactory.Load("assets/circle_mask.png");
 
         // ステンシルバッファ方式のデモ
         var stencilContainer = new MaskedContainer(_circleMaskTexture, useAlphaMask: false)

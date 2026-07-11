@@ -1,4 +1,4 @@
-﻿namespace Promete.Example.Kernel;
+namespace Promete.Example.Kernel;
 
 public class SceneFile(string name, string description, Type scene, Folder? parent = null)
     : IFileSystemElement

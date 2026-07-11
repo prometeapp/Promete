@@ -27,9 +27,11 @@ public sealed class ShaderProgram : IDisposable
     public int Handle { get; private set; }
 
     /// <summary>新しい <see cref="ShaderProgram"/> ビルダーを生成します。</summary>
+    /// <returns></returns>
     public static ShaderProgram Create() => new();
 
     /// <summary>頂点シェーダーのソースコードを設定します。</summary>
+    /// <returns></returns>
     public ShaderProgram Vertex(string source)
     {
         VertexShaderSource = source;
@@ -37,6 +39,7 @@ public sealed class ShaderProgram : IDisposable
     }
 
     /// <summary>フラグメントシェーダーのソースコードを設定します。</summary>
+    /// <returns></returns>
     public ShaderProgram Fragment(string source)
     {
         FragmentShaderSource = source;
@@ -47,6 +50,7 @@ public sealed class ShaderProgram : IDisposable
     /// シェーダーをコンパイルします。
     /// 内部で <see cref="IShaderFactory"/> を取得し、バックエンドに処理を委譲します。
     /// </summary>
+    /// <returns></returns>
     public ShaderProgram Compile()
     {
         PrometeApp.Current.GetPlugin<IShaderFactory>().Compile(this);

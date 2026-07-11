@@ -107,7 +107,7 @@ public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard) : Scene
     public override void OnStart()
     {
         console.Print("Press [ESC] to exit");
-        _texture = Window.TextureFactory.Load("assets/ichigo.png");
+        _texture = App.TextureFactory.Load("assets/ichigo.png");
 
         // シェーダーのコンパイル（OnStart以降・メインスレッドで呼ぶ必要あり）
         _sepiaShader = ShaderProgram.Create().Vertex(VertSrc).Fragment(SepiaFragSrc).Compile();
@@ -140,7 +140,7 @@ public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         for (var i = 0; i < 100; i++)
         {
             var ichigo = new Sprite(_texture)
-                .Location(Random.Shared.NextVector(Window.Size))
+                .Location(Random.Shared.NextVector(View.Size))
                 .Size(Random.Shared.NextVectorInt(128, 128) + (16, 16))
                 .Angle(Random.Shared.Next(0, 359).Degrees)
                 .Pivot(HorizontalAlignment.Center, VerticalAlignment.Center);
@@ -148,13 +148,14 @@ public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard) : Scene
 
             Root.Add(ichigo);
         }
+
         App.BackgroundColor = Color.DarkGray;
     }
 
     public override void OnUpdate()
     {
         // ラスタースクロールのアニメーション時間を更新
-        _rasterScrollMat["uTime"] = (float)Window.TotalTime;
+        _rasterScrollMat["uTime"] = (float)Time.TotalTime;
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

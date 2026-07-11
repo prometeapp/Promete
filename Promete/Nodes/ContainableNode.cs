@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Promete.Graphics.Rendering;
@@ -19,8 +19,8 @@ public abstract class ContainableNode : Node
     protected readonly ObservableCollection<Node> children = [];
 
     private bool _isSortingRequested = true;
-    protected internal bool isTrimmable;
-    protected internal Node[] sortedChildren = [];
+    protected internal bool IsTrimmable;
+    protected internal Node[] SortedChildren = [];
 #pragma warning restore SA1401
 
     protected ContainableNode()
@@ -40,7 +40,7 @@ public abstract class ContainableNode : Node
     {
         SortChildrenIfNeeded();
         base.Update();
-        for (var i = 0; i < sortedChildren.Length; i++)
+        for (var i = 0; i < SortedChildren.Length; i++)
         {
             if (children.Count <= i)
                 break;
@@ -59,7 +59,7 @@ public abstract class ContainableNode : Node
     internal override void BeforeRender()
     {
         base.BeforeRender();
-        foreach (var child in sortedChildren)
+        foreach (var child in SortedChildren)
         {
             if (!child.IsVisible || child.IsDestroyed)
                 continue;
@@ -69,7 +69,7 @@ public abstract class ContainableNode : Node
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        foreach (var child in sortedChildren)
+        foreach (var child in SortedChildren)
         {
             if (!child.IsVisible || child.IsDestroyed)
                 continue;
@@ -94,7 +94,7 @@ public abstract class ContainableNode : Node
         // ソートが要求されている場合、ソートを行う
         if (!_isSortingRequested)
             return;
-        sortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
+        SortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
         _isSortingRequested = false;
     }
 
@@ -126,7 +126,7 @@ public abstract class ContainableNode : Node
         foreach (var child in children)
             child.Parent = null;
         children.Clear();
-        sortedChildren = [];
+        SortedChildren = [];
     }
 
     protected void Insert(int index, Node node)

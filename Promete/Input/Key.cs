@@ -25,13 +25,17 @@ public class Key
     /// <summary>
     /// キーが押されてからの経過フレーム数を取得します。
     /// </summary>
-    /// <value></value>
+    /// <value>
+    /// <placeholder>キーが押されてからの経過フレーム数を取得します。</placeholder>
+    /// </value>
     public int ElapsedFrameCount { get; internal set; }
 
     /// <summary>
     /// キーが押されてからの経過時間を取得します。
     /// </summary>
-    /// <value></value>
+    /// <value>
+    /// <placeholder>キーが押されてからの経過時間を取得します。</placeholder>
+    /// </value>
     public float ElapsedTime { get; internal set; }
 
     public static implicit operator bool(Key key)

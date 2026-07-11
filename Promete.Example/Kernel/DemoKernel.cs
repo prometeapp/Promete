@@ -1,4 +1,4 @@
-﻿namespace Promete.Example.Kernel;
+namespace Promete.Example.Kernel;
 
 public static class DemoKernel
 {

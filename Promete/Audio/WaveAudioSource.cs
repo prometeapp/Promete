@@ -17,12 +17,14 @@ public class WaveAudioSource : IAudioSource
     private readonly float[] _store;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="WaveAudioSource"/> class.
     /// 指定されたパスからWaveオーディオソースを初期化します。
     /// </summary>
     public WaveAudioSource(string path)
         : this(File.OpenRead(path)) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="WaveAudioSource"/> class.
     /// 指定されたストリームからWaveオーディオソースを初期化します。
     /// </summary>
     public WaveAudioSource(Stream stream)
@@ -48,6 +50,7 @@ public class WaveAudioSource : IAudioSource
     /// <summary>
     /// サンプルデータを指定されたバッファに読み込みます。
     /// </summary>
+    /// <returns></returns>
     public (int FilledFrames, bool IsFinished) FillSamples(Span<float> buffer, int offsetFrames)
     {
         var totalFrames = _store.Length / _channels;
@@ -70,6 +73,7 @@ public class WaveAudioSource : IAudioSource
         ArgumentNullException.ThrowIfNull(stream);
 
         using var reader = new BinaryReader(stream);
+
         // RIFF header
         string riff = new(reader.ReadChars(4));
         if (riff != "RIFF")
@@ -166,6 +170,7 @@ public class WaveAudioSource : IAudioSource
                     var sample = BitConverter.ToInt16(rawData, i * 2);
                     result[i] = sample / (float)short.MaxValue;
                 }
+
                 break;
 
             case 24:
@@ -180,6 +185,7 @@ public class WaveAudioSource : IAudioSource
                         | (rawData[offset + 2] << 24);
                     result[i] = (sample >> 8) / 8388608f;
                 }
+
                 break;
 
             case 32:
@@ -188,6 +194,7 @@ public class WaveAudioSource : IAudioSource
                     var sample = BitConverter.ToInt32(rawData, i * 4);
                     result[i] = sample / (float)int.MaxValue;
                 }
+
                 break;
 
             default:

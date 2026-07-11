@@ -1,4 +1,4 @@
-﻿namespace Promete.Input;
+namespace Promete.Input;
 
 /// <summary>
 /// ゲームパッドのボタンタイプを表す列挙型

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Promete.Audio;
 using Promete.Headless;
 

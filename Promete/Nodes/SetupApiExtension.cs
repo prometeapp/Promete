@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Promete.Nodes;
 
@@ -10,6 +10,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードの位置をベクトルで設定します
     /// </summary>
+    /// <returns></returns>
     public static T Location<T>(this T node, Vector vec)
         where T : Node
     {
@@ -20,6 +21,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードの位置を X, Y 座標で設定します
     /// </summary>
+    /// <returns></returns>
     public static T Location<T>(this T node, float x, float y)
         where T : Node
     {
@@ -30,6 +32,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードの角度を設定します
     /// </summary>
+    /// <returns></returns>
     public static T Angle<T>(this T node, Angle angle)
         where T : Node
     {
@@ -40,6 +43,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのスケールをベクトルで設定します
     /// </summary>
+    /// <returns></returns>
     public static T Scale<T>(this T node, Vector vec)
         where T : Node
     {
@@ -50,6 +54,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのスケールを X, Y 値で設定します
     /// </summary>
+    /// <returns></returns>
     public static T Scale<T>(this T node, float x, float y)
         where T : Node
     {
@@ -60,6 +65,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのサイズをベクトルで設定します
     /// </summary>
+    /// <returns></returns>
     public static T Size<T>(this T node, VectorInt vec)
         where T : Node
     {
@@ -70,6 +76,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのサイズを幅と高さで設定します
     /// </summary>
+    /// <returns></returns>
     public static T Size<T>(this T node, int width, int height)
         where T : Node
     {
@@ -80,6 +87,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードの名前を設定します
     /// </summary>
+    /// <returns></returns>
     public static T Name<T>(this T node, string name)
         where T : Node
     {
@@ -90,6 +98,7 @@ public static class SetupApiExtension
     /// <summary>
     /// コンテナに子ノードを追加します
     /// </summary>
+    /// <returns></returns>
     public static T Children<T>(this T node, params Node[] children)
         where T : Container
     {
@@ -100,6 +109,7 @@ public static class SetupApiExtension
     /// <summary>
     /// コンテナに子ノードのコレクションを追加します
     /// </summary>
+    /// <returns></returns>
     public static T Children<T>(this T node, IEnumerable<Node> children)
         where T : Container
     {
@@ -110,6 +120,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのZ軸インデックスを設定します
     /// </summary>
+    /// <returns></returns>
     public static T ZIndex<T>(this T node, int zIndex)
         where T : Node
     {
@@ -120,6 +131,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのピボット位置をベクトルで設定します
     /// </summary>
+    /// <returns></returns>
     public static T Pivot<T>(this T node, Vector pivot)
         where T : Node
     {
@@ -130,6 +142,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのピボット位置を X, Y 座標で設定します
     /// </summary>
+    /// <returns></returns>
     public static T Pivot<T>(this T node, float x, float y)
         where T : Node
     {
@@ -140,6 +153,7 @@ public static class SetupApiExtension
     /// <summary>
     /// ノードのピボット位置を水平・垂直アライメントで設定します
     /// </summary>
+    /// <returns></returns>
     public static T Pivot<T>(
         this T node,
         HorizontalAlignment horizontalAlignment,

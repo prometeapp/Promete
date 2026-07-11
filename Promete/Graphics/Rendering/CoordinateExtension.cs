@@ -8,6 +8,7 @@ public static class CoordinateExtension
     /// <summary>
     /// スクリーン座標をViewport座標に変換します。
     /// </summary>
+    /// <returns></returns>
     public static Vector ToViewportPoint(this Vector dp, float halfWidth, float halfHeight)
     {
         return ((dp.X - halfWidth) / halfWidth, -(dp.Y - halfHeight) / halfHeight);
@@ -16,6 +17,7 @@ public static class CoordinateExtension
     /// <summary>
     /// スクリーン座標をViewport座標に変換します。
     /// </summary>
+    /// <returns></returns>
     public static (float, float) ToViewportPoint(
         this (float, float) dp,
         float halfWidth,

@@ -64,6 +64,7 @@ public class Coroutine : YieldInstruction
     /// <summary>
     /// コルーチンが完了した後に実行されるコールバックを設定します。
     /// </summary>
+    /// <returns></returns>
     public Coroutine Then(Action callback)
     {
         ThenAction = callback;
@@ -73,6 +74,7 @@ public class Coroutine : YieldInstruction
     /// <summary>
     /// コルーチンが例外をスローした場合に実行されるコールバックを設定します。
     /// </summary>
+    /// <returns></returns>
     public Coroutine Error(Action<Exception> callback)
     {
         ErrorAction = callback;
@@ -82,6 +84,7 @@ public class Coroutine : YieldInstruction
     /// <summary>
     /// シーンが切り替わっても、コルーチンを破棄せず継続するよう設定します。
     /// </summary>
+    /// <returns></returns>
     public Coroutine KeepAlive(bool keepAlive = true)
     {
         IsKeepAlive = keepAlive;

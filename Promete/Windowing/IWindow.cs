@@ -191,7 +191,7 @@ public interface IWindow
     /// INTERNAL API (使用しないでください)
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public IInputContext? _RawInputContext { get; }
+    public IInputContext? RawInputContext { get; }
 
     /// <summary>
     /// INTERNAL API (使用しないでください)
@@ -219,5 +219,6 @@ public interface IWindow
     /// </summary>
     /// <param name="path">パス</param>
     /// <param name="ct">このタスクのキャンセレーショントークン</param>
+    /// <returns></returns>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default);
 }

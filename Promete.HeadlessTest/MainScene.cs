@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Promete.Coroutines;
 
 namespace Promete.HeadlessTest;

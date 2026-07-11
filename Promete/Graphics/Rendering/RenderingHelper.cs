@@ -1,4 +1,4 @@
-﻿using Promete.Nodes;
+using Promete.Nodes;
 
 namespace Promete.Graphics.Rendering;
 

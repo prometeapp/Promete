@@ -22,6 +22,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     private readonly RenderTexture _renderTexture;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="FrameBuffer"/> class.
     /// 指定したサイズの <see cref="FrameBuffer"/> の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="width">フレームバッファの幅。</param>
@@ -45,6 +46,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     }
 
     /// <summary>
+    /// Finalizes an instance of the <see cref="FrameBuffer"/> class.
     /// ファイナライザー
     /// </summary>
     ~FrameBuffer()
@@ -107,7 +109,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     /// <summary>
     /// ソート済みの子ノードのリストを取得します。
     /// </summary>
-    public IReadOnlyList<Node> SortedChildren => _children.sortedChildren;
+    public IReadOnlyList<Node> SortedChildren => _children.SortedChildren;
 
     /// <summary>
     /// このフレームバッファの子ノードを取得または設定します。
@@ -152,7 +154,6 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         queue.PopScopeAndFlush();
     }
 
-    #region IEnumerable<Node>
     /// <summary>
     /// 指定したインデックスの位置に子ノードを挿入します。
     /// </summary>
@@ -241,9 +242,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     {
         return _children.GetEnumerator();
     }
-    #endregion
 
-    #region IDisposable
     /// <summary>
     /// このオブジェクトによって使用されているリソースを解放します。
     /// </summary>
@@ -275,5 +274,4 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
 
         _disposed = true;
     }
-    #endregion
 }

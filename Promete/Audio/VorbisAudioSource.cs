@@ -16,12 +16,14 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     private readonly float[] _store;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="VorbisAudioSource"/> class.
     /// 指定されたパスからVorbisオーディオソースを初期化します。
     /// </summary>
     public VorbisAudioSource(string path)
         : this(File.OpenRead(path)) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="VorbisAudioSource"/> class.
     /// 指定されたストリームからVorbisオーディオソースを初期化します。
     /// </summary>
     public VorbisAudioSource(Stream stream)
@@ -58,7 +60,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
                 }
             }
 
-            exit:
+        exit:
             reader.Dispose();
             IsLoadingFinished = true;
         });
@@ -92,6 +94,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// <summary>
     /// サンプルデータを指定されたバッファに読み込みます。
     /// </summary>
+    /// <returns></returns>
     public (int FilledFrames, bool IsFinished) FillSamples(Span<float> buffer, int offsetFrames)
     {
         var totalFrames = _store.Length / Channels;

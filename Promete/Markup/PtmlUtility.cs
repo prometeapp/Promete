@@ -1,4 +1,4 @@
-﻿namespace Promete.Markup;
+namespace Promete.Markup;
 
 /// <summary>
 /// PTMLに関するユーティリティクラス。

@@ -1,4 +1,4 @@
-﻿namespace Promete.Input;
+namespace Promete.Input;
 
 /// <summary>
 /// マウスのボタン入力を表します。
@@ -15,13 +15,17 @@ public class MouseButton
     /// <summary>
     /// このボタンが押されてからの経過フレーム数を取得します。
     /// </summary>
-    /// <value></value>
+    /// <value>
+    /// <placeholder>このボタンが押されてからの経過フレーム数を取得します。</placeholder>
+    /// </value>
     public int ElapsedFrameCount { get; internal set; }
 
     /// <summary>
     /// このボタンが押されてからの経過時間を取得します。
     /// </summary>
-    /// <value></value>
+    /// <value>
+    /// <placeholder>このボタンが押されてからの経過時間を取得します。</placeholder>
+    /// </value>
     public float ElapsedTime { get; internal set; }
 
     /// <summary>

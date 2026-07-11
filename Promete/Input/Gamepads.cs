@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Promete.Backends.SilkNetCommon;
 using Silk.NET.Input;
 
@@ -10,7 +10,7 @@ namespace Promete.Input;
 public sealed class Gamepads(PrometeApp app, InputProvider inputProvider) : IInitializable
 {
     private readonly List<Gamepad> _pads = [];
-    private IInputContext _ctx;
+    private IInputContext? _ctx;
 
     /// <summary>
     /// 指定されたインデックスのゲームパッドを取得します。

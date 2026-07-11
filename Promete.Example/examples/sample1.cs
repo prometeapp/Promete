@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 
 namespace Promete.Example.examples;

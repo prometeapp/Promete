@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Text;
 using Promete.Example.Kernel;
 using Promete.Graphics.Fonts;
@@ -10,16 +10,16 @@ namespace Promete.Example.examples;
 [Demo("/sample4.demo", "簡易テキストエディタ")]
 public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
-    private readonly StringBuilder buf = new();
-    private Text? editorView;
+    private readonly StringBuilder _buf = new();
+    private Text? _editorView;
 
     public override void OnStart()
     {
         console.Print("Promete Text Editor");
         console.Print("Press [ESC] to exit");
 
-        editorView = new Text("", Font.GetDefault(), Color.White).Location(8, 64);
-        Root.Add(editorView);
+        _editorView = new Text("", Font.GetDefault(), Color.White).Location(8, 64);
+        Root.Add(_editorView);
 
         // 実行前に残ったキー入力をクリア
         keyboard.GetString();
@@ -27,7 +27,7 @@ public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
 
     public override void OnUpdate()
     {
-        editorView!.Content = buf.ToString() + '_';
+        _editorView!.Content = _buf.ToString() + '_';
         if (
             (
                 keyboard.BackSpace.ElapsedFrameCount == 1
@@ -36,17 +36,17 @@ public class TextEditorScene(ConsoleLayer console, Keyboard keyboard) : Scene
                     && keyboard.BackSpace.ElapsedFrameCount % 3 == 0
                 )
             )
-            && buf.Length > 0
+            && _buf.Length > 0
         )
-            buf.Length--;
+            _buf.Length--;
         if (
             keyboard.Enter.ElapsedFrameCount == 1
             || (keyboard.Enter.ElapsedTime > 0.5f && keyboard.Enter.ElapsedFrameCount % 3 == 0)
         )
-            buf.Append('\n');
+            _buf.Append('\n');
 
         if (keyboard.HasChar())
-            buf.Append(keyboard.GetString());
+            _buf.Append(keyboard.GetString());
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

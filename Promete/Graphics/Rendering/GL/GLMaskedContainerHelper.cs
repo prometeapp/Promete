@@ -24,18 +24,18 @@ public class GLMaskedContainerHelper(
     private bool _initialized;
     private uint _maskShader;
     private uint _stencilShader; // ステンシルバッファ書き込み用シェーダー
-    private int _uMaskModel,
-        _uMaskProjection,
-        _uContent,
-        _uMask,
-        _uMaskTintColor;
-    private int _uStencilModel,
-        _uStencilProjection,
-        _uStencilTexture0,
-        _uStencilTintColor;
-    private uint _vao,
-        _vbo,
-        _ebo;
+    private int _uMaskModel;
+    private int _uMaskProjection;
+    private int _uContent;
+    private int _uMask;
+    private int _uMaskTintColor;
+    private int _uStencilModel;
+    private int _uStencilProjection;
+    private int _uStencilTexture0;
+    private int _uStencilTintColor;
+    private uint _vao;
+    private uint _vbo;
+    private uint _ebo;
 
     /// <summary>
     /// 全てのキャッシュをクリアします。
@@ -228,6 +228,7 @@ public class GLMaskedContainerHelper(
     /// <summary>
     /// MaskedContainerの子要素を独自のフレームバッファにレンダリングし、テクスチャを返します。
     /// </summary>
+    /// <returns></returns>
     public Texture2D RenderToTexture(MaskedContainer container, RenderContext ctx)
     {
         EnsureInitialized();
@@ -267,7 +268,7 @@ public class GLMaskedContainerHelper(
 
         // 子要素のModelMatrixを再計算させる
         container.BeforeRender();
-        var sorted = container.sortedChildren;
+        var sorted = container.SortedChildren;
         foreach (var child in sorted)
         {
             child.BeforeRender();
@@ -396,6 +397,7 @@ public class GLMaskedContainerHelper(
         gl.UniformMatrix4(_uMaskProjection, 1, false, (float*)&projectionMatrix);
         gl.Uniform1(_uContent, 0);
         gl.Uniform1(_uMask, 1);
+
         // MaskedContainerは常に白でレンダリング（子要素のTintColorはそのまま保持）
         gl.Uniform4(_uMaskTintColor, new Vector4(1.0f, 1.0f, 1.0f, 1.0f));
 

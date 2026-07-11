@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Promete.Audio;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
@@ -16,8 +16,8 @@ namespace Promete.Example.examples.debug;
 public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console, Keyboard keyboard)
     : Scene
 {
-    private AudioPlayer _audioPlayer;
-    private VorbisAudioSource _source;
+    private AudioPlayer? _audioPlayer;
+    private VorbisAudioSource? _source;
 
     public override void OnStart()
     {

@@ -21,7 +21,7 @@ public class FiltersExampleScene(Keyboard keyboard, ConsoleLayer console) : Scen
 
     public override void OnStart()
     {
-        Window.Title = "Audio filters example";
+        View.Title = "Audio filters example";
         console.Print("Audio Filters Example");
 
         _audio.Play(_bgm, 0);

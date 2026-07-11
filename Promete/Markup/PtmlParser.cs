@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -32,16 +32,22 @@ public static class PtmlParser
     {
         // プレーンテキストの部分を格納。最終的にreturnする。
         var plainTextBuilder = new StringBuilder();
+
         // 解析したタグを格納。最終的にreturnする
         var decorations = new List<PtmlDecoration>();
+
         // 解析した開始タグを格納。Peekすることで終了タグを解析し、終了タグが一致したらPopしてdecorationsへ
         var decorationStack = new Stack<PtmlDecoration>();
+
         // タグ解析時点のプレーンテキスト位置を格納。
         var rangeStartStack = new Stack<int>();
+
         // タグ名を一時保管する。タグ記法が終わったらclear
         var tagNameBuilder = new StringBuilder();
+
         // 属性を一時保管する。タグ記法が終わったらclear
         var attributeBuilder = new StringBuilder();
+
         // エスケープシーケンスを一時保管する。エスケープシーケンスが終わったらclear
         var escapeBuilder = new StringBuilder();
 

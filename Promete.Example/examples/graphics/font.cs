@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Promete.Example.Kernel;
 using Promete.Graphics.Fonts;
 using Promete.Input;
@@ -7,7 +7,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/font.demo", "フォントの描画例")]
-public class font(Keyboard keyboard, ConsoleLayer console) : Scene
+public class Font(Keyboard keyboard, ConsoleLayer console) : Scene
 {
     private readonly (string name, string? path, int size, bool antialias)[] _fontDefinitions =
     [
@@ -32,7 +32,7 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
         [D]キーでダークモード/ライトモード切替
         [ESC]キーでメニューに戻る
         """,
-        Font.GetDefault(),
+        Graphics.Fonts.Font.GetDefault(),
         Color.White
     );
 
@@ -46,9 +46,9 @@ public class font(Keyboard keyboard, ConsoleLayer console) : Scene
         {
             var font =
                 path == null
-                    ? Font.GetDefault(size, FontStyle.Normal, antialias)
-                    : Font.FromFile(path, size, isAntialiased: antialias);
-            var text = new Text(name, font, Color.White).Location(16, 24 + i * 24);
+                    ? Graphics.Fonts.Font.GetDefault(size, FontStyle.Normal, antialias)
+                    : Graphics.Fonts.Font.FromFile(path, size, isAntialiased: antialias);
+            var text = new Text(name, font, Color.White).Location(16, 24 + (i * 24));
 
             _menuItems.Add(text);
             i++;

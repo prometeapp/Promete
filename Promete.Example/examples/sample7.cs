@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -11,37 +11,37 @@ public class SpriteRotateTest2Scene : Scene
 {
     private readonly ConsoleLayer _console;
     private readonly Keyboard _keyboard;
-    private readonly Sprite spriteChild;
-    private readonly Texture2D tChild;
-    private readonly Texture2D tParent;
-    private readonly Container wrapper;
-    private float angle;
-    private bool isPlaying = true;
-    private int mode;
-    private Sprite spriteParent;
+    private readonly Sprite _spriteChild;
+    private readonly Texture2D _tChild;
+    private readonly Texture2D _tParent;
+    private readonly Container _wrapper;
+    private float _angle;
+    private bool _isPlaying = true;
+    private int _mode;
+    private Sprite _spriteParent;
 
     public SpriteRotateTest2Scene(ConsoleLayer console, Keyboard keyboard)
     {
-        tParent = Window.TextureFactory.CreateSolid(Color.DarkBlue, (160, 120));
-        tChild = Window.TextureFactory.CreateSolid(Color.Chocolate, (32, 32));
+        _tParent = App.TextureFactory.CreateSolid(Color.DarkBlue, (160, 120));
+        _tChild = App.TextureFactory.CreateSolid(Color.Chocolate, (32, 32));
 
         _console = console;
         _keyboard = keyboard;
 
         Root =
         [
-            wrapper = new Container()
+            _wrapper = new Container()
                 .Scale((2, 2))
                 .Location(320, 240)
                 .Children(
-                    spriteParent = new Sprite(tParent).Location(0, 0),
-                    spriteChild = new Sprite(tChild).Location(32, 32)
+                    _spriteParent = new Sprite(_tParent).Location(0, 0),
+                    _spriteChild = new Sprite(_tChild).Location(32, 32)
                 ),
         ];
     }
 
     private string ModeText =>
-        mode switch
+        _mode switch
         {
             0 => "Rotate Parent",
             1 => "Rotate Child",
@@ -52,30 +52,30 @@ public class SpriteRotateTest2Scene : Scene
     public override void OnUpdate()
     {
         _console.Clear();
-        _console.Print("Angle: " + angle);
+        _console.Print("Angle: " + _angle);
         _console.Print("Mode: " + ModeText);
         _console.Print("[1]: Change Mode");
         _console.Print("[SPACE]: Toggle Rotation");
         _console.Print("[ESC]: return");
 
-        if (isPlaying)
+        if (_isPlaying)
         {
-            angle += Window.DeltaTime * 90;
-            if (angle > 360)
-                angle -= 360;
+            _angle += Time.DeltaTime * 90;
+            if (_angle > 360)
+                _angle -= 360;
         }
 
-        switch (mode)
+        switch (_mode)
         {
             case 0:
-                wrapper.Angle = angle.Degrees;
+                _wrapper.Angle = _angle.Degrees;
                 break;
             case 1:
-                spriteChild.Angle = angle.Degrees;
+                _spriteChild.Angle = _angle.Degrees;
                 break;
             case 2:
-                wrapper.Angle = angle.Degrees;
-                spriteChild.Angle = angle.Degrees;
+                _wrapper.Angle = _angle.Degrees;
+                _spriteChild.Angle = _angle.Degrees;
                 break;
         }
 
@@ -84,25 +84,25 @@ public class SpriteRotateTest2Scene : Scene
 
         if (_keyboard.Number1.IsKeyDown)
         {
-            wrapper.Angle = spriteChild.Angle = 0.Degrees;
-            mode = (mode + 1) % 3;
+            _wrapper.Angle = _spriteChild.Angle = 0.Degrees;
+            _mode = (_mode + 1) % 3;
         }
 
         if (_keyboard.Space.IsKeyDown)
-            isPlaying ^= true;
+            _isPlaying ^= true;
 
         if (_keyboard.Left.IsKeyDown)
         {
-            angle = (int)(angle - 1);
-            if (angle < 0)
-                angle = 360;
+            _angle = (int)(_angle - 1);
+            if (_angle < 0)
+                _angle = 360;
         }
 
         if (_keyboard.Right.IsKeyDown)
         {
-            angle = (int)(angle + 1);
-            if (angle > 360)
-                angle = 0;
+            _angle = (int)(_angle + 1);
+            if (_angle > 360)
+                _angle = 0;
         }
     }
 }

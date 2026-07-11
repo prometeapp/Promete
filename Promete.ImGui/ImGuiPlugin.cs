@@ -11,7 +11,7 @@ namespace Promete.ImGui;
 /// </summary>
 public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializable
 {
-    private ImGuiController _controller;
+    private ImGuiController? _controller;
 
     public event Action? Render;
 

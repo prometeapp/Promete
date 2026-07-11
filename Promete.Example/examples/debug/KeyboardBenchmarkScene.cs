@@ -47,6 +47,7 @@ public class KeyboardBenchmarkScene(ConsoleLayer console, InputProvider inputPro
         {
             Parallel.ForEach(_allKeys, k => kb.IsKeyPressed(k));
         }
+
         var parallelUs = TicksToMicroseconds(Stopwatch.GetTimestamp() - t0) / Iterations;
 
         // foreach 実装
@@ -58,6 +59,7 @@ public class KeyboardBenchmarkScene(ConsoleLayer console, InputProvider inputPro
                 kb.IsKeyPressed(k);
             }
         }
+
         var foreachUs = TicksToMicroseconds(Stopwatch.GetTimestamp() - t0) / Iterations;
 
         EnqueueHistory(_parallelHistory, parallelUs);

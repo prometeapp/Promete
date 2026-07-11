@@ -11,23 +11,23 @@ namespace Promete.Example.examples.ptml;
 [Demo("/ptml/parse.demo", "PTMLの解析結果をダンプ")]
 public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
-    private readonly StringBuilder buf = new();
-    private Text? dumpView;
-    private Text? editorView;
-    private Text? ptmlView;
+    private readonly StringBuilder _buf = new();
+    private Text? _dumpView;
+    private Text? _editorView;
+    private Text? _ptmlView;
 
     public override void OnStart()
     {
         console.Print("Promete Text Editor");
         console.Print("Press [ESC] to exit");
 
-        editorView = new Text("", Font.GetDefault(), Color.White).Location(8, 64);
-        ptmlView = new Text("", Font.GetDefault(), Color.White).Location(8, 84);
-        dumpView = new Text("", Font.GetDefault(), Color.White).Location(8, 140);
+        _editorView = new Text("", Font.GetDefault(), Color.White).Location(8, 64);
+        _ptmlView = new Text("", Font.GetDefault(), Color.White).Location(8, 84);
+        _dumpView = new Text("", Font.GetDefault(), Color.White).Location(8, 140);
 
-        ptmlView.UseRichText = true;
+        _ptmlView.UseRichText = true;
 
-        Root.AddRange(editorView, ptmlView, dumpView);
+        Root.AddRange(_editorView, _ptmlView, _dumpView);
 
         // 実行前に残ったキー入力をクリア
         keyboard.GetString();
@@ -35,7 +35,7 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
 
     public override void OnUpdate()
     {
-        editorView!.Content = buf.ToString();
+        _editorView!.Content = _buf.ToString();
         if (
             (
                 keyboard.BackSpace.ElapsedFrameCount == 1
@@ -44,10 +44,10 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
                     && keyboard.BackSpace.ElapsedFrameCount % 3 == 0
                 )
             )
-            && buf.Length > 0
+            && _buf.Length > 0
         )
         {
-            buf.Length--;
+            _buf.Length--;
             DumpPtml();
         }
 
@@ -56,13 +56,13 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
             || (keyboard.Enter.ElapsedTime > 0.5f && keyboard.Enter.ElapsedFrameCount % 3 == 0)
         )
         {
-            buf.Append('\n');
+            _buf.Append('\n');
             DumpPtml();
         }
 
         if (keyboard.HasChar())
         {
-            buf.Append(keyboard.GetString());
+            _buf.Append(keyboard.GetString());
             DumpPtml();
         }
 
@@ -72,29 +72,29 @@ public class PtmlParseDemoScene(ConsoleLayer console, Keyboard keyboard) : Scene
 
     private void DumpPtml()
     {
-        if (ptmlView == null)
+        if (_ptmlView == null)
             return;
-        if (dumpView == null)
+        if (_dumpView == null)
             return;
 
-        ptmlView.Content = buf.ToString();
+        _ptmlView.Content = _buf.ToString();
 
         try
         {
-            var (plainText, decorations) = PtmlParser.Parse(buf.ToString(), true);
-            dumpView.Content = $"""
+            var (plainText, decorations) = PtmlParser.Parse(_buf.ToString(), true);
+            _dumpView.Content = $"""
                 （デバッグビュー）
                 プレーンテキスト：{plainText}
 
                 ダンプ：
                 {string.Join('\n', decorations)}
                 """;
-            dumpView.Color = Color.Lime;
+            _dumpView.Color = Color.Lime;
         }
         catch (PtmlParserException e)
         {
-            dumpView.Content = e.Message;
-            dumpView.Color = Color.Red;
+            _dumpView.Content = e.Message;
+            _dumpView.Color = Color.Red;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 namespace Promete;
 
@@ -10,6 +10,7 @@ public static class VectorExtension
     /// <summary>
     /// <see cref="VectorInt"/> を <see cref="Vector2"/> に変換します。
     /// </summary>
+    /// <returns></returns>
     public static Vector2 ToNumerics(this VectorInt vector)
     {
         return new Vector2(vector.X, vector.Y);
@@ -19,6 +20,7 @@ public static class VectorExtension
     /// <see cref="Vector2"/> を <see cref="VectorInt"/> に変換します。
     /// <para>小数点以下は切り捨てられます。</para>
     /// </summary>
+    /// <returns></returns>
     public static VectorInt ToPrometeInt(this Vector2 vector)
     {
         return new VectorInt((int)vector.X, (int)vector.Y);
@@ -27,6 +29,7 @@ public static class VectorExtension
     /// <summary>
     /// <see cref="Vector"/> を <see cref="Vector2"/> に変換します。
     /// </summary>
+    /// <returns></returns>
     public static Vector2 ToNumerics(this Vector vector)
     {
         return new Vector2(vector.X, vector.Y);
@@ -35,6 +38,7 @@ public static class VectorExtension
     /// <summary>
     /// <see cref="Vector2"/> を <see cref="Vector"/> に変換します。
     /// </summary>
+    /// <returns></returns>
     public static Vector ToPromete(this Vector2 vector)
     {
         return new Vector(vector.X, vector.Y);

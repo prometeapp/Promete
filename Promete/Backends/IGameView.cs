@@ -120,5 +120,6 @@ public interface IGameView
     /// </summary>
     /// <param name="path">パス</param>
     /// <param name="ct">このタスクのキャンセレーショントークン</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default);
 }

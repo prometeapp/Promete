@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Promete.Input;
 
@@ -140,6 +140,7 @@ public partial class Keyboard
     /// <summary>
     /// Get a specific key by <see cref="KeyCode" />.
     /// </summary>
+    /// <returns></returns>
     public Key KeyOf(KeyCode code)
     {
         return code switch

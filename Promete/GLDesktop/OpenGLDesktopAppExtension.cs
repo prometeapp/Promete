@@ -25,6 +25,7 @@ public static class OpenGLDesktopAppExtension
             .Use<GLMaskedContainerHelper>()
             .Use<GLRenderState>()
             .Use<RenderCommandQueue>()
+
             // GL CommandRunner 群
             .Use<GLDrawTextureBatchedCommandRunner>()
             .Use<GLDrawPrimitiveCommandRunner>()

@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 using static Promete.Example.Kernel.DemoKernel;
 
@@ -19,7 +19,7 @@ public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
         console.Clear();
         console.Print("Promete Demo\n");
         console.Print($"現在のディレクトリ: /{CurrentFolder.GetFullPath()}\n");
-        Window.Title = $"Promete Demo - {CurrentFolder.GetFullPath()}";
+        View.Title = $"Promete Demo - {CurrentFolder.GetFullPath()}";
 
         for (var i = 0; i < CurrentFolder.Files.Count; i++)
         {

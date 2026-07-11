@@ -68,14 +68,19 @@ dotnet_diagnostic.SA1200.severity = none    # using 配置（file-scoped namespa
 dotnet_diagnostic.SA1210.severity = none    # using の並び順（CSharpier に委譲）
 dotnet_diagnostic.SA1208.severity = none    # System using 優先（CSharpier に委譲）
 dotnet_diagnostic.SA1309.severity = none    # フィールド名のアンダースコアプレフィックス禁止（本プロジェクトはプレフィックスを使用）
+dotnet_diagnostic.SA1316.severity = none    # フィールド名のアンダースコアプレフィックス禁止（本プロジェクトはプレフィックスを使用）
 dotnet_diagnostic.SX1309.severity = warning # アンダースコアプレフィックス必須（SA1309 の逆ルール）
+dotnet_diagnostic.SA1500.severity = none
 dotnet_diagnostic.SA1502.severity = none
 dotnet_diagnostic.SA1503.severity = none    # ブロックなしifなどを許容
 dotnet_diagnostic.SA1516.severity = none
 dotnet_diagnostic.SA1519.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1614.severity = none
+dotnet_diagnostic.SA1616.severity = none
 dotnet_diagnostic.SA1623.severity = none    # XMLコメントのルールを無視
 
 ## ドキュメントルール → warning（公開 API のみ）
-dotnet_diagnostic.SA1600.severity = warning # public メンバーに XML ドキュメント必須
+dotnet_diagnostic.SA1600.severity = none # public メンバーに XML ドキュメント必須
 dotnet_diagnostic.SA1601.severity = warning # partial クラスにドキュメント必須
 dotnet_diagnostic.SA1602.severity = warning # 列挙値にドキュメント必須

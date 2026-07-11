@@ -80,8 +80,8 @@ public class Tilemap(
         // ビューポートに収まるタイル数（ScanAndCollect と同じ計算式）
         var tileSize = TileSize * AbsoluteScale;
         var (ww, wh) = ctx.WindowSize;
-        var maxTilesX = ww / tileSize.X + 2;
-        var maxTilesY = wh / tileSize.Y + 2;
+        var maxTilesX = (ww / tileSize.X) + 2;
+        var maxTilesY = (wh / tileSize.Y) + 2;
 
         // マップ全体がビューポートに収まる場合のみ RenderAll、それ以外は Scan
         return (mapW <= maxTilesX && mapH <= maxTilesY)
@@ -93,8 +93,8 @@ public class Tilemap(
     {
         var tileSize = TileSize * AbsoluteScale;
         var (ww, wh) = ctx.WindowSize;
-        var maxTilesX = ww / tileSize.X + 2;
-        var maxTilesY = wh / tileSize.Y + 2;
+        var maxTilesX = (ww / tileSize.X) + 2;
+        var maxTilesY = (wh / tileSize.Y) + 2;
 
         var tl = -AbsoluteLocation / tileSize;
         if (tl.X < 0)
@@ -104,25 +104,25 @@ public class Tilemap(
         var (tx, ty) = (VectorInt)tl;
 
         for (var y = ty; y < ty + maxTilesY; y++)
-        for (var x = tx; x < tx + maxTilesX; x++)
-        {
-            var offset = (x, y) * TileSize;
-            var tile = this[x, y];
-            if (tile == null)
-                continue;
+            for (var x = tx; x < tx + maxTilesX; x++)
+            {
+                var offset = (x, y) * TileSize;
+                var tile = this[x, y];
+                if (tile == null)
+                    continue;
 
-            queue.Enqueue(
-                new DrawTextureCommand
-                {
-                    Texture = tile.GetTexture(this, (x, y)),
-                    ModelMatrix = ModelMatrix,
-                    TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
-                    Width = TileSize.X,
-                    Height = TileSize.Y,
-                    Pivot = offset,
-                }
-            );
-        }
+                queue.Enqueue(
+                    new DrawTextureCommand
+                    {
+                        Texture = tile.GetTexture(this, (x, y)),
+                        ModelMatrix = ModelMatrix,
+                        TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
+                        Width = TileSize.X,
+                        Height = TileSize.Y,
+                        Pivot = offset,
+                    }
+                );
+            }
     }
 
     private void FullCollect(RenderCommandQueue queue)
@@ -152,6 +152,7 @@ public class Tilemap(
     /// <summary>
     /// 指定した位置のタイルを取得します。
     /// </summary>
+    /// <returns></returns>
     public ITile? GetTileAt(VectorInt point)
     {
         return _tiles.TryGetValue(point, out var tile) ? tile.tile : null;
@@ -160,6 +161,7 @@ public class Tilemap(
     /// <summary>
     /// 指定した位置のタイルを取得します。
     /// </summary>
+    /// <returns></returns>
     public ITile? GetTileAt(int x, int y)
     {
         return GetTileAt((x, y));
@@ -168,6 +170,7 @@ public class Tilemap(
     /// <summary>
     /// 指定した位置のタイルの色を取得します。
     /// </summary>
+    /// <returns></returns>
     public Color? GetTileColorAt(VectorInt point)
     {
         return _tiles.ContainsKey(point) ? _tiles[point].color : default;
@@ -176,6 +179,7 @@ public class Tilemap(
     /// <summary>
     /// 指定した位置のタイルの色を取得します。
     /// </summary>
+    /// <returns></returns>
     public Color? GetTileColorAt(int x, int y)
     {
         return GetTileColorAt((x, y));
@@ -189,6 +193,7 @@ public class Tilemap(
         if (tile == null)
         {
             _tiles.Remove(point);
+
             // バウンディングボックスの縮小は O(n) スキャンが必要なため省略。
             // 保守的に大きめに保つことで Scan が過剰選択されることがあるが常に安全。
         }
@@ -228,6 +233,7 @@ public class Tilemap(
     public void Line(int x1, int y1, int x2, int y2, ITile tile)
     {
         var steep = Math.Abs(y2 - y1) > Math.Abs(x2 - x1);
+
         // 左上から右下に描くよう正規化する
         if (steep)
         {
@@ -273,8 +279,8 @@ public class Tilemap(
     public void Fill(int x1, int y1, int width, int height, ITile tile)
     {
         for (var y = y1; y < y1 + height; y++)
-        for (var x = x1; x < x1 + width; x++)
-            this[x, y] = tile;
+            for (var x = x1; x < x1 + width; x++)
+                this[x, y] = tile;
     }
 
     /// <summary>
@@ -296,6 +302,7 @@ public class Tilemap(
     /// <summary>
     /// タイルマップの列挙子を取得します。
     /// </summary>
+    /// <returns></returns>
     public IEnumerator<(VectorInt loc, ITile tile, Color? color)> GetEnumerator()
     {
         foreach (var t in _tiles)

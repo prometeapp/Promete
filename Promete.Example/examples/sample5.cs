@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
 using Promete.Nodes;
@@ -8,22 +8,22 @@ namespace Promete.Example.examples;
 [Demo("/sample5.demo", "10000スプライトを表示してFPSを計測します")]
 public class BenchmarkScene(Keyboard keyboard) : Scene
 {
-    private readonly Random rnd = new();
-    private bool initialized;
-    private Texture2D strawberry;
+    private readonly Random _rnd = new();
+    private bool _initialized;
+    private Texture2D _strawberry;
 
     public override async void OnStart()
     {
-        strawberry = Window.TextureFactory.Load("assets/ichigo.png");
+        _strawberry = App.TextureFactory.Load("assets/ichigo.png");
         App.NextFrame(Init);
-        Window.Title = "Initializing in background thread...";
+        View.Title = "Initializing in background thread...";
     }
 
     public override void OnUpdate()
     {
-        if (!initialized)
+        if (!_initialized)
             return;
-        Window.Title = $"{Window.FramePerSeconds} FPS";
+        View.Title = $"{Time.FramePerSeconds} FPS";
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
@@ -31,7 +31,7 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
 
     public override void OnDestroy()
     {
-        strawberry.Dispose();
+        _strawberry.Dispose();
     }
 
     private async void Init()
@@ -40,13 +40,13 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
         {
             for (var i = 0; i < 10000; i++)
             {
-                var sprite = new Sprite(strawberry).Location(
-                    rnd.NextVector(Window.Width, Window.Height)
+                var sprite = new Sprite(_strawberry).Location(
+                    _rnd.NextVector(View.Width, View.Height)
                 );
                 App.NextFrame(() => Root.Add(sprite));
             }
 
-            initialized = true;
+            _initialized = true;
         });
     }
 }

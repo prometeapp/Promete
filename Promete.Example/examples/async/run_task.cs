@@ -1,10 +1,10 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 
 namespace Promete.Example.examples.async;
 
 [Demo("/async/run_task.demo", "重たいTaskを動かします。")]
-public class run_task(ConsoleLayer console, Keyboard keyboard) : Scene
+public class Run_task(ConsoleLayer console, Keyboard keyboard) : Scene
 {
     public override void OnStart()
     {

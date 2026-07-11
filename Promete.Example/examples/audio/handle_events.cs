@@ -1,4 +1,4 @@
-﻿using Promete.Audio;
+using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
 using Promete.Windowing;
@@ -13,7 +13,7 @@ public class HandleEventsExampleScene(Keyboard keyboard, ConsoleLayer console) :
 
     public override void OnStart()
     {
-        Window.FileDropped += WindowOnFileDropped;
+        View.FileDropped += WindowOnFileDropped;
         console.Clear();
         console.Print($"PRESS SPACE TO PLAY/STOP");
         console.Print($"PRESS ESC TO RETURN");
@@ -43,7 +43,7 @@ public class HandleEventsExampleScene(Keyboard keyboard, ConsoleLayer console) :
         _audio.Stop();
         _audio.Dispose();
         _bgm.Dispose();
-        Window.FileDropped -= WindowOnFileDropped;
+        View.FileDropped -= WindowOnFileDropped;
     }
 
     private void WindowOnFileDropped(FileDroppedEventArgs e)

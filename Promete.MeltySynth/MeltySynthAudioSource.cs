@@ -14,6 +14,7 @@ public class MeltySynthAudioSource : IAudioSource
     private readonly Synthesizer _synthesizer;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="MeltySynthAudioSource"/> class.
     /// 指定されたサウンドフォントを用いて、このオーディオソースの新しいインスタンスを初期化します。
     /// </summary>
     public MeltySynthAudioSource(string soundFontPath)
@@ -43,6 +44,7 @@ public class MeltySynthAudioSource : IAudioSource
     /// サンプルデータを指定されたバッファに読み込みます。
     /// このソースはシーク不可であるため、<paramref name="offsetFrames"/> は無視されます。
     /// </summary>
+    /// <returns></returns>
     public (int FilledFrames, bool IsFinished) FillSamples(Span<float> buffer, int offsetFrames)
     {
         var frames = buffer.Length / Channels;
@@ -57,7 +59,7 @@ public class MeltySynthAudioSource : IAudioSource
         for (var t = 0; t < frames; t++)
         {
             buffer[t * 2] = left[t];
-            buffer[t * 2 + 1] = right[t];
+            buffer[(t * 2) + 1] = right[t];
         }
 
         return (frames, false);

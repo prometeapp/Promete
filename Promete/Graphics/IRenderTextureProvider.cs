@@ -11,6 +11,7 @@ public interface IRenderTextureProvider
     /// <summary>
     /// 指定したサイズの <see cref="RenderTexture"/> を生成します。
     /// </summary>
+    /// <returns></returns>
     public RenderTexture Create(VectorInt size);
 
     /// <summary>
@@ -19,6 +20,7 @@ public interface IRenderTextureProvider
     /// </summary>
     /// <param name="renderTexture">キャプチャ先のテクスチャ。</param>
     /// <param name="clearColor">クリアする色。null の場合はクリアしない。</param>
+    /// <returns></returns>
     public IDisposable BeginCapture(RenderTexture renderTexture, Color? clearColor = null);
 
     /// <summary>

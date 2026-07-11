@@ -26,7 +26,8 @@ public class ScenelessExampleTests
             console.Print("Hello, world!");
         };
 
-        app.Update += () => {
+        app.Update += () =>
+        {
             // Update logic would go here
         };
 

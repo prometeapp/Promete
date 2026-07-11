@@ -54,7 +54,8 @@ public class OpenGLDesktopGameView : IGameView
             field = value;
             UpdateWindowSize();
         }
-    } = (640, 480);
+    } 
+= (640, 480);
 
     public VectorInt ActualSize =>
         new VectorInt(NativeWindow.FramebufferSize.X, NativeWindow.FramebufferSize.Y) / Scale;
@@ -72,7 +73,8 @@ public class OpenGLDesktopGameView : IGameView
             field = value;
             UpdateWindowSize();
         }
-    } = 1;
+    } 
+= 1;
 
     public int X
     {
@@ -172,6 +174,7 @@ public class OpenGLDesktopGameView : IGameView
     {
         NativeWindow.Size = new Vector2D<int>(Size.X, Size.Y) * Scale;
         var fb = NativeWindow.FramebufferSize;
+
         // TODO: オフスクリーンレンダリングによって動かなくなってる気がするので確認したい
         _screenshotBuffer = new byte[fb.X * fb.Y * Scale * 4];
     }

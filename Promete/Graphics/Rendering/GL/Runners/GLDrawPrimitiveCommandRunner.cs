@@ -67,8 +67,8 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
         for (var i = 0; i < worldVertices.Length; i++)
         {
             var (x, y) = worldVertices[i].ToViewportPoint(viewport.X / 2, viewport.Y / 2);
-            vertices[i * 2 + 0] = x;
-            vertices[i * 2 + 1] = y;
+            vertices[(i * 2) + 0] = x;
+            vertices[(i * 2) + 1] = y;
         }
 
         // シェーダー選択: カスタムマテリアルがある場合はそのプログラムを使用

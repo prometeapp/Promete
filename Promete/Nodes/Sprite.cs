@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Promete.Graphics;
 using Promete.Graphics.Rendering;
 using Promete.Graphics.Rendering.Commands;

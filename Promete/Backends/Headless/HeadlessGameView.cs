@@ -20,21 +20,25 @@ public class HeadlessGameView : IGameView
         get => Location.X;
         set => Location = (value, Y);
     }
+
     public int Y
     {
         get => Location.Y;
         set => Location = (X, value);
     }
+
     public int Width
     {
         get => Size.X;
         set => Size = (value, Height);
     }
+
     public int Height
     {
         get => Size.Y;
         set => Size = (Width, value);
     }
+
     public int ActualWidth => Width;
     public int ActualHeight => Height;
     public bool IsVisible { get; set; } = true;

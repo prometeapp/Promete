@@ -26,6 +26,7 @@ internal static class GLMaterialApplier
             loc = gl.GetUniformLocation(program, name);
             _locationCache[key] = loc;
         }
+
         return loc;
     }
 

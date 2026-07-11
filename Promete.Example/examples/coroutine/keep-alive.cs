@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Input;
@@ -24,14 +24,14 @@ public class CoroutineKeepAliveDemoScene(
             App.LoadScene<MainScene>();
     }
 
+    public override void OnDestroy() { }
+
     private IEnumerator Task()
     {
         for (var i = 1; i <= 10; i++)
         {
-            Window.Title = "Count: " + i;
+            View.Title = "Count: " + i;
             yield return new WaitForSeconds(1);
         }
     }
-
-    public override void OnDestroy() { }
 }

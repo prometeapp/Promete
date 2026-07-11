@@ -321,6 +321,7 @@ public class Font : IFont
             return (text, textOptions);
 
         var (t, decorations) = PtmlParser.Parse(text);
+
         // Note: ImageSharpの不具合により、TextRun.Endが文字列の末尾インデックスと同じのときに挙動がおかしくなるため、workaroundとしてZeroWidthSpaceを追加する
         //       下記が修正され次第対応を外す
         //       https://github.com/SixLabors/ImageSharp.Drawing/issues/337
@@ -354,32 +355,36 @@ public class Font : IFont
         switch (decoration.TagName.ToLowerInvariant())
         {
             case "b":
-            {
-                run.Font = new SixLabors.Fonts.Font(_internalFont, SixLabors.Fonts.FontStyle.Bold);
-                break;
-            }
-            case "i":
-            {
-                run.Font = new SixLabors.Fonts.Font(
-                    _internalFont,
-                    SixLabors.Fonts.FontStyle.Italic
-                );
-                break;
-            }
-            case "color":
-            {
-                if (string.IsNullOrEmpty(decoration.Attribute))
+                {
+                    run.Font = new SixLabors.Fonts.Font(_internalFont, SixLabors.Fonts.FontStyle.Bold);
                     break;
-                var color = FromHtml(decoration.Attribute);
-                run.Brush = new SolidBrush(color.ToSixLabors());
-                break;
-            }
+                }
+
+            case "i":
+                {
+                    run.Font = new SixLabors.Fonts.Font(
+                        _internalFont,
+                        SixLabors.Fonts.FontStyle.Italic
+                    );
+                    break;
+                }
+
+            case "color":
+                {
+                    if (string.IsNullOrEmpty(decoration.Attribute))
+                        break;
+                    var color = FromHtml(decoration.Attribute);
+                    run.Brush = new SolidBrush(color.ToSixLabors());
+                    break;
+                }
+
             case "size":
-            {
-                if (int.TryParse(decoration.Attribute, out var size))
-                    run.Font = new SixLabors.Fonts.Font(_internalFont, size);
-                break;
-            }
+                {
+                    if (int.TryParse(decoration.Attribute, out var size))
+                        run.Font = new SixLabors.Fonts.Font(_internalFont, size);
+                    break;
+                }
+
             default:
                 return null;
         }

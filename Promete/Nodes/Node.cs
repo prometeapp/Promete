@@ -180,7 +180,7 @@ public abstract class Node
     /// このノードの絶対位置（親ノードの位置を考慮した位置）を取得します。
     /// </summary>
     public Vector AbsoluteLocation =>
-        Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
+        Parent == null ? Location : (Location * Parent.AbsoluteScale) + Parent.AbsoluteLocation;
 
     /// <summary>
     /// このノードの絶対スケール（親ノードのスケールを考慮したスケール）を取得します。

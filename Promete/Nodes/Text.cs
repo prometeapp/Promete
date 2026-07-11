@@ -16,6 +16,7 @@ public class Text : Node
     private bool _isUpdateRequested;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Text"/> class.
     /// テキストノードのコンストラクタ
     /// </summary>
     /// <param name="content">表示するテキスト内容</param>

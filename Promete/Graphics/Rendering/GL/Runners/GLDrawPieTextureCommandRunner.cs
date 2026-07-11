@@ -18,15 +18,15 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
 
     private bool _initialized;
     private uint _shader;
-    private int _uModel,
-        _uProjection,
-        _uTexture0,
-        _uTintColor,
-        _uStartAngle,
-        _uEndAngle;
-    private uint _vbo,
-        _vao,
-        _ebo;
+    private int _uModel;
+    private int _uProjection;
+    private int _uTexture0;
+    private int _uTintColor;
+    private int _uStartAngle;
+    private int _uEndAngle;
+    private uint _vbo;
+    private uint _vao;
+    private uint _ebo;
 
     public override void Execute(DrawPieTextureCommand command)
     {
@@ -89,8 +89,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
         );
 
         // パーセント→ラジアン変換（12時方向を0%にするため-90度オフセット）
-        var startAngle = (startPercent / 100.0f * 360.0f - 90.0f) * MathF.PI / 180.0f;
-        var endAngle = (percent / 100.0f * 360.0f - 90.0f) * MathF.PI / 180.0f;
+        var startAngle = ((startPercent / 100.0f * 360.0f) - 90.0f) * MathF.PI / 180.0f;
+        var endAngle = ((percent / 100.0f * 360.0f) - 90.0f) * MathF.PI / 180.0f;
 
         // 描画開始
         gl.Enable(GLEnum.Blend);
@@ -208,8 +208,7 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
             0.0f,
             0.0f,
             0.0f,
-            0.0f // 左下
-            ,
+            0.0f, // 左下
         ];
 
         // バッファに頂点情報を書き込む

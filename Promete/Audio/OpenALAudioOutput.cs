@@ -31,6 +31,7 @@ public sealed class OpenALAudioOutput : IAudioOutput
     private int _bufferSizeInFrames;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="OpenALAudioOutput"/> class.
     /// この <see cref="OpenALAudioOutput" /> の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="device">出力先の ALC デバイス・コンテキストを保持する <see cref="AudioDevice"/>。</param>

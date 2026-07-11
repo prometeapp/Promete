@@ -12,6 +12,7 @@ namespace Promete.Nodes;
 public class Container : ContainableNode, IEnumerable<Node>
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="Container"/> class.
     /// Container の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
@@ -30,8 +31,8 @@ public class Container : ContainableNode, IEnumerable<Node>
     /// </summary>
     public bool IsTrimmable
     {
-        get => isTrimmable;
-        set => isTrimmable = value;
+        get => base.IsTrimmable;
+        set => base.IsTrimmable = value;
     }
 
     /// <summary>

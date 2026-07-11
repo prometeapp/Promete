@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +18,7 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
     private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
     private readonly Queue<char> _keyChars = new();
     private IKeyboard? _currentKeyboard;
-    private IInputContext _ctx;
+    private IInputContext? _ctx;
 
     public event Action<KeyEventArgs>? KeyDown;
     public event Action<KeyPressEventArgs>? KeyPress;
@@ -62,6 +62,7 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
     /// キーボードバッファに蓄積されている、入力された文字列を取得します。
     /// 呼び出した時点でバッファはクリアされます。
     /// </summary>
+    /// <returns></returns>
     public string GetString()
     {
         if (!HasChar())
@@ -77,6 +78,7 @@ public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider
     /// キーボードバッファに蓄積されている、入力された文字を取得します。
     /// 呼び出した時点でその文字はバッファから削除されます。
     /// </summary>
+    /// <returns></returns>
     public char GetChar()
     {
         return HasChar() ? _keyChars.Dequeue() : '\0';

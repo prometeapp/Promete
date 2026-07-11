@@ -1,4 +1,4 @@
-﻿using Promete.Audio;
+using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
 

@@ -38,6 +38,7 @@ public class Issue39DebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
             App.LoadScene<MainScene>();
             return;
         }
+
         if (keyboard.Enter.IsKeyDown)
         {
             if (_player.IsPlaying)
@@ -49,6 +50,7 @@ public class Issue39DebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
                 _player.Play(_bgm, 0);
             }
         }
+
         if (keyboard.Space.IsKeyDown)
         {
             PlaySfx();
@@ -69,9 +71,9 @@ public class Issue39DebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
 
     private string GetUptime()
     {
-        var t = Window.TotalTime;
+        var t = Time.TotalTime;
         var h = (int)(t / 60 / 60);
-        var m = (int)(t / 60 % 60);
+        var m = (int)((t / 60) % 60);
         var s = (int)(t % 60);
 
         return $"{h:D2}:{m:D2}:{s:D2}";

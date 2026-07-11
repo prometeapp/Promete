@@ -1,4 +1,4 @@
-﻿namespace Promete.Graphics.Fonts;
+namespace Promete.Graphics.Fonts;
 
 /// <summary>
 /// Prometeで利用できるフォントを表すインターフェイス。

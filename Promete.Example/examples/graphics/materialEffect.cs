@@ -151,7 +151,7 @@ public class MaterialEffectDemo(ConsoleLayer console, Keyboard keyboard) : Scene
     {
         console.Print("Press [ESC] to exit");
 
-        _texture = Window.TextureFactory.Load("assets/ichigo.png");
+        _texture = App.TextureFactory.Load("assets/ichigo.png");
 
         // シェーダーのコンパイル（OnStart以降・メインスレッドで呼ぶ必要あり）
         _sepiaShader = ShaderProgram.Create().Vertex(VertSrc).Fragment(SepiaFragSrc).Compile();
@@ -186,11 +186,11 @@ public class MaterialEffectDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         _rasterScrollMat = new Material(_rasterScrollShader) { ["uTime"] = 0.0f };
 
         // 2×3グリッドで6エフェクトを配置
-        var font = Font.GetDefault(18);
+        var font = Graphics.Fonts.Font.GetDefault(18);
         var dispSize = 180;
         var scale = (float)dispSize / _texture.Size.X;
         var cols = 3;
-        var marginX = (Window.Width - cols * dispSize) / (cols + 1);
+        var marginX = (View.Width - (cols * dispSize)) / (cols + 1);
         var marginY = 60;
         var labelH = 28;
         var rowH = dispSize + labelH + marginY;
@@ -209,8 +209,8 @@ public class MaterialEffectDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         {
             var col = i % cols;
             var row = i / cols;
-            var x = marginX + col * (dispSize + marginX);
-            var y = marginY + row * rowH;
+            var x = marginX + (col * (dispSize + marginX));
+            var y = marginY + (row * rowH);
 
             var sprite = new Sprite(_texture) { Material = effects[i].Mat };
             sprite.Location(x, y).Scale(scale, scale);
@@ -224,7 +224,7 @@ public class MaterialEffectDemo(ConsoleLayer console, Keyboard keyboard) : Scene
     public override void OnUpdate()
     {
         // ラスタースクロールのアニメーション時間を更新
-        _rasterScrollMat["uTime"] = (float)Window.TotalTime;
+        _rasterScrollMat["uTime"] = Time.TotalTime;
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

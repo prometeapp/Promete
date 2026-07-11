@@ -51,7 +51,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルの大きさを取得します。
     /// </summary>
-    public float Magnitude => MathF.Sqrt(X * X + Y * Y);
+    public float Magnitude => MathF.Sqrt((X * X) + (Y * Y));
 
     /// <summary>
     /// このベクトルの単位ベクトルを取得します。
@@ -127,6 +127,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// </summary>
     /// <param name="from">始点。</param>
     /// <param name="to">終点。</param>
+    /// <returns></returns>
     public static Angle Angle(VectorInt from, VectorInt to)
     {
         return MathF.Atan2(to.Y - from.Y, to.X - from.X).Radians;
@@ -138,19 +139,21 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <param name="to">終点。</param>
     /// <returns>距離。</returns>
     /// </summary>
+    /// <returns></returns>
     public static float Distance(VectorInt from, VectorInt to)
     {
         return MathF.Sqrt(
-            MathF.Abs((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y))
+            MathF.Abs(((to.X - from.X) * (to.X - from.X)) + ((to.Y - from.Y) * (to.Y - from.Y)))
         );
     }
 
     /// <summary>
     /// 2つのベクトルの内積を計算します。
     /// </summary>
+    /// <returns></returns>
     public static int Dot(VectorInt v1, VectorInt v2)
     {
-        return v1.X * v2.X + v1.Y * v2.Y;
+        return (v1.X * v2.X) + (v1.Y * v2.Y);
     }
 
     public static VectorInt From(Vector2 vec)
@@ -161,6 +164,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルと指定したベクトルの内積を計算します。
     /// </summary>
+    /// <returns></returns>
     public int Dot(VectorInt v)
     {
         return Dot(this, v);
@@ -169,6 +173,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このオブジェクトを比較します。
     /// </summary>
+    /// <returns></returns>
     public override bool Equals(object? obj)
     {
         return obj is VectorInt vec && Equals(vec);
@@ -177,6 +182,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このオブジェクトを比較します。
     /// </summary>
+    /// <returns></returns>
     public bool Equals(VectorInt other)
     {
         return X == other.X && Y == other.Y;
@@ -185,6 +191,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このオブジェクトのハッシュ値を取得します。
     /// </summary>
+    /// <returns></returns>
     public override int GetHashCode()
     {
         return HashCode.Combine(X, Y);
@@ -193,6 +200,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルの角度を取得します。
     /// </summary>
+    /// <returns></returns>
     public Angle Angle()
     {
         return Promete.Angle.FromRadians(MathF.Atan2(Y, X));
@@ -201,6 +209,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルに対する指定したベクトルの方向を取得します。
     /// </summary>
+    /// <returns></returns>
     public Angle Angle(VectorInt to)
     {
         return Angle(this, to);
@@ -209,6 +218,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// 2つのベクトル間の距離を取得します。
     /// </summary>
+    /// <returns></returns>
     public float Distance(VectorInt to)
     {
         return Distance(this, to);
@@ -217,6 +227,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
+    /// <returns></returns>
     public bool In(Rect rect)
     {
         var topLeft = rect.Location;
@@ -227,6 +238,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
+    /// <returns></returns>
     public bool In(Vector location, Vector size)
     {
         return In(new Rect(location, size));
@@ -243,6 +255,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルのフォーマットされた文字列を取得します。
     /// </summary>
+    /// <returns></returns>
     public override string ToString()
     {
         return $"({X}, {Y})";

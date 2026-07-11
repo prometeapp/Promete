@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -10,13 +10,13 @@ namespace Promete.Example.examples.graphics;
 [Demo("/graphics/container.demo", "ノードをコンテナーにいくつか追加する例")]
 public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
 {
-    private readonly Container container = new();
-    private Texture2D ichigo;
+    private readonly Container _container = new();
+    private Texture2D _ichigo;
 
     public override void OnStart()
     {
-        ichigo = Window.TextureFactory.Load("assets/ichigo.png");
-        Root.Add(container);
+        _ichigo = App.TextureFactory.Load("assets/ichigo.png");
+        Root.Add(_container);
 
         var canvas = new Container().Location(400, 200);
 
@@ -63,18 +63,17 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
                     break;
             }
         }
-        ;
 
-        container.Add(new Text("O", Font.GetDefault(32), Color.White));
+        _container.Add(new Text("O", Graphics.Fonts.Font.GetDefault(32), Color.White));
 
-        container.Add(canvas);
+        _container.Add(canvas);
 
         for (var i = 0; i < 8; i++)
-            container.Add(
-                new Sprite(ichigo)
+            _container.Add(
+                new Sprite(_ichigo)
                 {
-                    Location = random.NextVector(Window.Width, Window.Height),
-                    Scale = Vector.One + random.NextVectorFloat() * 7,
+                    Location = random.NextVector(View.Width, View.Height),
+                    Scale = Vector.One + (random.NextVectorFloat() * 7),
                     TintColor = random.NextColor(),
                 }
             );
@@ -88,16 +87,16 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
     public override void OnUpdate()
     {
         if (keyboard.Up)
-            container.Scale += Vector.One * 0.25f * Window.DeltaTime;
+            _container.Scale += Vector.One * 0.25f * Time.DeltaTime;
         if (keyboard.Down)
-            container.Scale -= Vector.One * 0.25f * Window.DeltaTime;
-        container.Location += mouse.Scroll * (-1, 1);
+            _container.Scale -= Vector.One * 0.25f * Time.DeltaTime;
+        _container.Location += mouse.Scroll * (-1, 1);
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
     }
 
     public override void OnDestroy()
     {
-        ichigo.Dispose();
+        _ichigo.Dispose();
     }
 }

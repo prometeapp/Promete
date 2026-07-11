@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using SixLabors.ImageSharp;
@@ -16,16 +16,19 @@ public abstract class TextureFactoryBase
     /// <summary>
     /// 指定したパスからテクスチャを読み込みます。
     /// </summary>
+    /// <returns></returns>
     public abstract Texture2D Load(string path);
 
     /// <summary>
     /// 指定したストリームからテクスチャを読み込みます。
     /// </summary>
+    /// <returns></returns>
     public abstract Texture2D Load(Stream stream);
 
     /// <summary>
     /// 指定したパスからテクスチャを読み込み、切り抜きます。
     /// </summary>
+    /// <returns></returns>
     public abstract Texture2D[] LoadSpriteSheet(
         string path,
         int horizontalCount,
@@ -36,6 +39,7 @@ public abstract class TextureFactoryBase
     /// <summary>
     /// 指定したストリームからテクスチャを読み込み、切り抜きます。
     /// </summary>
+    /// <returns></returns>
     public abstract Texture2D[] LoadSpriteSheet(
         Stream stream,
         int horizontalCount,
@@ -46,16 +50,19 @@ public abstract class TextureFactoryBase
     /// <summary>
     /// ビットマップのデータからテクスチャを生成します。
     /// </summary>
+    /// <returns></returns>
     public abstract Texture2D Create(byte[] bitmap, VectorInt size);
 
     /// <summary>
     /// ビットマップのデータからテクスチャを生成します。
     /// </summary>
+    /// <returns></returns>
     public abstract Texture2D Create(byte[,,] bitmap);
 
     /// <summary>
     /// 指定した色の単色テクスチャを生成します。
     /// </summary>
+    /// <returns></returns>
     public abstract Texture2D CreateSolid(Color color, VectorInt size);
 
     /// <summary>
@@ -66,6 +73,7 @@ public abstract class TextureFactoryBase
     /// <summary>
     /// 指定したパスから 9 スライステクスチャを読み込みます。
     /// </summary>
+    /// <returns></returns>
     public virtual Texture9Sliced Load9Sliced(string path, int left, int top, int right, int bottom)
     {
         return Load9Sliced(Image.Load(path), left, top, right, bottom);
@@ -74,6 +82,7 @@ public abstract class TextureFactoryBase
     /// <summary>
     /// 指定したストリームから 9 スライステクスチャを読み込みます。
     /// </summary>
+    /// <returns></returns>
     public virtual Texture9Sliced Load9Sliced(
         Stream stream,
         int left,

@@ -10,7 +10,6 @@ public class NextFrameTests
     {
         // このテストでは、NextFrameが次のフレームで実行されることを確認します
         // NextFrame内のアクションは、次のOnUpdate呼び出しの開始時に実行されるべきです
-
         var executionOrder = new List<string>();
 
         using var app = PrometeApp.Create().BuildWithHeadless();
@@ -52,7 +51,6 @@ public class NextFrameTests
     public void NextFrame_MultipleActions_ShouldExecuteInOrder()
     {
         // 複数のNextFrameアクションが正しい順序で実行されることを確認
-
         var executionOrder = new List<string>();
 
         using var app = PrometeApp.Create().BuildWithHeadless();

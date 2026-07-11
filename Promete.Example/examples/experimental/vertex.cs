@@ -7,7 +7,7 @@ using UI = ImGuiNET.ImGui;
 namespace Promete.Example.examples.experimental;
 
 [Demo("/experimental/vertex", "")]
-public class vertex(ImGuiPlugin ui) : Scene
+public class Vertex(ImGuiPlugin ui) : Scene
 {
     private readonly Container _container = new Container().Location(64, 64);
 

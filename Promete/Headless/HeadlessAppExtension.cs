@@ -1,4 +1,4 @@
-﻿using Promete.Backends.Headless;
+using Promete.Backends.Headless;
 using Promete.Windowing;
 
 namespace Promete.Headless;

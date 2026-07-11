@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -158,6 +158,7 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// Promete アプリケーションを作成します。
     /// </summary>
+    /// <returns></returns>
     public static PrometeAppBuilder Create()
     {
         return new PrometeAppBuilder();
@@ -529,6 +530,7 @@ public sealed class PrometeApp : IDisposable
         var asm =
             Assembly.GetEntryAssembly()
             ?? throw new InvalidOperationException("There is no entry assembly.");
+
         // Scene 派生クラスを全て取得する
         var types = asm.GetTypes();
         foreach (var type in types.Where(t => t.IsSubclassOf(typeof(Scene))))

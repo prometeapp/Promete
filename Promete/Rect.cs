@@ -6,6 +6,7 @@ namespace Promete;
 public struct Rect
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="Rect"/> struct.
     /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="location">位置。</param>
@@ -17,6 +18,7 @@ public struct Rect
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Rect"/> struct.
     /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="left">左の位置。</param>

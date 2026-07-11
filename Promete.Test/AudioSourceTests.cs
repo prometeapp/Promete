@@ -10,7 +10,6 @@ namespace Promete.Test;
 public class AudioSourceTests
 {
     // Wave フォーマット読み込みテスト
-
     [Fact]
     public void Wave_8bit_LoadsExpectedValues()
     {
@@ -107,7 +106,6 @@ public class AudioSourceTests
     }
 
     // FillSamples 振る舞いテスト
-
     [Fact]
     public void Wave_FillSamples_RespectsOffsetFrames()
     {
@@ -172,7 +170,6 @@ public class AudioSourceTests
     }
 
     // Vorbis フォーマットテスト
-
     [Fact]
     public void VorbisAudioSource_CanLoad()
     {
@@ -213,7 +210,6 @@ public class AudioSourceTests
     }
 
     // Private helpers
-
     private static WaveAudioSource LoadWave(byte[] wavBytes)
     {
         var path = Path.GetTempFileName();
@@ -245,8 +241,8 @@ public class AudioSourceTests
         {
             var value = samples[i];
             raw[i * 3] = (byte)(value & 0xFF);
-            raw[i * 3 + 1] = (byte)((value >> 8) & 0xFF);
-            raw[i * 3 + 2] = (byte)((value >> 16) & 0xFF);
+            raw[(i * 3) + 1] = (byte)((value >> 8) & 0xFF);
+            raw[(i * 3) + 2] = (byte)((value >> 16) & 0xFF);
         }
 
         return BuildWaveFile(1, 24, channels, sampleRate, raw);

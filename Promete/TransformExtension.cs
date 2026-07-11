@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Promete;
@@ -11,7 +11,7 @@ public static class TransformExtension
         var rad = angle.ToRadians();
         var cos = MathF.Cos(rad);
         var sin = MathF.Sin(rad);
-        return (point.X * cos - point.Y * sin, point.X * sin + point.Y * cos);
+        return ((point.X * cos) - (point.Y * sin), (point.X * sin) + (point.Y * cos));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

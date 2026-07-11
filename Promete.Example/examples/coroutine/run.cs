@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Input;

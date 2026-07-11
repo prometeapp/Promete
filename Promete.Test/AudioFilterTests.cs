@@ -36,7 +36,7 @@ public class AudioFilterTests
         buffer[(delaySamples * 2) + 1].Should().BeApproximately(1f, 0.0001f);
 
         // フィードバックにより 2*delaySamples 後にも Feedback 倍のピークが現れる
-        buffer[(delaySamples * 2 * 2)].Should().BeApproximately(0.5f, 0.0001f);
+        buffer[ delaySamples * 2 * 2].Should().BeApproximately(0.5f, 0.0001f);
     }
 
     [Fact]

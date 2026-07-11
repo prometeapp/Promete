@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 using Promete.Windowing;
 
@@ -9,7 +9,7 @@ public class Sample3ExampleScene(ConsoleLayer console, Keyboard keyboard) : Scen
 {
     public override void OnStart()
     {
-        Window.FileDropped += OnFileDrop;
+        View.FileDropped += OnFileDrop;
         console.Print("Drop some files");
         console.Print("Press [ESC] to return");
     }
@@ -22,7 +22,7 @@ public class Sample3ExampleScene(ConsoleLayer console, Keyboard keyboard) : Scen
 
     public override void OnDestroy()
     {
-        Window.FileDropped -= OnFileDrop!;
+        View.FileDropped -= OnFileDrop!;
     }
 
     private void OnFileDrop(FileDroppedEventArgs e)

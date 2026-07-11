@@ -47,6 +47,7 @@ public sealed class Material : IEquatable<Material>
             if (!v.Equals(ov))
                 return false;
         }
+
         return true;
     }
 

@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
 using Promete.Nodes;
@@ -10,28 +10,28 @@ public class SpriteRotateTest3Scene : Scene
 {
     private readonly ConsoleLayer _console;
     private readonly Keyboard _keyboard;
-    private readonly List<Container> allIchigos = [];
-    private readonly Texture2D tIchigo;
-    private float angle;
-    private bool isPlaying = true;
+    private readonly List<Container> _allIchigos = [];
+    private readonly Texture2D _tIchigo;
+    private float _angle;
+    private bool _isPlaying = true;
 
     public SpriteRotateTest3Scene(ConsoleLayer console, Keyboard keyboard)
     {
         _console = console;
         _keyboard = keyboard;
 
-        tIchigo = Window.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
 
-        var parent = CreateIchigo(Window.Size / 2);
+        var parent = CreateIchigo(View.Size / 2);
         var root = parent;
-        allIchigos.Add(parent);
+        _allIchigos.Add(parent);
 
         for (var i = 1; i < 16; i++)
         {
-            var child = CreateIchigo((32 + i * 4, 0));
+            var child = CreateIchigo((32 + (i * 4), 0));
 
             parent.Add(child);
-            allIchigos.Add(child);
+            _allIchigos.Add(child);
             parent = child;
         }
 
@@ -41,42 +41,42 @@ public class SpriteRotateTest3Scene : Scene
     public override void OnUpdate()
     {
         _console.Clear();
-        _console.Print("Angle: " + angle);
+        _console.Print("Angle: " + _angle);
         _console.Print("[SPACE]: Toggle Rotation");
         _console.Print("[ESC]: return");
 
-        if (isPlaying)
+        if (_isPlaying)
         {
-            angle += Window.DeltaTime * 30;
-            if (angle > 360)
-                angle -= 360;
+            _angle += Time.DeltaTime * 30;
+            if (_angle > 360)
+                _angle -= 360;
         }
 
-        allIchigos.ForEach(i => i.Angle = angle.Degrees);
+        _allIchigos.ForEach(i => i.Angle = _angle.Degrees);
 
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
 
         if (_keyboard.Space.IsKeyDown)
-            isPlaying ^= true;
+            _isPlaying ^= true;
 
         if (_keyboard.Left.IsKeyDown)
         {
-            angle = (int)(angle - 1);
-            if (angle < 0)
-                angle = 360;
+            _angle = (int)(_angle - 1);
+            if (_angle < 0)
+                _angle = 360;
         }
 
         if (_keyboard.Right.IsKeyDown)
         {
-            angle = (int)(angle + 1);
-            if (angle > 360)
-                angle = 0;
+            _angle = (int)(_angle + 1);
+            if (_angle > 360)
+                _angle = 0;
         }
     }
 
     private Container CreateIchigo(Vector location)
     {
-        return new Container().Location(location).Children(new Sprite(tIchigo));
+        return new Container().Location(location).Children(new Sprite(_tIchigo));
     }
 }

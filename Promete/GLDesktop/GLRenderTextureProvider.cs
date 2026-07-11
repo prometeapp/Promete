@@ -97,7 +97,6 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
     }
 
     // --- private helpers ---
-
     private unsafe Texture2D CreateGLTexture(VectorInt size)
     {
         var handle = GL.GenTexture();
@@ -132,6 +131,7 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
     {
         var rbo = GL.GenRenderbuffer();
         GL.BindRenderbuffer(GLEnum.Renderbuffer, rbo);
+
         // ステンシルバッファも確保する（DepthComponent24のみだとステンシルテストが機能しない）
         GL.RenderbufferStorage(
             GLEnum.Renderbuffer,
@@ -184,7 +184,6 @@ internal sealed class GLRenderTextureProvider : IRenderTextureProvider
     }
 
     // --- スコープ ---
-
     private readonly struct CaptureScope : IDisposable
     {
         private readonly GL _gl;

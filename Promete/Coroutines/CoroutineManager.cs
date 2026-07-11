@@ -22,6 +22,7 @@ public class CoroutineManager
     /// <summary>
     /// 指定されたコルーチンを開始します。
     /// </summary>
+    /// <returns></returns>
     public Coroutine Start(IEnumerator coroutine)
     {
         var c = new Coroutine(coroutine);

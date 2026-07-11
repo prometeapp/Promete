@@ -26,12 +26,12 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view)
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
     private uint _shader;
-    private int _uProjection,
-        _uTexture0;
-    private uint _vao,
-        _vbo,
-        _ebo,
-        _instanceVbo;
+    private int _uProjection;
+    private int _uTexture0;
+    private uint _vao;
+    private uint _vbo;
+    private uint _ebo;
+    private uint _instanceVbo;
 
     public void Dispose()
     {

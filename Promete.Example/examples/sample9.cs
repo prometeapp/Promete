@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
 using Promete.Nodes;
@@ -12,9 +12,9 @@ public class SpriteZTestScene : Scene
     private readonly Keyboard _keyboard;
     private readonly Sprite _mainIchigo;
     private readonly Mouse _mouse;
-    private readonly Texture2D tIchigo;
-    private float angle = 0;
-    private bool isPlaying = true;
+    private readonly Texture2D _tIchigo;
+    private float _angle = 0;
+    private bool _isPlaying = true;
 
     public SpriteZTestScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse)
     {
@@ -22,18 +22,18 @@ public class SpriteZTestScene : Scene
         _keyboard = keyboard;
         _mouse = mouse;
 
-        tIchigo = Window.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
 
         for (var i = 1; i < 255; i++)
         {
-            var pos = Random.Shared.NextVectorInt(Window.Width, Window.Height);
-            var ichigo = new Sprite(tIchigo).Location(pos);
+            var pos = Random.Shared.NextVectorInt(View.Width, View.Height);
+            var ichigo = new Sprite(_tIchigo).Location(pos);
             ichigo.ZIndex = pos.Y;
 
             Root.Add(ichigo);
         }
 
-        _mainIchigo = new Sprite(tIchigo).Scale(2, 2);
+        _mainIchigo = new Sprite(_tIchigo).Scale(2, 2);
         Root.Add(_mainIchigo);
     }
 
@@ -43,12 +43,12 @@ public class SpriteZTestScene : Scene
         _mainIchigo.ZIndex = _mouse.Position.Y;
 
         _console.Clear();
-        _console.Print("FPS: " + Window.FramePerSeconds);
+        _console.Print("FPS: " + Time.FramePerSeconds);
 
         if (_keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();
 
         if (_keyboard.Space.IsKeyDown)
-            isPlaying ^= true;
+            _isPlaying ^= true;
     }
 }

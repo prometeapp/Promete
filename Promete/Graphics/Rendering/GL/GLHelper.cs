@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Silk.NET.OpenGL;
 
 namespace Promete.Graphics.Rendering.GL;

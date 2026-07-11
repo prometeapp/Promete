@@ -6,17 +6,17 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/pixelSnap.demo", "ピクセルスナップのテスト")]
-public class pixelSnap : Scene
+public class PixelSnap : Scene
 {
     private readonly ConsoleLayer _console;
     private readonly Keyboard _keyboard;
     private readonly Texture2D _tIchigo;
 
-    public pixelSnap(ConsoleLayer console, Keyboard keyboard)
+    public PixelSnap(ConsoleLayer console, Keyboard keyboard)
     {
         _console = console;
         _keyboard = keyboard;
-        _tIchigo = Window.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
 
         // 中央ピボット + 端数を含む位置で、スナップ有無による描画差を比較する
         Root =

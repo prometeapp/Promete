@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Promete.Example.Kernel;
 using Promete.Input;
 using Promete.Nodes;

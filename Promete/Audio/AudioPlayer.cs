@@ -27,6 +27,7 @@ public class AudioPlayer : IDisposable
     private bool _isDisposed;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="AudioPlayer"/> class.
     /// この <see cref="AudioPlayer" /> の新しいインスタンスを初期化します。
     /// 共有 <see cref="AudioDevice"/> を取得し、実デバイスへの出力を即座に開始します（常駐レンダーループ）。
     /// </summary>
@@ -42,6 +43,7 @@ public class AudioPlayer : IDisposable
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="AudioPlayer"/> class.
     /// この <see cref="AudioPlayer" /> の新しいインスタンスを、指定した <see cref="IAudioOutput"/> を使用して初期化します。
     /// 主にテスト用途です。この場合、共有デバイスの取得は行われません。
     /// </summary>

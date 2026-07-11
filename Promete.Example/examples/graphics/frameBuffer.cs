@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -7,9 +7,9 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/frameBuffer.demo", "FrameBufferのテスト")]
-public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : Scene
+public class FrameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : Scene
 {
-    private FrameBuffer? _frameBuffer;
+    private Graphics.FrameBuffer? _frameBuffer;
     private bool _isSupported;
     private Texture2D _texture;
 
@@ -30,13 +30,13 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
             return;
         }
 
-        _frameBuffer = new FrameBuffer(128, 128);
+        _frameBuffer = new Graphics.FrameBuffer(128, 128);
         _editorSprite.Texture = _frameBuffer.Texture;
         _previewSprite.Texture = _frameBuffer.Texture;
         _previewSprite.Scale *= 2;
         _frameBuffer.BackgroundColor = Color.White;
 
-        _texture = Window.TextureFactory.Load("assets/ichigo.png");
+        _texture = App.TextureFactory.Load("assets/ichigo.png");
 
         _frameBuffer.Add(new Text("Hello", null, Color.Black));
         _frameBuffer.Add(new Sprite(_texture).Location(0, 32));
@@ -52,11 +52,12 @@ public class frameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
             App.LoadScene<MainScene>();
             return;
         }
+
         if (!_isSupported)
             return;
         if (_frameBuffer == null)
             return;
-        _previewSprite.Angle = (_previewSprite.Angle + (45 * Window.DeltaTime).Degrees) % 360f;
+        _previewSprite.Angle = (_previewSprite.Angle + (45 * Time.DeltaTime).Degrees) % 360f;
 
         if (keyboard.Enter.IsKeyDown)
         {

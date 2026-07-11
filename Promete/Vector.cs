@@ -51,7 +51,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このベクトルの長さを取得します。
     /// </summary>
-    public float Magnitude => MathF.Sqrt(X * X + Y * Y);
+    public float Magnitude => MathF.Sqrt((X * X) + (Y * Y));
 
     /// <summary>
     /// このベクトルの単位ベクトルを取得します。
@@ -157,6 +157,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// 2つのベクトルがなす角を取得します。
     /// </summary>
+    /// <returns></returns>
     public static Angle Angle(Vector from, Vector to)
     {
         return MathF.Atan2(to.Y - from.Y, to.X - from.X).Radians;
@@ -165,19 +166,21 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// 2つのベクトル間の距離を取得します。
     /// </summary>
+    /// <returns></returns>
     public static float Distance(Vector from, Vector to)
     {
         return MathF.Sqrt(
-            MathF.Abs((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y))
+            MathF.Abs(((to.X - from.X) * (to.X - from.X)) + ((to.Y - from.Y) * (to.Y - from.Y)))
         );
     }
 
     /// <summary>
     /// 内積を計算します。
     /// </summary>
+    /// <returns></returns>
     public static float Dot(Vector v1, Vector v2)
     {
-        return v1.X * v2.X + v1.Y * v2.Y;
+        return (v1.X * v2.X) + (v1.Y * v2.Y);
     }
 
     public static Vector From(Vector2 vec)
@@ -188,6 +191,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// 内積を計算します。
     /// </summary>
+    /// <returns></returns>
     public float Dot(Vector v)
     {
         return Dot(this, v);
@@ -196,6 +200,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このオブジェクトを比較します。
     /// </summary>
+    /// <returns></returns>
     public override bool Equals(object? obj)
     {
         return obj is Vector vector && Equals(vector);
@@ -204,6 +209,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このオブジェクトを比較します。
     /// </summary>
+    /// <returns></returns>
     public bool Equals(Vector other)
     {
         return X.Equals(other.X) && Y.Equals(other.Y);
@@ -212,6 +218,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このオブジェクトのハッシュ値を取得します。
     /// </summary>
+    /// <returns></returns>
     public override int GetHashCode()
     {
         return HashCode.Combine(X, Y);
@@ -220,6 +227,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このベクトルの角度を取得します。
     /// </summary>
+    /// <returns></returns>
     public Angle Angle()
     {
         return Promete.Angle.FromRadians(MathF.Atan2(Y, X));
@@ -228,6 +236,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このベクトルに対する指定したベクトルの方向を取得します。
     /// </summary>
+    /// <returns></returns>
     public Angle Angle(Vector to)
     {
         return Angle(this, to);
@@ -236,6 +245,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// 2つのベクトル間の距離を取得します。
     /// </summary>
+    /// <returns></returns>
     public float Distance(Vector to)
     {
         return Distance(this, to);
@@ -244,6 +254,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
+    /// <returns></returns>
     public bool In(Rect rect)
     {
         var topLeft = rect.Location;
@@ -254,6 +265,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
+    /// <returns></returns>
     public bool In(Vector location, Vector size)
     {
         return In(new Rect(location, size));
@@ -270,6 +282,7 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <summary>
     /// このベクトルの文字列表現を取得します。
     /// </summary>
+    /// <returns></returns>
     public override string ToString()
     {
         return $"({X}, {Y})";

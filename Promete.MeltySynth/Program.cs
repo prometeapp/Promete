@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// Copyright (c) PlaceholderCompany. All rights reserved.
 
 using MeltySynth;
 using Promete;

@@ -16,7 +16,7 @@ public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
     private readonly List<string> _consoleBuffer = [];
     private int _maxLine;
 
-    private Text _text;
+    private Text? _text;
 
     /// <summary>
     /// 現在のコンソール上のカーソル位置を取得または設定します。
@@ -42,6 +42,7 @@ public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
     /// </summary>
     public Color TextColor { get; set; } = Color.White;
 
+    /// <inheritdoc/>
     public void OnStart()
     {
         _text = new Text("", Font.GetDefault(), Color.White);
