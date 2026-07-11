@@ -10,10 +10,12 @@ public sealed class LowPassFilter : IAudioFilter
 {
     private const float DefaultCutoffFrequency = 1000f;
     private const float DefaultResonance = 0.707f;
+    private const float DefaultMix = 1f;
     private const float MinCutoffFrequency = 10f;
 
     private float _cutoffFrequency = DefaultCutoffFrequency;
     private float _resonance = DefaultResonance;
+    private float _mix = DefaultMix;
     private int _lastSampleRate;
     private bool _coefficientsValid;
 
@@ -60,33 +62,37 @@ public sealed class LowPassFilter : IAudioFilter
         }
     }
 
+    /// <summary>
+    /// ウェット（フィルター適用後の音）の混合比率を取得または設定します。範囲は 0.0～1.0、デフォルトは 1（ウェットのみ）です。
+    /// 0 に近づけるほど元の音が残るため、値を徐々に変化させることでフィルターの掛かり具合をスムーズに遷移できます。
+    /// ミックス比率に関わらずフィルターの内部状態は常に更新されるため、遷移中も波形が不連続になりません。
+    /// </summary>
+    public float Mix
+    {
+        get => _mix;
+        set => _mix = float.IsFinite(value) ? Math.Clamp(value, 0f, 1f) : DefaultMix;
+    }
+
     /// <inheritdoc />
     public void Process(Span<float> buffer, int channels, int sampleRate)
     {
         if (!_coefficientsValid || sampleRate != _lastSampleRate)
             RecalculateCoefficients(sampleRate);
 
+        var mix = _mix;
         var frameCount = buffer.Length / channels;
         for (var i = 0; i < frameCount; i++)
         {
-            buffer[i * channels] = ProcessSample(
-                buffer[i * channels],
-                ref _x1L,
-                ref _x2L,
-                ref _y1L,
-                ref _y2L
-            );
+            var dryL = buffer[i * channels];
+            var wetL = ProcessSample(dryL, ref _x1L, ref _x2L, ref _y1L, ref _y2L);
+            buffer[i * channels] = dryL + ((wetL - dryL) * mix);
 
             if (channels < 2)
                 continue;
 
-            buffer[(i * channels) + 1] = ProcessSample(
-                buffer[(i * channels) + 1],
-                ref _x1R,
-                ref _x2R,
-                ref _y1R,
-                ref _y2R
-            );
+            var dryR = buffer[(i * channels) + 1];
+            var wetR = ProcessSample(dryR, ref _x1R, ref _x2R, ref _y1R, ref _y2R);
+            buffer[(i * channels) + 1] = dryR + ((wetR - dryR) * mix);
         }
     }
 

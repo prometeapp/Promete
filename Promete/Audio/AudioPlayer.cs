@@ -255,14 +255,24 @@ public class AudioPlayer : IDisposable
     /// <param name="gain">再生する音量。</param>
     /// <param name="pitch">再生時のピッチ。</param>
     /// <param name="pan">再生時のパン。</param>
+    /// <param name="followsMasterGain">このプレイヤーの <see cref="Gain"/> を乗算するかどうか。デフォルトは <c>false</c>。</param>
     public async void PlayOneShot(
         IAudioSource source,
         float gain = 1,
         float pitch = 1,
-        float pan = 0
+        float pan = 0,
+        bool followsMasterGain = false
     )
     {
-        await PlayOneShotAsync(source, gain, pitch, pan);
+        try
+        {
+            await PlayOneShotAsync(source, gain, pitch, pan, followsMasterGain);
+        }
+        catch (Exception e)
+        {
+            // fire-and-forget のため、例外が未観測のままプロセスを落とさないよう握りつぶしてログに残す
+            System.Diagnostics.Debug.WriteLine($"AudioPlayer.PlayOneShot failed: {e}");
+        }
     }
 
     /// <summary>
@@ -272,12 +282,14 @@ public class AudioPlayer : IDisposable
     /// <param name="gain">再生する音量。</param>
     /// <param name="pitch">再生時のピッチ。</param>
     /// <param name="pan">再生時のパン。</param>
+    /// <param name="followsMasterGain">このプレイヤーの <see cref="Gain"/> を乗算するかどうか。デフォルトは <c>false</c>。</param>
     /// <returns>非同期操作を表すタスク。</returns>
     public async ValueTask PlayOneShotAsync(
         IAudioSource source,
         float gain = 1,
         float pitch = 1,
-        float pan = 0
+        float pan = 0,
+        bool followsMasterGain = false
     )
     {
         if (source.Frames is null)
@@ -296,9 +308,11 @@ public class AudioPlayer : IDisposable
             using var alBuf = new ALBuffer(al);
             var bufferFormat = GetBufferFormat(source);
 
+            var effectiveGain = followsMasterGain ? gain * Gain : gain;
+
             al.BufferData(alBuf.Handle, bufferFormat, buffer, source.SampleRate);
             al.SourceQueueBuffers(alSrc.Handle, new uint[] { alBuf.Handle });
-            al.SetSourceProperty(alSrc.Handle, SourceFloat.Gain, gain);
+            al.SetSourceProperty(alSrc.Handle, SourceFloat.Gain, effectiveGain);
             al.SetSourceProperty(alSrc.Handle, SourceFloat.Pitch, pitch);
             var x = pan;
             var z = MathF.Abs(pan) < 1.0f ? -MathF.Sqrt(1.0f - (pan * pan)) : 0.0f;

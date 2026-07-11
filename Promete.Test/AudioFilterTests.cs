@@ -90,6 +90,33 @@ public class AudioFilterTests
     }
 
     [Fact]
+    public void LowPassFilter_MixZero_PassesInputThroughUnchanged()
+    {
+        var filter = new LowPassFilter { CutoffFrequency = 500f, Mix = 0f };
+        var input = GenerateSineWave(frequency: 8000f, frames: 1024, channels: 2);
+        var buffer = (float[])input.Clone();
+
+        filter.Process(buffer, 2, SampleRate);
+
+        buffer.Should().Equal(input);
+    }
+
+    [Fact]
+    public void LowPassFilter_HalfMix_AttenuatesLessThanFullWet()
+    {
+        var wetFilter = new LowPassFilter { CutoffFrequency = 500f, Mix = 1f };
+        var halfFilter = new LowPassFilter { CutoffFrequency = 500f, Mix = 0.5f };
+        var wetBuffer = GenerateSineWave(frequency: 8000f, frames: 4096, channels: 2);
+        var halfBuffer = (float[])wetBuffer.Clone();
+
+        wetFilter.Process(wetBuffer, 2, SampleRate);
+        halfFilter.Process(halfBuffer, 2, SampleRate);
+
+        // Mix=0.5 はドライ成分が残るため、全ウェットより減衰が緩くなる
+        ComputeRms(halfBuffer).Should().BeGreaterThan(ComputeRms(wetBuffer));
+    }
+
+    [Fact]
     public void DistortionFilter_LargeAmplitude_IsClampedWithinLevel()
     {
         var filter = new DistortionFilter { Drive = 10f, Level = 0.8f };

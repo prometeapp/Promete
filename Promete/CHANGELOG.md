@@ -25,6 +25,12 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
     - `Node.IsPixelSnapEnabled` プロパティ（デフォルト `true`）で制御できます
     - ピボットや位置の端数（例: 奇数サイズ + `Pivot(0.5, 0.5)`）による描画のにじみを防ぎます
     - サブピクセル単位の滑らかな移動・回転・ズーム演出を行うノードでは、`.PixelSnap(false)` で無効化してください
+- オーディオシステムを再設計しました
+    - `IAudioSource` をfloat32・フレーム単位の契約に変更しました
+        - `int? Frames`（総フレーム数。未確定・無限ストリームの場合は`null`）、`Channels`、`SampleRate`、`FillSamples(Span<float> buffer, int offsetFrames)` を実装します
+        - `Bits` プロパティを廃止しました
+    - `AudioPlayer` は常駐のレンダーループ（pull型）で動作するようになりました。常に音声出力を続け、停止中は無音を出力します
+    - 再生はステレオ出力に固定されます
 
 ### Features
 
@@ -40,6 +46,16 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
     - `Time` / `TimeInSamples` プロパティに値を設定すると、その位置へシークします
     - 再生していないときに設定した値は、次回再生時の開始位置になります（`Stop()` で 0 にリセット）
     - 範囲外の値は音源の長さの範囲内にクランプされます
+- `AudioPlayer`: DSPフィルター機能を追加しました
+    - `Filters`（`ObservableCollection<IAudioFilter>`）に追加することで、出力段にDSPエフェクトを適用できます
+    - 標準フィルターとして `DelayFilter`（Time/Feedback/Mix）、`LowPassFilter`（CutoffFrequency/Resonance）、`DistortionFilter`（Drive/Level）を `Promete.Audio.Filters` 名前空間に追加しました
+    - フィルターは再生停止中・無音中も毎バッファ呼び出され続けるため、ディレイの残響などが自然に鳴り切ります。パイプラインが自動的に `Reset()` を呼ぶことはありません
+    - `IAudioFilter` インターフェースを実装することで、独自のDSPフィルターを追加できます
+- `AudioPlayer.PlayOneShot` / `PlayOneShotAsync` に `followsMasterGain` 引数を追加しました（デフォルト`false`。`true`にするとプレイヤーの`Gain`を乗算します）
+- `WaveAudioSource`: 8/16/24/32bit PCM に加え、32bit float WAV の読み込みに対応しました
+- `AudioPlayer` のパンをconstant-powerのソフトウェア実装に変更し、ステレオ音源に対してもパンが効くようになりました
+- 複数の `AudioPlayer` を同時に使用できるようになりました（BGM用・SE用など）。内部で `AudioDevice` がALCコンテキストを共有します
+- `AudioPlayer.BufferSize` のデフォルト値は1024フレーム（実効レイテンシ約70ms）です
 
 ### Enhancements
 

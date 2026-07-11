@@ -33,7 +33,7 @@ audio.Resume();
 - `audio.Stop(time)`<br/>再生を停止します（timeはフェードアウト秒、省略可）
 - `audio.Pause()`<br/>一時停止します
 - `audio.Resume()`<br/>一時停止を解除します
-- `audio.PlayOneShot(source, gain, pitch, pan)`<br/>効果音などをその場で再生します
+- `audio.PlayOneShot(source, gain, pitch, pan, followsMasterGain)`<br/>効果音などをその場で再生します（`followsMasterGain`を`true`にすると`audio.Gain`が乗算されます）
 - `audio.Gain`<br/>音量（0.0～1.0）
 - `audio.Pan`<br/>パン（-1.0～1.0）
 - `audio.Pitch`<br/>ピッチ比率
@@ -51,7 +51,7 @@ audio.Resume();
 
 ```csharp
 private readonly AudioPlayer _audio = new();
-private VorbisAudioSource _bgm = new("./assets/GB-Action-C02-2.ogg");
+private VorbisAudioSource _bgm = new("./assets/amaebi.ogg");
 
 public override void OnStart()
 {
@@ -76,9 +76,18 @@ audio.Time = 30000;
 - `Stop` を呼ぶと再生位置は 0 にリセットされます
 - 範囲外の値を設定した場合は、音源の長さの範囲内にクランプされます
 
+## バッファサイズとレイテンシ
+
+`AudioPlayer`は生成と同時に常駐のレンダーループを開始し、再生していない間も無音データを出力し続けます。
+そのため`Play`を呼んだ瞬間から遅延なく音が鳴り始めます。
+
+出力の1バッファあたりのフレーム数は`audio.BufferSize`で取得・設定できます（デフォルト1024フレーム、44.1kHzで約23ms、トリプルバッファのため実効レイテンシは約70msです）。
+値を変更しても、次に出力を開始するまでは反映されません。
+
 ## ノート
 
-- 再生できるフォーマットはWAV, Ogg Vorbisなどです
+- 再生できるフォーマットはWAV（8/16/24/32bit PCM、32bit float）, Ogg Vorbisなどです
 - 効果音再生には `PlayOneShot` を使うと便利です
 - 再生中に `Stop` を呼ぶと即時またはフェードアウトで停止します
 - イベントで再生状態の変化を検知できます
+- `audio.Filters` にディレイやローパスなどのDSPフィルターを追加できます。詳しくは[オーディオフィルター](/guide/audio/filters)を参照してください
