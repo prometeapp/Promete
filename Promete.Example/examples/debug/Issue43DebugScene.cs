@@ -27,7 +27,7 @@ public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console,
     private IEnumerator Debug()
     {
         _audioPlayer = new AudioPlayer();
-        _source = new VorbisAudioSource("assets/GB-Action-C02-2.ogg");
+        _source = new VorbisAudioSource("assets/amaebi.ogg");
         console.Print("Loading...");
         yield return new WaitUntil(() => _source.IsLoadingFinished);
 

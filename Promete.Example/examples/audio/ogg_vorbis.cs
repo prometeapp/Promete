@@ -9,7 +9,7 @@ namespace Promete.Example.examples.audio;
 public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
     private readonly AudioPlayer _audio = new();
-    private VorbisAudioSource _bgm = new("./assets/GB-Action-C02-2.ogg");
+    private VorbisAudioSource _bgm = new("./assets/amaebi.ogg");
 
     public override void OnStart()
     {
@@ -26,7 +26,7 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
             $"""
             Location: {_audio.Time / 1000f:0.000} / {_audio.Length / 1000f:0.000}
             Location in Samples: {_audio.TimeInSamples} / {_audio.LengthInSamples}
-            Loaded: {_bgm.LoadedSize} / {_bgm.Samples}
+            Loaded: {_bgm.LoadedSize} / {_bgm.Frames}
             Volume: {_audio.Gain}
             Pitch: {_audio.Pitch}
             Pan: {_audio.Pan}
@@ -38,6 +38,8 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
             [→] Pitch Up
             [A] Pan Left
             [D] Pan Right
+            [Q] Seek -5s
+            [E] Seek +5s
             PRESS ESC TO RETURN
             """
         );
@@ -62,6 +64,12 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
 
         if (keyboard.D.IsKeyDown)
             _audio.Pan = MathF.Min(1, (int)((_audio.Pan + 0.1f) * 10) / 10f);
+
+        if (keyboard.Q.IsKeyDown)
+            _audio.Time -= 5000;
+
+        if (keyboard.E.IsKeyDown)
+            _audio.Time += 5000;
 
         if (keyboard.Space.IsKeyDown)
         {

@@ -9,7 +9,7 @@ public class AudioPlayerTests
     [Fact]
     public void VorbisAudioSource_CanLoad()
     {
-        var initialize = () => new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        var initialize = () => new VorbisAudioSource("./assets/amaebi.ogg");
 
         initialize.Should().NotThrow();
     }
@@ -19,7 +19,7 @@ public class AudioPlayerTests
     {
         using var app = PrometeApp.Create().BuildWithHeadless();
         using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Invoking(x => x.Play(audioSource)).Should().NotThrow();
         audioPlayer.IsPlaying.Should().BeTrue();
@@ -33,7 +33,7 @@ public class AudioPlayerTests
     {
         using var app = PrometeApp.Create().BuildWithHeadless();
         using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Play(audioSource);
         audioPlayer.IsPausing.Should().BeFalse();
@@ -53,7 +53,7 @@ public class AudioPlayerTests
     public void PauseAndStop()
     {
         using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Play(audioSource);
         audioPlayer.IsPausing.Should().BeFalse();
@@ -71,7 +71,7 @@ public class AudioPlayerTests
     public async Task IsPlayingShouldBeTrueWhenPlayTwice()
     {
         using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Play(audioSource);
         audioPlayer.IsPlaying.Should().BeTrue();

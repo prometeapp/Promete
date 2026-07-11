@@ -11,7 +11,7 @@ namespace Promete.Example.examples.debug;
 [Demo("/debug/issue39", "Issue39: Debug Scene")]
 public class Issue39DebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
-    private readonly IAudioSource _bgm = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+    private readonly IAudioSource _bgm = new VorbisAudioSource("./assets/amaebi.ogg");
     private readonly IAudioSource _wav = new WaveAudioSource("./assets/lineclear.wav");
     private readonly AudioPlayer _player = new();
     private int _sfxPlayedCount;

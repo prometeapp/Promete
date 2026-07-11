@@ -35,7 +35,7 @@
         <None Update="assets\MisakiGothic.ttf">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="assets\GB-Action-C02-2.ogg">
+        <None Update="assets\amaebi.ogg">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="assets\anim1.png">

@@ -33,11 +33,10 @@ audio.Play(ogg);
 
 ## 主なAPI
 
-- `Samples`<br/>合計サンプル数（未指定の場合はnull）
+- `Frames`<br/>合計フレーム数（1フレームは全チャンネル分のサンプルをまとめた単位です。未確定・無限ストリームの場合はnull）
 - `Channels`<br/>チャンネル数（1=モノラル, 2=ステレオ）
-- `Bits`<br/>量子化ビット数（8または16）
 - `SampleRate`<br/>サンプリング周波数（Hz）
-- `FillSamples(buffer, offset)`<br/>サンプルデータをバッファに読み込む
+- `FillSamples(buffer, offsetFrames)`<br/>チャンネルインターリーブ形式のfloat PCM（範囲は-1.0～1.0）をバッファに読み込む
 
 ## サンプル：効果音の再生
 
