@@ -176,7 +176,7 @@ public class AudioSourceTests
     [Fact]
     public void VorbisAudioSource_CanLoad()
     {
-        var initialize = () => new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        var initialize = () => new VorbisAudioSource("./assets/amaebi.ogg");
 
         initialize.Should().NotThrow();
     }
@@ -184,7 +184,7 @@ public class AudioSourceTests
     [Fact]
     public void VorbisAudioSource_Properties_AreValid()
     {
-        using var vorbis = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var vorbis = new VorbisAudioSource("./assets/amaebi.ogg");
 
         vorbis.Frames.Should().NotBeNull();
         vorbis.Frames!.Value.Should().BeGreaterThan(0);
@@ -195,7 +195,7 @@ public class AudioSourceTests
     [Fact]
     public async Task VorbisAudioSource_FillSamples_ProducesValuesInRangeAndReachesEnd()
     {
-        using var vorbis = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var vorbis = new VorbisAudioSource("./assets/amaebi.ogg");
 
         // デコードスレッドの完了を待つ
         while (!vorbis.IsLoadingFinished)

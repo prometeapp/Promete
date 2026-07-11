@@ -9,7 +9,7 @@ namespace Promete.Example.examples.audio;
 public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
 {
     private readonly AudioPlayer _audio = new();
-    private VorbisAudioSource _bgm = new("./assets/GB-Action-C02-2.ogg");
+    private VorbisAudioSource _bgm = new("./assets/amaebi.ogg");
 
     public override void OnStart()
     {
