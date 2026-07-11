@@ -117,6 +117,70 @@ public class AudioFilterTests
     }
 
     [Fact]
+    public void LowPassFilter_AutoMakeupGain_RestoresOutputRmsTowardInput()
+    {
+        var plain = new LowPassFilter { CutoffFrequency = 500f };
+        var makeup = new LowPassFilter { CutoffFrequency = 500f, AutoMakeupGain = true };
+
+        // 高域寄りの信号で大きくエネルギーが失われる状況を作り、平滑化が収束するまで複数バッファ処理する
+        var inputRms = 0f;
+        var plainRms = 0f;
+        var makeupRms = 0f;
+        for (var i = 0; i < 50; i++)
+        {
+            var input = GenerateSineWave(frequency: 8000f, frames: 1024, channels: 2);
+            inputRms = ComputeRms(input);
+
+            var plainBuffer = (float[])input.Clone();
+            plain.Process(plainBuffer, 2, SampleRate);
+            plainRms = ComputeRms(plainBuffer);
+
+            var makeupBuffer = (float[])input.Clone();
+            makeup.Process(makeupBuffer, 2, SampleRate);
+            makeupRms = ComputeRms(makeupBuffer);
+        }
+
+        // 補正ありは補正なしより入力RMSに近い
+        Math.Abs(makeupRms - inputRms).Should().BeLessThan(Math.Abs(plainRms - inputRms));
+        makeupRms.Should().BeGreaterThan(plainRms);
+    }
+
+    [Fact]
+    public void LowPassFilter_AutoMakeupGain_MixZero_DoesNotBoost()
+    {
+        var filter = new LowPassFilter
+        {
+            CutoffFrequency = 500f,
+            Mix = 0f,
+            AutoMakeupGain = true,
+        };
+
+        // Mix=0 では出力=入力なので、補正ゲインは1のまま変化しない
+        var input = GenerateSineWave(frequency: 8000f, frames: 1024, channels: 2);
+        var buffer = (float[])input.Clone();
+        for (var i = 0; i < 20; i++)
+        {
+            buffer = (float[])input.Clone();
+            filter.Process(buffer, 2, SampleRate);
+        }
+
+        ComputeRms(buffer).Should().BeApproximately(ComputeRms(input), 0.001f);
+    }
+
+    [Fact]
+    public void LowPassFilter_AutoMakeupGain_SilentInput_DoesNotBlowUp()
+    {
+        var filter = new LowPassFilter { CutoffFrequency = 500f, AutoMakeupGain = true };
+
+        var silence = new float[1024 * 2];
+        for (var i = 0; i < 20; i++)
+            filter.Process(silence, 2, SampleRate);
+
+        // 無音入力では補正値の更新が凍結され、出力も無音のまま
+        silence.Should().OnlyContain(x => x == 0f);
+    }
+
+    [Fact]
     public void DistortionFilter_LargeAmplitude_IsClampedWithinLevel()
     {
         var filter = new DistortionFilter { Drive = 10f, Level = 0.8f };

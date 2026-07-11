@@ -26,6 +26,7 @@ public class FiltersExampleScene(Keyboard keyboard, ConsoleLayer console) : Scen
 
         _audio.Play(_bgm, 0);
         _delay.Mix = 0.23f;
+        _delay.Feedback = 0.12f;
         _delay.Time = 0.25f;
     }
 
@@ -38,7 +39,7 @@ public class FiltersExampleScene(Keyboard keyboard, ConsoleLayer console) : Scen
 
             [1] LowPass  : {(
                 _isLowPassEnabled ? "ON" : "OFF"
-            )} (Cutoff: {_lowPass.CutoffFrequency:0} Hz) (Mix: {_lowPass.Mix * 100:0}%)
+            )} (Cutoff: {_lowPass.CutoffFrequency:0} Hz) (Mix: {_lowPass.Mix * 100:0}%) {(_lowPass.AutoMakeupGain ? "AUTO GAIN" : "")}
             [2] Delay    : {(_isDelayEnabled ? "ON" : "OFF")}
             [3] Distortion: {(_isDistortionEnabled ? "ON" : "OFF")} (Drive: {_distortion.Drive})
 
@@ -79,6 +80,15 @@ public class FiltersExampleScene(Keyboard keyboard, ConsoleLayer console) : Scen
 
         if (keyboard.S)
             _lowPass.Mix = Math.Clamp(_lowPass.Mix - 0.01f, 0, 1);
+
+        if (keyboard.A.IsKeyDown)
+            _lowPass.AutoMakeupGain ^= true;
+
+        if (keyboard.Space.IsKeyDown)
+            if (!_audio.IsPausing)
+                _audio.Pause();
+            else
+                _audio.Resume();
     }
 
     public override void OnDestroy()

@@ -13,9 +13,16 @@ public sealed class LowPassFilter : IAudioFilter
     private const float DefaultMix = 1f;
     private const float MinCutoffFrequency = 10f;
 
+    // 自動メイクアップゲインの安全域: 補正は最大+12dB(4倍)まで、無音に近い入力では補正値を更新しない
+    private const float MaxMakeupGain = 4f;
+    private const float MinMakeupGain = 0.25f;
+    private const float SilenceRmsThreshold = 1e-4f;
+    private const float MakeupSmoothingTimeConstant = 0.2f;
+
     private float _cutoffFrequency = DefaultCutoffFrequency;
     private float _resonance = DefaultResonance;
     private float _mix = DefaultMix;
+    private float _makeupGain = 1f;
     private int _lastSampleRate;
     private bool _coefficientsValid;
 
@@ -73,6 +80,15 @@ public sealed class LowPassFilter : IAudioFilter
         set => _mix = float.IsFinite(value) ? Math.Clamp(value, 0f, 1f) : DefaultMix;
     }
 
+    /// <summary>
+    /// 自動メイクアップゲインを有効にするかどうかを取得または設定します。デフォルトは <c>false</c> です。
+    /// 有効にすると、フィルターで失われたエネルギー分だけ出力を自動的に増幅し、
+    /// カットオフを絞っても体感音量が元の音に近づきます。
+    /// 補正量は入力と出力（<see cref="Mix"/> 適用後）の RMS 比から求め、時間方向に平滑化して適用されます。
+    /// 増幅は最大 +12dB までにクランプされ、無音に近い入力では補正値の更新を凍結します。
+    /// </summary>
+    public bool AutoMakeupGain { get; set; }
+
     /// <inheritdoc />
     public void Process(Span<float> buffer, int channels, int sampleRate)
     {
@@ -81,19 +97,31 @@ public sealed class LowPassFilter : IAudioFilter
 
         var mix = _mix;
         var frameCount = buffer.Length / channels;
+        var drySquaredSum = 0.0;
+        var outSquaredSum = 0.0;
+
         for (var i = 0; i < frameCount; i++)
         {
             var dryL = buffer[i * channels];
             var wetL = ProcessSample(dryL, ref _x1L, ref _x2L, ref _y1L, ref _y2L);
-            buffer[i * channels] = dryL + ((wetL - dryL) * mix);
+            var outL = dryL + ((wetL - dryL) * mix);
+            buffer[i * channels] = outL;
+            drySquaredSum += dryL * dryL;
+            outSquaredSum += outL * outL;
 
             if (channels < 2)
                 continue;
 
             var dryR = buffer[(i * channels) + 1];
             var wetR = ProcessSample(dryR, ref _x1R, ref _x2R, ref _y1R, ref _y2R);
-            buffer[(i * channels) + 1] = dryR + ((wetR - dryR) * mix);
+            var outR = dryR + ((wetR - dryR) * mix);
+            buffer[(i * channels) + 1] = outR;
+            drySquaredSum += dryR * dryR;
+            outSquaredSum += outR * outR;
         }
+
+        if (AutoMakeupGain)
+            ApplyMakeupGain(buffer, drySquaredSum, outSquaredSum, sampleRate, frameCount, channels);
     }
 
     /// <inheritdoc />
@@ -101,6 +129,45 @@ public sealed class LowPassFilter : IAudioFilter
     {
         _x1L = _x2L = _y1L = _y2L = 0f;
         _x1R = _x2R = _y1R = _y2R = 0f;
+        _makeupGain = 1f;
+    }
+
+    /// <summary>
+    /// 入力(dry)と出力(Mix適用後)のRMS比から自動メイクアップゲインを算出し、平滑化した上でバッファへ適用します。
+    /// ゲインの段差によるノイズを防ぐため、前回値から今回値までバッファ内で線形にランプさせます。
+    /// </summary>
+    private void ApplyMakeupGain(
+        Span<float> buffer,
+        double drySquaredSum,
+        double outSquaredSum,
+        int sampleRate,
+        int frameCount,
+        int channels
+    )
+    {
+        var previousGain = _makeupGain;
+
+        var dryRms = Math.Sqrt(drySquaredSum / Math.Max(1, buffer.Length));
+        var outRms = Math.Sqrt(outSquaredSum / Math.Max(1, buffer.Length));
+
+        // 無音に近い入力では比率が発散するため、補正値の更新を凍結する
+        if (dryRms > SilenceRmsThreshold && outRms > SilenceRmsThreshold)
+        {
+            var targetGain = Math.Clamp((float)(dryRms / outRms), MinMakeupGain, MaxMakeupGain);
+
+            // バッファ長に応じた1次ローパス平滑化（時定数 MakeupSmoothingTimeConstant 秒）
+            var bufferSeconds = frameCount / (float)Math.Max(1, sampleRate);
+            var smoothing = 1f - MathF.Exp(-bufferSeconds / MakeupSmoothingTimeConstant);
+            _makeupGain += (targetGain - _makeupGain) * smoothing;
+        }
+
+        for (var i = 0; i < frameCount; i++)
+        {
+            var t = frameCount > 1 ? i / (float)(frameCount - 1) : 1f;
+            var gain = previousGain + ((_makeupGain - previousGain) * t);
+            for (var ch = 0; ch < channels; ch++)
+                buffer[(i * channels) + ch] *= gain;
+        }
     }
 
     private float ProcessSample(float input, ref float x1, ref float x2, ref float y1, ref float y2)
