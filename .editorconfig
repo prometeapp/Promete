@@ -69,6 +69,7 @@ dotnet_diagnostic.SA1210.severity = none    # using の並び順（CSharpier に
 dotnet_diagnostic.SA1208.severity = none    # System using 優先（CSharpier に委譲）
 dotnet_diagnostic.SA1309.severity = none    # フィールド名のアンダースコアプレフィックス禁止（本プロジェクトはプレフィックスを使用）
 dotnet_diagnostic.SX1309.severity = warning # アンダースコアプレフィックス必須（SA1309 の逆ルール）
+dotnet_diagnostic.SA1502.severity = none
 dotnet_diagnostic.SA1503.severity = none    # ブロックなしifなどを許容
 dotnet_diagnostic.SA1516.severity = none
 dotnet_diagnostic.SA1519.severity = none

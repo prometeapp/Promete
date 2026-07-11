@@ -67,7 +67,10 @@ public class AudioPlayerPipelineTests
         // (Pan=0 の constant-power スケール √2/2 が乗算される)
         resumedBuffer[0]
             .Should()
-            .BeApproximately(RampAudioSource.ExpectedMonoValue(positionBeforePause) * CenterPanScale, 0.0001f);
+            .BeApproximately(
+                RampAudioSource.ExpectedMonoValue(positionBeforePause) * CenterPanScale,
+                0.0001f
+            );
     }
 
     [Fact]
@@ -137,7 +140,9 @@ public class AudioPlayerPipelineTests
         output.RenderNext();
 
         var buffer = output.CapturedBuffers[^1];
-        buffer[0].Should().BeApproximately(RampAudioSource.ExpectedMonoValue(50_000) * CenterPanScale, 0.0001f);
+        buffer[0]
+            .Should()
+            .BeApproximately(RampAudioSource.ExpectedMonoValue(50_000) * CenterPanScale, 0.0001f);
     }
 
     [Fact]
@@ -152,7 +157,9 @@ public class AudioPlayerPipelineTests
         output.RenderNext();
 
         var buffer = output.CapturedBuffers[0];
-        buffer[0].Should().BeApproximately(RampAudioSource.ExpectedMonoValue(1_234) * CenterPanScale, 0.0001f);
+        buffer[0]
+            .Should()
+            .BeApproximately(RampAudioSource.ExpectedMonoValue(1_234) * CenterPanScale, 0.0001f);
     }
 
     [Fact]
@@ -161,7 +168,7 @@ public class AudioPlayerPipelineTests
         var output = new CaptureAudioOutput();
         using var audioPlayer = new AudioPlayer(output);
 
-        // バッファサイズ(10000フレーム)よりずっと短いソースにより、1バッファ内で何度もループ境界をまたぐ
+        // バッファサイズ(デフォルト1024フレーム)よりずっと短いソースにより、1バッファ内で何度もループ境界をまたぐ
         using var source = new RampAudioSource(frames: 7);
 
         audioPlayer.Play(source, loop: 0);
@@ -187,8 +194,8 @@ public class AudioPlayerPipelineTests
         audioPlayer.Play(source, loop: 0);
         output.RenderNext();
 
-        // 10000フレームバッファを7フレーム周期でループするので、1000回以上ループするはず
-        loopedCount.Should().BeGreaterThan(1000);
+        // 1024フレームバッファを7フレーム周期でループするので、100回以上ループするはず
+        loopedCount.Should().BeGreaterThan(100);
     }
 
     [Fact]
@@ -223,9 +230,9 @@ public class AudioPlayerPipelineTests
         audioPlayer.Play(source);
         output.RenderNext();
 
-        // BufferSize(10000フレーム) / SampleRate(44100Hz) ≈ 0.227秒よりわずかに長いフェード時間を指定し、
-        // フェード完了までに複数バッファかかるようにする
-        audioPlayer.Stop(time: 1f);
+        // BufferSize(1024フレーム) / SampleRate(44100Hz) ≈ 23ms より長いフェード時間を指定し、
+        // フェード完了までに複数バッファかかるようにする（0.1秒 ≈ 4.3バッファ）
+        audioPlayer.Stop(time: 0.1f);
         output.RenderNext(6);
 
         var samples = output.GetAllSamples();
@@ -457,15 +464,15 @@ public class AudioPlayerPipelineTests
             return (framesToFill, isFinished);
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
     }
 
     /// <summary>
     /// 常に一定値を返し続ける、長さ未確定（無限ストリーム）のモックソース。
     /// </summary>
-    private sealed class ConstantAudioSource(float value, int channels = 1) : IAudioSource, IDisposable
+    private sealed class ConstantAudioSource(float value, int channels = 1)
+        : IAudioSource,
+            IDisposable
     {
         public int? Frames => null;
 
@@ -485,8 +492,6 @@ public class AudioPlayerPipelineTests
             return (framesToFill, false);
         }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
     }
 }

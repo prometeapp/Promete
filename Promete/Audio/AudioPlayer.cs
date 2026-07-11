@@ -1,5 +1,8 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
+using Promete.Audio.Filters;
 using Promete.Audio.Internal;
 using Silk.NET.OpenAL;
 
@@ -15,6 +18,7 @@ public class AudioPlayer : IDisposable
     private readonly AudioRenderPipeline _pipeline = new();
     private readonly PrometeApp? _app;
     private readonly bool _ownsOutput;
+    private readonly ObservableCollection<IAudioFilter> _filters = [];
 
     private IAudioSource? _currentSource;
     private TaskCompletionSource? _playCompletion;
@@ -32,7 +36,7 @@ public class AudioPlayer : IDisposable
         _audioDevice = AudioDevice.Acquire();
         _output = new OpenALAudioOutput(_audioDevice);
         _ownsOutput = true;
-
+        SubscribeFilterChanges();
         SubscribePipelineEvents();
         StartOutput();
     }
@@ -48,7 +52,7 @@ public class AudioPlayer : IDisposable
         _audioDevice = null;
         _output = output;
         _ownsOutput = false;
-
+        SubscribeFilterChanges();
         SubscribePipelineEvents();
         StartOutput();
     }
@@ -176,9 +180,17 @@ public class AudioPlayer : IDisposable
 
     /// <summary>
     ///     オーディオバッファのサイズを取得または設定します。単位は1バッファあたりのフレーム数です。
+    ///     デフォルトは 1024 フレーム（44.1kHz でバッファあたり約 23ms、トリプルバッファで実レイテンシ約 70ms）です。
     ///     出力開始後に変更しても、次回の出力開始まで反映されません。
     /// </summary>
-    public int BufferSize { get; set; } = 10000;
+    public int BufferSize { get; set; } = 1024;
+
+    /// <summary>
+    ///     この <see cref="AudioPlayer"/> の出力段に適用する DSP フィルターのチェーンを取得します。
+    ///     <c>Filters.Add(new DelayFilter())</c> のように追加・削除でき、変更は次のバッファから反映されます。
+    ///     フィルターは再生停止中・無音中も毎バッファ呼び出され続けるため、ディレイの残響などが自然に鳴り切ります。
+    /// </summary>
+    public ObservableCollection<IAudioFilter> Filters => _filters;
 
     /// <summary>
     ///     再生を開始します。
@@ -370,6 +382,11 @@ public class AudioPlayer : IDisposable
         }
 
         return result;
+    }
+
+    private void SubscribeFilterChanges()
+    {
+        _filters.CollectionChanged += (_, _) => _pipeline.SetFilters(_filters.ToArray());
     }
 
     private void SubscribePipelineEvents()

@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Promete.Audio.Filters;
 
 namespace Promete.Audio;
 
@@ -27,6 +28,8 @@ internal sealed class AudioRenderPipeline
 
     private readonly System.Collections.Generic.Queue<PendingCommand> _pendingCommands = new();
     private float[] _sourceBuffer = [];
+    private IAudioFilter[] _filters = [];
+    private int _currentSampleRate = DefaultSampleRate;
 
     /// <summary>
     /// 再生が開始されたときに、レンダースレッドから発生します。
@@ -101,7 +104,9 @@ internal sealed class AudioRenderPipeline
     }
 
     /// <summary>
-    /// 出力すべきサンプリング周波数を取得します。カレントソースが設定されていない場合は 44100 を返します。
+    /// 出力すべきサンプリング周波数を取得します。
+    /// ソース停止後も最後に再生したソースのレートを維持します（停止のたびに出力ストリームが再構成されたり、
+    /// レート依存のフィルター状態が破棄されて残響が途切れたりするのを防ぐため）。
     /// </summary>
     public int SampleRate
     {
@@ -109,7 +114,7 @@ internal sealed class AudioRenderPipeline
         {
             lock (_lock)
             {
-                return _source?.SampleRate ?? DefaultSampleRate;
+                return _currentSampleRate;
             }
         }
     }
@@ -251,6 +256,18 @@ internal sealed class AudioRenderPipeline
     }
 
     /// <summary>
+    /// 適用するフィルターチェーンを差し替えます。スレッドセーフに配列ごと置き換えられます。
+    /// </summary>
+    /// <param name="filters">新しいフィルターチェーン。</param>
+    public void SetFilters(IAudioFilter[] filters)
+    {
+        lock (_lock)
+        {
+            _filters = filters;
+        }
+    }
+
+    /// <summary>
     /// 1バッファ分の interleaved float PCM（ステレオ固定）を生成します。<see cref="AudioRenderCallback"/> として使用します。
     /// </summary>
     /// <param name="buffer">書き込み先のバッファ。要素数は「フレーム数 × 2」である必要があります。</param>
@@ -260,12 +277,21 @@ internal sealed class AudioRenderPipeline
         Action? stopPlaying = null;
         Action? finishPlaying = null;
         var loopedCount = 0;
+        IAudioFilter[] filters;
+        int sampleRate;
 
         lock (_lock)
         {
             ApplyPendingCommands(ref startPlaying, ref stopPlaying);
             RenderLocked(buffer, ref stopPlaying, ref finishPlaying, ref loopedCount);
+            filters = _filters;
+            sampleRate = _currentSampleRate;
         }
+
+        // フィルターは再生状態を問わず毎回通す（停止中・無音中でもディレイ残響などを鳴らし続けるため）。
+        // Process はロック外で呼び出すことで、フィルター実装から Player API を触ってもデッドロックしない
+        foreach (var filter in filters)
+            filter.Process(buffer, 2, sampleRate);
 
         startPlaying?.Invoke();
         stopPlaying?.Invoke();
@@ -284,6 +310,7 @@ internal sealed class AudioRenderPipeline
                     if (_source is not null)
                         stopPlaying = () => StopPlaying?.Invoke();
                     _source = command.Source;
+                    _currentSampleRate = command.Source?.SampleRate ?? _currentSampleRate;
                     _loopStartFrames = command.LoopStartFrames;
                     _cursorFrames = ClampToSourceLength(command.SeekFrames);
                     _fadeSeconds = 0;
@@ -420,7 +447,7 @@ internal sealed class AudioRenderPipeline
         ref Action? stopPlaying
     )
     {
-        var sampleRate = _source?.SampleRate ?? DefaultSampleRate;
+        var sampleRate = _currentSampleRate;
         var fadeSecondsPerFrame = sampleRate > 0 ? 1f / sampleRate : 0f;
 
         var theta = (_pan + 1f) * MathF.PI / 4f;

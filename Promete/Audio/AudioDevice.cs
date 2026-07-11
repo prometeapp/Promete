@@ -12,7 +12,7 @@ namespace Promete.Audio;
 /// </summary>
 public sealed class AudioDevice : IDisposable
 {
-    private static readonly Lock Lock = new();
+    private static readonly Lock _lock = new();
     private static AudioDevice? _shared;
     private static int _refCount;
 
@@ -57,7 +57,7 @@ public sealed class AudioDevice : IDisposable
     /// <returns>共有される <see cref="AudioDevice"/> インスタンス。</returns>
     public static AudioDevice Acquire()
     {
-        lock (Lock)
+        lock (_lock)
         {
             _shared ??= new AudioDevice();
             _refCount++;
@@ -70,7 +70,7 @@ public sealed class AudioDevice : IDisposable
     /// </summary>
     public unsafe void Dispose()
     {
-        lock (Lock)
+        lock (_lock)
         {
             if (_isDisposed)
                 return;
