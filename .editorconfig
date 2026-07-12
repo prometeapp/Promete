@@ -58,6 +58,7 @@ dotnet_diagnostic.SA1400.severity = error   # アクセス修飾子の省略禁�
 dotnet_diagnostic.SA1201.severity = error   # メンバー順序の強制
 
 ## 不要・プロジェクト方針と合わないルール → none
+dotnet_diagnostic.SA1003.severity = none
 dotnet_diagnostic.SA1009.severity = none
 dotnet_diagnostic.SA1101.severity = none    # this. プレフィックス不要
 dotnet_diagnostic.SA1111.severity = none

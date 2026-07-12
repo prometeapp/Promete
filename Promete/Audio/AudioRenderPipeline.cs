@@ -15,6 +15,8 @@ internal sealed class AudioRenderPipeline
     private const int DefaultSampleRate = 44100;
 
     private readonly Lock _lock = new();
+    private readonly System.Collections.Generic.Queue<PendingCommand> _pendingCommands = new();
+    private readonly System.Collections.Generic.Queue<RenderSegment> _renderHistory = new();
 
     private AudioRenderPipelineState _state = AudioRenderPipelineState.Stopped;
     private IAudioSource? _source;
@@ -26,10 +28,10 @@ internal sealed class AudioRenderPipeline
     private float _fadeElapsedSeconds;
     private float _fadeStartGainScale = 1f;
 
-    private readonly System.Collections.Generic.Queue<PendingCommand> _pendingCommands = new();
     private float[] _sourceBuffer = [];
     private IAudioFilter[] _filters = [];
     private int _currentSampleRate = DefaultSampleRate;
+    private long _totalRenderedFrames;
 
     /// <summary>
     /// 再生が開始されたときに、レンダースレッドから発生します。
@@ -283,7 +285,9 @@ internal sealed class AudioRenderPipeline
         lock (_lock)
         {
             ApplyPendingCommands(ref startPlaying, ref stopPlaying);
+            var cursorStart = _cursorFrames;
             RenderLocked(buffer, ref stopPlaying, ref finishPlaying, ref loopedCount);
+            RecordRenderSegmentLocked(buffer.Length / 2, cursorStart);
             filters = _filters;
             sampleRate = _currentSampleRate;
         }
@@ -298,6 +302,62 @@ internal sealed class AudioRenderPipeline
         finishPlaying?.Invoke();
         for (var i = 0; i < loopedCount; i++)
             Looped?.Invoke();
+    }
+
+    /// <summary>
+    /// 出力段の未再生フレーム数をもとに、実際に聴こえている再生位置（フレーム単位）を求めます。
+    /// レンダリング履歴（総レンダーフレーム数とカーソル位置の対応）を参照するため、
+    /// 一時停止中の無音バッファなど、ソースを消費していない区間はカウントされません。
+    /// </summary>
+    /// <param name="pendingFrames">出力段にキュー済みでまだ再生されていないフレーム数。</param>
+    public long GetHeardPositionInFrames(long pendingFrames)
+    {
+        lock (_lock)
+        {
+            var playedFrames = _totalRenderedFrames - Math.Max(0, pendingFrames);
+
+            foreach (var segment in _renderHistory)
+            {
+                if (playedFrames >= segment.RenderedEnd)
+                    continue;
+
+                // 履歴より古い位置（保持数を超えて破棄済み）は、残っている最古のセグメント開始位置に丸める
+                if (playedFrames < segment.RenderedStart)
+                    return segment.CursorStart;
+
+                // ソースを等速消費したセグメントは線形補間できる。
+                // ループ・一時停止・終端などカーソルが不連続なセグメントは終端値で近似する（誤差は最大1バッファ）
+                var isLinear =
+                    segment.CursorEnd - segment.CursorStart
+                    == segment.RenderedEnd - segment.RenderedStart;
+                return isLinear
+                    ? segment.CursorStart + (playedFrames - segment.RenderedStart)
+                    : segment.CursorEnd;
+            }
+
+            // 未再生キューがない（すべて再生済み）場合は、レンダリング済み位置がそのまま聴取位置
+            return _cursorFrames;
+        }
+    }
+
+    /// <summary>
+    /// 1バッファ分のレンダリング結果を履歴に記録します。履歴は出力段のキュー深度を十分カバーする数だけ保持します。
+    /// </summary>
+    private void RecordRenderSegmentLocked(int frameCount, long cursorStart)
+    {
+        _renderHistory.Enqueue(
+            new RenderSegment
+            {
+                RenderedStart = _totalRenderedFrames,
+                RenderedEnd = _totalRenderedFrames + frameCount,
+                CursorStart = cursorStart,
+                CursorEnd = _cursorFrames,
+            }
+        );
+        _totalRenderedFrames += frameCount;
+
+        while (_renderHistory.Count > 32)
+            _renderHistory.Dequeue();
     }
 
     private void ApplyPendingCommands(ref Action? startPlaying, ref Action? stopPlaying)
@@ -506,5 +566,17 @@ internal sealed class AudioRenderPipeline
         public long? LoopStartFrames;
         public float FadeSeconds;
         public long SeekFrames;
+    }
+
+    /// <summary>
+    /// 1バッファ分のレンダリング区間と、その間のソースカーソルの対応を表します。
+    /// 総レンダーフレーム数（無音含む）から聴取位置を逆引きするために使用します。
+    /// </summary>
+    private struct RenderSegment
+    {
+        public long RenderedStart;
+        public long RenderedEnd;
+        public long CursorStart;
+        public long CursorEnd;
     }
 }

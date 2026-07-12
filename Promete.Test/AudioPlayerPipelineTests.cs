@@ -391,7 +391,7 @@ public class AudioPlayerPipelineTests
         var output = new CaptureAudioOutput();
         using var audioPlayer = new AudioPlayer(output);
         using var source = new RampAudioSource(frames: 100_000);
-        var events = new System.Collections.Generic.List<string>();
+        var events = new List<string>();
         audioPlayer.StartPlaying += (_, _) => events.Add("Start");
         audioPlayer.StopPlaying += (_, _) => events.Add("Stop");
         audioPlayer.FinishPlaying += (_, _) => events.Add("Finish");
@@ -410,7 +410,7 @@ public class AudioPlayerPipelineTests
         var output = new CaptureAudioOutput();
         using var audioPlayer = new AudioPlayer(output);
         using var source = new RampAudioSource(frames: 5);
-        var events = new System.Collections.Generic.List<string>();
+        var events = new List<string>();
         audioPlayer.StartPlaying += (_, _) => events.Add("Start");
         audioPlayer.StopPlaying += (_, _) => events.Add("Stop");
         audioPlayer.FinishPlaying += (_, _) => events.Add("Finish");
@@ -419,6 +419,123 @@ public class AudioPlayerPipelineTests
         output.RenderNext();
 
         events.Should().Equal("Start", "Finish");
+    }
+
+    [Fact]
+    public void TimeInSamples_SubtractsPendingFramesFromRenderedPosition()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        using var source = new RampAudioSource(frames: 100_000);
+
+        audioPlayer.Play(source);
+        output.RenderNext(2);
+
+        // レンダリング済み 2048 フレームのうち 1024 フレームが未再生キューにある想定
+        output.PendingFrames = 1024;
+
+        audioPlayer.TimeInSamples.Should().Be(2048 - 1024);
+    }
+
+    [Fact]
+    public void TimeInSamples_ClampsToZero_WhenPendingExceedsRendered()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        using var source = new RampAudioSource(frames: 100_000);
+
+        audioPlayer.Play(source);
+        output.RenderNext();
+
+        // 再生開始直後: レンダリング済みより未再生キューの方が多い＝まだ何も聴こえていない
+        output.PendingFrames = 4096;
+
+        audioPlayer.TimeInSamples.Should().Be(0);
+    }
+
+    [Fact]
+    public void TimeInSamples_FreezesDuringPause_EvenWithPendingFrames()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        using var source = new RampAudioSource(frames: 100_000);
+
+        audioPlayer.Play(source);
+        output.RenderNext(4);
+        audioPlayer.Pause();
+        output.RenderNext(4);
+
+        // 一時停止後の未再生キューは無音なので、キュー残量が変動しても聴取位置は一時停止位置で凍結する
+        output.PendingFrames = 2048;
+        audioPlayer.TimeInSamples.Should().Be(4096);
+
+        output.PendingFrames = 3072;
+        audioPlayer.TimeInSamples.Should().Be(4096);
+    }
+
+    [Fact]
+    public void Seek_WhilePlaying_FlushesOutput()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        using var source = new RampAudioSource(frames: 100_000);
+
+        audioPlayer.Play(source);
+        output.RenderNext();
+
+        audioPlayer.TimeInSamples = 50_000;
+
+        // Play 時の 1 回に加え、シークでもう 1 回フラッシュされる
+        output.FlushCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void Play_FlushesOutput()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        using var source = new RampAudioSource(frames: 100_000);
+
+        audioPlayer.Play(source);
+
+        output.FlushCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void BufferSize_Setter_RestartsOutput()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        output.StartCount.Should().Be(1);
+
+        audioPlayer.BufferSize = 256;
+
+        output.StartCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void BufferCount_Setter_RestartsOutput_AndClampsToMinimum()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        output.StartCount.Should().Be(1);
+
+        audioPlayer.BufferCount = 1;
+
+        audioPlayer.BufferCount.Should().Be(2);
+        output.StartCount.Should().Be(2);
+    }
+
+    [Fact]
+    public void Latency_ReflectsPendingFrames()
+    {
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+
+        output.PendingFrames = 4410;
+
+        // 4410 フレーム @44.1kHz = 100ms
+        audioPlayer.Latency.Should().BeApproximately(100f, 0.001f);
     }
 
     // Private helpers / mocks

@@ -30,6 +30,22 @@ public class CaptureAudioOutput : IAudioOutput
     public float Pitch { get; set; } = 1;
 
     /// <summary>
+    /// キュー済み未再生フレーム数として報告する値を取得または設定します。
+    /// テストから任意の値を設定することで、実デバイスの先行キューをシミュレートできます。デフォルトは 0 です。
+    /// </summary>
+    public long PendingFrames { get; set; }
+
+    /// <summary>
+    /// <see cref="Flush"/> が呼び出された回数を取得します。
+    /// </summary>
+    public int FlushCount { get; private set; }
+
+    /// <summary>
+    /// <see cref="Start"/> が呼び出された回数を取得します。
+    /// </summary>
+    public int StartCount { get; private set; }
+
+    /// <summary>
     /// 出力を開始します。実際には音声を出力せず、以後の <see cref="RenderNext"/> 呼び出しに備えて
     /// コールバックとバッファ形状を保持します。
     /// </summary>
@@ -38,18 +54,21 @@ public class CaptureAudioOutput : IAudioOutput
     /// <param name="sampleRate">出力するサンプリング周波数。</param>
     /// <param name="bufferSizeInFrames">1回のコールバックで生成するフレーム数。</param>
     /// <param name="getSampleRate">現在のサンプリング周波数を取得するコールバック。この実装では使用しません。</param>
+    /// <param name="bufferCount">先行キューするバッファ数。この実装では使用しません。</param>
     public void Start(
         AudioRenderCallback render,
         int channels,
         int sampleRate,
         int bufferSizeInFrames,
-        Func<int>? getSampleRate = null
+        Func<int>? getSampleRate = null,
+        int bufferCount = 3
     )
     {
         _render = render;
         _channels = channels;
         _bufferSizeInFrames = bufferSizeInFrames;
         _isStarted = true;
+        StartCount++;
     }
 
     /// <summary>
@@ -59,6 +78,14 @@ public class CaptureAudioOutput : IAudioOutput
     {
         _isStarted = false;
         _render = null;
+    }
+
+    /// <summary>
+    /// 未再生バッファの破棄要求を記録します。実際のバッファ操作は行いません。
+    /// </summary>
+    public void Flush()
+    {
+        FlushCount++;
     }
 
     /// <summary>

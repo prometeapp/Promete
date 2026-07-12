@@ -17,18 +17,22 @@ public sealed class OpenALAudioOutput : IAudioOutput
     /// </summary>
     private const int AlFormatStereoFloat32 = 0x10011;
 
-    private const int BufferCount = 3;
+    private const int MinBufferCount = 2;
 
     private readonly AudioDevice _device;
     private readonly AL _al;
     private readonly object _threadGate = new();
+    private readonly AutoResetEvent _wakeEvent = new(false);
 
     private Thread? _thread;
     private volatile bool _stopRequested;
+    private volatile bool _flushRequested;
+    private volatile uint _sourceHandle;
     private AudioRenderCallback? _render;
     private Func<int>? _getSampleRate;
     private int _channels;
     private int _bufferSizeInFrames;
+    private int _bufferCount = 3;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenALAudioOutput"/> class.
@@ -47,19 +51,39 @@ public sealed class OpenALAudioOutput : IAudioOutput
     public float Pitch { get; set; } = 1;
 
     /// <summary>
-    /// 出力を開始します。専用の背景スレッドを起動し、トリプルバッファリングで再生を継続します。
+    /// キュー済みでまだ再生されていないフレーム数を取得します。
+    /// AL ソースのキュー済みバッファ数と再生オフセットから算出します。出力停止中は 0 を返します。
+    /// </summary>
+    public long PendingFrames
+    {
+        get
+        {
+            var handle = _sourceHandle;
+            if (handle == 0)
+                return 0;
+
+            _al.GetSourceProperty(handle, GetSourceInteger.BuffersQueued, out var queuedCount);
+            _al.GetSourceProperty(handle, GetSourceInteger.SampleOffset, out var sampleOffset);
+            return Math.Max(0, ((long)queuedCount * _bufferSizeInFrames) - sampleOffset);
+        }
+    }
+
+    /// <summary>
+    /// 出力を開始します。専用の背景スレッドを起動し、マルチバッファリングで再生を継続します。
     /// </summary>
     /// <param name="render">1バッファ分の interleaved float PCM を生成するコールバック。</param>
     /// <param name="channels">出力するチャンネル数。</param>
     /// <param name="sampleRate">出力を開始する時点のサンプリング周波数。</param>
     /// <param name="bufferSizeInFrames">1回のコールバックで生成するフレーム数。</param>
     /// <param name="getSampleRate">現在要求されているサンプリング周波数を取得するコールバック。</param>
+    /// <param name="bufferCount">先行キューするバッファ数。最小 2 にクランプされます。</param>
     public void Start(
         AudioRenderCallback render,
         int channels,
         int sampleRate,
         int bufferSizeInFrames,
-        Func<int>? getSampleRate = null
+        Func<int>? getSampleRate = null,
+        int bufferCount = 3
     )
     {
         lock (_threadGate)
@@ -69,8 +93,10 @@ public sealed class OpenALAudioOutput : IAudioOutput
             _render = render;
             _channels = channels;
             _bufferSizeInFrames = bufferSizeInFrames;
+            _bufferCount = Math.Max(MinBufferCount, bufferCount);
             _getSampleRate = getSampleRate;
             _stopRequested = false;
+            _flushRequested = false;
 
             _thread = new Thread(() => RunLoop(sampleRate))
             {
@@ -93,11 +119,35 @@ public sealed class OpenALAudioOutput : IAudioOutput
     }
 
     /// <summary>
+    /// キュー済みの未再生バッファを破棄し、レンダースレッドを即時起床させて再充填・再生します。
+    /// 再生開始コマンド直後に呼ぶことで、先行キューされた無音の排出待ちを解消します。
+    /// </summary>
+    public void Flush()
+    {
+        _flushRequested = true;
+        _wakeEvent.Set();
+    }
+
+    /// <summary>
     /// リソースを解放します。<see cref="Stop"/> と同様に、背景スレッドの終了を待機してから AL リソースを破棄します。
     /// </summary>
     public void Dispose()
     {
         Stop();
+        _wakeEvent.Dispose();
+    }
+
+    private static ALBuffer FindBuffer(ALBuffer[] buffers, uint handle)
+    {
+        foreach (var buf in buffers)
+        {
+            if (buf.Handle == handle)
+                return buf;
+        }
+
+        throw new InvalidOperationException(
+            "Unqueued buffer handle was not found among the tracked buffers."
+        );
     }
 
     private void StopThread()
@@ -106,6 +156,7 @@ public sealed class OpenALAudioOutput : IAudioOutput
             return;
 
         _stopRequested = true;
+        _wakeEvent.Set();
         _thread.Join();
         _thread = null;
         _render = null;
@@ -115,8 +166,8 @@ public sealed class OpenALAudioOutput : IAudioOutput
     private void RunLoop(int initialSampleRate)
     {
         using var alSource = new ALSource(_al);
-        var buffers = new ALBuffer[BufferCount];
-        for (var i = 0; i < BufferCount; i++)
+        var buffers = new ALBuffer[_bufferCount];
+        for (var i = 0; i < _bufferCount; i++)
             buffers[i] = new ALBuffer(_al);
 
         try
@@ -132,11 +183,27 @@ public sealed class OpenALAudioOutput : IAudioOutput
 
             QueueAll(alSource, buffers);
             _al.SourcePlay(alSource.Handle);
+            _sourceHandle = alSource.Handle;
 
             var waitMs = CalculateWaitMilliseconds(sampleRate);
 
             while (!_stopRequested)
             {
+                if (_flushRequested)
+                {
+                    _flushRequested = false;
+
+                    _al.SourceStop(alSource.Handle);
+                    UnqueueAll(alSource);
+
+                    foreach (var buf in buffers)
+                        FillAndBuffer(alSource, buf, sampleRate, floatBuffer, pcmBuffer);
+
+                    QueueAll(alSource, buffers);
+                    _al.SourcePlay(alSource.Handle);
+                    continue;
+                }
+
                 var currentSampleRate = _getSampleRate?.Invoke() ?? sampleRate;
                 if (currentSampleRate != sampleRate && currentSampleRate > 0)
                 {
@@ -172,7 +239,7 @@ public sealed class OpenALAudioOutput : IAudioOutput
                 if (state != (int)SourceState.Playing)
                     _al.SourcePlay(alSource.Handle);
 
-                Thread.Sleep(waitMs);
+                _wakeEvent.WaitOne(waitMs);
             }
 
             _al.SourceStop(alSource.Handle);
@@ -180,6 +247,7 @@ public sealed class OpenALAudioOutput : IAudioOutput
         }
         finally
         {
+            _sourceHandle = 0;
             foreach (var buf in buffers)
                 buf.Dispose();
         }
@@ -241,19 +309,6 @@ public sealed class OpenALAudioOutput : IAudioOutput
         var handles = new uint[1];
         _al.SourceUnqueueBuffers(alSource.Handle, handles);
         return handles[0];
-    }
-
-    private static ALBuffer FindBuffer(ALBuffer[] buffers, uint handle)
-    {
-        foreach (var buf in buffers)
-        {
-            if (buf.Handle == handle)
-                return buf;
-        }
-
-        throw new InvalidOperationException(
-            "Unqueued buffer handle was not found among the tracked buffers."
-        );
     }
 
     private void UnqueueAll(ALSource alSource)

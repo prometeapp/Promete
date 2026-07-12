@@ -25,6 +25,8 @@ public class AudioPlayer : IDisposable
     private long? _requestedStartFrames;
     private bool _isOutputStarted;
     private bool _isDisposed;
+    private int _bufferSize = 1024;
+    private int _bufferCount = 3;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AudioPlayer"/> class.
@@ -141,9 +143,15 @@ public class AudioPlayer : IDisposable
     /// </summary>
     public int TimeInSamples
     {
+        // 再生中のとき、出力段の未再生キュー分を差し引いた「実際に聴こえている位置」を返す
         get =>
             IsPlaying
-                ? (int)Math.Min(_pipeline.PositionInFrames, int.MaxValue)
+                ? (int)
+                    Math.Clamp(
+                        _pipeline.GetHeardPositionInFrames(_output.PendingFrames),
+                        0,
+                        int.MaxValue
+                    )
                 : (int)Math.Min(_requestedStartFrames ?? 0, int.MaxValue);
         set
         {
@@ -157,6 +165,9 @@ public class AudioPlayer : IDisposable
 
             var max = LengthInSamples > 0 ? LengthInSamples - 1 : clamped;
             _pipeline.Seek(Math.Clamp(clamped, 0, Math.Max(0, max)));
+
+            // シーク前の音声が未再生キューに残ったまま鳴り続けないよう、即座に破棄して反映する
+            _output.Flush();
         }
     }
 
@@ -182,10 +193,46 @@ public class AudioPlayer : IDisposable
 
     /// <summary>
     ///     オーディオバッファのサイズを取得または設定します。単位は1バッファあたりのフレーム数です。
-    ///     デフォルトは 1024 フレーム（44.1kHz でバッファあたり約 23ms、トリプルバッファで実レイテンシ約 70ms）です。
-    ///     出力開始後に変更しても、次回の出力開始まで反映されません。
+    ///     デフォルトは 1024 フレーム（44.1kHz でバッファあたり約 23ms）です。
+    ///     小さくするとレイテンシが減りますが、レンダースレッドの動作頻度が上がり CPU 負荷とアンダーラン
+    ///     （音途切れ）のリスクが増えます。設定すると出力が再起動され、即座に反映されます。
     /// </summary>
-    public int BufferSize { get; set; } = 1024;
+    public int BufferSize
+    {
+        get => _bufferSize;
+        set
+        {
+            if (_bufferSize == value)
+                return;
+            _bufferSize = Math.Max(1, value);
+            RestartOutputIfStarted();
+        }
+    }
+
+    /// <summary>
+    ///     先行キューするオーディオバッファの数を取得または設定します。デフォルトは 3、最小は 2 です。
+    ///     出力レイテンシはおよそ「<see cref="BufferSize"/> × <see cref="BufferCount"/> ÷ サンプリング周波数」になります。
+    ///     小さくするとレイテンシが減りますが、アンダーラン（音途切れ）のリスクが増えます。
+    ///     設定すると出力が再起動され、即座に反映されます。
+    /// </summary>
+    public int BufferCount
+    {
+        get => _bufferCount;
+        set
+        {
+            if (_bufferCount == value)
+                return;
+            _bufferCount = Math.Max(2, value);
+            RestartOutputIfStarted();
+        }
+    }
+
+    /// <summary>
+    ///     出力段にキューされた未再生バッファによる出力レイテンシをミリ秒単位で取得します。
+    ///     <see cref="Time"/> は既にこの値を考慮した「実際に聴こえている位置」を返すため、
+    ///     通常は補正不要ですが、リズムゲームのキャリブレーション等の指標に使用できます。
+    /// </summary>
+    public float Latency => _output.PendingFrames * 1000f / Math.Max(1, _pipeline.SampleRate);
 
     /// <summary>
     ///     この <see cref="AudioPlayer"/> の出力段に適用する DSP フィルターのチェーンを取得します。
@@ -210,6 +257,9 @@ public class AudioPlayer : IDisposable
         _currentSource = source;
         _playCompletion = new TaskCompletionSource();
         _pipeline.Play(source, loop, startFrames);
+
+        // 先行キュー済みの無音バッファを破棄し、再生開始の遅延を最小化する
+        _output.Flush();
     }
 
     /// <summary>
@@ -435,9 +485,19 @@ public class AudioPlayer : IDisposable
             _pipeline.Render,
             2,
             _pipeline.SampleRate,
-            BufferSize,
-            () => _pipeline.SampleRate
+            _bufferSize,
+            () => _pipeline.SampleRate,
+            _bufferCount
         );
         _isOutputStarted = true;
+    }
+
+    private void RestartOutputIfStarted()
+    {
+        if (!_isOutputStarted || _isDisposed)
+            return;
+
+        _output.Stop();
+        StartOutput();
     }
 }
