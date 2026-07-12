@@ -54,8 +54,7 @@ public class OpenGLDesktopGameView : IGameView
             field = value;
             UpdateWindowSize();
         }
-    } 
-= (640, 480);
+    } = (640, 480);
 
     public VectorInt ActualSize =>
         new VectorInt(NativeWindow.FramebufferSize.X, NativeWindow.FramebufferSize.Y) / Scale;
@@ -73,8 +72,7 @@ public class OpenGLDesktopGameView : IGameView
             field = value;
             UpdateWindowSize();
         }
-    } 
-= 1;
+    } = 1;
 
     public int X
     {

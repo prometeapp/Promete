@@ -12,7 +12,11 @@ using SilkKey = Silk.NET.Input.Key;
 namespace Promete.Example.examples.debug;
 
 [Demo("/debug/keyboard-benchmark", "BA-001: Keyboard.OnUpdate ベンチマーク")]
-public class KeyboardBenchmarkScene(ConsoleLayer console, InputProvider inputProvider, Keyboard keyboard) : Scene
+public class KeyboardBenchmarkScene(
+    ConsoleLayer console,
+    InputProvider inputProvider,
+    Keyboard keyboard
+) : Scene
 {
     private const int Iterations = 200;
     private const int HistorySize = 60;
@@ -69,11 +73,13 @@ public class KeyboardBenchmarkScene(ConsoleLayer console, InputProvider inputPro
         var foreachAvg = _foreachHistory.Average();
 
         console.Clear();
-        console.Print($"BA-001: Keyboard.OnUpdate ベンチマーク  ({Iterations} iter/frame, avg {HistorySize}f)");
+        console.Print(
+            $"BA-001: Keyboard.OnUpdate ベンチマーク  ({Iterations} iter/frame, avg {HistorySize}f)"
+        );
         console.Print($"対象キー数: {_allKeys.Length}");
         console.Print("");
-        console.Print($"  Parallel.ForEach : {parallelUs,8:F2} us  (avg: {parallelAvg:F2} us)");
-        console.Print($"  foreach          : {foreachUs,8:F2} us  (avg: {foreachAvg:F2} us)");
+        console.Print($"  Parallel.ForEach : {parallelUs, 8:F2} us  (avg: {parallelAvg:F2} us)");
+        console.Print($"  foreach          : {foreachUs, 8:F2} us  (avg: {foreachAvg:F2} us)");
         console.Print("");
         console.Print($"  Parallel / foreach 比率: {parallelAvg / foreachAvg:F2}x");
         console.Print("");

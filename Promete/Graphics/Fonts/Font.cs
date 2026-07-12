@@ -355,35 +355,35 @@ public class Font : IFont
         switch (decoration.TagName.ToLowerInvariant())
         {
             case "b":
-                {
-                    run.Font = new SixLabors.Fonts.Font(_internalFont, SixLabors.Fonts.FontStyle.Bold);
-                    break;
-                }
+            {
+                run.Font = new SixLabors.Fonts.Font(_internalFont, SixLabors.Fonts.FontStyle.Bold);
+                break;
+            }
 
             case "i":
-                {
-                    run.Font = new SixLabors.Fonts.Font(
-                        _internalFont,
-                        SixLabors.Fonts.FontStyle.Italic
-                    );
-                    break;
-                }
+            {
+                run.Font = new SixLabors.Fonts.Font(
+                    _internalFont,
+                    SixLabors.Fonts.FontStyle.Italic
+                );
+                break;
+            }
 
             case "color":
-                {
-                    if (string.IsNullOrEmpty(decoration.Attribute))
-                        break;
-                    var color = FromHtml(decoration.Attribute);
-                    run.Brush = new SolidBrush(color.ToSixLabors());
+            {
+                if (string.IsNullOrEmpty(decoration.Attribute))
                     break;
-                }
+                var color = FromHtml(decoration.Attribute);
+                run.Brush = new SolidBrush(color.ToSixLabors());
+                break;
+            }
 
             case "size":
-                {
-                    if (int.TryParse(decoration.Attribute, out var size))
-                        run.Font = new SixLabors.Fonts.Font(_internalFont, size);
-                    break;
-                }
+            {
+                if (int.TryParse(decoration.Attribute, out var size))
+                    run.Font = new SixLabors.Fonts.Font(_internalFont, size);
+                break;
+            }
 
             default:
                 return null;

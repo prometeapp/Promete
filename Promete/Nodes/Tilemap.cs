@@ -104,25 +104,25 @@ public class Tilemap(
         var (tx, ty) = (VectorInt)tl;
 
         for (var y = ty; y < ty + maxTilesY; y++)
-            for (var x = tx; x < tx + maxTilesX; x++)
-            {
-                var offset = (x, y) * TileSize;
-                var tile = this[x, y];
-                if (tile == null)
-                    continue;
+        for (var x = tx; x < tx + maxTilesX; x++)
+        {
+            var offset = (x, y) * TileSize;
+            var tile = this[x, y];
+            if (tile == null)
+                continue;
 
-                queue.Enqueue(
-                    new DrawTextureCommand
-                    {
-                        Texture = tile.GetTexture(this, (x, y)),
-                        ModelMatrix = ModelMatrix,
-                        TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
-                        Width = TileSize.X,
-                        Height = TileSize.Y,
-                        Pivot = offset,
-                    }
-                );
-            }
+            queue.Enqueue(
+                new DrawTextureCommand
+                {
+                    Texture = tile.GetTexture(this, (x, y)),
+                    ModelMatrix = ModelMatrix,
+                    TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
+                    Width = TileSize.X,
+                    Height = TileSize.Y,
+                    Pivot = offset,
+                }
+            );
+        }
     }
 
     private void FullCollect(RenderCommandQueue queue)
@@ -200,10 +200,14 @@ public class Tilemap(
         else
         {
             _tiles[point] = (tile, color ?? DefaultColor);
-            if (point.X < _minTileX) _minTileX = point.X;
-            if (point.X > _maxTileX) _maxTileX = point.X;
-            if (point.Y < _minTileY) _minTileY = point.Y;
-            if (point.Y > _maxTileY) _maxTileY = point.Y;
+            if (point.X < _minTileX)
+                _minTileX = point.X;
+            if (point.X > _maxTileX)
+                _maxTileX = point.X;
+            if (point.Y < _minTileY)
+                _minTileY = point.Y;
+            if (point.Y > _maxTileY)
+                _maxTileY = point.Y;
         }
     }
 
@@ -279,8 +283,8 @@ public class Tilemap(
     public void Fill(int x1, int y1, int width, int height, ITile tile)
     {
         for (var y = y1; y < y1 + height; y++)
-            for (var x = x1; x < x1 + width; x++)
-                this[x, y] = tile;
+        for (var x = x1; x < x1 + width; x++)
+            this[x, y] = tile;
     }
 
     /// <summary>

@@ -64,12 +64,12 @@ public class DemoFileSystem
             switch (el)
             {
                 case null:
-                    {
-                        var folder = new Folder(name, current);
-                        current.Files.Add(folder);
-                        current = folder;
-                        break;
-                    }
+                {
+                    var folder = new Folder(name, current);
+                    current.Files.Add(folder);
+                    current = folder;
+                    break;
+                }
 
                 case Folder f:
                     current = f;

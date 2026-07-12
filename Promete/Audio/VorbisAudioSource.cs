@@ -60,7 +60,7 @@ public class VorbisAudioSource : IAudioSource, IDisposable
                 }
             }
 
-        exit:
+            exit:
             reader.Dispose();
             IsLoadingFinished = true;
         });

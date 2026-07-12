@@ -22,10 +22,10 @@ public class GamepadExampleScene(ConsoleLayer console, Keyboard keyboard, Gamepa
         console.Print($"Left Stick: {CurrentPad.LeftStick}");
         console.Print($"Right Stick: {CurrentPad.RightStick}");
 
-        console.Print($"\n{"Button Type",-12} Pressed Down  Up");
+        console.Print($"\n{"Button Type", -12} Pressed Down  Up");
         foreach (var btn in CurrentPad.AllButtons)
             console.Print(
-                $"{btn.Type.ToString(),-12} {btn.IsPressed,-7} {btn.IsButtonDown,-5} {btn.IsButtonUp,-5}"
+                $"{btn.Type.ToString(), -12} {btn.IsPressed, -7} {btn.IsButtonDown, -5} {btn.IsButtonUp, -5}"
             );
 
         if (keyboard.Escape.IsKeyDown)
