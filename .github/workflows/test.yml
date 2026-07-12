@@ -27,13 +27,13 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore Promete.Test/Promete.Test.csproj
 
     - name: Build
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build Promete.Test/Promete.Test.csproj --no-restore --configuration Release
 
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release
+      run: dotnet test Promete.Test/Promete.Test.csproj --no-build --verbosity normal --configuration Release

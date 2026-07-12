@@ -27,7 +27,7 @@ jobs:
         run: dotnet csharpier --check .
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore Promete.CSharp.slnf
 
       - name: Lint (StyleCop analyzers)
-        run: dotnet build --no-restore
+        run: dotnet build Promete.CSharp.slnf --no-restore
