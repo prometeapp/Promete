@@ -158,4 +158,15 @@ public class VectorIntTests
         n.X.Should().Be(1);
         n.Y.Should().Be(2);
     }
+
+    [Fact]
+    public void InShouldNotBeTruthyByZeroSizeRect()
+    {
+        var rect = new RectInt(5, 5, 0, 0);
+        var vec1 = new VectorInt(5, 5);
+        var vec2 = new VectorInt(4, 4);
+
+        vec1.In(rect).Should().BeFalse();
+        vec2.In(rect).Should().BeFalse();
+    }
 }

@@ -128,7 +128,14 @@ public struct RectInt
     /// <returns>重なっている場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
     public bool Intersect(RectInt rect)
     {
-        return Left < rect.Right && Right > rect.Left && Top < rect.Bottom && Bottom > rect.Top;
+        return Width > 0
+            && Height > 0
+            && rect.Width > 0
+            && rect.Height > 0
+            && Left < rect.Left + rect.Width
+            && rect.Left < Left + Width
+            && Top < rect.Top + rect.Height
+            && rect.Top < Top + Height;
     }
 
     /// <summary>

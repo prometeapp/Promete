@@ -257,6 +257,8 @@ public struct Vector(float x, float y) : IEquatable<Vector>
     /// <returns></returns>
     public bool In(Rect rect)
     {
+        if (rect.Size == Zero)
+            return false;
         var topLeft = rect.Location;
         var bottomRight = rect.Location + rect.Size - One;
         return X >= topLeft.X && X <= bottomRight.X && Y >= topLeft.Y && Y <= bottomRight.Y;
