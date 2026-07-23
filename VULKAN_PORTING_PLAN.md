@@ -92,7 +92,8 @@ OpenGL 依存コードは以下の 16 ファイル・約 2,600 行に限定さ�
 ### Phase 3: ランナー移植 🚧 主要部分実装済み
 
 実装済み: `VulkanDrawTextureBatchedCommandRunner` (インスタンシング + per-frame アリーナ + カスタムマテリアル対応)、`VulkanDrawPrimitiveCommandRunner`、`VulkanBeginTrim/EndTrimCommandRunner`、`VulkanDrawPieTextureCommandRunner` (push constant で MVP/tint/角度)、`VulkanScreenBlitter` (ピンポンポストプロセス + 最終ブリット)。スクリーンショット (`TakeScreenshot`/`SaveScreenshotAsync`) はポストプロセス適用後の最終ブリット元を読み出す。Promete.Experimental.Vulkan によるピクセル単位の自動検証 13 項目（スプライト/プリミティブ/ティント/FrameBuffer/PieSprite/カスタムマテリアル/色反転ポストプロセス）がパスしている。
-未実装: マスク系 (stencil/alpha — オフスクリーンパスへのステンシルアタッチメント追加が必要)、PieSprite のカスタムマテリアル、Material の Texture2D Uniform、線幅 >1 の線 (wideLines)。
+マスク系も実装済み: オフスクリーンパス/RT にステンシルアタッチメント (D24S8/D32S8 をフォーマット照会で選択) を追加し、ステンシルマスクはパイプラインバリアント (None/WriteMask/TestEqual) + `vkCmdClearAttachments` で実現。アルファマスクは `VulkanMaskedContainerHelper` によるサブレンダリング + 2テクスチャ合成 (set0=content, set1=mask として既存のテクスチャ毎ディスクリプタセットを流用)。
+未実装 (小物): PieSprite のカスタムマテリアル、Material の Texture2D Uniform、線幅 >1 の線 (wideLines)、ImGui。
 
 元の計画（規模目安: 2,000 行）:
 

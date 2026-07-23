@@ -36,6 +36,7 @@ public class VulkanDesktopBackend : BackendBase
     private VulkanScreenBlitter _screenBlitter = null!;
     private VulkanDrawTextureBatchedCommandRunner? _textureRunner;
     private VulkanDrawPieTextureCommandRunner? _pieRunner;
+    private VulkanMaskedContainerHelper? _maskHelper;
 
     public override void OnInitialize(PrometeApp app, WindowOptions opts)
     {
@@ -128,14 +129,25 @@ public class VulkanDesktopBackend : BackendBase
             _materialSystem
         );
         _pieRunner = new VulkanDrawPieTextureCommandRunner(_context, _resources, _pipelines);
-        _app.GetPlugin<RenderCommandQueue>()
-            .RegisterRunnerRange(
-                _textureRunner,
-                _pieRunner,
-                new VulkanDrawPrimitiveCommandRunner(_context, _pipelines),
-                new VulkanBeginTrimCommandRunner(_context),
-                new VulkanEndTrimCommandRunner(_context)
-            );
+        var queue = _app.GetPlugin<RenderCommandQueue>();
+        _maskHelper = new VulkanMaskedContainerHelper(
+            _app,
+            queue,
+            _context,
+            _resources,
+            _pipelines,
+            _renderTextureProvider
+        );
+        queue.RegisterRunnerRange(
+            _textureRunner,
+            _pieRunner,
+            new VulkanDrawPrimitiveCommandRunner(_context, _pipelines),
+            new VulkanBeginTrimCommandRunner(_context),
+            new VulkanEndTrimCommandRunner(_context),
+            new VulkanBeginStencilMaskCommandRunner(_context, _maskHelper),
+            new VulkanBeginAlphaMaskCommandRunner(_maskHelper),
+            new VulkanEndMaskCommandRunner(_context)
+        );
     }
 
     private void OnClosing()
@@ -145,6 +157,7 @@ public class VulkanDesktopBackend : BackendBase
         if (!_context.IsInitialized)
             return;
         _context.WaitIdle();
+        _maskHelper?.Dispose();
         _textureRunner?.Dispose();
         _pieRunner?.Dispose();
         _pipelines.Dispose();

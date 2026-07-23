@@ -17,8 +17,14 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
     private readonly VulkanShaderManager _shaders;
     private readonly VulkanMaterialSystem _materials;
     private readonly VulkanShaderCompiler _compiler = new();
-    private readonly Dictionary<(PipelineKind Kind, PassClass Pass, PrimitiveTopology Topology), Pipeline> _cache = [];
-    private readonly Dictionary<(int ShaderId, CustomKind Kind, PassClass Pass), Pipeline> _customCache = [];
+    private readonly Dictionary<
+        (PipelineKind Kind, PassClass Pass, PrimitiveTopology Topology, StencilMode Stencil),
+        Pipeline
+    > _cache = [];
+    private readonly Dictionary<
+        (int ShaderId, CustomKind Kind, PassClass Pass, StencilMode Stencil),
+        Pipeline
+    > _customCache = [];
 
     private PipelineLayout _textureLayout;
     private PipelineLayout _primitiveLayout;
@@ -26,6 +32,8 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
     private PipelineLayout _pieLayout;
     private PipelineLayout _customSpriteLayout;
     private PipelineLayout _customBlitLayout;
+    private PipelineLayout _maskedLayout;
+    private PipelineLayout _stencilWriteLayout;
     private bool _initialized;
     private bool _disposed;
 
@@ -59,12 +67,27 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         Blit,
     }
 
+    /// <summary>ステンシルの動作モード。</summary>
+    public enum StencilMode
+    {
+        /// <summary>ステンシルテスト無効。</summary>
+        None,
+
+        /// <summary>マスク書き込み (Always/Replace, ref=1, カラー書き込みなし)。</summary>
+        WriteMask,
+
+        /// <summary>マスク適用 (Equal, ref=1, 書き込みなし)。</summary>
+        TestEqual,
+    }
+
     private enum PipelineKind
     {
         Texture,
         Primitive,
         Blit,
         Pie,
+        Masked,
+        StencilWrite,
     }
 
     private enum VertexLayout
@@ -135,36 +158,75 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         }
     }
 
+    /// <summary>アルファマスク合成用のパイプラインレイアウトを取得します。</summary>
+    public PipelineLayout MaskedLayout
+    {
+        get
+        {
+            EnsureInitialized();
+            return _maskedLayout;
+        }
+    }
+
+    /// <summary>ステンシル書き込み用のパイプラインレイアウトを取得します。</summary>
+    public PipelineLayout StencilWriteLayout
+    {
+        get
+        {
+            EnsureInitialized();
+            return _stencilWriteLayout;
+        }
+    }
+
     /// <summary>インスタンシングテクスチャ描画用のパイプラインを取得します。</summary>
-    public Pipeline GetTexturePipeline(PassClass pass) =>
-        GetOrCreate(PipelineKind.Texture, pass, PrimitiveTopology.TriangleList);
+    public Pipeline GetTexturePipeline(PassClass pass, StencilMode stencil = StencilMode.None) =>
+        GetOrCreate(PipelineKind.Texture, pass, PrimitiveTopology.TriangleList, stencil);
 
     /// <summary>プリミティブ描画用のパイプラインを取得します。</summary>
-    public Pipeline GetPrimitivePipeline(PassClass pass, PrimitiveTopology topology) =>
-        GetOrCreate(PipelineKind.Primitive, pass, topology);
+    public Pipeline GetPrimitivePipeline(
+        PassClass pass,
+        PrimitiveTopology topology,
+        StencilMode stencil = StencilMode.None
+    ) => GetOrCreate(PipelineKind.Primitive, pass, topology, stencil);
 
     /// <summary>フルスクリーンブリット用のパイプラインを取得します。</summary>
     public Pipeline GetBlitPipeline(PassClass pass) =>
-        GetOrCreate(PipelineKind.Blit, pass, PrimitiveTopology.TriangleList);
+        GetOrCreate(PipelineKind.Blit, pass, PrimitiveTopology.TriangleList, StencilMode.None);
 
     /// <summary>扇形テクスチャ描画用のパイプラインを取得します。</summary>
-    public Pipeline GetPiePipeline(PassClass pass) =>
-        GetOrCreate(PipelineKind.Pie, pass, PrimitiveTopology.TriangleList);
+    public Pipeline GetPiePipeline(PassClass pass, StencilMode stencil = StencilMode.None) =>
+        GetOrCreate(PipelineKind.Pie, pass, PrimitiveTopology.TriangleList, stencil);
+
+    /// <summary>アルファマスク合成用のパイプラインを取得します。</summary>
+    public Pipeline GetMaskedPipeline(PassClass pass) =>
+        GetOrCreate(PipelineKind.Masked, pass, PrimitiveTopology.TriangleList, StencilMode.None);
+
+    /// <summary>ステンシルへのマスク書き込み用のパイプラインを取得します。</summary>
+    public Pipeline GetStencilWritePipeline(PassClass pass) =>
+        GetOrCreate(
+            PipelineKind.StencilWrite,
+            pass,
+            PrimitiveTopology.TriangleList,
+            StencilMode.WriteMask
+        );
 
     /// <summary>カスタムシェーダーによるスプライト描画用のパイプラインを取得します。</summary>
-    public Pipeline GetCustomSpritePipeline(int shaderId, PassClass pass) =>
-        GetOrCreateCustom(shaderId, CustomKind.Sprite, pass);
+    public Pipeline GetCustomSpritePipeline(
+        int shaderId,
+        PassClass pass,
+        StencilMode stencil = StencilMode.None
+    ) => GetOrCreateCustom(shaderId, CustomKind.Sprite, pass, stencil);
 
     /// <summary>カスタムシェーダーによるフルスクリーンブリット用のパイプラインを取得します。</summary>
     public Pipeline GetCustomBlitPipeline(int shaderId, PassClass pass) =>
-        GetOrCreateCustom(shaderId, CustomKind.Blit, pass);
+        GetOrCreateCustom(shaderId, CustomKind.Blit, pass, StencilMode.None);
 
     /// <summary>
     /// 破棄されたカスタムシェーダーのパイプラインをキャッシュから除去します。
     /// </summary>
     public void InvalidateShader(int shaderId)
     {
-        var keys = new List<(int, CustomKind, PassClass)>();
+        var keys = new List<(int, CustomKind, PassClass, StencilMode)>();
         foreach (var key in _customCache.Keys)
             if (key.ShaderId == shaderId)
                 keys.Add(key);
@@ -202,6 +264,8 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             vk.DestroyPipelineLayout(device, _pieLayout, null);
             vk.DestroyPipelineLayout(device, _customSpriteLayout, null);
             vk.DestroyPipelineLayout(device, _customBlitLayout, null);
+            vk.DestroyPipelineLayout(device, _maskedLayout, null);
+            vk.DestroyPipelineLayout(device, _stencilWriteLayout, null);
         }
 
         _compiler.Dispose();
@@ -298,12 +362,54 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             vk.CreatePipelineLayout(device, in layoutInfo, null, out _customBlitLayout);
         }
 
+        // masked: set0 = content, set1 = mask, push constant = mat4 + vec4 (両ステージ, 80 bytes)
+        {
+            var twoTextureLayouts = stackalloc DescriptorSetLayout[2] { textureSetLayout, textureSetLayout };
+            var pushConstant = new PushConstantRange(
+                ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
+                0,
+                80
+            );
+            var layoutInfo = new PipelineLayoutCreateInfo
+            {
+                SType = StructureType.PipelineLayoutCreateInfo,
+                SetLayoutCount = 2,
+                PSetLayouts = twoTextureLayouts,
+                PushConstantRangeCount = 1,
+                PPushConstantRanges = &pushConstant,
+            };
+            vk.CreatePipelineLayout(device, in layoutInfo, null, out _maskedLayout);
+        }
+
+        // stencil write: set0 = sampler, push constant = mat4 + vec4 (両ステージ, 80 bytes)
+        {
+            var pushConstant = new PushConstantRange(
+                ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
+                0,
+                80
+            );
+            var layoutInfo = new PipelineLayoutCreateInfo
+            {
+                SType = StructureType.PipelineLayoutCreateInfo,
+                SetLayoutCount = 1,
+                PSetLayouts = &textureSetLayout,
+                PushConstantRangeCount = 1,
+                PPushConstantRanges = &pushConstant,
+            };
+            vk.CreatePipelineLayout(device, in layoutInfo, null, out _stencilWriteLayout);
+        }
+
         _initialized = true;
     }
 
-    private Pipeline GetOrCreate(PipelineKind kind, PassClass pass, PrimitiveTopology topology)
+    private Pipeline GetOrCreate(
+        PipelineKind kind,
+        PassClass pass,
+        PrimitiveTopology topology,
+        StencilMode stencil
+    )
     {
-        var key = (kind, pass, topology);
+        var key = (kind, pass, topology, stencil);
         if (_cache.TryGetValue(key, out var cached))
             return cached;
 
@@ -312,35 +418,63 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         {
             PipelineKind.Texture => CreateEmbeddedPipeline(
                 "texture_instanced",
+                "texture_instanced",
                 _textureLayout,
                 pass,
                 PrimitiveTopology.TriangleList,
                 enableBlend: true,
-                VertexLayout.InstancedSprite
+                VertexLayout.InstancedSprite,
+                stencil
             ),
             PipelineKind.Primitive => CreateEmbeddedPipeline(
+                "primitive",
                 "primitive",
                 _primitiveLayout,
                 pass,
                 topology,
                 enableBlend: true,
-                VertexLayout.Position2D
+                VertexLayout.Position2D,
+                stencil
             ),
             PipelineKind.Blit => CreateEmbeddedPipeline(
+                "blit",
                 "blit",
                 _blitLayout,
                 pass,
                 PrimitiveTopology.TriangleList,
                 enableBlend: false,
-                VertexLayout.None
+                VertexLayout.None,
+                stencil
             ),
             PipelineKind.Pie => CreateEmbeddedPipeline(
+                "pie",
                 "pie",
                 _pieLayout,
                 pass,
                 PrimitiveTopology.TriangleList,
                 enableBlend: true,
-                VertexLayout.PositionUv
+                VertexLayout.PositionUv,
+                stencil
+            ),
+            PipelineKind.Masked => CreateEmbeddedPipeline(
+                "masked",
+                "masked",
+                _maskedLayout,
+                pass,
+                PrimitiveTopology.TriangleList,
+                enableBlend: true,
+                VertexLayout.PositionUv,
+                stencil
+            ),
+            PipelineKind.StencilWrite => CreateEmbeddedPipeline(
+                "masked",
+                "stencil_mask",
+                _stencilWriteLayout,
+                pass,
+                PrimitiveTopology.TriangleList,
+                enableBlend: false,
+                VertexLayout.PositionUv,
+                StencilMode.WriteMask
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
@@ -348,9 +482,14 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         return pipeline;
     }
 
-    private Pipeline GetOrCreateCustom(int shaderId, CustomKind kind, PassClass pass)
+    private Pipeline GetOrCreateCustom(
+        int shaderId,
+        CustomKind kind,
+        PassClass pass,
+        StencilMode stencil
+    )
     {
-        var key = (shaderId, kind, pass);
+        var key = (shaderId, kind, pass, stencil);
         if (_customCache.TryGetValue(key, out var cached))
             return cached;
 
@@ -365,7 +504,8 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 pass,
                 PrimitiveTopology.TriangleList,
                 enableBlend: true,
-                VertexLayout.InstancedSprite
+                VertexLayout.InstancedSprite,
+                stencil
             ),
             CustomKind.Blit => CreatePipeline(
                 entry.VertexModule,
@@ -374,7 +514,8 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 pass,
                 PrimitiveTopology.TriangleList,
                 enableBlend: false,
-                VertexLayout.None
+                VertexLayout.None,
+                stencil
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
@@ -386,23 +527,25 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         pass == PassClass.Offscreen ? _ctx.OffscreenClearPass : _ctx.SwapchainPass;
 
     private Pipeline CreateEmbeddedPipeline(
-        string shaderName,
+        string vertexShaderName,
+        string fragmentShaderName,
         PipelineLayout layout,
         PassClass pass,
         PrimitiveTopology topology,
         bool enableBlend,
-        VertexLayout vertexLayout
+        VertexLayout vertexLayout,
+        StencilMode stencil
     )
     {
         var vertSpv = _compiler.Compile(
-            EmbeddedResource.GetResourceAsString($"Promete.Resources.shaders.vulkan.{shaderName}.vert"),
+            EmbeddedResource.GetResourceAsString($"Promete.Resources.shaders.vulkan.{vertexShaderName}.vert"),
             ShaderKind.VertexShader,
-            $"{shaderName}.vert"
+            $"{vertexShaderName}.vert"
         );
         var fragSpv = _compiler.Compile(
-            EmbeddedResource.GetResourceAsString($"Promete.Resources.shaders.vulkan.{shaderName}.frag"),
+            EmbeddedResource.GetResourceAsString($"Promete.Resources.shaders.vulkan.{fragmentShaderName}.frag"),
             ShaderKind.FragmentShader,
-            $"{shaderName}.frag"
+            $"{fragmentShaderName}.frag"
         );
 
         var vertModule = CreateShaderModule(vertSpv);
@@ -410,7 +553,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
 
         try
         {
-            return CreatePipeline(vertModule, fragModule, layout, pass, topology, enableBlend, vertexLayout);
+            return CreatePipeline(vertModule, fragModule, layout, pass, topology, enableBlend, vertexLayout, stencil);
         }
         finally
         {
@@ -426,7 +569,8 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         PassClass pass,
         PrimitiveTopology topology,
         bool enableBlend,
-        VertexLayout vertexLayout
+        VertexLayout vertexLayout,
+        StencilMode stencil
     )
     {
         var vk = _ctx.Vk;
@@ -524,6 +668,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             RasterizationSamples = SampleCountFlags.Count1Bit,
         };
 
+        // ステンシル書き込みモードではカラーバッファへ書き込まない
         var blendAttachment = new PipelineColorBlendAttachmentState
         {
             BlendEnable = enableBlend,
@@ -534,10 +679,47 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             DstAlphaBlendFactor = BlendFactor.OneMinusSrcAlpha,
             AlphaBlendOp = BlendOp.Add,
             ColorWriteMask =
-                ColorComponentFlags.RBit
-                | ColorComponentFlags.GBit
-                | ColorComponentFlags.BBit
-                | ColorComponentFlags.ABit,
+                stencil == StencilMode.WriteMask
+                    ? 0
+                    : ColorComponentFlags.RBit
+                        | ColorComponentFlags.GBit
+                        | ColorComponentFlags.BBit
+                        | ColorComponentFlags.ABit,
+        };
+
+        var stencilOp = stencil switch
+        {
+            StencilMode.WriteMask => new StencilOpState
+            {
+                FailOp = StencilOp.Keep,
+                PassOp = StencilOp.Replace,
+                DepthFailOp = StencilOp.Keep,
+                CompareOp = CompareOp.Always,
+                CompareMask = 0xFF,
+                WriteMask = 0xFF,
+                Reference = 1,
+            },
+            StencilMode.TestEqual => new StencilOpState
+            {
+                FailOp = StencilOp.Keep,
+                PassOp = StencilOp.Keep,
+                DepthFailOp = StencilOp.Keep,
+                CompareOp = CompareOp.Equal,
+                CompareMask = 0xFF,
+                WriteMask = 0x00,
+                Reference = 1,
+            },
+            _ => default,
+        };
+
+        var depthStencil = new PipelineDepthStencilStateCreateInfo
+        {
+            SType = StructureType.PipelineDepthStencilStateCreateInfo,
+            DepthTestEnable = false,
+            DepthWriteEnable = false,
+            StencilTestEnable = stencil != StencilMode.None,
+            Front = stencilOp,
+            Back = stencilOp,
         };
 
         var colorBlend = new PipelineColorBlendStateCreateInfo
@@ -570,6 +752,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             PRasterizationState = &rasterization,
             PMultisampleState = &multisample,
             PColorBlendState = &colorBlend,
+            PDepthStencilState = pass == PassClass.Offscreen ? &depthStencil : null,
             PDynamicState = &dynamicState,
             Layout = layout,
             RenderPass = GetRenderPass(pass),

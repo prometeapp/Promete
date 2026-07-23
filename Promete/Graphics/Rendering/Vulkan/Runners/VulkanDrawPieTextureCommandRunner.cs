@@ -109,7 +109,12 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
         var vk = ctx.Vk;
         var cmd = ctx.CurrentCommandBuffer;
 
-        var pipeline = pipelines.GetPiePipeline(VulkanPipelineProvider.PassClass.Offscreen);
+        var pipeline = pipelines.GetPiePipeline(
+            VulkanPipelineProvider.PassClass.Offscreen,
+            ctx.StencilMaskActive
+                ? VulkanPipelineProvider.StencilMode.TestEqual
+                : VulkanPipelineProvider.StencilMode.None
+        );
         vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
         vk.CmdPushConstants(
             cmd,

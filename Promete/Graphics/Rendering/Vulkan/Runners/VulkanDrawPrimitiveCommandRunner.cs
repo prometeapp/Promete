@@ -71,7 +71,8 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
 
         var pipeline = pipelines.GetPrimitivePipeline(
             VulkanPipelineProvider.PassClass.Offscreen,
-            ToVulkanTopology(type)
+            ToVulkanTopology(type),
+            CurrentStencilMode()
         );
         vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
         PushColor(cmd, color);
@@ -109,7 +110,8 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
 
         var pipeline = pipelines.GetPrimitivePipeline(
             VulkanPipelineProvider.PassClass.Offscreen,
-            PrimitiveTopology.LineStrip
+            PrimitiveTopology.LineStrip,
+            CurrentStencilMode()
         );
         vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
         PushColor(cmd, lc);
@@ -130,6 +132,11 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
             &value
         );
     }
+
+    private VulkanPipelineProvider.StencilMode CurrentStencilMode() =>
+        ctx.StencilMaskActive
+            ? VulkanPipelineProvider.StencilMode.TestEqual
+            : VulkanPipelineProvider.StencilMode.None;
 
     /// <summary>
     /// Prometeの<see cref="ShapeType"/>を、Vulkanの<see cref="PrimitiveTopology"/>に変換します。
