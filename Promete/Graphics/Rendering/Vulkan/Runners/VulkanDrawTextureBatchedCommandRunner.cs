@@ -23,6 +23,8 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
     private readonly VulkanContext _ctx;
     private readonly VulkanResourceManager _resources;
     private readonly VulkanPipelineProvider _pipelines;
+    private readonly VulkanShaderManager _shaders;
+    private readonly VulkanMaterialSystem _materials;
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
     private Buffer _quadVbo;
@@ -36,12 +38,16 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
     public VulkanDrawTextureBatchedCommandRunner(
         VulkanContext ctx,
         VulkanResourceManager resources,
-        VulkanPipelineProvider pipelines
+        VulkanPipelineProvider pipelines,
+        VulkanShaderManager shaders,
+        VulkanMaterialSystem materials
     )
     {
         _ctx = ctx;
         _resources = resources;
         _pipelines = pipelines;
+        _shaders = shaders;
+        _materials = materials;
     }
 
     public override void Execute(DrawTextureBatchedCommand command)
@@ -71,11 +77,14 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
         if (!_resources.Contains(textureId))
             return;
 
-        // TODO: Phase 3+ でカスタムマテリアルに対応する
-        if (material is not null && !_materialWarned)
+        // カスタムマテリアル: シェーダーがコンパイル済みならカスタムパイプラインを使用
+        var useCustom = material is not null && _shaders.Contains(material.Shader.Handle);
+        if (material is not null && !useCustom && !_materialWarned)
         {
             _materialWarned = true;
-            LogHelper.Bug("Vulkan バックエンドはまだカスタムマテリアルをサポートしていません。");
+            LogHelper.Bug(
+                "Material のシェーダーがコンパイルされていないため、デフォルトシェーダーで描画します。"
+            );
         }
 
         EnsureInitialized();
@@ -130,7 +139,13 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
         var vk = _ctx.Vk;
         var cmdBuffer = _ctx.CurrentCommandBuffer;
 
-        var pipeline = _pipelines.GetTexturePipeline(VulkanPipelineProvider.PassClass.Offscreen);
+        var pipeline = useCustom
+            ? _pipelines.GetCustomSpritePipeline(
+                material!.Shader.Handle,
+                VulkanPipelineProvider.PassClass.Offscreen
+            )
+            : _pipelines.GetTexturePipeline(VulkanPipelineProvider.PassClass.Offscreen);
+        var layout = useCustom ? _pipelines.CustomSpriteLayout : _pipelines.TextureLayout;
         vk.CmdBindPipeline(cmdBuffer, PipelineBindPoint.Graphics, pipeline);
 
         // プロジェクション行列 (Vulkan は NDC が Y 下向きなので bottom=0, top=height)
@@ -143,26 +158,22 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
             -1f,
             1f
         );
-        vk.CmdPushConstants(
-            cmdBuffer,
-            _pipelines.TextureLayout,
-            ShaderStageFlags.VertexBit,
-            0,
-            64,
-            &projection
-        );
+        vk.CmdPushConstants(cmdBuffer, layout, ShaderStageFlags.VertexBit, 0, 64, &projection);
 
         var descriptorSet = _resources.GetDescriptorSet(textureId);
         vk.CmdBindDescriptorSets(
             cmdBuffer,
             PipelineBindPoint.Graphics,
-            _pipelines.TextureLayout,
+            layout,
             0,
             1,
             in descriptorSet,
             0,
             null
         );
+
+        if (useCustom)
+            _materials.Apply(cmdBuffer, material!, layout);
 
         var vertexBuffers = stackalloc Buffer[2] { _quadVbo, instanceBuffer };
         var offsets = stackalloc ulong[2] { 0, instanceOffset };
