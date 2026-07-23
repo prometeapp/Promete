@@ -21,6 +21,7 @@ public class MainScene : Scene
     );
 
     private Texture2D _redTexture;
+    private FrameBuffer? _frameBuffer;
     private int _frameCount;
     private bool _screenshotRequested;
 
@@ -41,6 +42,12 @@ public class MainScene : Scene
         tinted.TintColor = Color.Blue;
         Root.Add(tinted);
 
+        // FrameBuffer の上下向き検証: 黄背景 100x100 の上部 30px にマゼンタ帯
+        _frameBuffer = new FrameBuffer(100, 100) { BackgroundColor = Color.Yellow };
+        var magenta = App.TextureFactory.CreateSolid(Color.Magenta, (100, 30));
+        _frameBuffer.Add(new Sprite(magenta).Location(0, 0));
+        Root.Add(new Sprite(_frameBuffer.Texture).Location(50, 300));
+
         Console.WriteLine("[MainScene] OnStart: ノード配置完了");
     }
 
@@ -57,6 +64,7 @@ public class MainScene : Scene
 
     public override void OnDestroy()
     {
+        _frameBuffer?.Dispose();
         _redTexture.Dispose();
         Console.WriteLine("[MainScene] OnDestroy");
     }
@@ -76,6 +84,8 @@ public class MainScene : Scene
             failures += Verify(img, 475, 75, Color.Blue, "青ティントスプライト");
             failures += Verify(img, 100, 400, Color.DarkSlateBlue, "背景 (下部, Y軸反転検出)");
             failures += Verify(img, 620, 460, Color.DarkSlateBlue, "背景 (右下)");
+            failures += Verify(img, 100, 310, Color.Magenta, "FrameBuffer 上部 (マゼンタ帯)");
+            failures += Verify(img, 100, 380, Color.Yellow, "FrameBuffer 下部 (黄背景)");
 
             Console.WriteLine(
                 failures == 0

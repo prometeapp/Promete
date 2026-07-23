@@ -18,8 +18,7 @@ internal sealed unsafe class VulkanRenderTextureProvider(
     public RenderTexture Create(VectorInt size)
     {
         var target = CreateTarget(size, textureId: null);
-        var texture = new Texture2D(target.TextureId, size, _ => { });
-        var rt = new RenderTexture(size, texture, this);
+        var rt = new RenderTexture(size, CreateFlippedTexture(target.TextureId, size), this);
         _targets[rt] = target;
         return rt;
     }
@@ -48,8 +47,17 @@ internal sealed unsafe class VulkanRenderTextureProvider(
         target.Framebuffer = newTarget.Framebuffer;
         target.Extent = newTarget.Extent;
 
-        renderTexture.Texture = new Texture2D(target.TextureId, newSize, _ => { });
+        renderTexture.Texture = CreateFlippedTexture(target.TextureId, newSize);
     }
+
+    /// <summary>
+    /// V 反転 UV を持つ RenderTexture 用の <see cref="Texture2D"/> を生成します。
+    /// GL の RT テクスチャは bottom-up 格納であり、<see cref="FrameBuffer"/> 等はそれを前提に
+    /// 子ノードを上下反転して補正しています。Vulkan の RT は top-down のため、
+    /// UV を V 反転させることで GL と同じ見え方に揃えます。
+    /// </summary>
+    private static Texture2D CreateFlippedTexture(int textureId, VectorInt size) =>
+        new(textureId, size, _ => { }, new Vector(0, 1), new Vector(1, 0));
 
     public void Release(RenderTexture renderTexture)
     {
