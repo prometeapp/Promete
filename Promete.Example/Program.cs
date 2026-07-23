@@ -1,29 +1,38 @@
 using Promete;
 using Promete.Coroutines;
 using Promete.Example;
-using Promete.VulkanDesktop;
+using Promete.GLDesktop;
 using Promete.ImGui;
 using Promete.Input;
+using Promete.VulkanDesktop;
 using Promete.Windowing;
-using Promete.GLDesktop;
 
-var app = PrometeApp
+// --vulkan フラグで実験的な Vulkan バックエンドを使用する
+// (ImGui プラグインは OpenGL 専用のため Vulkan 時は無効化)
+var useVulkan = args.Contains("--vulkan");
+
+var builder = PrometeApp
     .Create()
     .Use<Keyboard>()
     .Use<Mouse>()
     .Use<Gamepads>()
     .Use<ConsoleLayer>()
-    .Use<CoroutineManager>()
-    // .Use<ImGuiPlugin>()
-    .BuildWithOpenGLDesktop(
-        WindowOptions.Default with
-        {
-            Title = "Promete Demo",
-            Mode = WindowMode.Resizable,
-            TargetFps = 0,
-            TargetUps = 0,
-            IsVsyncMode = false,
-        }
-    );
+    .Use<CoroutineManager>();
+
+if (!useVulkan)
+    builder = builder.Use<ImGuiPlugin>();
+
+var options = WindowOptions.Default with
+{
+    Title = useVulkan ? "Promete Demo (Vulkan)" : "Promete Demo",
+    Mode = WindowMode.Resizable,
+    TargetFps = 0,
+    TargetUps = 0,
+    IsVsyncMode = false,
+};
+
+var app = useVulkan
+    ? builder.BuildWithVulkanDesktop(options)
+    : builder.BuildWithOpenGLDesktop(options);
 
 return app.Run<MainScene>();
