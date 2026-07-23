@@ -139,12 +139,16 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
         var vk = _ctx.Vk;
         var cmdBuffer = _ctx.CurrentCommandBuffer;
 
+        var stencil = _ctx.StencilMaskActive
+            ? VulkanPipelineProvider.StencilMode.TestEqual
+            : VulkanPipelineProvider.StencilMode.None;
         var pipeline = useCustom
             ? _pipelines.GetCustomSpritePipeline(
                 material!.Shader.Handle,
-                VulkanPipelineProvider.PassClass.Offscreen
+                VulkanPipelineProvider.PassClass.Offscreen,
+                stencil
             )
-            : _pipelines.GetTexturePipeline(VulkanPipelineProvider.PassClass.Offscreen);
+            : _pipelines.GetTexturePipeline(VulkanPipelineProvider.PassClass.Offscreen, stencil);
         var layout = useCustom ? _pipelines.CustomSpriteLayout : _pipelines.TextureLayout;
         vk.CmdBindPipeline(cmdBuffer, PipelineBindPoint.Graphics, pipeline);
 

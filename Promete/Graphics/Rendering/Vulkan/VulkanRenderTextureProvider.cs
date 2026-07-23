@@ -44,6 +44,9 @@ internal sealed unsafe class VulkanRenderTextureProvider(
         target.Image = newTarget.Image;
         target.Memory = newTarget.Memory;
         target.View = newTarget.View;
+        target.StencilImage = newTarget.StencilImage;
+        target.StencilMemory = newTarget.StencilMemory;
+        target.StencilView = newTarget.StencilView;
         target.Framebuffer = newTarget.Framebuffer;
         target.Extent = newTarget.Extent;
 
@@ -71,12 +74,18 @@ internal sealed unsafe class VulkanRenderTextureProvider(
         var view = target.View;
         var image = target.Image;
         var memory = target.Memory;
+        var stencilView = target.StencilView;
+        var stencilImage = target.StencilImage;
+        var stencilMemory = target.StencilMemory;
         ctx.DeferDestroy(() =>
         {
             vk.DestroyFramebuffer(device, framebuffer, null);
             vk.DestroyImageView(device, view, null);
             vk.DestroyImage(device, image, null);
             vk.FreeMemory(device, memory, null);
+            vk.DestroyImageView(device, stencilView, null);
+            vk.DestroyImage(device, stencilImage, null);
+            vk.FreeMemory(device, stencilMemory, null);
         });
     }
 
@@ -114,7 +123,31 @@ internal sealed unsafe class VulkanRenderTextureProvider(
         );
 
         var view = ctx.CreateImageView2D(image, VulkanContext.OffscreenFormat);
-        var framebuffer = ctx.CreateOffscreenFramebuffer(view, width, height);
+
+        // ステンシルアタッチメント
+        var (stencilImage, stencilMemory) = ctx.CreateImage2D(
+            width,
+            height,
+            ctx.StencilFormat,
+            ImageUsageFlags.DepthStencilAttachmentBit
+        );
+        var stencilAspect = ImageAspectFlags.DepthBit | ImageAspectFlags.StencilBit;
+        ctx.ExecuteOneTime(cmd =>
+            ctx.TransitionImageLayout(
+                cmd,
+                stencilImage,
+                ImageLayout.Undefined,
+                ImageLayout.DepthStencilAttachmentOptimal,
+                PipelineStageFlags.TopOfPipeBit,
+                0,
+                PipelineStageFlags.EarlyFragmentTestsBit | PipelineStageFlags.LateFragmentTestsBit,
+                AccessFlags.DepthStencilAttachmentWriteBit | AccessFlags.DepthStencilAttachmentReadBit,
+                stencilAspect
+            )
+        );
+        var stencilView = ctx.CreateImageView2D(stencilImage, ctx.StencilFormat, stencilAspect);
+
+        var framebuffer = ctx.CreateOffscreenFramebuffer(view, stencilView, width, height);
 
         int id;
         if (textureId is { } existingId)
@@ -132,6 +165,9 @@ internal sealed unsafe class VulkanRenderTextureProvider(
             Image = image,
             Memory = memory,
             View = view,
+            StencilImage = stencilImage,
+            StencilMemory = stencilMemory,
+            StencilView = stencilView,
             Framebuffer = framebuffer,
             Extent = new Extent2D(width, height),
             TextureId = id,
@@ -146,6 +182,9 @@ internal sealed unsafe class VulkanRenderTextureProvider(
         vk.DestroyImageView(device, target.View, null);
         vk.DestroyImage(device, target.Image, null);
         vk.FreeMemory(device, target.Memory, null);
+        vk.DestroyImageView(device, target.StencilView, null);
+        vk.DestroyImage(device, target.StencilImage, null);
+        vk.FreeMemory(device, target.StencilMemory, null);
     }
 
     private sealed class CaptureScope(VulkanContext ctx) : IDisposable

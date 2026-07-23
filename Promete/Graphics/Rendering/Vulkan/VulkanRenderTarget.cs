@@ -16,6 +16,15 @@ internal sealed class VulkanRenderTarget
     /// <summary>イメージビュー。</summary>
     public required ImageView View { get; set; }
 
+    /// <summary>ステンシルアタッチメントのイメージ。</summary>
+    public required Image StencilImage { get; set; }
+
+    /// <summary>ステンシルイメージのメモリ。</summary>
+    public required DeviceMemory StencilMemory { get; set; }
+
+    /// <summary>ステンシルイメージビュー。</summary>
+    public required ImageView StencilView { get; set; }
+
     /// <summary>オフスクリーンパス用フレームバッファ。</summary>
     public required Framebuffer Framebuffer { get; set; }
 

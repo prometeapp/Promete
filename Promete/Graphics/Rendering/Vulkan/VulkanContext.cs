@@ -119,6 +119,15 @@ internal sealed unsafe class VulkanContext : IDisposable
     /// <summary>現在のトリム (シザー) 領域。null なら全域。</summary>
     public Rect2D? TrimScissor { get; private set; }
 
+    /// <summary>オフスクリーンターゲットのステンシルフォーマットを取得します。</summary>
+    public Format StencilFormat { get; private set; }
+
+    /// <summary>
+    /// ステンシルマスクが有効かどうかを取得または設定します。
+    /// 有効な間、ランナーはステンシルテスト (Equal, ref=1) 付きパイプラインを使用します。
+    /// </summary>
+    public bool StencilMaskActive { get; set; }
+
     /// <summary>現在の描画ターゲットの大きさを取得します。</summary>
     public Extent2D CurrentTargetExtent =>
         _targetStack.Count > 0 ? _targetStack.Peek().Extent : _swapchainExtent;
@@ -134,6 +143,7 @@ internal sealed unsafe class VulkanContext : IDisposable
         CreateLogicalDevice();
         CreateSwapchain();
         CreateImageViews();
+        ChooseStencilFormat();
         CreateRenderPasses();
         CreateFramebuffers();
         CreateCommandPools();
@@ -429,7 +439,11 @@ internal sealed unsafe class VulkanContext : IDisposable
     /// <summary>
     /// 2D イメージビューを作成します。
     /// </summary>
-    public ImageView CreateImageView2D(Image image, Format format)
+    public ImageView CreateImageView2D(
+        Image image,
+        Format format,
+        ImageAspectFlags aspect = ImageAspectFlags.ColorBit
+    )
     {
         var createInfo = new ImageViewCreateInfo
         {
@@ -437,7 +451,7 @@ internal sealed unsafe class VulkanContext : IDisposable
             Image = image,
             ViewType = ImageViewType.Type2D,
             Format = format,
-            SubresourceRange = new ImageSubresourceRange(ImageAspectFlags.ColorBit, 0, 1, 0, 1),
+            SubresourceRange = new ImageSubresourceRange(aspect, 0, 1, 0, 1),
         };
         ThrowIfFailed(
             Vk.CreateImageView(_device, in createInfo, null, out var view),
@@ -447,16 +461,22 @@ internal sealed unsafe class VulkanContext : IDisposable
     }
 
     /// <summary>
-    /// オフスクリーンパス用のフレームバッファを作成します。
+    /// オフスクリーンパス用のフレームバッファを作成します。（カラー + ステンシル）
     /// </summary>
-    public Framebuffer CreateOffscreenFramebuffer(ImageView view, uint width, uint height)
+    public Framebuffer CreateOffscreenFramebuffer(
+        ImageView colorView,
+        ImageView stencilView,
+        uint width,
+        uint height
+    )
     {
+        var attachments = stackalloc ImageView[2] { colorView, stencilView };
         var createInfo = new FramebufferCreateInfo
         {
             SType = StructureType.FramebufferCreateInfo,
             RenderPass = _offscreenClearPass,
-            AttachmentCount = 1,
-            PAttachments = &view,
+            AttachmentCount = 2,
+            PAttachments = attachments,
             Width = width,
             Height = height,
             Layers = 1,
@@ -466,6 +486,27 @@ internal sealed unsafe class VulkanContext : IDisposable
             "フレームバッファの作成"
         );
         return framebuffer;
+    }
+
+    /// <summary>
+    /// 現在の描画ターゲットのステンシルアタッチメントを 0 でクリアします。
+    /// レンダーパス記録中に呼び出してください。
+    /// </summary>
+    public void ClearStencil()
+    {
+        EnsureFrameActive();
+        var attachment = new ClearAttachment
+        {
+            AspectMask = ImageAspectFlags.StencilBit,
+            ClearValue = new ClearValue { DepthStencil = new ClearDepthStencilValue(1f, 0) },
+        };
+        var rect = new ClearRect
+        {
+            Rect = new Rect2D(new Offset2D(0, 0), CurrentTargetExtent),
+            BaseArrayLayer = 0,
+            LayerCount = 1,
+        };
+        Vk.CmdClearAttachments(CurrentCommandBuffer, 1, in attachment, 1, in rect);
     }
 
     /// <summary>
@@ -514,7 +555,8 @@ internal sealed unsafe class VulkanContext : IDisposable
         PipelineStageFlags srcStage,
         AccessFlags srcAccess,
         PipelineStageFlags dstStage,
-        AccessFlags dstAccess
+        AccessFlags dstAccess,
+        ImageAspectFlags aspect = ImageAspectFlags.ColorBit
     )
     {
         var barrier = new ImageMemoryBarrier
@@ -525,7 +567,7 @@ internal sealed unsafe class VulkanContext : IDisposable
             SrcQueueFamilyIndex = Vk.QueueFamilyIgnored,
             DstQueueFamilyIndex = Vk.QueueFamilyIgnored,
             Image = image,
-            SubresourceRange = new ImageSubresourceRange(ImageAspectFlags.ColorBit, 0, 1, 0, 1),
+            SubresourceRange = new ImageSubresourceRange(aspect, 0, 1, 0, 1),
             SrcAccessMask = srcAccess,
             DstAccessMask = dstAccess,
         };
@@ -692,15 +734,19 @@ internal sealed unsafe class VulkanContext : IDisposable
     private void BeginOffscreenPass(VulkanRenderTarget target, Color? clearColor)
     {
         var cmd = CurrentCommandBuffer;
-        var clearValue = new ClearValue(ToClearColor(clearColor ?? Color.Transparent));
+        var clearValues = stackalloc ClearValue[2]
+        {
+            new ClearValue(ToClearColor(clearColor ?? Color.Transparent)),
+            new ClearValue { DepthStencil = new ClearDepthStencilValue(1f, 0) },
+        };
         var beginInfo = new RenderPassBeginInfo
         {
             SType = StructureType.RenderPassBeginInfo,
             RenderPass = clearColor.HasValue ? _offscreenClearPass : _offscreenLoadPass,
             Framebuffer = target.Framebuffer,
             RenderArea = new Rect2D(new Offset2D(0, 0), target.Extent),
-            ClearValueCount = 1,
-            PClearValues = &clearValue,
+            ClearValueCount = 2,
+            PClearValues = clearValues,
         };
 
         Vk.CmdBeginRenderPass(cmd, in beginInfo, SubpassContents.Inline);
@@ -1076,49 +1122,42 @@ internal sealed unsafe class VulkanContext : IDisposable
             _swapchainImageViews[i] = CreateImageView2D(_swapchainImages[i], _swapchainFormat);
     }
 
-    private void CreateRenderPasses()
+    private void ChooseStencilFormat()
     {
-        _swapchainPass = CreateRenderPass(
-            _swapchainFormat,
-            AttachmentLoadOp.Clear,
-            ImageLayout.Undefined,
-            ImageLayout.PresentSrcKhr,
-            forSampling: false
-        );
-        _offscreenClearPass = CreateRenderPass(
-            OffscreenFormat,
-            AttachmentLoadOp.Clear,
-            ImageLayout.General,
-            ImageLayout.General,
-            forSampling: true
-        );
-        _offscreenLoadPass = CreateRenderPass(
-            OffscreenFormat,
-            AttachmentLoadOp.Load,
-            ImageLayout.General,
-            ImageLayout.General,
-            forSampling: true
-        );
+        // 環境によってサポートが異なるため、利用可能なステンシル付きフォーマットを選択する
+        Span<Format> candidates = [Format.D24UnormS8Uint, Format.D32SfloatS8Uint];
+        foreach (var format in candidates)
+        {
+            Vk.GetPhysicalDeviceFormatProperties(_physicalDevice, format, out var props);
+            if ((props.OptimalTilingFeatures & FormatFeatureFlags.DepthStencilAttachmentBit) != 0)
+            {
+                StencilFormat = format;
+                return;
+            }
+        }
+
+        throw new NotSupportedException("ステンシルアタッチメントに使用できるフォーマットがありません。");
     }
 
-    private RenderPass CreateRenderPass(
-        Format format,
-        AttachmentLoadOp loadOp,
-        ImageLayout initialLayout,
-        ImageLayout finalLayout,
-        bool forSampling
-    )
+    private void CreateRenderPasses()
+    {
+        _swapchainPass = CreateSwapchainRenderPass();
+        _offscreenClearPass = CreateOffscreenRenderPass(clear: true);
+        _offscreenLoadPass = CreateOffscreenRenderPass(clear: false);
+    }
+
+    private RenderPass CreateSwapchainRenderPass()
     {
         var colorAttachment = new AttachmentDescription
         {
-            Format = format,
+            Format = _swapchainFormat,
             Samples = SampleCountFlags.Count1Bit,
-            LoadOp = loadOp,
+            LoadOp = AttachmentLoadOp.Clear,
             StoreOp = AttachmentStoreOp.Store,
             StencilLoadOp = AttachmentLoadOp.DontCare,
             StencilStoreOp = AttachmentStoreOp.DontCare,
-            InitialLayout = initialLayout,
-            FinalLayout = finalLayout,
+            InitialLayout = ImageLayout.Undefined,
+            FinalLayout = ImageLayout.PresentSrcKhr,
         };
 
         var colorRef = new AttachmentReference(0, ImageLayout.ColorAttachmentOptimal);
@@ -1130,26 +1169,14 @@ internal sealed unsafe class VulkanContext : IDisposable
             PColorAttachments = &colorRef,
         };
 
-        // 開始依存: 前段の描画/読み取り完了を待つ
-        // 終了依存 (forSampling): パス完了後のフラグメントシェーダーからの読み取りを同期する
-        var dependencies = stackalloc SubpassDependency[2];
-        dependencies[0] = new SubpassDependency
+        var dependency = new SubpassDependency
         {
             SrcSubpass = Vk.SubpassExternal,
             DstSubpass = 0,
-            SrcStageMask = PipelineStageFlags.ColorAttachmentOutputBit | PipelineStageFlags.FragmentShaderBit,
-            SrcAccessMask = AccessFlags.ColorAttachmentWriteBit | AccessFlags.ShaderReadBit,
-            DstStageMask = PipelineStageFlags.ColorAttachmentOutputBit,
-            DstAccessMask = AccessFlags.ColorAttachmentWriteBit | AccessFlags.ColorAttachmentReadBit,
-        };
-        dependencies[1] = new SubpassDependency
-        {
-            SrcSubpass = 0,
-            DstSubpass = Vk.SubpassExternal,
             SrcStageMask = PipelineStageFlags.ColorAttachmentOutputBit,
-            SrcAccessMask = AccessFlags.ColorAttachmentWriteBit,
-            DstStageMask = PipelineStageFlags.FragmentShaderBit | PipelineStageFlags.TransferBit,
-            DstAccessMask = AccessFlags.ShaderReadBit | AccessFlags.TransferReadBit,
+            SrcAccessMask = 0,
+            DstStageMask = PipelineStageFlags.ColorAttachmentOutputBit,
+            DstAccessMask = AccessFlags.ColorAttachmentWriteBit,
         };
 
         var createInfo = new RenderPassCreateInfo
@@ -1159,7 +1186,102 @@ internal sealed unsafe class VulkanContext : IDisposable
             PAttachments = &colorAttachment,
             SubpassCount = 1,
             PSubpasses = &subpass,
-            DependencyCount = forSampling ? 2u : 1u,
+            DependencyCount = 1,
+            PDependencies = &dependency,
+        };
+
+        ThrowIfFailed(
+            Vk.CreateRenderPass(_device, in createInfo, null, out var renderPass),
+            "レンダーパスの作成"
+        );
+        return renderPass;
+    }
+
+    private RenderPass CreateOffscreenRenderPass(bool clear)
+    {
+        var attachments = stackalloc AttachmentDescription[2];
+
+        // カラーアタッチメント (サンプリングを単純化するため General レイアウトを維持)
+        attachments[0] = new AttachmentDescription
+        {
+            Format = OffscreenFormat,
+            Samples = SampleCountFlags.Count1Bit,
+            LoadOp = clear ? AttachmentLoadOp.Clear : AttachmentLoadOp.Load,
+            StoreOp = AttachmentStoreOp.Store,
+            StencilLoadOp = AttachmentLoadOp.DontCare,
+            StencilStoreOp = AttachmentStoreOp.DontCare,
+            InitialLayout = ImageLayout.General,
+            FinalLayout = ImageLayout.General,
+        };
+
+        // ステンシルアタッチメント (パス中断/再開をまたいで保持するため Load/Store)
+        attachments[1] = new AttachmentDescription
+        {
+            Format = StencilFormat,
+            Samples = SampleCountFlags.Count1Bit,
+            LoadOp = AttachmentLoadOp.DontCare,
+            StoreOp = AttachmentStoreOp.DontCare,
+            StencilLoadOp = clear ? AttachmentLoadOp.Clear : AttachmentLoadOp.Load,
+            StencilStoreOp = AttachmentStoreOp.Store,
+            InitialLayout = ImageLayout.DepthStencilAttachmentOptimal,
+            FinalLayout = ImageLayout.DepthStencilAttachmentOptimal,
+        };
+
+        var colorRef = new AttachmentReference(0, ImageLayout.ColorAttachmentOptimal);
+        var stencilRef = new AttachmentReference(1, ImageLayout.DepthStencilAttachmentOptimal);
+
+        var subpass = new SubpassDescription
+        {
+            PipelineBindPoint = PipelineBindPoint.Graphics,
+            ColorAttachmentCount = 1,
+            PColorAttachments = &colorRef,
+            PDepthStencilAttachment = &stencilRef,
+        };
+
+        const PipelineStageFlags stencilStages =
+            PipelineStageFlags.EarlyFragmentTestsBit | PipelineStageFlags.LateFragmentTestsBit;
+
+        // 開始依存: 前段の描画/読み取り完了を待つ
+        // 終了依存: パス完了後のフラグメントシェーダー/転送からの読み取りを同期する
+        var dependencies = stackalloc SubpassDependency[2];
+        dependencies[0] = new SubpassDependency
+        {
+            SrcSubpass = Vk.SubpassExternal,
+            DstSubpass = 0,
+            SrcStageMask =
+                PipelineStageFlags.ColorAttachmentOutputBit
+                | PipelineStageFlags.FragmentShaderBit
+                | stencilStages,
+            SrcAccessMask =
+                AccessFlags.ColorAttachmentWriteBit
+                | AccessFlags.ShaderReadBit
+                | AccessFlags.DepthStencilAttachmentWriteBit,
+            DstStageMask = PipelineStageFlags.ColorAttachmentOutputBit | stencilStages,
+            DstAccessMask =
+                AccessFlags.ColorAttachmentWriteBit
+                | AccessFlags.ColorAttachmentReadBit
+                | AccessFlags.DepthStencilAttachmentWriteBit
+                | AccessFlags.DepthStencilAttachmentReadBit,
+        };
+        dependencies[1] = new SubpassDependency
+        {
+            SrcSubpass = 0,
+            DstSubpass = Vk.SubpassExternal,
+            SrcStageMask = PipelineStageFlags.ColorAttachmentOutputBit | stencilStages,
+            SrcAccessMask =
+                AccessFlags.ColorAttachmentWriteBit | AccessFlags.DepthStencilAttachmentWriteBit,
+            DstStageMask = PipelineStageFlags.FragmentShaderBit | PipelineStageFlags.TransferBit,
+            DstAccessMask = AccessFlags.ShaderReadBit | AccessFlags.TransferReadBit,
+        };
+
+        var createInfo = new RenderPassCreateInfo
+        {
+            SType = StructureType.RenderPassCreateInfo,
+            AttachmentCount = 2,
+            PAttachments = attachments,
+            SubpassCount = 1,
+            PSubpasses = &subpass,
+            DependencyCount = 2,
             PDependencies = dependencies,
         };
 

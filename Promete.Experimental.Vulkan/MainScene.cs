@@ -129,6 +129,22 @@ public class MainScene : Scene
         customSprite.Material = material;
         Root.Add(customSprite);
 
+        // ステンシルマスク検証: 左半分白・右半分黒のマスク + オレンジ全面スプライト
+        var halfMask100 = CreateHalfMask((100, 100));
+        var orange = App.TextureFactory.CreateSolid(Color.Orange, (100, 100));
+        var stencilMasked = new MaskedContainer(halfMask100) { Size = (100, 100) };
+        stencilMasked.Location = (450, 300);
+        stencilMasked.Add(new Sprite(orange));
+        Root.Add(stencilMasked);
+
+        // アルファマスク検証: 左半分白・右半分黒のマスク + ピンク全面スプライト
+        var halfMask60 = CreateHalfMask((60, 60));
+        var pink = App.TextureFactory.CreateSolid(Color.HotPink, (60, 60));
+        var alphaMasked = new MaskedContainer(halfMask60, useAlphaMask: true) { Size = (60, 60) };
+        alphaMasked.Location = (560, 380);
+        alphaMasked.Add(new Sprite(pink));
+        Root.Add(alphaMasked);
+
         // フェーズ2用: 色反転ポストプロセスシェーダー
         _invertShader = ShaderProgram
             .Create()
@@ -183,6 +199,10 @@ public class MainScene : Scene
             _failures += Verify(img, 320, 330, Color.Cyan, "PieSprite 右上 1/4 (シアン)");
             _failures += Verify(img, 280, 370, Color.DarkSlateBlue, "PieSprite 左下 (背景=切り抜き)");
             _failures += Verify(img, 475, 175, Color.FromArgb(255, 102, 0), "カスタムマテリアル (uOverrideColor)");
+            _failures += Verify(img, 470, 350, Color.Orange, "ステンシルマスク 左半分 (表示)");
+            _failures += Verify(img, 530, 350, Color.DarkSlateBlue, "ステンシルマスク 右半分 (非表示)");
+            _failures += Verify(img, 575, 410, Color.HotPink, "アルファマスク 左半分 (表示)");
+            _failures += Verify(img, 605, 410, Color.DarkSlateBlue, "アルファマスク 右半分 (非表示)");
 
             // フェーズ2: 色反転ポストプロセスを適用
             App.PostProcessMaterials.Add(new Material(_invertShader!));
@@ -220,6 +240,28 @@ public class MainScene : Scene
             Console.WriteLine($"[MainScene] ❌ フェーズ2で例外: {ex}");
             App.Exit(2);
         }
+    }
+
+    /// <summary>
+    /// 左半分が白、右半分が黒のマスクテクスチャを生成します。
+    /// </summary>
+    private Texture2D CreateHalfMask(VectorInt size)
+    {
+        var arr = new byte[size.X * size.Y * 4];
+        for (var y = 0; y < size.Y; y++)
+        {
+            for (var x = 0; x < size.X; x++)
+            {
+                var i = ((y * size.X) + x) * 4;
+                var value = x < size.X / 2 ? (byte)255 : (byte)0;
+                arr[i + 0] = value;
+                arr[i + 1] = value;
+                arr[i + 2] = value;
+                arr[i + 3] = 255;
+            }
+        }
+
+        return App.TextureFactory.Create(arr, size);
     }
 
     private static int Verify(Rgba32Image img, int x, int y, Color expected, string label)
