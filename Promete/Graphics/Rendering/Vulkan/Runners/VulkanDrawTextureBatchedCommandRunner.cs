@@ -149,7 +149,12 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
                 stencil
             )
             : _pipelines.GetTexturePipeline(VulkanPipelineProvider.PassClass.Offscreen, stencil);
-        var layout = useCustom ? _pipelines.CustomSpriteLayout : _pipelines.TextureLayout;
+        var layout = useCustom
+            ? _pipelines.GetCustomLayout(
+                material!.Shader.Handle,
+                VulkanPipelineProvider.CustomKind.Sprite
+            )
+            : _pipelines.TextureLayout;
         vk.CmdBindPipeline(cmdBuffer, PipelineBindPoint.Graphics, pipeline);
 
         // プロジェクション行列 (Vulkan は NDC が Y 下向きなので bottom=0, top=height)

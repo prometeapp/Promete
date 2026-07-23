@@ -10,7 +10,10 @@ namespace Promete.Graphics.Rendering.Vulkan;
 /// </summary>
 internal static class SpirvReflector
 {
+    private const uint OpName = 5;
     private const uint OpMemberName = 6;
+    private const uint OpTypeImage = 25;
+    private const uint OpTypeSampledImage = 27;
     private const uint OpTypeStruct = 30;
     private const uint OpTypePointer = 32;
     private const uint OpVariable = 59;
@@ -21,12 +24,19 @@ internal static class SpirvReflector
     private const uint DecorationDescriptorSet = 34;
     private const uint DecorationOffset = 35;
 
+    private const uint StorageClassUniformConstant = 0;
     private const uint StorageClassUniform = 2;
 
     /// <summary>
     /// SPIR-V から Uniform ブロック (storage class Uniform) の一覧を抽出します。
     /// </summary>
-    public static List<UniformBlock> ReflectUniformBlocks(byte[] spirv)
+    public static List<UniformBlock> ReflectUniformBlocks(byte[] spirv) =>
+        Reflect(spirv).Blocks;
+
+    /// <summary>
+    /// SPIR-V から Uniform ブロックとサンプラー変数の一覧を抽出します。
+    /// </summary>
+    public static (List<UniformBlock> Blocks, List<SamplerBinding> Samplers) Reflect(byte[] spirv)
     {
         var words = new uint[spirv.Length / 4];
         System.Buffer.BlockCopy(spirv, 0, words, 0, words.Length * 4);
@@ -35,12 +45,15 @@ internal static class SpirvReflector
             throw new InvalidOperationException("不正な SPIR-V バイナリです。");
 
         // 収集用テーブル
+        var names = new Dictionary<uint, string>();
         var memberNames = new Dictionary<(uint TypeId, uint Member), string>();
         var memberOffsets = new Dictionary<(uint TypeId, uint Member), uint>();
         var decorations = new Dictionary<(uint Id, uint Decoration), uint>();
         var structTypes = new HashSet<uint>();
+        var imageTypes = new HashSet<uint>();
         var pointerTargets = new Dictionary<uint, (uint StorageClass, uint TypeId)>();
         var uniformVariables = new List<(uint Id, uint PointerTypeId)>();
+        var samplerVariables = new List<(uint Id, uint PointerTypeId)>();
 
         var index = 5;
         while (index < words.Length)
@@ -52,6 +65,9 @@ internal static class SpirvReflector
 
             switch (opcode)
             {
+                case OpName:
+                    names[words[index + 1]] = ReadString(words, index + 2, index + wordCount);
+                    break;
                 case OpMemberName:
                     memberNames[(words[index + 1], words[index + 2])] = ReadString(words, index + 3, index + wordCount);
                     break;
@@ -64,11 +80,18 @@ internal static class SpirvReflector
                 case OpTypeStruct:
                     structTypes.Add(words[index + 1]);
                     break;
+                case OpTypeImage:
+                case OpTypeSampledImage:
+                    imageTypes.Add(words[index + 1]);
+                    break;
                 case OpTypePointer:
                     pointerTargets[words[index + 1]] = (words[index + 2], words[index + 3]);
                     break;
                 case OpVariable when words[index + 3] == StorageClassUniform:
                     uniformVariables.Add((words[index + 2], words[index + 1]));
+                    break;
+                case OpVariable when words[index + 3] == StorageClassUniformConstant:
+                    samplerVariables.Add((words[index + 2], words[index + 1]));
                     break;
             }
 
@@ -107,7 +130,26 @@ internal static class SpirvReflector
             );
         }
 
-        return blocks;
+        // サンプラー変数 (combined image sampler) を解決
+        var samplers = new List<SamplerBinding>();
+        foreach (var (variableId, pointerTypeId) in samplerVariables)
+        {
+            if (!pointerTargets.TryGetValue(pointerTypeId, out var pointer))
+                continue;
+            if (!imageTypes.Contains(pointer.TypeId))
+                continue;
+
+            samplers.Add(
+                new SamplerBinding
+                {
+                    Set = decorations.GetValueOrDefault((variableId, DecorationDescriptorSet)),
+                    Binding = decorations.GetValueOrDefault((variableId, DecorationBinding)),
+                    Name = names.GetValueOrDefault(variableId, string.Empty),
+                }
+            );
+        }
+
+        return (blocks, samplers);
     }
 
     private static string ReadString(uint[] words, int start, int end)
@@ -144,5 +186,20 @@ internal static class SpirvReflector
 
         /// <summary>ブロックの最低サイズ（最大オフセット + 64 バイトの余裕）。</summary>
         public uint Size { get; init; }
+    }
+
+    /// <summary>
+    /// リフレクションで得られたサンプラー変数の情報です。
+    /// </summary>
+    public sealed class SamplerBinding
+    {
+        /// <summary>ディスクリプタセット番号。</summary>
+        public uint Set { get; init; }
+
+        /// <summary>バインディング番号。</summary>
+        public uint Binding { get; init; }
+
+        /// <summary>変数名。</summary>
+        public required string Name { get; init; }
     }
 }

@@ -17,6 +17,7 @@ internal sealed unsafe class VulkanMaterialSystem : IDisposable
 
     private readonly VulkanContext _ctx;
     private readonly VulkanShaderManager _shaders;
+    private readonly VulkanResourceManager _resources;
     private readonly Dictionary<(Material Material, int Slot), MaterialSlot> _slots = [];
     private readonly HashSet<string> _warnedUniforms = [];
 
@@ -25,10 +26,15 @@ internal sealed unsafe class VulkanMaterialSystem : IDisposable
     private bool _initialized;
     private bool _disposed;
 
-    public VulkanMaterialSystem(VulkanContext ctx, VulkanShaderManager shaders)
+    public VulkanMaterialSystem(
+        VulkanContext ctx,
+        VulkanShaderManager shaders,
+        VulkanResourceManager resources
+    )
     {
         _ctx = ctx;
         _shaders = shaders;
+        _resources = resources;
     }
 
     /// <summary>Uniform ブロック (set=1) 用のディスクリプタセットレイアウトを取得します。</summary>
@@ -42,43 +48,98 @@ internal sealed unsafe class VulkanMaterialSystem : IDisposable
     }
 
     /// <summary>
-    /// マテリアルの Uniform 値を UBO へ書き込み、set=1 としてバインドします。
-    /// シェーダーに Uniform ブロックが無い場合は何もしません。
+    /// マテリアルの Uniform 値を適用します。
+    /// スカラー/ベクトル値は UBO へ書き込み set=1 としてバインドし、
+    /// Texture2D 値はシェーダーの同名サンプラー (set >= 2) にバインドします。
     /// </summary>
     public void Apply(CommandBuffer cmd, Material material, PipelineLayout pipelineLayout)
     {
         var entry = _shaders.Get(material.Shader.Handle);
-        if (entry.UniformBlock is not { } block)
-            return;
 
-        EnsureInitialized();
-
-        var slotKey = (material, _ctx.FrameIndex);
-        if (!_slots.TryGetValue(slotKey, out var slot))
+        if (entry.UniformBlock is { } block)
         {
-            slot = CreateSlot(block.Size);
-            _slots[slotKey] = slot;
+            EnsureInitialized();
+
+            var slotKey = (material, _ctx.FrameIndex);
+            if (!_slots.TryGetValue(slotKey, out var slot))
+            {
+                slot = CreateSlot(block.Size);
+                _slots[slotKey] = slot;
+            }
+
+            // Uniform 値をオフセットに従って書き込む
+            foreach (var (name, value) in material.Uniforms)
+            {
+                if (!block.MemberOffsets.TryGetValue(name, out var offset))
+                    continue;
+                WriteValue(slot.Mapped + offset, value);
+            }
+
+            var set = slot.Set;
+            _ctx.Vk.CmdBindDescriptorSets(
+                cmd,
+                PipelineBindPoint.Graphics,
+                pipelineLayout,
+                1,
+                1,
+                in set,
+                0,
+                null
+            );
         }
 
-        // Uniform 値をオフセットに従って書き込む
+        BindTextureUniforms(cmd, material, entry, pipelineLayout);
+    }
+
+    /// <summary>
+    /// Material の Texture2D Uniform を、シェーダーの同名サンプラー (set >= 2) にバインドします。
+    /// </summary>
+    private void BindTextureUniforms(
+        CommandBuffer cmd,
+        Material material,
+        VulkanShaderManager.VulkanShaderEntry entry,
+        PipelineLayout pipelineLayout
+    )
+    {
         foreach (var (name, value) in material.Uniforms)
         {
-            if (!block.MemberOffsets.TryGetValue(name, out var offset))
+            if (value is not Texture2D texture)
                 continue;
-            WriteValue(slot.Mapped + offset, value, name);
-        }
 
-        var set = slot.Set;
-        _ctx.Vk.CmdBindDescriptorSets(
-            cmd,
-            PipelineBindPoint.Graphics,
-            pipelineLayout,
-            1,
-            1,
-            in set,
-            0,
-            null
-        );
+            SpirvReflector.SamplerBinding? sampler = null;
+            foreach (var s in entry.Samplers)
+            {
+                if (s.Set >= 2 && s.Name == name)
+                {
+                    sampler = s;
+                    break;
+                }
+            }
+
+            if (sampler is null)
+            {
+                if (_warnedUniforms.Add(name))
+                    LogHelper.Bug(
+                        $"Material の Texture2D Uniform ({name}) に対応するサンプラーがシェーダーにありません。set=2 以降に同名の sampler2D を宣言してください。"
+                    );
+                continue;
+            }
+
+            if (!_resources.Contains(texture.Handle))
+                continue;
+
+            var textureSet = _resources.GetDescriptorSet(texture.Handle);
+            _ctx.Vk.CmdBindDescriptorSets(
+                cmd,
+                PipelineBindPoint.Graphics,
+                pipelineLayout,
+                sampler.Set,
+                1,
+                in textureSet,
+                0,
+                null
+            );
+        }
     }
 
     public void Dispose()
@@ -197,7 +258,7 @@ internal sealed unsafe class VulkanMaterialSystem : IDisposable
         };
     }
 
-    private void WriteValue(byte* dst, object value, string name)
+    private static void WriteValue(byte* dst, object value)
     {
         switch (value)
         {
@@ -224,12 +285,6 @@ internal sealed unsafe class VulkanMaterialSystem : IDisposable
                 break;
             case Matrix4x4 m:
                 *(Matrix4x4*)dst = m;
-                break;
-            case Texture2D:
-                if (_warnedUniforms.Add(name))
-                    LogHelper.Bug(
-                        $"Vulkan バックエンドはまだ Material の Texture2D Uniform ({name}) をサポートしていません。"
-                    );
                 break;
         }
     }

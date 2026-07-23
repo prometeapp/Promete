@@ -57,6 +57,68 @@ public class MainScene : Scene
         }
         """;
 
+    private const string PrimitiveVertexShader = """
+        #version 450
+        layout(location = 0) in vec2 vPos;
+        void main()
+        {
+            gl_Position = vec4(vPos, 0.0, 1.0);
+        }
+        """;
+
+    private const string PrimitiveUboFragmentShader = """
+        #version 450
+        layout(set = 1, binding = 0) uniform Uniforms { vec4 uFillColor; };
+        layout(location = 0) out vec4 FragColor;
+        void main()
+        {
+            FragColor = uFillColor;
+        }
+        """;
+
+    private const string ExtraTextureFragmentShader = """
+        #version 450
+        layout(location = 0) in vec2 fUv;
+        layout(location = 1) in vec4 fTintColor;
+        layout(set = 0, binding = 0) uniform sampler2D uTexture0;
+        layout(set = 2, binding = 0) uniform sampler2D uExtraTexture;
+        layout(location = 0) out vec4 FragColor;
+        void main()
+        {
+            FragColor = texture(uTexture0, fUv) * texture(uExtraTexture, fUv) * fTintColor;
+        }
+        """;
+
+    private const string PieVertexShader = """
+        #version 450
+        layout(location = 0) in vec2 vPos;
+        layout(location = 1) in vec2 vUv;
+        layout(location = 0) out vec2 fUv;
+        layout(push_constant) uniform PushConstants
+        {
+            mat4 uMvp;
+            vec4 uTintColor;
+            vec2 uAngles;
+        };
+        void main()
+        {
+            gl_Position = uMvp * vec4(vPos, 0.0, 1.0);
+            fUv = vUv;
+        }
+        """;
+
+    private const string PieUboFragmentShader = """
+        #version 450
+        layout(location = 0) in vec2 fUv;
+        layout(set = 0, binding = 0) uniform sampler2D uTexture0;
+        layout(set = 1, binding = 0) uniform Uniforms { vec4 uPieColor; };
+        layout(location = 0) out vec4 FragColor;
+        void main()
+        {
+            FragColor = texture(uTexture0, fUv) * uPieColor;
+        }
+        """;
+
     private const string BlitVertexShader = """
         #version 450
         layout(location = 0) out vec2 fUv;
@@ -84,6 +146,9 @@ public class MainScene : Scene
     private FrameBuffer? _frameBuffer;
     private ShaderProgram? _overrideShader;
     private ShaderProgram? _invertShader;
+    private ShaderProgram? _primitiveShader;
+    private ShaderProgram? _extraTextureShader;
+    private ShaderProgram? _pieShader;
     private int _frameCount;
     private int _phase;
     private int _failures;
@@ -145,6 +210,47 @@ public class MainScene : Scene
         alphaMasked.Add(new Sprite(pink));
         Root.Add(alphaMasked);
 
+        // Primitive カスタムマテリアル検証: UBO の uFillColor で塗る矩形
+        _primitiveShader = ShaderProgram
+            .Create()
+            .Vertex(PrimitiveVertexShader)
+            .Fragment(PrimitiveUboFragmentShader)
+            .Compile();
+        var primitiveMaterial = new Material(_primitiveShader);
+        primitiveMaterial["uFillColor"] = new Vector4(0.5f, 0f, 0.5f, 1f); // (128, 0, 128)
+        var customRect = Shape.CreateRect(50, 430, 110, 470, Color.White);
+        customRect.Material = primitiveMaterial;
+        Root.Add(customRect);
+
+        // Texture2D Uniform 検証: 白スプライト × 追加テクスチャ (緑, set=2)
+        _extraTextureShader = ShaderProgram
+            .Create()
+            .Vertex(InstancedVertexShader)
+            .Fragment(ExtraTextureFragmentShader)
+            .Compile();
+        var extraMaterial = new Material(_extraTextureShader);
+        extraMaterial["uExtraTexture"] = App.TextureFactory.CreateSolid(Color.Lime, (40, 40));
+        var extraSprite = new Sprite(App.TextureFactory.CreateSolid(Color.White, (40, 40))).Location(560, 50);
+        extraSprite.Material = extraMaterial;
+        Root.Add(extraSprite);
+
+        // PieSprite カスタムマテリアル検証: UBO の uPieColor で塗る (全周)
+        _pieShader = ShaderProgram
+            .Create()
+            .Vertex(PieVertexShader)
+            .Fragment(PieUboFragmentShader)
+            .Compile();
+        var pieMaterial = new Material(_pieShader);
+        pieMaterial["uPieColor"] = new Vector4(1f, 0.08f, 0.58f, 1f); // DeepPink (255, 20, 147)
+        var customPie = new PieSprite(App.TextureFactory.CreateSolid(Color.White, (30, 30)))
+        {
+            StartPercent = 0,
+            Percent = 100,
+        };
+        customPie.Location = (600, 240);
+        customPie.Material = pieMaterial;
+        Root.Add(customPie);
+
         // フェーズ2用: 色反転ポストプロセスシェーダー
         _invertShader = ShaderProgram
             .Create()
@@ -177,6 +283,9 @@ public class MainScene : Scene
         _frameBuffer?.Dispose();
         _overrideShader?.Dispose();
         _invertShader?.Dispose();
+        _primitiveShader?.Dispose();
+        _extraTextureShader?.Dispose();
+        _pieShader?.Dispose();
         _redTexture.Dispose();
         Console.WriteLine("[MainScene] OnDestroy");
     }
@@ -203,6 +312,9 @@ public class MainScene : Scene
             _failures += Verify(img, 530, 350, Color.DarkSlateBlue, "ステンシルマスク 右半分 (非表示)");
             _failures += Verify(img, 575, 410, Color.HotPink, "アルファマスク 左半分 (表示)");
             _failures += Verify(img, 605, 410, Color.DarkSlateBlue, "アルファマスク 右半分 (非表示)");
+            _failures += Verify(img, 80, 450, Color.FromArgb(128, 0, 128), "Primitive カスタムマテリアル (uFillColor)");
+            _failures += Verify(img, 580, 70, Color.Lime, "Texture2D Uniform (uExtraTexture)");
+            _failures += Verify(img, 615, 255, Color.FromArgb(255, 20, 148), "Pie カスタムマテリアル (uPieColor)");
 
             // フェーズ2: 色反転ポストプロセスを適用
             App.PostProcessMaterials.Add(new Material(_invertShader!));

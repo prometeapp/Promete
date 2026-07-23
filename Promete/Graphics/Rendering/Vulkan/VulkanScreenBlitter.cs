@@ -97,9 +97,13 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
                         material.Shader.Handle,
                         VulkanPipelineProvider.PassClass.Offscreen
                     );
+                    var layout = _pipelines.GetCustomLayout(
+                        material.Shader.Handle,
+                        VulkanPipelineProvider.CustomKind.Blit
+                    );
                     vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
-                    BindSourceTexture(cmd, src, _pipelines.CustomBlitLayout);
-                    _materials.Apply(cmd, material, _pipelines.CustomBlitLayout);
+                    BindSourceTexture(cmd, src, layout);
+                    _materials.Apply(cmd, material, layout);
                     vk.CmdDraw(cmd, 3, 1, 0, 0);
                 }
 

@@ -26,10 +26,12 @@ internal sealed unsafe class VulkanShaderManager(VulkanContext ctx) : IDisposabl
         var vertSpv = _compiler.Compile(vertexSource, ShaderKind.VertexShader, $"{name}.vert");
         var fragSpv = _compiler.Compile(fragmentSource, ShaderKind.FragmentShader, $"{name}.frag");
 
+        var (vertBlocks, vertSamplers) = SpirvReflector.Reflect(vertSpv);
+        var (fragBlocks, fragSamplers) = SpirvReflector.Reflect(fragSpv);
+
         // 両ステージの Uniform ブロックを統合 (規約: set=1, binding=0)
-        var blocks = SpirvReflector
-            .ReflectUniformBlocks(vertSpv)
-            .Concat(SpirvReflector.ReflectUniformBlocks(fragSpv))
+        var blocks = vertBlocks
+            .Concat(fragBlocks)
             .Where(b => b is { Set: 1, Binding: 0 })
             .ToList();
 
@@ -54,9 +56,7 @@ internal sealed unsafe class VulkanShaderManager(VulkanContext ctx) : IDisposabl
             };
         }
 
-        var unsupported = SpirvReflector
-            .ReflectUniformBlocks(fragSpv)
-            .FirstOrDefault(b => b is not { Set: 1, Binding: 0 });
+        var unsupported = fragBlocks.FirstOrDefault(b => b is not { Set: 1, Binding: 0 });
         if (unsupported is not null)
         {
             LogHelper.Bug(
@@ -64,12 +64,20 @@ internal sealed unsafe class VulkanShaderManager(VulkanContext ctx) : IDisposabl
             );
         }
 
+        // 両ステージのサンプラーを統合 (set/binding で重複排除)
+        var samplers = vertSamplers
+            .Concat(fragSamplers)
+            .GroupBy(s => (s.Set, s.Binding))
+            .Select(g => g.First())
+            .ToList();
+
         var id = _nextId++;
         _shaders[id] = new VulkanShaderEntry
         {
             VertexModule = CreateModule(vertSpv),
             FragmentModule = CreateModule(fragSpv),
             UniformBlock = merged,
+            Samplers = samplers,
         };
         return id;
     }
@@ -147,5 +155,20 @@ internal sealed unsafe class VulkanShaderManager(VulkanContext ctx) : IDisposabl
 
         /// <summary>set=1, binding=0 の Uniform ブロック。存在しない場合 null。</summary>
         public SpirvReflector.UniformBlock? UniformBlock { get; init; }
+
+        /// <summary>シェーダーが宣言するサンプラー変数の一覧。</summary>
+        public required List<SpirvReflector.SamplerBinding> Samplers { get; init; }
+
+        /// <summary>追加テクスチャ (set >= 2) を含めた最大セット番号。</summary>
+        public uint MaxSet
+        {
+            get
+            {
+                var max = 1u;
+                foreach (var sampler in Samplers)
+                    max = Math.Max(max, sampler.Set);
+                return max;
+            }
+        }
     }
 }
