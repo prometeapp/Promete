@@ -1,17 +1,17 @@
 using ImGuiNET;
 using Promete.Backends.GL;
 using Promete.Backends.SilkNetCommon;
-using Silk.NET.OpenGL.Extensions.ImGui;
+using Promete.Backends.Vulkan;
 
 namespace Promete.ImGui;
 
 /// <summary>
 /// ImGUI との連携を提供する Promete プラグインです。起動時のカスタマイズが必要な場合は、継承し、OnConfigureメソッドをオーバーライドしてください。
-/// 本プラグインは、Prometeが OpenGL デスクトップバックエンドである場合にのみ使用できます。
+/// 本プラグインは、Prometeが OpenGL または Vulkan のデスクトップバックエンドである場合に使用できます。
 /// </summary>
 public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializable
 {
-    private ImGuiController? _controller;
+    private IImGuiController? _controller;
 
     public event Action? Render;
 
@@ -22,16 +22,25 @@ public class ImGuiPlugin(PrometeApp app, InputProvider provider) : IInitializabl
 
     public void OnStart()
     {
-        // PrometeがOpenGLバックエンドでなければ例外をスローする
-        if (app.View is not OpenGLDesktopGameView glView)
-            throw new NotSupportedException("Promete.ImGui only supports OpenGL backend.");
-
-        _controller = new ImGuiController(
-            glView.GL,
-            glView.NativeWindow,
-            provider.CreateInput(),
-            OnConfigure
-        );
+        _controller = app.View switch
+        {
+            OpenGLDesktopGameView glView => new OpenGLImGuiController(
+                new Silk.NET.OpenGL.Extensions.ImGui.ImGuiController(
+                    glView.GL,
+                    glView.NativeWindow,
+                    provider.CreateInput(),
+                    OnConfigure
+                )
+            ),
+            VulkanDesktopGameView vkView => new VulkanImGuiController(
+                vkView,
+                provider.CreateInput(),
+                OnConfigure
+            ),
+            _ => throw new NotSupportedException(
+                "Promete.ImGui only supports OpenGL and Vulkan desktop backends."
+            ),
+        };
 
         app.Destroy += OnWindowDestroy;
         app.PostRender += OnWindowRender;

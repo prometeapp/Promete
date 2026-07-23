@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Promete\Promete.csproj" />
+        <ProjectReference Include="..\Promete.ImGui\Promete.ImGui.csproj" />
     </ItemGroup>
 
 </Project>

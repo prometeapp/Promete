@@ -222,10 +222,11 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         // ブリットが行われなかった場合でも、スワップチェーンイメージをプレゼント可能な状態にする
         if (!_swapchainPassDone)
-        {
             BeginSwapchainPass(Color.Black);
+
+        // スワップチェーンパスは ImGui 等のオーバーレイ描画のためフレーム終了まで開いたままにしている
+        if (_swapchainPassActive)
             EndSwapchainPass();
-        }
 
         ThrowIfFailed(vk.EndCommandBuffer(cmd), "コマンドバッファの記録終了");
         _frameActive = false;
