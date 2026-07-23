@@ -105,11 +105,9 @@ public class RenderCommandQueue
         if (left.Y + size.Y > ctx.WindowSize.Y)
             size.Y = ctx.WindowSize.Y - left.Y;
 
-        // OpenGL の Scissor は左下原点なので Y を反転
-        var flippedY = ctx.WindowSize.Y - left.Y - size.Y;
-
+        // 座標は左上原点で保持する。バックエンド固有の変換（GL の左下原点への Y 反転など）はランナー側で行う
         var sx = (float)left.X;
-        var sy = (float)flippedY;
+        var sy = (float)left.Y;
         var sw = (float)size.X;
         var sh = (float)size.Y;
 
