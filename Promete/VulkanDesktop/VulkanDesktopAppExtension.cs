@@ -13,8 +13,9 @@ public static class VulkanDesktopAppExtension
     /// PrometeApp を Vulkan デスクトップアプリケーションとして構築します。
     /// </summary>
     /// <remarks>
-    /// 実験的なバックエンドです。現在はウィンドウ表示とクリアカラー描画のみをサポートし、
-    /// ノードの描画は行われません。詳細は VULKAN_PORTING_PLAN.md を参照してください。
+    /// 実験的なバックエンドです。スプライト・プリミティブ・トリム・RenderTexture の描画に対応しています。
+    /// カスタムシェーダー・マスク・扇形テクスチャ・ポストプロセスは未対応です。
+    /// 詳細は VULKAN_PORTING_PLAN.md を参照してください。
     /// </remarks>
     /// <param name="builder">PrometeAppのビルダー</param>
     /// <param name="opts">ウィンドウの設定</param>

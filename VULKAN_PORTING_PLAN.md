@@ -75,7 +75,12 @@ OpenGL 依存コードは以下の 16 ファイル・約 2,600 行に限定さ�
 - `VulkanDesktop/VulkanDesktopAppExtension.BuildWithVulkanDesktop()`
 - 到達点: **クリアカラーの表示とリサイズ対応**。TextureFactory / ShaderFactory / RenderTextureProvider / ScreenBlitter は暫定的に Headless 実装を流用（ランナー未登録のため描画コマンドは無視される）
 
-### Phase 2: リソース基盤（規模目安: 1,500 行）
+### Phase 2: リソース基盤 🚧 大部分実装済み
+
+実装済み: `VulkanResourceManager` (int ID テーブル + staging アップロード + ディスクリプタ管理)、`VulkanTextureFactory`、`VulkanRenderTextureProvider` (パス中断/再開・Resize 対応)、`VulkanPipelineProvider` (パイプラインキャッシュ)、shaderc ランタイムコンパイル (`Silk.NET.Shaderc`)。標準シェーダーは Vulkan GLSL 450 版を実行時コンパイル（事前 SPIR-V 化は将来最適化）。
+未実装: カスタムシェーダー (`VulkanShaderFactory` は NotSupportedException)。
+
+元の計画（規模目安: 1,500 行）:
 
 - `VulkanTextureFactory`: staging buffer 経由アップロード、Nearest サンプラー、int ID リソーステーブル、スプライトシート（アトラス + UV、ハーフテクセルインセットは既存の共通ロジックを再利用）
 - `VulkanShaderFactory`: shaderc による GLSL 450 → SPIR-V コンパイル + リフレクション結果のキャッシュ
@@ -83,7 +88,12 @@ OpenGL 依存コードは以下の 16 ファイル・約 2,600 行に限定さ�
 - `VulkanRenderTextureProvider`: オフスクリーンイメージ + レンダーパス、`BeginCapture` のパス中断/再開、`Resize`
 - 標準シェーダーの Vulkan GLSL 450 版を作成し、ビルド時 SPIR-V 化（MSBuild ターゲット）
 
-### Phase 3: ランナー移植（規模目安: 2,000 行）
+### Phase 3: ランナー移植 🚧 主要部分実装済み
+
+実装済み: `VulkanDrawTextureBatchedCommandRunner` (インスタンシング + per-frame アリーナ)、`VulkanDrawPrimitiveCommandRunner`、`VulkanBeginTrim/EndTrimCommandRunner`、`VulkanScreenBlitter` (単純ブリット)。スクリーンショット (`TakeScreenshot`/`SaveScreenshotAsync`) も実装済みで、Promete.Experimental.Vulkan によるピクセル単位の自動検証がパスしている。
+未実装: `DrawPieTextureCommand`、マスク系 (stencil/alpha)、ポストプロセスマテリアル、カスタムマテリアル、線幅 >1 の線 (wideLines)。
+
+元の計画（規模目安: 2,000 行）:
 
 移植順（依存が少なく検証しやすい順）:
 
