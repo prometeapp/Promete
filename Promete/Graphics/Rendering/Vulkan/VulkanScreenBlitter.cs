@@ -9,7 +9,7 @@ namespace Promete.Graphics.Rendering.Vulkan;
 
 /// <summary>
 /// 全描画をスクリーンサイズの <see cref="RenderTexture"/> にキャプチャし、
-/// スワップチェーンイメージへブリットするクラスです。
+/// ポストプロセスマテリアルを適用した後、スワップチェーンイメージへブリットするクラスです。
 /// </summary>
 internal sealed class VulkanScreenBlitter : IScreenBlitter
 {
@@ -17,14 +17,22 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
     private readonly VulkanResourceManager _resources;
     private readonly VulkanPipelineProvider _pipelines;
     private readonly VulkanRenderTextureProvider _provider;
+    private readonly VulkanShaderManager _shaders;
+    private readonly VulkanMaterialSystem _materials;
     private readonly IGameView _view;
-    private bool _postProcessWarned;
+
+    // ピンポンバッファ（ポストプロセス使用時に遅延生成）
+    private RenderTexture? _pingPong0;
+    private RenderTexture? _pingPong1;
+    private bool _shaderWarned;
 
     public VulkanScreenBlitter(
         VulkanContext ctx,
         VulkanResourceManager resources,
         VulkanPipelineProvider pipelines,
         VulkanRenderTextureProvider provider,
+        VulkanShaderManager shaders,
+        VulkanMaterialSystem materials,
         IGameView view
     )
     {
@@ -32,6 +40,8 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
         _resources = resources;
         _pipelines = pipelines;
         _provider = provider;
+        _shaders = shaders;
+        _materials = materials;
         _view = view;
         _view.Resize += OnViewResize;
     }
@@ -41,6 +51,12 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
     /// </summary>
     public RenderTexture ScreenRenderTexture { get; private set; } = null!;
 
+    /// <summary>
+    /// 最後にスワップチェーンへブリットした RenderTexture (ポストプロセス適用後) を取得します。
+    /// スクリーンショットはこれを読み出すことで表示内容と一致させます。
+    /// </summary>
+    public RenderTexture? LastBlitSource { get; private set; }
+
     public void InitializeScreenRenderTexture()
     {
         ScreenRenderTexture = _provider.Create(_view.Size);
@@ -48,41 +64,91 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
 
     public unsafe void BlitToScreen(IReadOnlyList<Material> materials)
     {
-        // TODO: Phase 3+ でポストプロセスマテリアルに対応する
-        if (materials.Count > 0 && !_postProcessWarned)
+        var vk = _ctx.Vk;
+        var src = ScreenRenderTexture;
+
+        // ポストプロセスマテリアルをピンポンバッファへ順に適用
+        if (materials.Count > 0)
         {
-            _postProcessWarned = true;
-            LogHelper.Bug("Vulkan バックエンドはまだポストプロセスマテリアルをサポートしていません。");
+            EnsurePingPongBuffers();
+            Span<RenderTexture> pingPongs = [_pingPong0!, _pingPong1!];
+            var pingIdx = 0;
+
+            foreach (var material in materials)
+            {
+                if (!_shaders.Contains(material.Shader.Handle))
+                {
+                    if (!_shaderWarned)
+                    {
+                        _shaderWarned = true;
+                        LogHelper.Bug(
+                            "ポストプロセスマテリアルのシェーダーがコンパイルされていないため、スキップします。"
+                        );
+                    }
+
+                    continue;
+                }
+
+                var dst = pingPongs[pingIdx];
+                using (dst.BeginCapture())
+                {
+                    var cmd = _ctx.CurrentCommandBuffer;
+                    var pipeline = _pipelines.GetCustomBlitPipeline(
+                        material.Shader.Handle,
+                        VulkanPipelineProvider.PassClass.Offscreen
+                    );
+                    vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
+                    BindSourceTexture(cmd, src, _pipelines.CustomBlitLayout);
+                    _materials.Apply(cmd, material, _pipelines.CustomBlitLayout);
+                    vk.CmdDraw(cmd, 3, 1, 0, 0);
+                }
+
+                src = dst;
+                pingIdx = 1 - pingIdx;
+            }
         }
 
-        var vk = _ctx.Vk;
+        // 最終結果をスワップチェーンへブリット
         _ctx.BeginSwapchainPass(Color.Black);
+        {
+            var cmd = _ctx.CurrentCommandBuffer;
+            var pipeline = _pipelines.GetBlitPipeline(VulkanPipelineProvider.PassClass.Swapchain);
+            vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
+            BindSourceTexture(cmd, src, _pipelines.BlitLayout);
+            vk.CmdDraw(cmd, 3, 1, 0, 0);
+        }
 
-        var cmd = _ctx.CurrentCommandBuffer;
-        var pipeline = _pipelines.GetBlitPipeline(VulkanPipelineProvider.PassClass.Swapchain);
-        vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
+        _ctx.EndSwapchainPass();
+        LastBlitSource = src;
+    }
 
-        var descriptorSet = _resources.GetDescriptorSet(ScreenRenderTexture.Texture.Handle);
-        vk.CmdBindDescriptorSets(
+    private unsafe void BindSourceTexture(CommandBuffer cmd, RenderTexture src, PipelineLayout layout)
+    {
+        var descriptorSet = _resources.GetDescriptorSet(src.Texture.Handle);
+        _ctx.Vk.CmdBindDescriptorSets(
             cmd,
             PipelineBindPoint.Graphics,
-            _pipelines.BlitLayout,
+            layout,
             0,
             1,
             in descriptorSet,
             0,
             null
         );
+    }
 
-        // フルスクリーントライアングル（頂点バッファ不要）
-        vk.CmdDraw(cmd, 3, 1, 0, 0);
-
-        _ctx.EndSwapchainPass();
+    private void EnsurePingPongBuffers()
+    {
+        var size = ScreenRenderTexture.Size;
+        _pingPong0 ??= _provider.Create(size);
+        _pingPong1 ??= _provider.Create(size);
     }
 
     private void OnViewResize()
     {
         var size = _view.Size;
         ScreenRenderTexture.Resize(size);
+        _pingPong0?.Resize(size);
+        _pingPong1?.Resize(size);
     }
 }

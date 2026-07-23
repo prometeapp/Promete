@@ -77,8 +77,9 @@ OpenGL 依存コードは以下の 16 ファイル・約 2,600 行に限定さ�
 
 ### Phase 2: リソース基盤 🚧 大部分実装済み
 
-実装済み: `VulkanResourceManager` (int ID テーブル + staging アップロード + ディスクリプタ管理)、`VulkanTextureFactory`、`VulkanRenderTextureProvider` (パス中断/再開・Resize 対応)、`VulkanPipelineProvider` (パイプラインキャッシュ)、shaderc ランタイムコンパイル (`Silk.NET.Shaderc`)。標準シェーダーは Vulkan GLSL 450 版を実行時コンパイル（事前 SPIR-V 化は将来最適化）。
-未実装: カスタムシェーダー (`VulkanShaderFactory` は NotSupportedException)。
+実装済み: `VulkanResourceManager` (int ID テーブル + staging アップロード + ディスクリプタ管理)、`VulkanTextureFactory`、`VulkanRenderTextureProvider` (パス中断/再開・Resize 対応・V反転UVでGLと見え方統一)、`VulkanPipelineProvider` (パイプラインキャッシュ)、shaderc ランタイムコンパイル (`Silk.NET.Shaderc`)。標準シェーダーは Vulkan GLSL 450 版を実行時コンパイル（事前 SPIR-V 化は将来最適化）。
+
+カスタムシェーダーも実装済み: `VulkanShaderFactory` + `VulkanShaderManager` (ID テーブル) + 自前の最小 SPIR-V リフレクタ (`SpirvReflector`、追加ネイティブ依存なし) + `VulkanMaterialSystem` (per-material UBO)。シェーダー規約: カスタム Uniform は set=1, binding=0 の uniform ブロック、テクスチャは set=0, binding=0、射影行列は push_constant。Material の Texture2D Uniform は未対応。
 
 元の計画（規模目安: 1,500 行）:
 
@@ -90,8 +91,8 @@ OpenGL 依存コードは以下の 16 ファイル・約 2,600 行に限定さ�
 
 ### Phase 3: ランナー移植 🚧 主要部分実装済み
 
-実装済み: `VulkanDrawTextureBatchedCommandRunner` (インスタンシング + per-frame アリーナ)、`VulkanDrawPrimitiveCommandRunner`、`VulkanBeginTrim/EndTrimCommandRunner`、`VulkanScreenBlitter` (単純ブリット)。スクリーンショット (`TakeScreenshot`/`SaveScreenshotAsync`) も実装済みで、Promete.Experimental.Vulkan によるピクセル単位の自動検証がパスしている。
-未実装: `DrawPieTextureCommand`、マスク系 (stencil/alpha)、ポストプロセスマテリアル、カスタムマテリアル、線幅 >1 の線 (wideLines)。
+実装済み: `VulkanDrawTextureBatchedCommandRunner` (インスタンシング + per-frame アリーナ + カスタムマテリアル対応)、`VulkanDrawPrimitiveCommandRunner`、`VulkanBeginTrim/EndTrimCommandRunner`、`VulkanDrawPieTextureCommandRunner` (push constant で MVP/tint/角度)、`VulkanScreenBlitter` (ピンポンポストプロセス + 最終ブリット)。スクリーンショット (`TakeScreenshot`/`SaveScreenshotAsync`) はポストプロセス適用後の最終ブリット元を読み出す。Promete.Experimental.Vulkan によるピクセル単位の自動検証 13 項目（スプライト/プリミティブ/ティント/FrameBuffer/PieSprite/カスタムマテリアル/色反転ポストプロセス）がパスしている。
+未実装: マスク系 (stencil/alpha — オフスクリーンパスへのステンシルアタッチメント追加が必要)、PieSprite のカスタムマテリアル、Material の Texture2D Uniform、線幅 >1 の線 (wideLines)。
 
 元の計画（規模目安: 2,000 行）:
 

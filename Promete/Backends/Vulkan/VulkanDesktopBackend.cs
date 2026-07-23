@@ -28,11 +28,14 @@ public class VulkanDesktopBackend : BackendBase
     private VulkanDesktopGameView _gameView = null!;
     private VulkanContext _context = null!;
     private VulkanResourceManager _resources = null!;
+    private VulkanShaderManager _shaderManager = null!;
+    private VulkanMaterialSystem _materialSystem = null!;
     private VulkanPipelineProvider _pipelines = null!;
     private VulkanTextureFactory _textureFactory = null!;
     private VulkanRenderTextureProvider _renderTextureProvider = null!;
     private VulkanScreenBlitter _screenBlitter = null!;
     private VulkanDrawTextureBatchedCommandRunner? _textureRunner;
+    private VulkanDrawPieTextureCommandRunner? _pieRunner;
 
     public override void OnInitialize(PrometeApp app, WindowOptions opts)
     {
@@ -62,7 +65,9 @@ public class VulkanDesktopBackend : BackendBase
 
         _context = new VulkanContext(_nativeWindow);
         _resources = new VulkanResourceManager(_context);
-        _pipelines = new VulkanPipelineProvider(_context, _resources);
+        _shaderManager = new VulkanShaderManager(_context);
+        _materialSystem = new VulkanMaterialSystem(_context, _shaderManager);
+        _pipelines = new VulkanPipelineProvider(_context, _resources, _shaderManager, _materialSystem);
         _time = new SilkNetCommonTimeProvider(_nativeWindow);
         _gameView = new VulkanDesktopGameView(_app, _nativeWindow);
         _textureFactory = new VulkanTextureFactory(_app, _resources);
@@ -72,6 +77,8 @@ public class VulkanDesktopBackend : BackendBase
             _resources,
             _pipelines,
             _renderTextureProvider,
+            _shaderManager,
+            _materialSystem,
             _gameView
         );
         _gameView.AttachRenderingResources(
@@ -94,7 +101,8 @@ public class VulkanDesktopBackend : BackendBase
 
     public override IRenderTextureProvider SetupRenderTextureProvider() => _renderTextureProvider;
 
-    public override IShaderFactory SetupShaderFactory() => new VulkanShaderFactory();
+    public override IShaderFactory SetupShaderFactory() =>
+        new VulkanShaderFactory(_shaderManager, _pipelines);
 
     public override void OnStart(PrometeApp app)
     {
@@ -112,10 +120,18 @@ public class VulkanDesktopBackend : BackendBase
         _screenBlitter.InitializeScreenRenderTexture();
 
         // ランナーをコマンドキューへ登録する
-        _textureRunner = new VulkanDrawTextureBatchedCommandRunner(_context, _resources, _pipelines);
+        _textureRunner = new VulkanDrawTextureBatchedCommandRunner(
+            _context,
+            _resources,
+            _pipelines,
+            _shaderManager,
+            _materialSystem
+        );
+        _pieRunner = new VulkanDrawPieTextureCommandRunner(_context, _resources, _pipelines);
         _app.GetPlugin<RenderCommandQueue>()
             .RegisterRunnerRange(
                 _textureRunner,
+                _pieRunner,
                 new VulkanDrawPrimitiveCommandRunner(_context, _pipelines),
                 new VulkanBeginTrimCommandRunner(_context),
                 new VulkanEndTrimCommandRunner(_context)
@@ -130,7 +146,10 @@ public class VulkanDesktopBackend : BackendBase
             return;
         _context.WaitIdle();
         _textureRunner?.Dispose();
+        _pieRunner?.Dispose();
         _pipelines.Dispose();
+        _materialSystem.Dispose();
+        _shaderManager.Dispose();
         _resources.Dispose();
         _context.Dispose();
     }

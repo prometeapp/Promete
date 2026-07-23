@@ -1,29 +1,92 @@
 using System.Drawing;
+using System.Numerics;
 using Promete.Graphics;
 using Promete.Nodes;
-using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Color = System.Drawing.Color;
+using ImageSharpImage = SixLabors.ImageSharp.Image;
+using Rgba32Image = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 
 namespace Promete.Experimental.Vulkan;
 
 /// <summary>
 /// Vulkan バックエンドの描画検証シーン。
-/// スプライトとプリミティブを描画し、スクリーンショットのピクセル色を検証して終了します。
+/// フェーズ1: スプライト・プリミティブ・FrameBuffer・PieSprite・カスタムマテリアルを検証。
+/// フェーズ2: ポストプロセス (色反転) を適用して検証し、終了します。
 /// </summary>
 public class MainScene : Scene
 {
-    private const int ScreenshotFrame = 60;
+    private const int Phase1Frame = 60;
+    private const int Phase2Frame = 120;
 
-    private static readonly string ScreenshotPath = Path.Combine(
-        AppContext.BaseDirectory,
-        "vulkan_test.png"
-    );
+    private static readonly string ScreenshotPath1 = Path.Combine(AppContext.BaseDirectory, "vulkan_test.png");
+    private static readonly string ScreenshotPath2 = Path.Combine(AppContext.BaseDirectory, "vulkan_test_postprocess.png");
+
+    private const string InstancedVertexShader = """
+        #version 450
+        layout(location = 0) in vec2 vPos;
+        layout(location = 1) in vec2 vUv;
+        layout(location = 2) in vec4 iModel0;
+        layout(location = 3) in vec4 iModel1;
+        layout(location = 4) in vec4 iModel2;
+        layout(location = 5) in vec4 iModel3;
+        layout(location = 6) in vec4 iTintColor;
+        layout(location = 7) in vec4 iUvRect;
+        layout(location = 0) out vec2 fUv;
+        layout(location = 1) out vec4 fTintColor;
+        layout(push_constant) uniform PushConstants { mat4 uProjection; };
+        void main()
+        {
+            mat4 model = mat4(iModel0, iModel1, iModel2, iModel3);
+            gl_Position = uProjection * model * vec4(vPos, 0.0, 1.0);
+            fUv = mix(iUvRect.xy, iUvRect.zw, vUv);
+            fTintColor = iTintColor;
+        }
+        """;
+
+    private const string OverrideColorFragmentShader = """
+        #version 450
+        layout(location = 0) in vec2 fUv;
+        layout(location = 1) in vec4 fTintColor;
+        layout(set = 0, binding = 0) uniform sampler2D uTexture0;
+        layout(set = 1, binding = 0) uniform Uniforms { vec4 uOverrideColor; };
+        layout(location = 0) out vec4 FragColor;
+        void main()
+        {
+            FragColor = uOverrideColor;
+        }
+        """;
+
+    private const string BlitVertexShader = """
+        #version 450
+        layout(location = 0) out vec2 fUv;
+        void main()
+        {
+            vec2 pos = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
+            fUv = pos;
+            gl_Position = vec4(pos * 2.0 - 1.0, 0.0, 1.0);
+        }
+        """;
+
+    private const string InvertFragmentShader = """
+        #version 450
+        layout(location = 0) in vec2 fUv;
+        layout(set = 0, binding = 0) uniform sampler2D uScreenTexture;
+        layout(location = 0) out vec4 FragColor;
+        void main()
+        {
+            vec4 c = texture(uScreenTexture, fUv);
+            FragColor = vec4(1.0 - c.rgb, 1.0);
+        }
+        """;
 
     private Texture2D _redTexture;
     private FrameBuffer? _frameBuffer;
+    private ShaderProgram? _overrideShader;
+    private ShaderProgram? _invertShader;
     private int _frameCount;
-    private bool _screenshotRequested;
+    private int _phase;
+    private int _failures;
 
     public override void OnStart()
     {
@@ -48,60 +111,118 @@ public class MainScene : Scene
         _frameBuffer.Add(new Sprite(magenta).Location(0, 0));
         Root.Add(new Sprite(_frameBuffer.Texture).Location(50, 300));
 
-        Console.WriteLine("[MainScene] OnStart: ノード配置完了");
+        // PieSprite 検証: シアン 100x100、0% から 25% (12時→3時の扇形)
+        var cyan = App.TextureFactory.CreateSolid(Color.Cyan, (100, 100));
+        var pie = new PieSprite(cyan) { StartPercent = 0, Percent = 25 };
+        pie.Location = (250, 300);
+        Root.Add(pie);
+
+        // カスタムマテリアル検証: UBO の uOverrideColor で塗りつぶすシェーダー
+        _overrideShader = ShaderProgram
+            .Create()
+            .Vertex(InstancedVertexShader)
+            .Fragment(OverrideColorFragmentShader)
+            .Compile();
+        var material = new Material(_overrideShader);
+        material["uOverrideColor"] = new Vector4(1f, 0.4f, 0f, 1f); // (255, 102, 0)
+        var customSprite = new Sprite(white).Location(450, 150);
+        customSprite.Material = material;
+        Root.Add(customSprite);
+
+        // フェーズ2用: 色反転ポストプロセスシェーダー
+        _invertShader = ShaderProgram
+            .Create()
+            .Vertex(BlitVertexShader)
+            .Fragment(InvertFragmentShader)
+            .Compile();
+
+        Console.WriteLine("[MainScene] OnStart: ノード配置・シェーダーコンパイル完了");
     }
 
     public override void OnUpdate()
     {
         _frameCount++;
 
-        if (_frameCount == ScreenshotFrame && !_screenshotRequested)
+        if (_frameCount == Phase1Frame && _phase == 0)
         {
-            _screenshotRequested = true;
-            _ = VerifyAndExitAsync();
+            _phase = 1;
+            _ = RunPhase1Async();
+        }
+
+        if (_frameCount == Phase2Frame && _phase == 1)
+        {
+            _phase = 2;
+            _ = RunPhase2Async();
         }
     }
 
     public override void OnDestroy()
     {
         _frameBuffer?.Dispose();
+        _overrideShader?.Dispose();
+        _invertShader?.Dispose();
         _redTexture.Dispose();
         Console.WriteLine("[MainScene] OnDestroy");
     }
 
-    private async Task VerifyAndExitAsync()
+    private async Task RunPhase1Async()
     {
         try
         {
-            await Window.SaveScreenshotAsync(ScreenshotPath);
-            Console.WriteLine($"[MainScene] スクリーンショット保存: {ScreenshotPath}");
+            await Window.SaveScreenshotAsync(ScreenshotPath1);
+            using var img = ImageSharpImage.Load<Rgba32>(ScreenshotPath1);
 
-            using var img = SixLabors.ImageSharp.Image.Load<Rgba32>(ScreenshotPath);
-            var failures = 0;
-            failures += Verify(img, 10, 10, Color.DarkSlateBlue, "背景 (左上)");
-            failures += Verify(img, 100, 100, Color.Red, "赤スプライト中心");
-            failures += Verify(img, 300, 150, Color.Lime, "ライム矩形中心");
-            failures += Verify(img, 475, 75, Color.Blue, "青ティントスプライト");
-            failures += Verify(img, 100, 400, Color.DarkSlateBlue, "背景 (下部, Y軸反転検出)");
-            failures += Verify(img, 620, 460, Color.DarkSlateBlue, "背景 (右下)");
-            failures += Verify(img, 100, 310, Color.Magenta, "FrameBuffer 上部 (マゼンタ帯)");
-            failures += Verify(img, 100, 380, Color.Yellow, "FrameBuffer 下部 (黄背景)");
+            Console.WriteLine("[MainScene] --- フェーズ1: 通常描画 ---");
+            _failures += Verify(img, 10, 10, Color.DarkSlateBlue, "背景 (左上)");
+            _failures += Verify(img, 100, 100, Color.Red, "赤スプライト中心");
+            _failures += Verify(img, 300, 150, Color.Lime, "ライム矩形中心");
+            _failures += Verify(img, 475, 75, Color.Blue, "青ティントスプライト");
+            _failures += Verify(img, 620, 460, Color.DarkSlateBlue, "背景 (右下)");
+            _failures += Verify(img, 100, 310, Color.Magenta, "FrameBuffer 上部 (マゼンタ帯)");
+            _failures += Verify(img, 100, 380, Color.Yellow, "FrameBuffer 下部 (黄背景)");
+            _failures += Verify(img, 320, 330, Color.Cyan, "PieSprite 右上 1/4 (シアン)");
+            _failures += Verify(img, 280, 370, Color.DarkSlateBlue, "PieSprite 左下 (背景=切り抜き)");
+            _failures += Verify(img, 475, 175, Color.FromArgb(255, 102, 0), "カスタムマテリアル (uOverrideColor)");
 
-            Console.WriteLine(
-                failures == 0
-                    ? "[MainScene] ✅ 全ピクセル検証パス"
-                    : $"[MainScene] ❌ {failures} 件の検証失敗"
-            );
-            App.Exit(failures == 0 ? 0 : 1);
+            // フェーズ2: 色反転ポストプロセスを適用
+            App.PostProcessMaterials.Add(new Material(_invertShader!));
+            Console.WriteLine("[MainScene] ポストプロセス (色反転) を適用");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[MainScene] ❌ 検証中に例外: {ex}");
+            Console.WriteLine($"[MainScene] ❌ フェーズ1で例外: {ex}");
             App.Exit(2);
         }
     }
 
-    private static int Verify(Image<Rgba32> img, int x, int y, Color expected, string label)
+    private async Task RunPhase2Async()
+    {
+        try
+        {
+            await Window.SaveScreenshotAsync(ScreenshotPath2);
+            using var img = ImageSharpImage.Load<Rgba32>(ScreenshotPath2);
+
+            Console.WriteLine("[MainScene] --- フェーズ2: ポストプロセス (色反転) ---");
+            var invBg = Color.FromArgb(255 - 72, 255 - 61, 255 - 139);
+            _failures += Verify(img, 10, 10, invBg, "背景 反転");
+            _failures += Verify(img, 100, 100, Color.Cyan, "赤スプライト 反転 (シアン)");
+            _failures += Verify(img, 300, 150, Color.Magenta, "ライム矩形 反転 (マゼンタ)");
+
+            Console.WriteLine(
+                _failures == 0
+                    ? "[MainScene] ✅ 全ピクセル検証パス"
+                    : $"[MainScene] ❌ {_failures} 件の検証失敗"
+            );
+            App.Exit(_failures == 0 ? 0 : 1);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MainScene] ❌ フェーズ2で例外: {ex}");
+            App.Exit(2);
+        }
+    }
+
+    private static int Verify(Rgba32Image img, int x, int y, Color expected, string label)
     {
         var actual = img[x, y];
         var ok =
