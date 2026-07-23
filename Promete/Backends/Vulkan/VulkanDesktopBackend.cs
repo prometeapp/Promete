@@ -1,10 +1,10 @@
 using System;
-using Promete.Backends.Headless;
 using Promete.Backends.SilkNetCommon;
 using Promete.Graphics;
+using Promete.Graphics.Rendering;
 using Promete.Graphics.Rendering.Vulkan;
+using Promete.Graphics.Rendering.Vulkan.Runners;
 using Promete.Windowing;
-using Promete.Windowing.Headless;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using IWindow = Silk.NET.Windowing.IWindow;
@@ -16,9 +16,8 @@ namespace Promete.Backends.Vulkan;
 /// Vulkan を使用するデスクトップバックエンドです。
 /// </summary>
 /// <remarks>
-/// 現在は Phase 1（骨格）段階の実装です。ウィンドウ表示・クリアカラー描画・リサイズ対応のみを行い、
-/// テクスチャ・シェーダー・RenderTexture・画面ブリットは暫定的に Headless 実装を流用しています。
-/// 描画コマンドのランナーは未登録のため、ノードは描画されません。
+/// 実験的なバックエンドです。スプライト・プリミティブ・トリム・RenderTexture の描画に対応しています。
+/// カスタムシェーダー・マスク・扇形テクスチャ・ポストプロセスは未対応です。
 /// 詳細は VULKAN_PORTING_PLAN.md を参照してください。
 /// </remarks>
 public class VulkanDesktopBackend : BackendBase
@@ -27,9 +26,13 @@ public class VulkanDesktopBackend : BackendBase
     private IWindow _nativeWindow = null!;
     private PrometeApp _app = null!;
     private VulkanDesktopGameView _gameView = null!;
-    private VulkanContext? _context;
-    private HeadlessRenderTextureProvider _renderTextureProvider = null!;
-    private HeadlessScreenBlitter _screenBlitter = null!;
+    private VulkanContext _context = null!;
+    private VulkanResourceManager _resources = null!;
+    private VulkanPipelineProvider _pipelines = null!;
+    private VulkanTextureFactory _textureFactory = null!;
+    private VulkanRenderTextureProvider _renderTextureProvider = null!;
+    private VulkanScreenBlitter _screenBlitter = null!;
+    private VulkanDrawTextureBatchedCommandRunner? _textureRunner;
 
     public override void OnInitialize(PrometeApp app, WindowOptions opts)
     {
@@ -55,16 +58,28 @@ public class VulkanDesktopBackend : BackendBase
         _nativeWindow.Load += OnLoad;
         _nativeWindow.Render += OnRenderFrame;
         _nativeWindow.Update += _ => _app.OnUpdate();
-        _nativeWindow.Closing += () =>
-        {
-            app.OnDestroy();
-            _context?.Dispose();
-        };
+        _nativeWindow.Closing += OnClosing;
 
+        _context = new VulkanContext(_nativeWindow);
+        _resources = new VulkanResourceManager(_context);
+        _pipelines = new VulkanPipelineProvider(_context, _resources);
         _time = new SilkNetCommonTimeProvider(_nativeWindow);
         _gameView = new VulkanDesktopGameView(_app, _nativeWindow);
-        _renderTextureProvider = new HeadlessRenderTextureProvider();
-        _screenBlitter = new HeadlessScreenBlitter(_renderTextureProvider, _gameView);
+        _textureFactory = new VulkanTextureFactory(_app, _resources);
+        _renderTextureProvider = new VulkanRenderTextureProvider(_context, _resources);
+        _screenBlitter = new VulkanScreenBlitter(
+            _context,
+            _resources,
+            _pipelines,
+            _renderTextureProvider,
+            _gameView
+        );
+        _gameView.AttachRenderingResources(
+            _context,
+            _renderTextureProvider,
+            _screenBlitter,
+            _textureFactory
+        );
     }
 
     public override ITimeProvider SetupTimeProvider() => _time;
@@ -75,13 +90,11 @@ public class VulkanDesktopBackend : BackendBase
 
     public override IScreenBlitter SetupScreenBlitter() => _screenBlitter;
 
-    // TODO: Phase 2 で Vulkan 実装に置き換える
-    public override TextureFactoryBase SetupTextureFactory() => new HeadlessTextureFactory();
+    public override TextureFactoryBase SetupTextureFactory() => _textureFactory;
 
     public override IRenderTextureProvider SetupRenderTextureProvider() => _renderTextureProvider;
 
-    // TODO: Phase 2 で shaderc による Vulkan 実装に置き換える
-    public override IShaderFactory SetupShaderFactory() => new HeadlessShaderFactory();
+    public override IShaderFactory SetupShaderFactory() => new VulkanShaderFactory();
 
     public override void OnStart(PrometeApp app)
     {
@@ -95,16 +108,43 @@ public class VulkanDesktopBackend : BackendBase
 
     private void OnLoad()
     {
-        _context = new VulkanContext(_nativeWindow);
         _context.Initialize(_nativeWindow.Title);
+        _screenBlitter.InitializeScreenRenderTexture();
+
+        // ランナーをコマンドキューへ登録する
+        _textureRunner = new VulkanDrawTextureBatchedCommandRunner(_context, _resources, _pipelines);
+        _app.GetPlugin<RenderCommandQueue>()
+            .RegisterRunnerRange(
+                _textureRunner,
+                new VulkanDrawPrimitiveCommandRunner(_context, _pipelines),
+                new VulkanBeginTrimCommandRunner(_context),
+                new VulkanEndTrimCommandRunner(_context)
+            );
+    }
+
+    private void OnClosing()
+    {
+        _app.OnDestroy();
+
+        if (!_context.IsInitialized)
+            return;
+        _context.WaitIdle();
+        _textureRunner?.Dispose();
+        _pipelines.Dispose();
+        _resources.Dispose();
+        _context.Dispose();
     }
 
     private void OnRenderFrame(double delta)
     {
-        // ノード走査とコマンドキュー処理（ランナー未登録のため現状は収集のみ）
+        if (!_context.IsInitialized)
+            return;
+        if (!_context.BeginFrame())
+            return;
+
+        // ノード走査 → コマンドキュー実行 (ScreenRenderTexture へのキャプチャ) → ブリット
         _app.OnRender();
 
-        // TODO: Phase 3 でコマンドキューの実行結果を統合する。現状はクリアカラーのみ描画する
-        _context?.DrawFrame(_app.BackgroundColor);
+        _context.EndFrame();
     }
 }

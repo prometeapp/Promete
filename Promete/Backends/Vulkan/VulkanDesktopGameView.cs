@@ -2,10 +2,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Promete.Graphics;
+using Promete.Graphics.Rendering.Vulkan;
 using Promete.Platforms;
 using Promete.Windowing;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using IWindow = Silk.NET.Windowing.IWindow;
 
 namespace Promete.Backends.Vulkan;
@@ -16,6 +19,10 @@ namespace Promete.Backends.Vulkan;
 public class VulkanDesktopGameView : IGameView
 {
     private readonly PrometeApp _app;
+    private VulkanContext? _context;
+    private VulkanRenderTextureProvider? _renderTextureProvider;
+    private VulkanScreenBlitter? _screenBlitter;
+    private TextureFactoryBase? _textureFactory;
 
     public VulkanDesktopGameView(PrometeApp app, IWindow window)
     {
@@ -151,24 +158,53 @@ public class VulkanDesktopGameView : IGameView
             };
     }
 
-    // TODO: Phase 4 で vkCmdCopyImageToBuffer によるスクリーンショットを実装する
     public Texture2D TakeScreenshot()
     {
-        throw new NotSupportedException(
-            "Vulkan バックエンドはまだスクリーンショットをサポートしていません。"
-        );
+        EnsureRenderingResources();
+        return _textureFactory!.LoadFromImageSharpImage(TakeScreenshotAsImage());
     }
 
-    public Task SaveScreenshotAsync(string path, CancellationToken ct = default)
+    public async Task SaveScreenshotAsync(string path, CancellationToken ct = default)
     {
-        throw new NotSupportedException(
-            "Vulkan バックエンドはまだスクリーンショットをサポートしていません。"
-        );
+        EnsureRenderingResources();
+        var img = TakeScreenshotAsImage();
+        await img.SaveAsPngAsync(path, ct);
     }
 
     public void UpdateWindowSize()
     {
         NativeWindow.Size = new Vector2D<int>(Size.X, Size.Y) * Scale;
+    }
+
+    /// <summary>
+    /// スクリーンショット等に必要な内部リソースへの参照を設定します。バックエンドが呼び出します。
+    /// </summary>
+    internal void AttachRenderingResources(
+        VulkanContext context,
+        VulkanRenderTextureProvider renderTextureProvider,
+        VulkanScreenBlitter screenBlitter,
+        TextureFactoryBase textureFactory
+    )
+    {
+        _context = context;
+        _renderTextureProvider = renderTextureProvider;
+        _screenBlitter = screenBlitter;
+        _textureFactory = textureFactory;
+    }
+
+    private void EnsureRenderingResources()
+    {
+        if (_context is not { IsInitialized: true } || _screenBlitter?.ScreenRenderTexture is null)
+            throw new InvalidOperationException(
+                "レンダリングが初期化されていないため、スクリーンショットを取得できません。"
+            );
+    }
+
+    private Image<Rgba32> TakeScreenshotAsImage()
+    {
+        var target = _renderTextureProvider!.GetTarget(_screenBlitter!.ScreenRenderTexture);
+        var pixels = _context!.ReadImagePixels(target.Image, target.Extent.Width, target.Extent.Height);
+        return Image.LoadPixelData<Rgba32>(pixels, (int)target.Extent.Width, (int)target.Extent.Height);
     }
 
     private void OnLoad()
