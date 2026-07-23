@@ -8,7 +8,6 @@ using Promete.VulkanDesktop;
 using Promete.Windowing;
 
 // --vulkan フラグで実験的な Vulkan バックエンドを使用する
-// (ImGui プラグインは OpenGL 専用のため Vulkan 時は無効化)
 var useVulkan = args.Contains("--vulkan");
 
 var builder = PrometeApp
@@ -17,10 +16,8 @@ var builder = PrometeApp
     .Use<Mouse>()
     .Use<Gamepads>()
     .Use<ConsoleLayer>()
-    .Use<CoroutineManager>();
-
-if (!useVulkan)
-    builder = builder.Use<ImGuiPlugin>();
+    .Use<CoroutineManager>()
+    .Use<ImGuiPlugin>();
 
 var options = WindowOptions.Default with
 {

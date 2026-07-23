@@ -84,6 +84,7 @@ public class VulkanDesktopBackend : BackendBase
         );
         _gameView.AttachRenderingResources(
             _context,
+            _resources,
             _renderTextureProvider,
             _screenBlitter,
             _textureFactory

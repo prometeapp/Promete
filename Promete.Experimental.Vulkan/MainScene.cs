@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Numerics;
 using Promete.Graphics;
+using Promete.ImGui;
 using Promete.Nodes;
 using SixLabors.ImageSharp.PixelFormats;
 using Color = System.Drawing.Color;
@@ -14,7 +15,7 @@ namespace Promete.Experimental.Vulkan;
 /// フェーズ1: スプライト・プリミティブ・FrameBuffer・PieSprite・カスタムマテリアルを検証。
 /// フェーズ2: ポストプロセス (色反転) を適用して検証し、終了します。
 /// </summary>
-public class MainScene : Scene
+public class MainScene(ImGuiPlugin imGui) : Scene
 {
     private const int Phase1Frame = 60;
     private const int Phase2Frame = 120;
@@ -258,6 +259,9 @@ public class MainScene : Scene
             .Fragment(InvertFragmentShader)
             .Compile();
 
+        // ImGui 描画検証: デモウィンドウを表示 (スワップチェーンへのオーバーレイ描画パスを通す)
+        imGui.Render += OnImGuiRender;
+
         Console.WriteLine("[MainScene] OnStart: ノード配置・シェーダーコンパイル完了");
     }
 
@@ -280,6 +284,7 @@ public class MainScene : Scene
 
     public override void OnDestroy()
     {
+        imGui.Render -= OnImGuiRender;
         _frameBuffer?.Dispose();
         _overrideShader?.Dispose();
         _invertShader?.Dispose();
@@ -352,6 +357,11 @@ public class MainScene : Scene
             Console.WriteLine($"[MainScene] ❌ フェーズ2で例外: {ex}");
             App.Exit(2);
         }
+    }
+
+    private static void OnImGuiRender()
+    {
+        ImGuiNET.ImGui.ShowDemoWindow();
     }
 
     /// <summary>

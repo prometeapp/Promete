@@ -20,6 +20,7 @@ public class VulkanDesktopGameView : IGameView
 {
     private readonly PrometeApp _app;
     private VulkanContext? _context;
+    private VulkanResourceManager? _resources;
     private VulkanRenderTextureProvider? _renderTextureProvider;
     private VulkanScreenBlitter? _screenBlitter;
     private TextureFactoryBase? _textureFactory;
@@ -138,6 +139,12 @@ public class VulkanDesktopGameView : IGameView
         }
     }
 
+    /// <summary>Vulkan コンテキストを取得します。（Promete.ImGui 等の内部連携用）</summary>
+    internal VulkanContext? RenderingContext => _context;
+
+    /// <summary>リソースマネージャを取得します。（Promete.ImGui 等の内部連携用）</summary>
+    internal VulkanResourceManager? RenderingResources => _resources;
+
     public WindowMode Mode
     {
         get =>
@@ -181,12 +188,14 @@ public class VulkanDesktopGameView : IGameView
     /// </summary>
     internal void AttachRenderingResources(
         VulkanContext context,
+        VulkanResourceManager resources,
         VulkanRenderTextureProvider renderTextureProvider,
         VulkanScreenBlitter screenBlitter,
         TextureFactoryBase textureFactory
     )
     {
         _context = context;
+        _resources = resources;
         _renderTextureProvider = renderTextureProvider;
         _screenBlitter = screenBlitter;
         _textureFactory = textureFactory;

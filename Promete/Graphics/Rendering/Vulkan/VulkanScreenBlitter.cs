@@ -112,7 +112,8 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
             }
         }
 
-        // 最終結果をスワップチェーンへブリット
+        // 最終結果をスワップチェーンへブリット。
+        // パスは終了せず開いたままにする (PostRender でのオーバーレイ描画用。EndFrame が閉じる)
         _ctx.BeginSwapchainPass(Color.Black);
         {
             var cmd = _ctx.CurrentCommandBuffer;
@@ -122,7 +123,6 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
             vk.CmdDraw(cmd, 3, 1, 0, 0);
         }
 
-        _ctx.EndSwapchainPass();
         LastBlitSource = src;
     }
 
