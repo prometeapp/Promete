@@ -67,7 +67,7 @@ public class VulkanDesktopBackend : BackendBase
         _context = new VulkanContext(_nativeWindow);
         _resources = new VulkanResourceManager(_context);
         _shaderManager = new VulkanShaderManager(_context);
-        _materialSystem = new VulkanMaterialSystem(_context, _shaderManager);
+        _materialSystem = new VulkanMaterialSystem(_context, _shaderManager, _resources);
         _pipelines = new VulkanPipelineProvider(_context, _resources, _shaderManager, _materialSystem);
         _time = new SilkNetCommonTimeProvider(_nativeWindow);
         _gameView = new VulkanDesktopGameView(_app, _nativeWindow);
@@ -128,7 +128,13 @@ public class VulkanDesktopBackend : BackendBase
             _shaderManager,
             _materialSystem
         );
-        _pieRunner = new VulkanDrawPieTextureCommandRunner(_context, _resources, _pipelines);
+        _pieRunner = new VulkanDrawPieTextureCommandRunner(
+            _context,
+            _resources,
+            _pipelines,
+            _shaderManager,
+            _materialSystem
+        );
         var queue = _app.GetPlugin<RenderCommandQueue>();
         _maskHelper = new VulkanMaskedContainerHelper(
             _app,
@@ -141,7 +147,7 @@ public class VulkanDesktopBackend : BackendBase
         queue.RegisterRunnerRange(
             _textureRunner,
             _pieRunner,
-            new VulkanDrawPrimitiveCommandRunner(_context, _pipelines),
+            new VulkanDrawPrimitiveCommandRunner(_context, _pipelines, _shaderManager, _materialSystem),
             new VulkanBeginTrimCommandRunner(_context),
             new VulkanEndTrimCommandRunner(_context),
             new VulkanBeginStencilMaskCommandRunner(_context, _maskHelper),

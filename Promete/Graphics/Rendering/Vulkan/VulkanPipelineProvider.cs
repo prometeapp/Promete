@@ -22,18 +22,18 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         Pipeline
     > _cache = [];
     private readonly Dictionary<
-        (int ShaderId, CustomKind Kind, PassClass Pass, StencilMode Stencil),
+        (int ShaderId, CustomKind Kind, PassClass Pass, StencilMode Stencil, PrimitiveTopology Topology),
         Pipeline
     > _customCache = [];
+    private readonly Dictionary<(int ShaderId, CustomKind Kind), PipelineLayout> _customLayoutCache = [];
 
     private PipelineLayout _textureLayout;
     private PipelineLayout _primitiveLayout;
     private PipelineLayout _blitLayout;
     private PipelineLayout _pieLayout;
-    private PipelineLayout _customSpriteLayout;
-    private PipelineLayout _customBlitLayout;
     private PipelineLayout _maskedLayout;
     private PipelineLayout _stencilWriteLayout;
+    private DescriptorSetLayout _emptySetLayout;
     private bool _initialized;
     private bool _disposed;
 
@@ -65,6 +65,12 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
 
         /// <summary>フルスクリーンブリット用 (頂点入力なし)。</summary>
         Blit,
+
+        /// <summary>扇形テクスチャ用 (pie 互換の頂点レイアウトと push constant)。</summary>
+        Pie,
+
+        /// <summary>プリミティブ用 (primitive 互換の頂点レイアウトと push constant)。</summary>
+        Primitive,
     }
 
     /// <summary>ステンシルの動作モード。</summary>
@@ -138,25 +144,6 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         }
     }
 
-    /// <summary>カスタムスプライトシェーダー用のパイプラインレイアウトを取得します。</summary>
-    public PipelineLayout CustomSpriteLayout
-    {
-        get
-        {
-            EnsureInitialized();
-            return _customSpriteLayout;
-        }
-    }
-
-    /// <summary>カスタムブリットシェーダー用のパイプラインレイアウトを取得します。</summary>
-    public PipelineLayout CustomBlitLayout
-    {
-        get
-        {
-            EnsureInitialized();
-            return _customBlitLayout;
-        }
-    }
 
     /// <summary>アルファマスク合成用のパイプラインレイアウトを取得します。</summary>
     public PipelineLayout MaskedLayout
@@ -176,6 +163,23 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             EnsureInitialized();
             return _stencilWriteLayout;
         }
+    }
+
+    /// <summary>
+    /// カスタムシェーダー用のパイプラインレイアウトを取得します。
+    /// シェーダーのリフレクション結果 (追加テクスチャのセット数) に基づいて生成・キャッシュされます。
+    /// </summary>
+    public PipelineLayout GetCustomLayout(int shaderId, CustomKind kind)
+    {
+        var key = (shaderId, kind);
+        if (_customLayoutCache.TryGetValue(key, out var cached))
+            return cached;
+
+        EnsureInitialized();
+        var entry = _shaders.Get(shaderId);
+        var layout = CreateCustomLayout(kind, entry.MaxSet);
+        _customLayoutCache[key] = layout;
+        return layout;
     }
 
     /// <summary>インスタンシングテクスチャ描画用のパイプラインを取得します。</summary>
@@ -215,28 +219,53 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         int shaderId,
         PassClass pass,
         StencilMode stencil = StencilMode.None
-    ) => GetOrCreateCustom(shaderId, CustomKind.Sprite, pass, stencil);
+    ) => GetOrCreateCustom(shaderId, CustomKind.Sprite, pass, stencil, PrimitiveTopology.TriangleList);
 
     /// <summary>カスタムシェーダーによるフルスクリーンブリット用のパイプラインを取得します。</summary>
     public Pipeline GetCustomBlitPipeline(int shaderId, PassClass pass) =>
-        GetOrCreateCustom(shaderId, CustomKind.Blit, pass, StencilMode.None);
+        GetOrCreateCustom(shaderId, CustomKind.Blit, pass, StencilMode.None, PrimitiveTopology.TriangleList);
+
+    /// <summary>カスタムシェーダーによる扇形テクスチャ描画用のパイプラインを取得します。</summary>
+    public Pipeline GetCustomPiePipeline(
+        int shaderId,
+        PassClass pass,
+        StencilMode stencil = StencilMode.None
+    ) => GetOrCreateCustom(shaderId, CustomKind.Pie, pass, stencil, PrimitiveTopology.TriangleList);
+
+    /// <summary>カスタムシェーダーによるプリミティブ描画用のパイプラインを取得します。</summary>
+    public Pipeline GetCustomPrimitivePipeline(
+        int shaderId,
+        PassClass pass,
+        PrimitiveTopology topology,
+        StencilMode stencil = StencilMode.None
+    ) => GetOrCreateCustom(shaderId, CustomKind.Primitive, pass, stencil, topology);
 
     /// <summary>
     /// 破棄されたカスタムシェーダーのパイプラインをキャッシュから除去します。
     /// </summary>
     public void InvalidateShader(int shaderId)
     {
-        var keys = new List<(int, CustomKind, PassClass, StencilMode)>();
+        var vk = _ctx.Vk;
+        var device = _ctx.Device;
+
+        var keys = new List<(int, CustomKind, PassClass, StencilMode, PrimitiveTopology)>();
         foreach (var key in _customCache.Keys)
             if (key.ShaderId == shaderId)
                 keys.Add(key);
-
-        var vk = _ctx.Vk;
-        var device = _ctx.Device;
         foreach (var key in keys)
         {
             if (_customCache.Remove(key, out var pipeline))
                 _ctx.DeferDestroy(() => vk.DestroyPipeline(device, pipeline, null));
+        }
+
+        var layoutKeys = new List<(int, CustomKind)>();
+        foreach (var key in _customLayoutCache.Keys)
+            if (key.ShaderId == shaderId)
+                layoutKeys.Add(key);
+        foreach (var key in layoutKeys)
+        {
+            if (_customLayoutCache.Remove(key, out var layout))
+                _ctx.DeferDestroy(() => vk.DestroyPipelineLayout(device, layout, null));
         }
     }
 
@@ -255,6 +284,9 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         foreach (var pipeline in _customCache.Values)
             vk.DestroyPipeline(device, pipeline, null);
         _customCache.Clear();
+        foreach (var layout in _customLayoutCache.Values)
+            vk.DestroyPipelineLayout(device, layout, null);
+        _customLayoutCache.Clear();
 
         if (_initialized)
         {
@@ -262,10 +294,9 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             vk.DestroyPipelineLayout(device, _primitiveLayout, null);
             vk.DestroyPipelineLayout(device, _blitLayout, null);
             vk.DestroyPipelineLayout(device, _pieLayout, null);
-            vk.DestroyPipelineLayout(device, _customSpriteLayout, null);
-            vk.DestroyPipelineLayout(device, _customBlitLayout, null);
             vk.DestroyPipelineLayout(device, _maskedLayout, null);
             vk.DestroyPipelineLayout(device, _stencilWriteLayout, null);
+            vk.DestroyDescriptorSetLayout(device, _emptySetLayout, null);
         }
 
         _compiler.Dispose();
@@ -279,8 +310,6 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         var vk = _ctx.Vk;
         var device = _ctx.Device;
         var textureSetLayout = _resources.TextureSetLayout;
-        var uboSetLayout = _materials.UboSetLayout;
-        var textureAndUboLayouts = stackalloc DescriptorSetLayout[2] { textureSetLayout, uboSetLayout };
 
         // texture: set0 = sampler, push constant = mat4 (vertex)
         {
@@ -337,29 +366,14 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             vk.CreatePipelineLayout(device, in layoutInfo, null, out _pieLayout);
         }
 
-        // custom sprite: set0 = sampler, set1 = UBO, push constant = mat4 (vertex)
+        // カスタムプリミティブ用の空セットレイアウト (set0 プレースホルダー)
         {
-            var pushConstant = new PushConstantRange(ShaderStageFlags.VertexBit, 0, 64);
-            var layoutInfo = new PipelineLayoutCreateInfo
+            var layoutInfo = new DescriptorSetLayoutCreateInfo
             {
-                SType = StructureType.PipelineLayoutCreateInfo,
-                SetLayoutCount = 2,
-                PSetLayouts = textureAndUboLayouts,
-                PushConstantRangeCount = 1,
-                PPushConstantRanges = &pushConstant,
+                SType = StructureType.DescriptorSetLayoutCreateInfo,
+                BindingCount = 0,
             };
-            vk.CreatePipelineLayout(device, in layoutInfo, null, out _customSpriteLayout);
-        }
-
-        // custom blit: set0 = sampler, set1 = UBO
-        {
-            var layoutInfo = new PipelineLayoutCreateInfo
-            {
-                SType = StructureType.PipelineLayoutCreateInfo,
-                SetLayoutCount = 2,
-                PSetLayouts = textureAndUboLayouts,
-            };
-            vk.CreatePipelineLayout(device, in layoutInfo, null, out _customBlitLayout);
+            vk.CreateDescriptorSetLayout(device, in layoutInfo, null, out _emptySetLayout);
         }
 
         // masked: set0 = content, set1 = mask, push constant = mat4 + vec4 (両ステージ, 80 bytes)
@@ -486,41 +500,81 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         int shaderId,
         CustomKind kind,
         PassClass pass,
-        StencilMode stencil
+        StencilMode stencil,
+        PrimitiveTopology topology
     )
     {
-        var key = (shaderId, kind, pass, stencil);
+        var key = (shaderId, kind, pass, stencil, topology);
         if (_customCache.TryGetValue(key, out var cached))
             return cached;
 
         EnsureInitialized();
         var entry = _shaders.Get(shaderId);
-        var pipeline = kind switch
+        var layout = GetCustomLayout(shaderId, kind);
+        var (vertexLayout, enableBlend) = kind switch
         {
-            CustomKind.Sprite => CreatePipeline(
-                entry.VertexModule,
-                entry.FragmentModule,
-                _customSpriteLayout,
-                pass,
-                PrimitiveTopology.TriangleList,
-                enableBlend: true,
-                VertexLayout.InstancedSprite,
-                stencil
-            ),
-            CustomKind.Blit => CreatePipeline(
-                entry.VertexModule,
-                entry.FragmentModule,
-                _customBlitLayout,
-                pass,
-                PrimitiveTopology.TriangleList,
-                enableBlend: false,
-                VertexLayout.None,
-                stencil
-            ),
+            CustomKind.Sprite => (VertexLayout.InstancedSprite, true),
+            CustomKind.Blit => (VertexLayout.None, false),
+            CustomKind.Pie => (VertexLayout.PositionUv, true),
+            CustomKind.Primitive => (VertexLayout.Position2D, true),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
+
+        var pipeline = CreatePipeline(
+            entry.VertexModule,
+            entry.FragmentModule,
+            layout,
+            pass,
+            topology,
+            enableBlend,
+            vertexLayout,
+            stencil
+        );
         _customCache[key] = pipeline;
         return pipeline;
+    }
+
+    /// <summary>
+    /// カスタムシェーダー用のパイプラインレイアウトを生成します。
+    /// set0 = メインテクスチャ (Primitive は空)、set1 = Uniform ブロック、
+    /// set2 以降 = Material の追加テクスチャ。
+    /// </summary>
+    private PipelineLayout CreateCustomLayout(CustomKind kind, uint maxSet)
+    {
+        var vk = _ctx.Vk;
+        var device = _ctx.Device;
+        var textureSetLayout = _resources.TextureSetLayout;
+        var uboSetLayout = _materials.UboSetLayout;
+
+        var setCount = Math.Max(2u, maxSet + 1);
+        var setLayouts = stackalloc DescriptorSetLayout[(int)setCount];
+        setLayouts[0] = kind == CustomKind.Primitive ? _emptySetLayout : textureSetLayout;
+        setLayouts[1] = uboSetLayout;
+        for (var i = 2u; i < setCount; i++)
+            setLayouts[i] = textureSetLayout;
+
+        var pushConstant = kind switch
+        {
+            CustomKind.Sprite => new PushConstantRange(ShaderStageFlags.VertexBit, 0, 64),
+            CustomKind.Pie => new PushConstantRange(
+                ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
+                0,
+                96
+            ),
+            CustomKind.Primitive => new PushConstantRange(ShaderStageFlags.FragmentBit, 0, 16),
+            _ => default,
+        };
+
+        var layoutInfo = new PipelineLayoutCreateInfo
+        {
+            SType = StructureType.PipelineLayoutCreateInfo,
+            SetLayoutCount = setCount,
+            PSetLayouts = setLayouts,
+            PushConstantRangeCount = kind == CustomKind.Blit ? 0u : 1u,
+            PPushConstantRanges = &pushConstant,
+        };
+        vk.CreatePipelineLayout(device, in layoutInfo, null, out var layout);
+        return layout;
     }
 
     private RenderPass GetRenderPass(PassClass pass) =>

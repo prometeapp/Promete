@@ -14,7 +14,9 @@ namespace Promete.Graphics.Rendering.Vulkan.Runners;
 internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
     VulkanContext ctx,
     VulkanResourceManager resources,
-    VulkanPipelineProvider pipelines
+    VulkanPipelineProvider pipelines,
+    VulkanShaderManager shaders,
+    VulkanMaterialSystem materials
 ) : CommandRunner<DrawPieTextureCommand>, IDisposable
 {
     // push constant: mat4 (16) + vec4 tint (4) + vec2 angles (2) + padding (2) = 24 floats
@@ -69,11 +71,14 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
         if (!ctx.IsFrameActive || !resources.Contains(texture.Handle))
             return;
 
-        // TODO: カスタムマテリアルの適用に対応する
-        if (material is not null && !_materialWarned)
+        // カスタムマテリアル: シェーダーがコンパイル済みならカスタムパイプラインを使用
+        var useCustom = material is not null && shaders.Contains(material.Shader.Handle);
+        if (material is not null && !useCustom && !_materialWarned)
         {
             _materialWarned = true;
-            LogHelper.Bug("Vulkan バックエンドはまだ PieSprite のカスタムマテリアルをサポートしていません。");
+            LogHelper.Bug(
+                "Material のシェーダーがコンパイルされていないため、デフォルトシェーダーで描画します。"
+            );
         }
 
         EnsureInitialized();
@@ -109,16 +114,23 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
         var vk = ctx.Vk;
         var cmd = ctx.CurrentCommandBuffer;
 
-        var pipeline = pipelines.GetPiePipeline(
-            VulkanPipelineProvider.PassClass.Offscreen,
-            ctx.StencilMaskActive
-                ? VulkanPipelineProvider.StencilMode.TestEqual
-                : VulkanPipelineProvider.StencilMode.None
-        );
+        var stencil = ctx.StencilMaskActive
+            ? VulkanPipelineProvider.StencilMode.TestEqual
+            : VulkanPipelineProvider.StencilMode.None;
+        var pipeline = useCustom
+            ? pipelines.GetCustomPiePipeline(
+                material!.Shader.Handle,
+                VulkanPipelineProvider.PassClass.Offscreen,
+                stencil
+            )
+            : pipelines.GetPiePipeline(VulkanPipelineProvider.PassClass.Offscreen, stencil);
+        var layout = useCustom
+            ? pipelines.GetCustomLayout(material!.Shader.Handle, VulkanPipelineProvider.CustomKind.Pie)
+            : pipelines.PieLayout;
         vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
         vk.CmdPushConstants(
             cmd,
-            pipelines.PieLayout,
+            layout,
             ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
             0,
             PushConstantFloats * sizeof(float),
@@ -129,13 +141,16 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
         vk.CmdBindDescriptorSets(
             cmd,
             PipelineBindPoint.Graphics,
-            pipelines.PieLayout,
+            layout,
             0,
             1,
             in descriptorSet,
             0,
             null
         );
+
+        if (useCustom)
+            materials.Apply(cmd, material!, layout);
 
         var offset = 0ul;
         vk.CmdBindVertexBuffers(cmd, 0, 1, in _quadVbo, in offset);

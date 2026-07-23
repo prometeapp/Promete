@@ -12,7 +12,9 @@ namespace Promete.Graphics.Rendering.Vulkan.Runners;
 /// </summary>
 internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
     VulkanContext ctx,
-    VulkanPipelineProvider pipelines
+    VulkanPipelineProvider pipelines,
+    VulkanShaderManager shaders,
+    VulkanMaterialSystem materials
 ) : CommandRunner<DrawPrimitiveCommand>
 {
     public override void Execute(DrawPrimitiveCommand command)
@@ -22,7 +24,8 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
             command.ShapeType,
             command.Color,
             command.LineWidth,
-            command.LineColor
+            command.LineColor,
+            command.Material
         );
     }
 
@@ -31,7 +34,8 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
         ShapeType type,
         Color color,
         int lineWidth,
-        Color? lineColor
+        Color? lineColor,
+        Material? material
     )
     {
         PrometeApp.Current.ThrowIfNotMainThread();
@@ -51,11 +55,17 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
             vertices[(i * 2) + 1] = -y;
         }
 
-        DrawFill(vertices, type, color, lineWidth);
-        DrawStroke(vertices, lineWidth, lineColor);
+        DrawFill(vertices, type, color, lineWidth, material);
+        DrawStroke(vertices, lineWidth, lineColor, material);
     }
 
-    private void DrawFill(Span<float> vertices, ShapeType type, Color color, int lineWidth)
+    private void DrawFill(
+        Span<float> vertices,
+        ShapeType type,
+        Color color,
+        int lineWidth,
+        Material? material
+    )
     {
         // 透明度が0の場合は、塗りつぶし領域の描画をスキップする
         if (color.A <= 0)
@@ -68,14 +78,7 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
         var vertexCount = (uint)(vertices.Length / 2);
 
         var (buffer, offset) = ctx.CurrentArena.Push<float>(vertices);
-
-        var pipeline = pipelines.GetPrimitivePipeline(
-            VulkanPipelineProvider.PassClass.Offscreen,
-            ToVulkanTopology(type),
-            CurrentStencilMode()
-        );
-        vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
-        PushColor(cmd, color);
+        BindPipeline(cmd, ToVulkanTopology(type), color, material);
 
         vk.CmdBindVertexBuffers(cmd, 0, 1, in buffer, in offset);
 
@@ -92,7 +95,7 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
         vk.CmdDraw(cmd, vertexCount, 1, 0, 0);
     }
 
-    private void DrawStroke(Span<float> vertices, int lineWidth, Color? lineColor)
+    private void DrawStroke(Span<float> vertices, int lineWidth, Color? lineColor, Material? material)
     {
         if (lineWidth <= 0 || lineColor is not { } lc)
             return;
@@ -107,30 +110,52 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
         looped[^1] = vertices[1];
 
         var (buffer, offset) = ctx.CurrentArena.Push<float>(looped);
-
-        var pipeline = pipelines.GetPrimitivePipeline(
-            VulkanPipelineProvider.PassClass.Offscreen,
-            PrimitiveTopology.LineStrip,
-            CurrentStencilMode()
-        );
-        vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
-        PushColor(cmd, lc);
+        BindPipeline(cmd, PrimitiveTopology.LineStrip, lc, material);
 
         vk.CmdBindVertexBuffers(cmd, 0, 1, in buffer, in offset);
         vk.CmdDraw(cmd, (uint)(looped.Length / 2), 1, 0, 0);
     }
 
-    private void PushColor(CommandBuffer cmd, Color color)
+    /// <summary>
+    /// パイプラインをバインドし、色の push constant とマテリアルを適用します。
+    /// </summary>
+    private void BindPipeline(
+        CommandBuffer cmd,
+        PrimitiveTopology topology,
+        Color color,
+        Material? material
+    )
     {
+        var vk = ctx.Vk;
+        var stencil = CurrentStencilMode();
+        var useCustom = material is not null && shaders.Contains(material.Shader.Handle);
+
+        var pipeline = useCustom
+            ? pipelines.GetCustomPrimitivePipeline(
+                material!.Shader.Handle,
+                VulkanPipelineProvider.PassClass.Offscreen,
+                topology,
+                stencil
+            )
+            : pipelines.GetPrimitivePipeline(
+                VulkanPipelineProvider.PassClass.Offscreen,
+                topology,
+                stencil
+            );
+        var layout = useCustom
+            ? pipelines.GetCustomLayout(
+                material!.Shader.Handle,
+                VulkanPipelineProvider.CustomKind.Primitive
+            )
+            : pipelines.PrimitiveLayout;
+
+        vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
+
         var value = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
-        ctx.Vk.CmdPushConstants(
-            cmd,
-            pipelines.PrimitiveLayout,
-            ShaderStageFlags.FragmentBit,
-            0,
-            16,
-            &value
-        );
+        vk.CmdPushConstants(cmd, layout, ShaderStageFlags.FragmentBit, 0, 16, &value);
+
+        if (useCustom)
+            materials.Apply(cmd, material!, layout);
     }
 
     private VulkanPipelineProvider.StencilMode CurrentStencilMode() =>
