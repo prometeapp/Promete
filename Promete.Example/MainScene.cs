@@ -17,9 +17,10 @@ public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
     private void OutputUI()
     {
         console.Clear();
-        console.Print("Promete Demo\n");
+        var rendererName = DemoKernel.UseVulkan ? "Vulkan" : "OpenGL";
+        console.Print($"Promete Demo ({rendererName})\n");
         console.Print($"現在のディレクトリ: /{CurrentFolder.GetFullPath()}\n");
-        View.Title = $"Promete Demo - {CurrentFolder.GetFullPath()}";
+        View.Title = $"Promete Demo ({rendererName}) - {CurrentFolder.GetFullPath()}";
 
         for (var i = 0; i < CurrentFolder.Files.Count; i++)
         {
