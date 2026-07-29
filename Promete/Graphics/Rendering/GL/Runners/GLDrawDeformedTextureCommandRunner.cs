@@ -23,6 +23,8 @@ public sealed class GLDrawDeformedTextureCommandRunner(IGameView view)
     private int _uProjection;
     private int _uTexture0;
     private int _uTintColor;
+    private int _uUvStart;
+    private int _uUvEnd;
 
     public override unsafe void Execute(DrawDeformedTextureCommand command)
     {
@@ -30,6 +32,7 @@ public sealed class GLDrawDeformedTextureCommandRunner(IGameView view)
         EnsureInitialized();
 
         var gl = _view.GL;
+        var model = command.ModelMatrix;
         var viewport = GLHelper.GetViewport(gl);
         var projection = Matrix4x4.CreateOrthographicOffCenter(
             0,
@@ -71,9 +74,15 @@ public sealed class GLDrawDeformedTextureCommandRunner(IGameView view)
         var uTintColor = command.Material is null
             ? _uTintColor
             : GLMaterialApplier.GetLocation(gl, program, "uTintColor");
+        var uUvStart = command.Material is null
+            ? _uUvStart
+            : GLMaterialApplier.GetLocation(gl, program, "uUvStart");
+        var uUvEnd = command.Material is null
+            ? _uUvEnd
+            : GLMaterialApplier.GetLocation(gl, program, "uUvEnd");
 
         if (uModel >= 0)
-            gl.UniformMatrix4(uModel, 1, false, (float*)&command.ModelMatrix);
+            gl.UniformMatrix4(uModel, 1, false, (float*)&model);
         if (uProjection >= 0)
             gl.UniformMatrix4(uProjection, 1, false, (float*)&projection);
         if (uTexture0 >= 0)
@@ -86,6 +95,10 @@ public sealed class GLDrawDeformedTextureCommandRunner(IGameView view)
                 new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f)
             );
         }
+        if (uUvStart >= 0)
+            gl.Uniform2(uUvStart, command.Texture.UvStart.X, command.Texture.UvStart.Y);
+        if (uUvEnd >= 0)
+            gl.Uniform2(uUvEnd, command.Texture.UvEnd.X, command.Texture.UvEnd.Y);
         if (command.Material is not null)
             GLMaterialApplier.Apply(gl, program, command.Material);
 
@@ -152,6 +165,8 @@ public sealed class GLDrawDeformedTextureCommandRunner(IGameView view)
         _uProjection = gl.GetUniformLocation(_shader, "uProjection");
         _uTexture0 = gl.GetUniformLocation(_shader, "uTexture0");
         _uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
+        _uUvStart = gl.GetUniformLocation(_shader, "uUvStart");
+        _uUvEnd = gl.GetUniformLocation(_shader, "uUvEnd");
         _initialized = true;
     }
 }
