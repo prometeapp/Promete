@@ -45,9 +45,13 @@ public sealed class GLDrawDeformedTextureCommandRunner(IGameView view)
 
         Span<float> vertices =
         [
+            // BottomRight: position(X,Y), UV(1,1)
             command.BottomRight.X, command.BottomRight.Y, 1, 1,
+            // TopRight: position(X,Y), UV(1,0)
             command.TopRight.X, command.TopRight.Y, 1, 0,
+            // BottomLeft: position(X,Y), UV(0,1)
             command.BottomLeft.X, command.BottomLeft.Y, 0, 1,
+            // TopLeft: position(X,Y), UV(0,0)
             command.TopLeft.X, command.TopLeft.Y, 0, 0,
         ];
 
@@ -141,7 +145,7 @@ public sealed class GLDrawDeformedTextureCommandRunner(IGameView view)
         gl.DeleteShader(vsh);
         gl.DeleteShader(fsh);
 
-        Span<uint> indices = [0, 1, 3, 1, 2, 3];
+        Span<uint> indices = [0, 1, 2, 1, 3, 2];
         _vao = gl.GenVertexArray();
         gl.BindVertexArray(_vao);
         _vbo = gl.GenBuffer();
