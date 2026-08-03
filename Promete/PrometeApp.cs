@@ -40,13 +40,17 @@ public sealed class PrometeApp : IDisposable
     private IScreenBlitter _screenBlitter;
     private int _statusCode;
 
-    private PrometeApp(ServiceCollection services, List<Type> pluginTypes)
+    private PrometeApp(
+        ServiceCollection services,
+        List<Type> pluginTypes,
+        List<Assembly> sceneAssemblies
+    )
     {
         _mainThread = Thread.CurrentThread;
 
         _services = services;
         _pluginTypes = pluginTypes;
-        RegisterAllScenes();
+        RegisterAllScenes(sceneAssemblies);
         services.AddSingleton(this);
         services.AddSingleton<FrameBufferManager>();
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
@@ -522,18 +526,34 @@ public sealed class PrometeApp : IDisposable
         }
     }
 
-    private void RegisterAllScenes()
+    private void RegisterAllScenes(List<Assembly> additionalAssemblies)
     {
         // DefaultScene を明示的に登録
         _services.AddTransient<DefaultScene>();
 
-        var asm =
+        var entryAsm =
             Assembly.GetEntryAssembly()
             ?? throw new InvalidOperationException("There is no entry assembly.");
 
-        // Scene 派生クラスを全て取得する
-        var types = asm.GetTypes();
-        foreach (var type in types.Where(t => t.IsSubclassOf(typeof(Scene))))
+        // エントリアセンブリに加え、UseScenesFrom で指定されたアセンブリも探索する
+        var assemblies = new List<Assembly> { entryAsm };
+        foreach (var asm in additionalAssemblies.Where(asm => asm != entryAsm))
+        {
+            assemblies.Add(asm);
+        }
+
+        foreach (var asm in assemblies)
+        {
+            RegisterScenesIn(asm);
+        }
+    }
+
+    /// <summary>
+    /// 指定したアセンブリの <see cref="Scene"/> 派生クラスを DI に登録する。
+    /// </summary>
+    private void RegisterScenesIn(Assembly assembly)
+    {
+        foreach (var type in assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Scene))))
         {
             // IgnoredSceneAttribute が付与されている場合は無視する
             if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null)
@@ -569,12 +589,40 @@ public sealed class PrometeApp : IDisposable
         ];
 
         private readonly List<Type> _pluginTypes = [];
+        private readonly List<Assembly> _sceneAssemblies = [];
         private readonly ServiceCollection _services;
 
         internal PrometeAppBuilder()
         {
             _services = [];
         }
+
+        /// <summary>
+        /// 指定したアセンブリに含まれる <see cref="Scene"/> 派生クラスを登録対象に追加します。
+        ///
+        /// 既定ではエントリアセンブリのシーンだけが自動登録されます。
+        /// ゲームをエンジン層とコンテンツ層に分割している場合など、
+        /// エントリアセンブリ以外にシーンを置いているときに使用してください。
+        /// </summary>
+        /// <param name="assembly">シーンを探索するアセンブリ。</param>
+        /// <returns>このビルダーインスタンス。</returns>
+        public PrometeAppBuilder UseScenesFrom(Assembly assembly)
+        {
+            ArgumentNullException.ThrowIfNull(assembly);
+            if (!_sceneAssemblies.Contains(assembly))
+            {
+                _sceneAssemblies.Add(assembly);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 指定した型が属するアセンブリに含まれる <see cref="Scene"/> 派生クラスを登録対象に追加します。
+        /// </summary>
+        /// <typeparam name="T">登録したいアセンブリに含まれる任意の型。</typeparam>
+        /// <returns>このビルダーインスタンス。</returns>
+        public PrometeAppBuilder UseScenesFrom<T>() => UseScenesFrom(typeof(T).Assembly);
 
         /// <summary>
         /// 指定した型のプラグインを追加します。
@@ -607,7 +655,7 @@ public sealed class PrometeApp : IDisposable
         public PrometeApp Build<T>(WindowOptions? opts)
             where T : BackendBase, new()
         {
-            var app = new PrometeApp(_services, _pluginTypes);
+            var app = new PrometeApp(_services, _pluginTypes, _sceneAssemblies);
             app.RegisterBackend(new T(), opts ?? WindowOptions.Default);
             return app;
         }
