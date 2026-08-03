@@ -39,7 +39,9 @@ public class TrimClampDebugScene(ConsoleLayer console, Keyboard keyboard) : Scen
     /// <summary>内側コンテナの画面上の左端。外側の可視領域内に置く。</summary>
     private const int InnerScreenX = 50;
 
-    /// <summary>外側コンテナ。左へはみ出させてクリップ幅を過大にする。</summary>
+    /// <summary>
+    /// 外側コンテナ。自身は中身を持たず、左へはみ出させてクリップ幅を過大にする役に徹する。
+    /// </summary>
     private readonly Container _outer = new Container().Size(OuterWidth, TrimHeight);
 
     /// <summary>内側コンテナ。中身を全域に持ち、外側の過大な幅の影響を受ける。</summary>
@@ -68,15 +70,7 @@ public class TrimClampDebugScene(ConsoleLayer console, Keyboard keyboard) : Scen
             );
         }
 
-        // 外側の中身。内側との重なりを避けるため上端の薄い帯だけにする
-        for (var x = 0; x < OuterWidth; x += 20)
-        {
-            var isEven = x / 20 % 2 == 0;
-            _outer.Add(
-                Shape.CreateRect(x, 0, x + 19, 10, isEven ? Color.SteelBlue : Color.DarkSlateBlue)
-            );
-        }
-
+        // 外側自身は中身を持たない。トリム枠としてのみ機能させる
         _outer.Add(_inner);
         Root.Add(_outer);
 

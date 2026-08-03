@@ -5,11 +5,15 @@ using Promete.Example.Kernel;
 using Promete.GLDesktop;
 using Promete.ImGui;
 using Promete.Input;
+using Promete.Vulkan.Validation;
 using Promete.VulkanDesktop;
 using Promete.Windowing;
 
 // --vulkan フラグで実験的な Vulkan バックエンドを使用する
 DemoKernel.UseVulkan = args.Contains("--vulkan");
+
+// --validation フラグで Vulkan バリデーションレイヤーを有効化する (要 Vulkan SDK)
+var useValidation = args.Contains("--validation");
 
 var builder = PrometeApp
     .Create()
@@ -19,6 +23,9 @@ var builder = PrometeApp
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
     .Use<ImGuiPlugin>();
+
+if (DemoKernel.UseVulkan && useValidation)
+    builder = builder.UseVulkanValidation();
 
 var options = WindowOptions.Default with
 {

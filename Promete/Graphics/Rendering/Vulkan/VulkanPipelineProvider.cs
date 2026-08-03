@@ -547,6 +547,20 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         var uboSetLayout = _materials.UboSetLayout;
 
         var setCount = Math.Max(2u, maxSet + 1);
+
+        // デバイス上限を超える set 数を渡すと仕様違反となり、
+        // バリデーションレイヤ不在の環境ではドライバ内でアクセス違反を起こす
+        // (VUID-VkPipelineLayoutCreateInfo-setLayoutCount-00286)。
+        var maxSets = _ctx.MaxBoundDescriptorSets;
+        if (setCount > maxSets)
+        {
+            throw new InvalidOperationException(
+                $"カスタムシェーダーが descriptor set {maxSet} を宣言しており、"
+                    + $"{setCount} 個のセットが必要ですが、このデバイスがバインドできるのは "
+                    + $"{maxSets} 個までです (指定できる set 番号は 0 〜 {maxSets - 1})。"
+            );
+        }
+
         var setLayouts = stackalloc DescriptorSetLayout[(int)setCount];
         setLayouts[0] = kind == CustomKind.Primitive ? _emptySetLayout : textureSetLayout;
         setLayouts[1] = uboSetLayout;

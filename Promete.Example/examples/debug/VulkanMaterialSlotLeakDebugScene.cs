@@ -20,8 +20,9 @@ namespace Promete.Example.examples.debug;
 [Demo("/debug/vulkan_material_slot_leak", "指摘#07: Materialスロットが解放されずプール枯渇")]
 public class VulkanMaterialSlotLeakDebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
+    // Vulkan 向け。uProjection は push constant、in/out はすべて location 必須。
     private const string VertSrc = """
-        #version 330 core
+        #version 450
         layout(location = 0) in vec2 vPos;
         layout(location = 1) in vec2 vUv;
         layout(location = 2) in vec4 iModel0;
@@ -31,10 +32,13 @@ public class VulkanMaterialSlotLeakDebugScene(ConsoleLayer console, Keyboard key
         layout(location = 6) in vec4 iTintColor;
         layout(location = 7) in vec4 iUvRect;
 
-        out vec2 fUv;
-        out vec4 fTintColor;
+        layout(location = 0) out vec2 fUv;
+        layout(location = 1) out vec4 fTintColor;
 
-        uniform mat4 uProjection;
+        layout(push_constant) uniform PushConstants
+        {
+            mat4 uProjection;
+        };
 
         void main()
         {
@@ -45,14 +49,21 @@ public class VulkanMaterialSlotLeakDebugScene(ConsoleLayer console, Keyboard key
         }
         """;
 
-    // uTime を持つだけの最小フラグメントシェーダー
+    // uTime を持つだけの最小フラグメントシェーダー。
+    // Material の名前ベース Uniform は set=1, binding=0 のブロックに置く規約。
     private const string FragSrc = """
-        #version 330 core
-        in vec2 fUv;
-        in vec4 fTintColor;
-        uniform sampler2D uTexture0;
-        uniform float uTime;
-        out vec4 FragColor;
+        #version 450
+        layout(location = 0) in vec2 fUv;
+        layout(location = 1) in vec4 fTintColor;
+
+        layout(set = 0, binding = 0) uniform sampler2D uTexture0;
+
+        layout(set = 1, binding = 0) uniform MaterialParams
+        {
+            float uTime;
+        };
+
+        layout(location = 0) out vec4 FragColor;
 
         void main()
         {

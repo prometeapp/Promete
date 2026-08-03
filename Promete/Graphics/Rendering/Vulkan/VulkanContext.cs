@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using Promete.Internal;
 using Silk.NET.Core;
 using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
@@ -25,11 +26,13 @@ internal sealed unsafe class VulkanContext : IDisposable
     public const Format OffscreenFormat = Format.R8G8B8A8Unorm;
 
     private readonly IWindow _window;
+    private readonly IVulkanInstanceHook? _hook;
     private readonly Stack<VulkanRenderTarget> _targetStack = new();
     private readonly List<Action>[] _deferredDestroys = new List<Action>[FramesInFlight];
 
     private KhrSurface _khrSurface = null!;
     private KhrSwapchain _khrSwapchain = null!;
+
 
     private Instance _instance;
     private SurfaceKHR _surface;
@@ -66,9 +69,10 @@ internal sealed unsafe class VulkanContext : IDisposable
     private bool _framebufferResized;
     private bool _disposed;
 
-    public VulkanContext(IWindow window)
+    public VulkanContext(IWindow window, IVulkanInstanceHook? hook = null)
     {
         _window = window;
+        _hook = hook;
         _window.FramebufferResize += _ => _framebufferResized = true;
         for (var i = 0; i < FramesInFlight; i++)
             _deferredDestroys[i] = [];
@@ -82,6 +86,12 @@ internal sealed unsafe class VulkanContext : IDisposable
 
     /// <summary>物理デバイスを取得します。</summary>
     public PhysicalDevice PhysicalDevice => _physicalDevice;
+
+    /// <summary>
+    /// パイプラインレイアウトにバインドできるディスクリプタセットの最大数を取得します。
+    /// 多くの実装では 4〜8 です。
+    /// </summary>
+    public uint MaxBoundDescriptorSets { get; private set; }
 
     /// <summary>グラフィックス兼プレゼントキューを取得します。</summary>
     public Queue GraphicsQueue => _graphicsQueue;
@@ -709,6 +719,10 @@ internal sealed unsafe class VulkanContext : IDisposable
         vk.DestroyRenderPass(_device, _offscreenLoadPass, null);
         vk.DestroyDevice(_device, null);
         _khrSurface.DestroySurface(_instance, _surface, null);
+
+        // フックが確保したリソースはインスタンスより先に解放させる
+        _hook?.OnInstanceDestroying(vk, _instance);
+
         vk.DestroyInstance(_instance, null);
 
         _khrSwapchain.Dispose();
@@ -776,15 +790,40 @@ internal sealed unsafe class VulkanContext : IDisposable
         if (!_frameActive)
             return;
         var cmd = CurrentCommandBuffer;
+        var extent = CurrentTargetExtent;
+
         if (TrimScissor is { } trim)
         {
-            Vk.CmdSetScissor(cmd, 0, 1, in trim);
+            // シザーは現在のレンダーターゲット内に収まっていなければならない
+            // (VUID-vkCmdSetScissor-x-00595)。トリム矩形はウィンドウ基準で
+            // 計算されるため、より小さいオフスクリーンターゲットでは超過しうる。
+            var clamped = ClampToExtent(trim, extent);
+            Vk.CmdSetScissor(cmd, 0, 1, in clamped);
         }
         else
         {
-            var full = new Rect2D(new Offset2D(0, 0), CurrentTargetExtent);
+            var full = new Rect2D(new Offset2D(0, 0), extent);
             Vk.CmdSetScissor(cmd, 0, 1, in full);
         }
+    }
+
+    /// <summary>
+    /// シザー矩形をレンダーターゲットの範囲内へ収めます。
+    /// 負のオフセットは 0 に寄せ、その分だけ範囲を縮めます。
+    /// </summary>
+    private static Rect2D ClampToExtent(Rect2D rect, Extent2D extent)
+    {
+        var left = Math.Max(0, rect.Offset.X);
+        var top = Math.Max(0, rect.Offset.Y);
+
+        // 元の右端・下端を保ったままターゲット内へクリップする
+        var right = Math.Min((long)rect.Offset.X + rect.Extent.Width, extent.Width);
+        var bottom = Math.Min((long)rect.Offset.Y + rect.Extent.Height, extent.Height);
+
+        var width = (uint)Math.Max(0, right - left);
+        var height = (uint)Math.Max(0, bottom - top);
+
+        return new Rect2D(new Offset2D(left, top), new Extent2D(width, height));
     }
 
     private void FlushDeferredDestroys(int slot)
@@ -817,17 +856,32 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         var surfaceExtensions = _window.VkSurface!.GetRequiredExtensions(out var extensionCount);
 
-        var enabledLayers = GetAvailableValidationLayers();
+        // フックが要求するレイヤーのうち、実際に利用できるものだけを有効化する
+        var enabledLayers = FilterAvailableLayers(_hook?.GetRequestedLayers());
         var layersPtr = enabledLayers.Length > 0
             ? (byte**)SilkMarshal.StringArrayToPtr(enabledLayers)
             : null;
+
+        var extensions = new List<string>();
+        for (var i = 0u; i < extensionCount; i++)
+            extensions.Add(SilkMarshal.PtrToString((nint)surfaceExtensions[i])!);
+
+        // レイヤーが 1 つも有効にならなかった場合、付随する拡張も不要
+        if (enabledLayers.Length > 0 && _hook is not null)
+        {
+            foreach (var extension in _hook.GetRequestedExtensions())
+                if (!extensions.Contains(extension))
+                    extensions.Add(extension);
+        }
+
+        var extensionsPtr = (byte**)SilkMarshal.StringArrayToPtr(extensions);
 
         var createInfo = new InstanceCreateInfo
         {
             SType = StructureType.InstanceCreateInfo,
             PApplicationInfo = &appInfo,
-            EnabledExtensionCount = extensionCount,
-            PpEnabledExtensionNames = surfaceExtensions,
+            EnabledExtensionCount = (uint)extensions.Count,
+            PpEnabledExtensionNames = extensionsPtr,
             EnabledLayerCount = (uint)enabledLayers.Length,
             PpEnabledLayerNames = layersPtr,
         };
@@ -836,6 +890,7 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         SilkMarshal.Free((nint)appNamePtr);
         SilkMarshal.Free((nint)engineNamePtr);
+        SilkMarshal.Free((nint)extensionsPtr);
         if (layersPtr != null)
             SilkMarshal.Free((nint)layersPtr);
 
@@ -843,12 +898,22 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         if (!vk.TryGetInstanceExtension(_instance, out _khrSurface))
             throw new InvalidOperationException("VK_KHR_surface 拡張が利用できません。");
+
+        if (enabledLayers.Length > 0)
+            _hook?.OnInstanceCreated(vk, _instance);
     }
 
-    private string[] GetAvailableValidationLayers()
+    /// <summary>
+    /// 要求されたレイヤーのうち、この環境で実際に利用できるものだけを返します。
+    /// </summary>
+    private string[] FilterAvailableLayers(IEnumerable<string>? requested)
     {
-#if DEBUG
-        const string validationLayerName = "VK_LAYER_KHRONOS_validation";
+        if (requested is null)
+            return [];
+
+        var wanted = new List<string>(requested);
+        if (wanted.Count == 0)
+            return [];
 
         var vk = Vk;
         uint layerCount = 0;
@@ -859,14 +924,24 @@ internal sealed unsafe class VulkanContext : IDisposable
             vk.EnumerateInstanceLayerProperties(ref layerCount, p);
         }
 
+        var available = new HashSet<string>();
         foreach (var layer in layers)
         {
             var name = SilkMarshal.PtrToString((nint)layer.LayerName);
-            if (name == validationLayerName)
-                return [validationLayerName];
+            if (name is not null)
+                available.Add(name);
         }
-#endif
-        return [];
+
+        var result = new List<string>();
+        foreach (var name in wanted)
+        {
+            if (available.Contains(name))
+                result.Add(name);
+            else
+                LogHelper.Warn($"Vulkan レイヤー {name} は利用できないため無視します。");
+        }
+
+        return result.ToArray();
     }
 
     private void CreateSurface()
@@ -927,6 +1002,9 @@ internal sealed unsafe class VulkanContext : IDisposable
         _physicalDevice = device;
         _queueFamilyIndex = queueFamily;
         Vk.GetPhysicalDeviceMemoryProperties(device, out _memoryProperties);
+
+        Vk.GetPhysicalDeviceProperties(device, out var properties);
+        MaxBoundDescriptorSets = properties.Limits.MaxBoundDescriptorSets;
     }
 
     private bool TryFindQueueFamily(PhysicalDevice device, out uint queueFamilyIndex)

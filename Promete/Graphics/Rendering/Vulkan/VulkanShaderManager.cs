@@ -56,7 +56,12 @@ internal sealed unsafe class VulkanShaderManager(VulkanContext ctx) : IDisposabl
             };
         }
 
-        var unsupported = fragBlocks.FirstOrDefault(b => b is not { Set: 1, Binding: 0 });
+        // 両ステージを対象に検査する。頂点ステージのブロックも同じ規約で
+        // merged から除外されるため、警告しないと無言で無視される
+        var unsupported = vertBlocks
+            .Concat(fragBlocks)
+            .FirstOrDefault(b => b is not { Set: 1, Binding: 0 });
+
         if (unsupported is not null)
         {
             LogHelper.Bug(

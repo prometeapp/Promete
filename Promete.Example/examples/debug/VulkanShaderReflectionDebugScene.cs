@@ -14,17 +14,24 @@ namespace Promete.Example.examples.debug;
 ///      除外されるにもかかわらず警告が一切出ない。
 ///
 /// #08: VulkanPipelineProvider は SPIR-V リフレクションで得た maxSet を上限チェックなしに
-///      stackalloc のサイズへ渡す。巨大な set 番号を宣言したシェーダーでスタックが溢れる。
-///      デバイスの maxBoundDescriptorSets (通常 4〜8) でクランプすべき。
+///      stackalloc のサイズへ渡す。デバイスの maxBoundDescriptorSets (通常 4〜8) で
+///      クランプすべきだが、していない。
 ///
-/// 注意: #08 のシェーダーは意図的にプロセスを巻き添えにする可能性がある。
-///       クランプ修正の検証用であり、通常のデモ操作では実行しないこと。
+///      当初「スタックオーバーフローする」と評価したが、これは誤り。
+///      shaderc が set >= 255 を拒否するため stackalloc は最大 2KB 程度にとどまる。
+///
+///      実際の危険はより深刻で、デバイスの maxBoundDescriptorSets を超える
+///      セット数を CreatePipelineLayout に渡すこと。仕様違反 (VUID-...-00286) であり、
+///      バリデーションレイヤ不在の環境ではドライバ内でアクセス違反 (0xC0000005) により
+///      プロセスが即死する。修正後は事前に InvalidOperationException で弾く。
 /// </summary>
 [Demo("/debug/vulkan_shader_reflection", "指摘#06/#08: シェーダーリフレクションの境界処理")]
 public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
 {
+    // Vulkan 向けの標準頂点シェーダー。
+    // uProjection は push constant (64 バイト = mat4)、in/out はすべて location 必須。
     private const string StandardVertSrc = """
-        #version 330 core
+        #version 450
         layout(location = 0) in vec2 vPos;
         layout(location = 1) in vec2 vUv;
         layout(location = 2) in vec4 iModel0;
@@ -34,10 +41,13 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
         layout(location = 6) in vec4 iTintColor;
         layout(location = 7) in vec4 iUvRect;
 
-        out vec2 fUv;
-        out vec4 fTintColor;
+        layout(location = 0) out vec2 fUv;
+        layout(location = 1) out vec4 fTintColor;
 
-        uniform mat4 uProjection;
+        layout(push_constant) uniform PushConstants
+        {
+            mat4 uProjection;
+        };
 
         void main()
         {
@@ -64,7 +74,10 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
         layout(location = 0) out vec2 fUv;
         layout(location = 1) out vec4 fTintColor;
 
-        uniform mat4 uProjection;
+        layout(push_constant) uniform PushConstants
+        {
+            mat4 uProjection;
+        };
 
         // set=1 ではないため、この uWobble は静かに無視される
         layout(set = 2, binding = 0) uniform VertexParams {
@@ -94,13 +107,21 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
         }
         """;
 
-    // 巨大な set 番号を宣言するシェーダー (指摘#08)
+    // 大きな set 番号を宣言するシェーダー (指摘#08)。
+    // shaderc が 255 以上の set を 'set is too large' で拒否するため、
+    // GLSL 経由で宣言できるのは 32〜254 未満の範囲にとどまる。
+    // よって stackalloc は最大でも DescriptorSetLayout(8バイト) × 255 = 約 2KB で、
+    // スタックオーバーフローには至らない。
+    //
+    // 実際の危険は maxBoundDescriptorSets (多くの実装で 4〜8、環境により 32) の超過。
+    // 修正前はこの値を検査せず CreatePipelineLayout に渡していたため、
+    // バリデーションレイヤ不在の環境ではドライバ内でアクセス違反 (0xC0000005) を起こした。
     private const string HugeSetFragSrc = """
         #version 450
         layout(location = 0) in vec2 fUv;
         layout(location = 1) in vec4 fTintColor;
         layout(set = 0, binding = 0) uniform sampler2D uTexture0;
-        layout(set = 100000, binding = 0) uniform sampler2D uUnreasonable;
+        layout(set = 32, binding = 0) uniform sampler2D uUnreasonable;
         layout(location = 0) out vec4 FragColor;
 
         void main()
@@ -122,7 +143,7 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
         console.Print("指摘#06 / #08 再現シーン");
         console.Print("1: 頂点ステージ set=2 の Uniform (指摘#06)");
         console.Print("   -> uWobble を設定しても効かず、警告も出ないことを確認");
-        console.Print("9: set=100000 のサンプラー (指摘#08) ※スタックオーバーフローの危険");
+        console.Print("9: set=32 のサンプラー (指摘#08) デバイス上限超過を弾けるか");
         console.Print("0: 標準シェーダーへ戻す");
     }
 
@@ -168,11 +189,11 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
     }
 
     /// <summary>
-    /// 指摘#08: リフレクション由来の巨大 set 番号で stackalloc が破綻することを確認する。
+    /// 指摘#08: デバイス上限を超える set 番号が、事前に弾かれるかを確認する。
     /// </summary>
     private void TryHugeSet()
     {
-        console.Print("set=100000 のシェーダーを構築中...");
+        console.Print("set=32 のシェーダーを構築中...");
         try
         {
             var shader = ShaderProgram
@@ -183,14 +204,16 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
 
             _sprite.Material = new Material(shader);
             console.Print("適用した。次の描画でパイプライン構築が走る");
-            console.Print("ここで落ちる、または応答しなくなれば指摘#08 の再現");
+            console.Print("修正前はここでドライバ内アクセス違反 (0xC0000005) により即死する");
         }
         catch (Exception ex)
         {
             console.Print($"例外を捕捉: {ex.GetType().Name}: {ex.Message}");
-            console.Print("明確なエラーで弾けていれば、クランプ修正が効いている");
         }
     }
+
+    // 補足: パイプライン構築は描画時に走るため、修正後の InvalidOperationException は
+    // ここではなく OnRender 経由で送出される。コンソールではなく標準の例外として現れる。
 
     public override void OnDestroy()
     {

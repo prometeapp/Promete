@@ -94,16 +94,32 @@ public class RenderCommandQueue
         var left = (VectorInt)node.AbsoluteLocation;
         var size = (VectorInt)(node.Size * node.AbsoluteScale);
 
+        // 原点を 0 にクランプする際は、切り詰めた分だけサイズも縮める。
+        // 縮めないと可視領域がはみ出した量だけ右下へ広がり、
+        // 入れ子トリムの積集合にもその過大な領域が漏れる。
         if (left.X < 0)
+        {
+            size.X += left.X;
             left.X = 0;
+        }
+
         if (left.Y < 0)
+        {
+            size.Y += left.Y;
             left.Y = 0;
+        }
 
         if (left.X + size.X > ctx.WindowSize.X)
             size.X = ctx.WindowSize.X - left.X;
 
         if (left.Y + size.Y > ctx.WindowSize.Y)
             size.Y = ctx.WindowSize.Y - left.Y;
+
+        // 完全に画面外へ出た場合は負になりうるため、0 で下限を取る
+        if (size.X < 0)
+            size.X = 0;
+        if (size.Y < 0)
+            size.Y = 0;
 
         // 座標は左上原点で保持する。バックエンド固有の変換（GL の左下原点への Y 反転など）はランナー側で行う
         var sx = (float)left.X;

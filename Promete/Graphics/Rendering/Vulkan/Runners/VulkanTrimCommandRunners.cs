@@ -18,12 +18,14 @@ internal sealed class VulkanBeginTrimCommandRunner(VulkanContext ctx)
         ctx.SetTrimScissor(ToScissor(command.X, command.Y, command.Width, command.Height));
     }
 
+    /// <summary>
+    /// トリム矩形をシザー矩形へ変換します。
+    /// レンダーターゲット範囲へのクランプは <see cref="VulkanContext.SetTrimScissor"/> 側で行うため、
+    /// ここでは負の値を潰さずそのまま渡します。
+    /// </summary>
     internal static Rect2D ToScissor(int x, int y, int width, int height)
     {
-        return new Rect2D(
-            new Offset2D(Math.Max(0, x), Math.Max(0, y)),
-            new Extent2D((uint)Math.Max(0, width), (uint)Math.Max(0, height))
-        );
+        return new Rect2D(new Offset2D(x, y), new Extent2D((uint)Math.Max(0, width), (uint)Math.Max(0, height)));
     }
 }
 

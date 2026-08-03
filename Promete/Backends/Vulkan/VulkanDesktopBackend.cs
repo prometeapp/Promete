@@ -64,7 +64,9 @@ public class VulkanDesktopBackend : BackendBase
         _nativeWindow.Update += _ => _app.OnUpdate();
         _nativeWindow.Closing += OnClosing;
 
-        _context = new VulkanContext(_nativeWindow);
+        // インスタンスフックが登録されていれば使う (バリデーションレイヤー等)
+        _app.TryGetPlugin<IVulkanInstanceHook>(out var instanceHook);
+        _context = new VulkanContext(_nativeWindow, instanceHook);
         _resources = new VulkanResourceManager(_context);
         _shaderManager = new VulkanShaderManager(_context);
         _materialSystem = new VulkanMaterialSystem(_context, _shaderManager, _resources);
