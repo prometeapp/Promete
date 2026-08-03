@@ -245,6 +245,25 @@ App.PushScene<PauseMenuScene>();  // ポーズメニューを重ねる
 App.PopScene();                    // ポーズメニューを閉じる
 ```
 
+#### シーンの登録
+
+`Scene` 派生クラスは**エントリアセンブリのものだけが自動的に DI へ登録**されます。
+そのため通常は登録を意識する必要はありません。
+
+エントリアセンブリの外にシーンを置いている場合（ゲームをエンジン層とコンテンツ層の
+2プロジェクトに分割し、共通シーンをエンジン側に置いた場合など）は、`UseScenesFrom` で
+探索対象のアセンブリを追加してください。指定しないと `LoadScene` が
+`The scene "Xxx" is not registered.` で失敗します。
+
+```csharp
+var app = PrometeApp.Create()
+    .UseScenesFrom(typeof(LoadingScene).Assembly)  // アセンブリを直接指定
+    .UseScenesFrom<LoadingScene>()                 // 型からアセンブリを指定（同じ意味）
+    .BuildWithVulkanDesktop(opts);
+```
+
+登録から除外したいシーンには `[IgnoredScene]` を付けます。
+
 ### プラグインシステム
 
 PrometeはMicrosoft.Extensions.DependencyInjectionをベースとしたDIコンテナを採用しています。

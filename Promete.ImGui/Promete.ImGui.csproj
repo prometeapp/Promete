@@ -17,7 +17,7 @@
 
     <PropertyGroup>
         <PackageId>Promete.ImGui</PackageId>
-        <Version>2.0.0-beta.1</Version>
+        <Version>2.0.0-beta.8</Version>
         <PackageTags>Game Engine;2D;gamedev;games;gaming;ui;gui;imgui</PackageTags>
         <Description>ImGui support for Promete
         </Description>

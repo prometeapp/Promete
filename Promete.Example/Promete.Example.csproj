@@ -11,6 +11,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Promete.ImGui\Promete.ImGui.csproj" />
         <ProjectReference Include="..\Promete\Promete.csproj" />
+        <ProjectReference Include="..\Promete.Vulkan.Validation\Promete.Vulkan.Validation.csproj" />
     </ItemGroup>
 
     <ItemGroup>

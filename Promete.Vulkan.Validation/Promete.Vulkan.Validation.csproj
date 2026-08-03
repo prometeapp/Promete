@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+        <PackageId>Promete.Vulkan.Validation</PackageId>
+        <Version>2.0.0-beta.8</Version>
+        <Authors>Ebise Lutica</Authors>
+        <Description>
+            Promete の Vulkan バックエンド用バリデーションレイヤープラグイン。
+            開発時のみ参照し、リリースビルドでは参照を外してください。
+        </Description>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Silk.NET.Vulkan.Extensions.EXT" Version="2.23.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Promete\Promete.csproj" />
+    </ItemGroup>
+</Project>
