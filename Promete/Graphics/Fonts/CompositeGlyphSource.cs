@@ -14,6 +14,7 @@ namespace Promete.Graphics.Fonts;
 public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
 {
     private readonly IGlyphSource[] _sources;
+    private readonly IGlyphSource _metricsSource;
     private readonly bool _leavesOpen;
     private bool _isDisposed;
 
@@ -21,18 +22,33 @@ public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
     /// <see cref="CompositeGlyphSource" /> の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="sources">探索するグリフソース。先頭ほど優先されます。</param>
+    /// <param name="metricsSource">
+    /// 行の高さの基準とするグリフソース。省略した場合は先頭のグリフソースを使用します。
+    /// 外字のように本文とは無関係な大きさを持つソースを先頭へ置く場合は、
+    /// 本文のフォントを明示的に指定してください。
+    /// </param>
     /// <param name="leavesOpen">
     /// <c>true</c> の場合、このインスタンスを破棄しても各グリフソースを破棄しません。
     /// </param>
-    public CompositeGlyphSource(IEnumerable<IGlyphSource> sources, bool leavesOpen = true)
+    public CompositeGlyphSource(
+        IEnumerable<IGlyphSource> sources,
+        IGlyphSource? metricsSource = null,
+        bool leavesOpen = true
+    )
     {
         _sources = sources.ToArray();
         if (_sources.Length == 0)
             throw new ArgumentException("グリフソースを 1 つ以上指定してください。", nameof(sources));
 
+        _metricsSource = metricsSource ?? _sources[0];
         _leavesOpen = leavesOpen;
         SourceId = _sources[0].SourceId;
     }
+
+    /// <summary>
+    /// 行の高さの基準となるグリフソースを取得します。
+    /// </summary>
+    public IGlyphSource MetricsSource => _metricsSource;
 
     /// <inheritdoc />
     /// <remarks>
@@ -47,10 +63,13 @@ public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
     public IReadOnlyList<IGlyphSource> Sources => _sources;
 
     /// <inheritdoc />
-    /// <remarks>行の高さは、チェーンの先頭のソースを基準とします。</remarks>
+    /// <remarks>
+    /// 行の高さは <see cref="MetricsSource" /> を基準とします。
+    /// 外字を差し込んでも行の高さが変わらないようにするためです。
+    /// </remarks>
     public FontMetrics GetMetrics(in GlyphRenderOptions options)
     {
-        return _sources[0].GetMetrics(options);
+        return _metricsSource.GetMetrics(options);
     }
 
     /// <inheritdoc />

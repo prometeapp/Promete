@@ -183,7 +183,12 @@ public sealed class Font : IEquatable<Font>
             ? composite.Sources.Concat(fallbacks)
             : [Source, .. fallbacks];
 
-        return new Font(new CompositeGlyphSource(sources), Size, Style, IsAntialiased);
+        return new Font(
+            new CompositeGlyphSource(sources, GetMetricsSource()),
+            Size,
+            Style,
+            IsAntialiased
+        );
     }
 
     /// <summary>
@@ -197,7 +202,21 @@ public sealed class Font : IEquatable<Font>
             ? [.. overrides, .. composite.Sources]
             : [.. overrides, Source];
 
-        return new Font(new CompositeGlyphSource(sources), Size, Style, IsAntialiased);
+        // 外字を先頭へ置いても、行の高さは本文のフォントを基準に保つ
+        return new Font(
+            new CompositeGlyphSource(sources, GetMetricsSource()),
+            Size,
+            Style,
+            IsAntialiased
+        );
+    }
+
+    /// <summary>
+    /// 行の高さの基準となるグリフソースを取得します。
+    /// </summary>
+    private IGlyphSource GetMetricsSource()
+    {
+        return Source is CompositeGlyphSource composite ? composite.MetricsSource : Source;
     }
 
     /// <inheritdoc />

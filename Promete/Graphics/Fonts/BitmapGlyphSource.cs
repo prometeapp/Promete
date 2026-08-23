@@ -294,7 +294,8 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
     /// </summary>
     private int GetScale(float size)
     {
-        return Math.Max(1, (int)MathF.Round(size / _nativeSize));
+        // 既定の丸めは偶数寄せのため、2.5 倍などが意図せず縮小されてしまう
+        return Math.Max(1, (int)MathF.Round(size / _nativeSize, MidpointRounding.AwayFromZero));
     }
 
     private static IEnumerable<int> EnumerateCodepoints(string text)

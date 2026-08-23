@@ -58,8 +58,11 @@ public class BitmapGlyphSourceTests
         Rasterize(source, 'A', new GlyphRenderOptions(16)).Size.Should().Be(new VectorInt(8, 16));
         Rasterize(source, 'A', new GlyphRenderOptions(24)).Size.Should().Be(new VectorInt(12, 24));
 
-        // 20px は 8px の 2.5 倍だが、最も近い整数倍である 2 倍に丸められる
-        Rasterize(source, 'A', new GlyphRenderOptions(20)).Size.Should().Be(new VectorInt(8, 16));
+        // 20px は 8px の 2.5 倍。中間値は大きい方へ丸める
+        Rasterize(source, 'A', new GlyphRenderOptions(20)).Size.Should().Be(new VectorInt(12, 24));
+
+        // 偶数寄せの丸めでは 2 倍になってしまう組み合わせも、正しく 3 倍になる
+        Rasterize(source, 'A', new GlyphRenderOptions(21)).Size.Should().Be(new VectorInt(12, 24));
     }
 
     [Fact]
