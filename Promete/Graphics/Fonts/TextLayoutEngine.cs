@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -17,6 +18,23 @@ namespace Promete.Graphics.Fonts;
 public static class TextLayoutEngine
 {
     /// <summary>
+    /// 行頭に置いてはならない文字。句読点・閉じ括弧・拗促音・繰り返し記号など。
+    /// </summary>
+    private static readonly SearchValues<char> LineStartProhibited = SearchValues.Create(
+        ",)]｝、〕〉》」』】〙〗〟'\"｠»"
+            + "ゝゞーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖ"
+            + "。.:;/？！?!‼⁇⁈⁉・:;。.、,"
+            + "々〻‐゠–〜～"
+    );
+
+    /// <summary>
+    /// 行末に置いてはならない文字。開き括弧など。
+    /// </summary>
+    private static readonly SearchValues<char> LineEndProhibited = SearchValues.Create(
+        "([{｟〔〈《「『【〘〖〝'\"«（［｛"
+    );
+
+    /// <summary>
     /// テキストをレイアウトします。
     /// </summary>
     /// <param name="text">レイアウトするテキスト。</param>
@@ -33,6 +51,7 @@ public static class TextLayoutEngine
         var (plainText, attributes) = ResolveAttributes(text, font, options);
         var items = CollectItems(plainText, font, attributes, options);
         var lineRanges = SplitIntoLines(items, options);
+        ApplyMaxLines(items, lineRanges, font, options);
 
         return Place(plainText, items, lineRanges, font, options);
     }
@@ -71,13 +90,17 @@ public static class TextLayoutEngine
             var end = Math.Clamp(decoration.End, start, plainText.Length);
 
             for (var i = start; i < end; i++)
-                attributes[i] = ApplyDecoration(attributes[i], decoration);
+                attributes[i] = ApplyDecoration(attributes[i], decoration, font);
         }
 
         return (plainText, attributes);
     }
 
-    private static CharAttribute ApplyDecoration(CharAttribute attribute, PtmlDecoration decoration)
+    private static CharAttribute ApplyDecoration(
+        CharAttribute attribute,
+        PtmlDecoration decoration,
+        Font font
+    )
     {
         switch (decoration.TagName.ToLowerInvariant())
         {
@@ -113,6 +136,18 @@ public static class TextLayoutEngine
                 ) && size > 0
                     ? attribute with { Options = attribute.Options with { Size = size } }
                     : attribute;
+
+            case "tex":
+            {
+                // 置換文字の位置に、名前で登録された外字を差し込む
+                if (string.IsNullOrEmpty(decoration.Attribute))
+                    return attribute;
+                if (font.Source is not INamedGlyphSource named)
+                    return attribute;
+                return named.TryGetCodepointByName(decoration.Attribute, out var codepoint)
+                    ? attribute with { SubstituteCodepoint = codepoint }
+                    : attribute;
+            }
 
             default:
                 return attribute;
@@ -178,26 +213,37 @@ public static class TextLayoutEngine
                 continue;
             }
 
-            var hasGlyph = font.Source.TryGetGlyph(codepoint, attribute.Options, out var glyph);
+            // 外字が割り当てられている場合は、置換文字の代わりにそのグリフを描画する
+            var resolved = attribute.SubstituteCodepoint >= 0 ? attribute.SubstituteCodepoint : codepoint;
+
+            // 外字を解決できなかった置換文字は、フォントが字形を持っていても描画しない
+            var isUnresolvedPlaceholder =
+                codepoint == PtmlParser.ObjectReplacementCharacter
+                && attribute.SubstituteCodepoint < 0;
+
+            var glyph = default(GlyphInfo);
+            var hasGlyph =
+                !isUnresolvedPlaceholder
+                && font.Source.TryGetGlyph(resolved, attribute.Options, out glyph);
             var advance = hasGlyph ? glyph.Advance + options.LetterSpacing : 0;
 
             if (hasGlyph && options.UseKerning && previousCodepoint >= 0)
-                advance += font.Source.GetKerning(previousCodepoint, codepoint, attribute.Options);
+                advance += font.Source.GetKerning(previousCodepoint, resolved, attribute.Options);
 
             items.Add(
                 new LayoutItem(
                     i,
-                    codepoint,
+                    resolved,
                     glyph,
                     hasGlyph,
                     advance,
                     attribute,
                     false,
-                    CanBreakBefore(items, codepoint, options.WrapMode)
+                    CanBreakBefore(items, codepoint, options)
                 )
             );
 
-            previousCodepoint = codepoint;
+            previousCodepoint = resolved;
             i += length;
         }
 
@@ -207,7 +253,11 @@ public static class TextLayoutEngine
     /// <summary>
     /// 直前の文字との関係から、この文字の直前で改行できるかどうかを判定します。
     /// </summary>
-    private static bool CanBreakBefore(List<LayoutItem> items, int codepoint, WrapMode mode)
+    private static bool CanBreakBefore(
+        List<LayoutItem> items,
+        int codepoint,
+        TextRenderingOptions options
+    )
     {
         if (items.Count == 0)
             return false;
@@ -216,7 +266,14 @@ public static class TextLayoutEngine
         if (previous.IsNewline)
             return false;
 
-        return mode switch
+        if (options.KinsokuMode == KinsokuMode.Standard)
+        {
+            // 行頭に置けない文字の前、および行末に置けない文字の後では改行しない
+            if (IsProhibitedAtLineStart(codepoint) || IsProhibitedAtLineEnd(previous.Codepoint))
+                return false;
+        }
+
+        return options.WrapMode switch
         {
             WrapMode.Character => true,
             WrapMode.Word => IsBreakingSpace(previous.Codepoint),
@@ -225,6 +282,22 @@ public static class TextLayoutEngine
                 || IsWideCharacter(previous.Codepoint),
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// 行頭に置いてはならない文字かどうかを判定します。
+    /// </summary>
+    private static bool IsProhibitedAtLineStart(int codepoint)
+    {
+        return LineStartProhibited.Contains((char)codepoint);
+    }
+
+    /// <summary>
+    /// 行末に置いてはならない文字かどうかを判定します。
+    /// </summary>
+    private static bool IsProhibitedAtLineEnd(int codepoint)
+    {
+        return LineEndProhibited.Contains((char)codepoint);
     }
 
     private static bool IsBreakingSpace(int codepoint)
@@ -301,6 +374,57 @@ public static class TextLayoutEngine
 
         lines.Add(new LineRange(lineStart, items.Count));
         return lines;
+    }
+
+    /// <summary>
+    /// 行数の上限を適用し、省略された場合は末尾へ省略記号を挿入します。
+    /// </summary>
+    private static void ApplyMaxLines(
+        List<LayoutItem> items,
+        List<LineRange> lines,
+        Font font,
+        TextRenderingOptions options
+    )
+    {
+        if (options.MaxLines <= 0 || lines.Count <= options.MaxLines)
+            return;
+
+        var lastIndex = options.MaxLines - 1;
+        var lastLine = lines[lastIndex];
+        lines.RemoveRange(options.MaxLines, lines.Count - options.MaxLines);
+
+        // 表示されない行に対応する要素を取り除く
+        items.RemoveRange(lastLine.End, items.Count - lastLine.End);
+
+        if (string.IsNullOrEmpty(options.Ellipsis))
+        {
+            lines[lastIndex] = new LineRange(lastLine.Start, items.Count);
+            return;
+        }
+
+        var attribute = items.Count > lastLine.Start
+            ? items[^1].Attribute
+            : new CharAttribute(font.RenderOptions, options.TextColor);
+
+        var ellipsisAttributes = new CharAttribute[options.Ellipsis.Length];
+        Array.Fill(ellipsisAttributes, attribute);
+        var ellipsis = CollectItems(options.Ellipsis, font, ellipsisAttributes, options);
+        var ellipsisWidth = SumAdvance(ellipsis, 0, ellipsis.Count);
+
+        // 省略記号が収まるまで、行末から文字を取り除く
+        if (options.Size.X > 0)
+        {
+            while (
+                items.Count > lastLine.Start
+                && SumAdvance(items, lastLine.Start, items.Count) + ellipsisWidth > options.Size.X
+            )
+            {
+                items.RemoveAt(items.Count - 1);
+            }
+        }
+
+        items.AddRange(ellipsis);
+        lines[lastIndex] = new LineRange(lastLine.Start, items.Count);
     }
 
     private static float SumAdvance(List<LayoutItem> items, int start, int end)
@@ -458,7 +582,11 @@ public static class TextLayoutEngine
     /// <summary>
     /// 1 文字分の描画属性を表します。
     /// </summary>
-    private readonly record struct CharAttribute(GlyphRenderOptions Options, Color Color);
+    private readonly record struct CharAttribute(
+        GlyphRenderOptions Options,
+        Color Color,
+        int SubstituteCodepoint = -1
+    );
 
     /// <summary>
     /// レイアウト途中の 1 文字分の情報を表します。

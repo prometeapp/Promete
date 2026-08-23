@@ -18,11 +18,19 @@ namespace Promete.Graphics.Fonts;
 /// フォントサイズは元の大きさに対する整数倍として解決されるため、
 /// 拡大してもドットが崩れません。
 /// </remarks>
-public sealed class BitmapGlyphSource : IGlyphSource
+public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
 {
+    /// <summary>
+    /// 名前で登録されたグリフに、コードポイントを自動的に割り当てる際の開始位置。
+    /// Unicode の私用領域 (Private Use Area) の先頭です。
+    /// </summary>
+    private const int PrivateUseAreaStart = 0xE000;
+
     private static int _nextSourceId;
 
     private readonly Dictionary<int, BitmapGlyph> _glyphs = new();
+    private readonly Dictionary<string, int> _namedGlyphs = new();
+    private int _nextPrivateUseCodepoint = PrivateUseAreaStart;
     private readonly int _nativeSize;
     private readonly int _baseline;
     private uint _nextGlyphIndex = 1;
@@ -128,6 +136,62 @@ public sealed class BitmapGlyphSource : IGlyphSource
     }
 
     /// <summary>
+    /// 名前を付けてグリフを登録します。コードポイントは私用領域から自動的に割り当てられます。
+    /// PTML では <c>&lt;tex=名前&gt;</c> として本文へ差し込めます。
+    /// </summary>
+    /// <param name="name">グリフに付ける名前。</param>
+    /// <param name="path">画像のパス。</param>
+    /// <param name="bearing">ベースライン原点から画像左上までのオフセット。</param>
+    /// <param name="advance">送り幅。省略した場合は画像の幅が使われます。</param>
+    /// <returns>割り当てられたコードポイント。</returns>
+    public int Register(
+        string name,
+        string path,
+        VectorInt? bearing = null,
+        int? advance = null
+    )
+    {
+        using var image = Image.Load<Rgba32>(path);
+        var size = new VectorInt(image.Width, image.Height);
+        return Register(name, Crop(image, 0, 0, size), size, bearing, advance);
+    }
+
+    /// <summary>
+    /// 名前を付けてグリフを登録します。コードポイントは私用領域から自動的に割り当てられます。
+    /// </summary>
+    /// <param name="name">グリフに付ける名前。</param>
+    /// <param name="pixels">RGBA8888 形式のピクセルデータ。</param>
+    /// <param name="size">画像のサイズ。</param>
+    /// <param name="bearing">ベースライン原点から画像左上までのオフセット。</param>
+    /// <param name="advance">送り幅。省略した場合は画像の幅が使われます。</param>
+    /// <returns>割り当てられたコードポイント。</returns>
+    public int Register(
+        string name,
+        byte[] pixels,
+        VectorInt size,
+        VectorInt? bearing = null,
+        int? advance = null
+    )
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+
+        if (!_namedGlyphs.TryGetValue(name, out var codepoint))
+        {
+            codepoint = _nextPrivateUseCodepoint++;
+            _namedGlyphs[name] = codepoint;
+        }
+
+        Register(codepoint, pixels, size, bearing, advance);
+        return codepoint;
+    }
+
+    /// <inheritdoc />
+    public bool TryGetCodepointByName(string name, out int codepoint)
+    {
+        return _namedGlyphs.TryGetValue(name, out codepoint);
+    }
+
+    /// <summary>
     /// ピクセルデータから 1 文字分のグリフを登録します。
     /// </summary>
     /// <param name="codepoint">割り当てる Unicode コードポイント。</param>
@@ -222,6 +286,7 @@ public sealed class BitmapGlyphSource : IGlyphSource
         _isDisposed = true;
 
         _glyphs.Clear();
+        _namedGlyphs.Clear();
     }
 
     /// <summary>

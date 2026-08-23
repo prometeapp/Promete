@@ -11,7 +11,7 @@ namespace Promete.Graphics.Fonts;
 /// 外字の差し込み、欧文フォントに対する和文フォントの補完、絵文字フォントの合成は、
 /// いずれもチェーンのどこにソースを差し込むかの違いでしかありません。
 /// </remarks>
-public sealed class CompositeGlyphSource : IGlyphSource
+public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
 {
     private readonly IGlyphSource[] _sources;
     private readonly bool _leavesOpen;
@@ -63,6 +63,19 @@ public sealed class CompositeGlyphSource : IGlyphSource
         }
 
         glyph = default;
+        return false;
+    }
+
+    /// <inheritdoc />
+    public bool TryGetCodepointByName(string name, out int codepoint)
+    {
+        foreach (var source in _sources)
+        {
+            if (source is INamedGlyphSource named && named.TryGetCodepointByName(name, out codepoint))
+                return true;
+        }
+
+        codepoint = 0;
         return false;
     }
 

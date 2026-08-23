@@ -43,6 +43,9 @@ public sealed class GlyphAtlas(TextureFactoryBase factory, int pageSize = 1024) 
             return cached;
 
         var bitmap = glyph.Source.Rasterize(glyph, options);
+        if (options.HasBorder)
+            bitmap = GlyphOutline.Create(bitmap, options.BorderThickness);
+
         var entry = bitmap.IsEmpty ? default : Allocate(bitmap);
 
         _entries[key] = entry;

@@ -184,6 +184,51 @@ public class Text : Node
     }
 
     /// <summary>
+    /// 禁則処理の方法
+    /// </summary>
+    public KinsokuMode KinsokuMode
+    {
+        get => Options.KinsokuMode;
+        set
+        {
+            if (Options.KinsokuMode == value)
+                return;
+            Options.KinsokuMode = value;
+            _isUpdateRequested = true;
+        }
+    }
+
+    /// <summary>
+    /// 表示する最大の行数。0 の場合は制限しない
+    /// </summary>
+    public int MaxLines
+    {
+        get => Options.MaxLines;
+        set
+        {
+            if (Options.MaxLines == value)
+                return;
+            Options.MaxLines = value;
+            _isUpdateRequested = true;
+        }
+    }
+
+    /// <summary>
+    /// 行数の制限によって省略が発生した場合に、末尾へ挿入する文字列
+    /// </summary>
+    public string Ellipsis
+    {
+        get => Options.Ellipsis;
+        set
+        {
+            if (Options.Ellipsis == value)
+                return;
+            Options.Ellipsis = value;
+            _isUpdateRequested = true;
+        }
+    }
+
+    /// <summary>
     /// 垂直方向の配置
     /// </summary>
     public VerticalAlignment VerticalAlignment
@@ -245,25 +290,46 @@ public class Text : Node
 
         var atlas = PrometeApp.Current.GlyphAtlas;
 
-        foreach (var placed in Layout.Glyphs)
+        // 縁取りは全文字分を先に描く。文字ごとに重ねると、隣の文字の本体が縁に隠れてしまう
+        if (Options.BorderColor is { } borderColor && Options.BorderThickness > 0)
         {
-            var entry = atlas.GetOrAdd(placed.Glyph, placed.Options);
-            if (entry.IsEmpty)
-                continue;
-
-            var location = placed.Position + entry.Bearing;
-            queue.Enqueue(
-                new DrawTextureCommand
-                {
-                    Texture = entry.Texture,
-                    ModelMatrix = ModelMatrix,
-                    TintColor = placed.Color,
-                    Width = entry.Size.X,
-                    Height = entry.Size.Y,
-                    Pivot = location,
-                }
-            );
+            foreach (var placed in Layout.Glyphs)
+            {
+                var options = placed.Options with { BorderThickness = Options.BorderThickness };
+                Enqueue(queue, atlas.GetOrAdd(placed.Glyph, options), placed.Position, borderColor);
+            }
         }
+
+        foreach (var placed in Layout.Glyphs)
+            Enqueue(
+                queue,
+                atlas.GetOrAdd(placed.Glyph, placed.Options),
+                placed.Position,
+                placed.Color
+            );
+    }
+
+    private void Enqueue(
+        RenderCommandQueue queue,
+        GlyphEntry entry,
+        VectorInt position,
+        Color color
+    )
+    {
+        if (entry.IsEmpty)
+            return;
+
+        queue.Enqueue(
+            new DrawTextureCommand
+            {
+                Texture = entry.Texture,
+                ModelMatrix = ModelMatrix,
+                TintColor = color,
+                Width = entry.Size.X,
+                Height = entry.Size.Y,
+                Pivot = position + entry.Bearing,
+            }
+        );
     }
 
     protected override void OnPreRender()

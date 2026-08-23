@@ -44,6 +44,21 @@ public sealed class TextRenderingOptions : ICloneable
     public WrapMode WrapMode { get; set; } = WrapMode.None;
 
     /// <summary>
+    /// 表示する最大の行数を取得または設定します。0 の場合は制限しません。
+    /// </summary>
+    public int MaxLines { get; set; }
+
+    /// <summary>
+    /// 行数の制限によって省略が発生した場合に、末尾へ挿入する文字列を取得または設定します。
+    /// </summary>
+    public string Ellipsis { get; set; } = "…";
+
+    /// <summary>
+    /// 禁則処理の方法を取得または設定します。
+    /// </summary>
+    public KinsokuMode KinsokuMode { get; set; } = KinsokuMode.Standard;
+
+    /// <summary>
     /// 縦方向の位置を取得または設定します。
     /// </summary>
     public VerticalAlignment VerticalAlignment { get; set; } = VerticalAlignment.Top;
@@ -80,6 +95,9 @@ public sealed class TextRenderingOptions : ICloneable
             LetterSpacing = LetterSpacing,
             UseKerning = UseKerning,
             WrapMode = WrapMode,
+            MaxLines = MaxLines,
+            Ellipsis = Ellipsis,
+            KinsokuMode = KinsokuMode,
             VerticalAlignment = VerticalAlignment,
             HorizontalAlignment = HorizontalAlignment,
             Size = Size,
