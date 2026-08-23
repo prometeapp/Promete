@@ -32,6 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="FreeTypeSharp" Version="3.1.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
         <PackageReference Include="NVorbis" Version="0.10.5" />
         <PackageReference Include="Silk.NET" Version="2.23.0" />
