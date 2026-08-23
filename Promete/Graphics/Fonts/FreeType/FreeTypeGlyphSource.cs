@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -23,6 +24,9 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
     private const int FaceFlagKerning = 1 << 6;
 
     private static int _nextSourceId;
+
+    private readonly Dictionary<(uint Index, GlyphRenderOptions Options), GlyphInfo> _glyphCache =
+        new();
 
     private readonly FT_FaceRec_* _face;
     private readonly void* _fontData;
@@ -150,9 +154,10 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
         if (index == 0)
             return false;
 
-        ApplySize(options.Size);
-        var error = FT.FT_Load_Glyph(_face, index, GetLoadFlags(options));
-        if (error != FT_Error.FT_Err_Ok)
+        if (_glyphCache.TryGetValue((index, options), out glyph))
+            return true;
+
+        if (!LoadGlyph(index, options))
             return false;
 
         glyph = new GlyphInfo
@@ -162,6 +167,7 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
             Codepoint = codepoint,
             Advance = FromF26Dot6(_face->glyph->advance.x),
         };
+        _glyphCache[(index, options)] = glyph;
         return true;
     }
 
@@ -170,12 +176,8 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-        ApplySize(options.Size);
-
-        FreeTypeContext.ThrowIfError(
-            FT.FT_Load_Glyph(_face, glyph.GlyphIndex, GetLoadFlags(options)),
-            $"グリフ {glyph.GlyphIndex} の読み込みに失敗しました。"
-        );
+        if (!LoadGlyph(glyph.GlyphIndex, options))
+            throw new FontException($"グリフ {glyph.GlyphIndex} の読み込みに失敗しました。");
 
         var slot = _face->glyph;
         var renderMode = options.IsAntialiased
@@ -234,6 +236,7 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
             return;
         _isDisposed = true;
 
+        _glyphCache.Clear();
         FT.FT_Done_Face(_face);
         NativeMemory.Free(_fontData);
     }
@@ -324,6 +327,25 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
         pixels[offset + 1] = (byte)Math.Min(255, source[1] * 255 / alpha);
         pixels[offset + 2] = (byte)Math.Min(255, source[0] * 255 / alpha);
         pixels[offset + 3] = alpha;
+    }
+
+    /// <summary>
+    /// グリフをスロットへ読み込み、必要に応じてスタイルを合成します。
+    /// </summary>
+    private bool LoadGlyph(uint glyphIndex, in GlyphRenderOptions options)
+    {
+        ApplySize(options.Size);
+
+        if (FT.FT_Load_Glyph(_face, glyphIndex, GetLoadFlags(options)) != FT_Error.FT_Err_Ok)
+            return false;
+
+        // 専用の字形を持たないスタイルは、字形を変形させて合成します。
+        if (options.IsBold)
+            FT.FT_GlyphSlot_Embolden(_face->glyph);
+        if (options.IsItalic)
+            FT.FT_GlyphSlot_Oblique(_face->glyph);
+
+        return true;
     }
 
     /// <summary>

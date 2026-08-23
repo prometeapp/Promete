@@ -147,6 +147,56 @@ public class FreeTypeGlyphSourceTests
     }
 
     [Fact]
+    public void 太字は元の字形より太くなる()
+    {
+        using var source = FreeTypeGlyphSource.FromFile(VectorFontPath);
+
+        var normal = Rasterize(source, 'A', new GlyphRenderOptions(32));
+        var bold = Rasterize(source, 'A', new GlyphRenderOptions(32, Style: FontStyle.Bold));
+
+        bold.Size.X.Should().BeGreaterThan(normal.Size.X);
+    }
+
+    [Fact]
+    public void 斜体は元の字形より横に広がる()
+    {
+        using var source = FreeTypeGlyphSource.FromFile(VectorFontPath);
+
+        // 縦画を持つ字形は、シアー変形によって確実に横へ広がる
+        var normal = Rasterize(source, 'H', new GlyphRenderOptions(32));
+        var italic = Rasterize(source, 'H', new GlyphRenderOptions(32, Style: FontStyle.Italic));
+
+        italic.Size.X.Should().BeGreaterThan(normal.Size.X);
+    }
+
+    [Fact]
+    public void 太字は送り幅も広がる()
+    {
+        using var source = FreeTypeGlyphSource.FromFile(VectorFontPath);
+
+        source.TryGetGlyph('A', new GlyphRenderOptions(32), out var normal).Should().BeTrue();
+        source
+            .TryGetGlyph('A', new GlyphRenderOptions(32, Style: FontStyle.Bold), out var bold)
+            .Should()
+            .BeTrue();
+
+        bold.Advance.Should().BeGreaterThan(normal.Advance);
+    }
+
+    [Fact]
+    public void 同じグリフを繰り返し取得しても同じ結果を返す()
+    {
+        using var source = FreeTypeGlyphSource.FromFile(VectorFontPath);
+        var options = new GlyphRenderOptions(16);
+
+        source.TryGetGlyph('A', options, out var first).Should().BeTrue();
+        source.TryGetGlyph('B', options, out _).Should().BeTrue();
+        source.TryGetGlyph('A', options, out var second).Should().BeTrue();
+
+        second.Should().Be(first);
+    }
+
+    [Fact]
     public void カーニングを持たないフォントでは0を返す()
     {
         using var source = FreeTypeGlyphSource.FromFile(VectorFontPath);
