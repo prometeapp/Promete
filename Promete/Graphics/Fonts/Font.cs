@@ -18,9 +18,10 @@ namespace Promete.Graphics.Fonts;
 /// </remarks>
 public sealed class Font : IEquatable<Font>
 {
-    private static readonly Dictionary<string, IGlyphSource> SourceCache = new();
+    private static readonly Dictionary<(string Path, int FaceIndex), IGlyphSource> SourceCache =
+        new();
 
-    private static readonly Lazy<IGlyphSource> DefaultSource = new(LoadDefaultSource);
+    private static readonly Lazy<SystemFontInfo> LazyDefaultFont = new(ResolveDefaultFont);
 
     private Font(IGlyphSource source, float size, FontStyle style, bool isAntialiased)
     {
@@ -74,17 +75,32 @@ public sealed class Font : IEquatable<Font>
         string path,
         float size = 16,
         FontStyle style = FontStyle.Normal,
+        bool isAntialiased = true,
+        int faceIndex = 0
+    )
+    {
+        return new Font(GetOrLoadSource(path, faceIndex), size, style, isAntialiased);
+    }
+
+    /// <summary>
+    /// 実行環境にインストールされているフォントを、ファミリー名を指定して読み込みます。
+    /// </summary>
+    /// <param name="familyName">フォントファミリー名。指定可能な名前は環境によって異なります。</param>
+    /// <param name="size">フォントサイズ。</param>
+    /// <param name="style">フォントスタイル。専用の字形がない場合は合成されます。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
+    /// <exception cref="FontException">指定したフォントが見つからない場合。</exception>
+    public static Font FromSystem(
+        string familyName,
+        float size = 16,
+        FontStyle style = FontStyle.Normal,
         bool isAntialiased = true
     )
     {
-        var fullPath = Path.GetFullPath(path);
-        if (!SourceCache.TryGetValue(fullPath, out var source))
-        {
-            source = FreeTypeGlyphSource.FromFile(fullPath);
-            SourceCache[fullPath] = source;
-        }
+        if (!SystemFonts.TryGet(familyName, style, out var info))
+            throw new FontException($"フォント \"{familyName}\" が見つかりませんでした。");
 
-        return new Font(source, size, style, isAntialiased);
+        return FromSystemFontInfo(info, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -122,7 +138,7 @@ public sealed class Font : IEquatable<Font>
         bool isAntialiased = true
     )
     {
-        return new Font(DefaultSource.Value, size, style, isAntialiased);
+        return FromSystemFontInfo(LazyDefaultFont.Value, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -207,55 +223,70 @@ public sealed class Font : IEquatable<Font>
     }
 
     /// <summary>
-    /// 実行環境ごとの既定のフォントファイルを探索して読み込みます。
+    /// 実行環境における既定のフォントを解決します。
     /// </summary>
-    private static IGlyphSource LoadDefaultSource()
+    private static SystemFontInfo ResolveDefaultFont()
     {
-        foreach (var path in EnumerateDefaultFontPaths())
-        {
-            if (File.Exists(path))
-                return FreeTypeGlyphSource.FromFile(path);
-        }
+        if (SystemFonts.TryGetFirst(EnumerateDefaultFamilies(), FontStyle.Normal, out var info))
+            return info;
 
-        throw new FontException("既定のフォントが見つかりませんでした。");
+        // 候補がいずれも見つからない環境では、最初に見つかったフォントで代用する
+        return SystemFonts.Fonts.Count > 0
+            ? SystemFonts.Fonts[0]
+            : throw new FontException("利用できるフォントが見つかりませんでした。");
     }
 
-    private static IEnumerable<string> EnumerateDefaultFontPaths()
+    private static IEnumerable<string> EnumerateDefaultFamilies()
     {
         if (OperatingSystem.IsWindows())
         {
-            var fonts = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-                "Fonts"
-            );
-            return new[]
-            {
-                "BIZ-UDGothicR.ttc",
-                "YuGothM.ttc",
-                "meiryo.ttc",
-                "msgothic.ttc",
-                "arial.ttf",
-            }.Select(name => Path.Combine(fonts, name));
+            return ["BIZ UDGothic", "Yu Gothic", "Meiryo", "MS Gothic", "Segoe UI", "Arial"];
         }
 
         if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
         {
-            return
-            [
-                "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc",
-                "/System/Library/Fonts/Hiragino Sans GB.ttc",
-                "/System/Library/Fonts/Helvetica.ttc",
-                "/Library/Fonts/Arial.ttf",
-            ];
+            return ["BIZ UDGothic", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Helvetica"];
         }
 
         return
         [
-            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-            "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-            "/usr/share/fonts/TTF/DejaVuSans.ttf",
+            "Noto Sans CJK JP",
+            "Noto Sans JP",
+            "IPAGothic",
+            "Droid Sans Fallback",
+            "DejaVu Sans",
+            "Liberation Sans",
         ];
+    }
+
+    private static Font FromSystemFontInfo(
+        SystemFontInfo info,
+        float size,
+        FontStyle style,
+        bool isAntialiased
+    )
+    {
+        // 要求されたスタイルの字形が存在する場合、重ねて合成する必要はない
+        var resolvedStyle = info.Style == style ? FontStyle.Normal : style;
+        return new Font(
+            GetOrLoadSource(info.Path, info.FaceIndex),
+            size,
+            resolvedStyle,
+            isAntialiased
+        );
+    }
+
+    /// <summary>
+    /// グリフソースを取得します。同一のファイルとフェイスに対しては同じインスタンスを返します。
+    /// </summary>
+    private static IGlyphSource GetOrLoadSource(string path, int faceIndex)
+    {
+        var key = (Path.GetFullPath(path), faceIndex);
+        if (SourceCache.TryGetValue(key, out var source))
+            return source;
+
+        source = FreeTypeGlyphSource.FromFile(key.Item1, faceIndex);
+        SourceCache[key] = source;
+        return source;
     }
 }
