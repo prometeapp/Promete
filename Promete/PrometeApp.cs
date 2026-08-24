@@ -464,6 +464,9 @@ public sealed class PrometeApp : IDisposable
             throw new InvalidOperationException("コマンドキューが登録されていません。");
         }
 
+        // 前フレームの描画命令はすべて処理済みのため、ここでアトラスを整理できる
+        GlyphAtlas.TrimIfNeeded();
+
         var queue = _renderCommandQueue;
         var ctx = new RenderContext
         {

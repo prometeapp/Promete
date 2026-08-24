@@ -20,6 +20,18 @@ public sealed class GlyphAtlas(TextureFactoryBase factory, int pageSize = 1024) 
     private readonly Dictionary<GlyphKey, GlyphEntry> _entries = new();
     private readonly List<AtlasPage> _pages = [];
     private bool _isDisposed;
+    private bool _isTrimRequested;
+
+    /// <summary>
+    /// 確保するページ数の上限を取得または設定します。
+    /// </summary>
+    /// <remarks>
+    /// アトラスは使われなくなったグリフを個別には解放しません。
+    /// フォントサイズを連続的に変化させるなど、
+    /// キャッシュキーの種類が際限なく増える使い方をした場合に備え、
+    /// ページ数がこの値を超えたらアトラス全体を作り直します。
+    /// </remarks>
+    public int MaxPages { get; set; } = 8;
 
     /// <summary>
     /// アトラスが確保しているページ数を取得します。
@@ -53,6 +65,23 @@ public sealed class GlyphAtlas(TextureFactoryBase factory, int pageSize = 1024) 
     }
 
     /// <summary>
+    /// ページ数が上限を超えている場合に、アトラスを作り直します。
+    /// </summary>
+    /// <remarks>
+    /// 描画の途中でページを解放すると、発行済みの描画命令が
+    /// 解放されたテクスチャを参照してしまいます。
+    /// そのため実際の解放はフレームの境界まで遅延されます。
+    /// </remarks>
+    public void TrimIfNeeded()
+    {
+        if (!_isTrimRequested)
+            return;
+
+        _isTrimRequested = false;
+        Clear();
+    }
+
+    /// <summary>
     /// アトラスの内容をすべて破棄し、確保しているページを解放します。
     /// </summary>
     public void Clear()
@@ -62,6 +91,7 @@ public sealed class GlyphAtlas(TextureFactoryBase factory, int pageSize = 1024) 
 
         _pages.Clear();
         _entries.Clear();
+        _isTrimRequested = false;
     }
 
     /// <inheritdoc />
@@ -92,6 +122,11 @@ public sealed class GlyphAtlas(TextureFactoryBase factory, int pageSize = 1024) 
             if (page.TryAllocate(bitmap.Size, pageSize, Padding, out var position))
                 return Write(page, position, bitmap);
         }
+
+        // 上限に達していても、このフレームの描画に必要なページは確保する。
+        // 解放は TrimIfNeeded によってフレームの境界まで遅延させる
+        if (_pages.Count + 1 >= MaxPages)
+            _isTrimRequested = true;
 
         var newPage = new AtlasPage(CreatePageTexture());
         _pages.Add(newPage);
