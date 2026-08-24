@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Silk.NET.Input;
 
 namespace Promete.Input.Internal;
@@ -19,14 +19,18 @@ internal static class GamepadButtonTypeEnumConverter
             GamepadButtonType.Y => ButtonName.Y,
             GamepadButtonType.L1 => ButtonName.LeftBumper,
             GamepadButtonType.R1 => ButtonName.RightBumper,
-            GamepadButtonType.L2 => throw new NotSupportedException("L2 is not a button in Silk.NET"),
-            GamepadButtonType.R2 => throw new NotSupportedException("R2 is not a button in Silk.NET"),
+            GamepadButtonType.L2 => throw new NotSupportedException(
+                "L2 is not a button in Silk.NET"
+            ),
+            GamepadButtonType.R2 => throw new NotSupportedException(
+                "R2 is not a button in Silk.NET"
+            ),
             GamepadButtonType.Plus => ButtonName.Start,
             GamepadButtonType.Minus => ButtonName.Back,
             GamepadButtonType.LeftStick => ButtonName.LeftStick,
             GamepadButtonType.RightStick => ButtonName.RightStick,
             GamepadButtonType.Home => ButtonName.Home,
-            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
         };
     }
 
@@ -49,7 +53,7 @@ internal static class GamepadButtonTypeEnumConverter
             ButtonName.LeftStick => GamepadButtonType.LeftStick,
             ButtonName.RightStick => GamepadButtonType.RightStick,
             ButtonName.Home => GamepadButtonType.Home,
-            _ => GamepadButtonType.Unknown
+            _ => GamepadButtonType.Unknown,
         };
     }
 }

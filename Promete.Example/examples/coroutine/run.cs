@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Input;
@@ -6,7 +6,11 @@ using Promete.Input;
 namespace Promete.Example.examples.coroutine;
 
 [Demo("/coroutine/run.demo", "コルーチンを実行します。")]
-public class CoroutineRunExampleScene(Keyboard keyboard, ConsoleLayer console, CoroutineManager coroutine) : Scene
+public class CoroutineRunExampleScene(
+    Keyboard keyboard,
+    ConsoleLayer console,
+    CoroutineManager coroutine
+) : Scene
 {
     public override void OnStart()
     {
@@ -15,7 +19,8 @@ public class CoroutineRunExampleScene(Keyboard keyboard, ConsoleLayer console, C
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 
     private IEnumerator Task()

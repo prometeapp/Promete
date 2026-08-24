@@ -1,4 +1,4 @@
-using Promete.Windowing;
+using Promete.Backends;
 
 namespace Promete.Coroutines;
 
@@ -10,14 +10,14 @@ public class WaitForSeconds(float time) : YieldInstruction
     private readonly double _targetTime = time;
 
     private double? _startTime;
-    private IWindow Window => PrometeApp.Current.Window;
+    private ITimeProvider Time => PrometeApp.Current.Time;
 
     public override bool KeepWaiting
     {
         get
         {
-            _startTime ??= Window.TotalTime;
-            return Window.TotalTime - _startTime.Value < _targetTime;
+            _startTime ??= Time.TotalTime;
+            return Time.TotalTime - _startTime.Value < _targetTime;
         }
     }
 }

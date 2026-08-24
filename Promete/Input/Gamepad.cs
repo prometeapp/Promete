@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Promete.Input.Internal;
-using Promete.Windowing;
 using Silk.NET.Input;
 
 namespace Promete.Input;
@@ -14,12 +13,12 @@ public sealed class Gamepad : IDisposable
 
     private readonly GamepadButton[] _buttons;
     private readonly IGamepad _pad;
-    private readonly IWindow _window;
+    private readonly PrometeApp _app;
 
-    public Gamepad(IGamepad pad, IWindow window)
+    public Gamepad(IGamepad pad, PrometeApp app)
     {
         _pad = pad;
-        _window = window;
+        _app = app;
         _buttons = new GamepadButton[pad.Buttons.Count + TriggerCount];
         for (var i = 0; i < pad.Buttons.Count; i++)
         {
@@ -28,15 +27,24 @@ public sealed class Gamepad : IDisposable
         }
 
         // Note: XInputの仕様に従い、Prometeでは最大2つのトリガーをL2, R2として解釈する
-        _buttonMap[GamepadButtonType.L2] = _buttons[pad.Buttons.Count + 0] = new GamepadButton(GamepadButtonType.L2);
-        _buttonMap[GamepadButtonType.R2] = _buttons[pad.Buttons.Count + 1] = new GamepadButton(GamepadButtonType.R2);
+        _buttonMap[GamepadButtonType.L2] = _buttons[pad.Buttons.Count + 0] = new GamepadButton(
+            GamepadButtonType.L2
+        );
+        _buttonMap[GamepadButtonType.R2] = _buttons[pad.Buttons.Count + 1] = new GamepadButton(
+            GamepadButtonType.R2
+        );
 
         pad.ButtonDown += OnButtonDown;
         pad.ButtonUp += OnButtonUp;
         pad.TriggerMoved += OnTriggerMove;
 
-        window.PreUpdate += OnPreUpdate;
-        window.PostUpdate += OnPostUpdate;
+        app.PreUpdate += OnPreUpdate;
+        app.PostUpdate += OnPostUpdate;
+    }
+
+    ~Gamepad()
+    {
+        ReleaseUnmanagedResources();
     }
 
     /// <summary>
@@ -57,24 +65,14 @@ public sealed class Gamepad : IDisposable
     /// <summary>
     /// 左スティックの位置を取得します。
     /// </summary>
-    public Vector LeftStick => _pad.Thumbsticks.Count >= 1 ? (_pad.Thumbsticks[0].X, _pad.Thumbsticks[0].Y) : (0, 0);
+    public Vector LeftStick =>
+        _pad.Thumbsticks.Count >= 1 ? (_pad.Thumbsticks[0].X, _pad.Thumbsticks[0].Y) : (0, 0);
 
     /// <summary>
     /// 右スティックの位置を取得します。
     /// </summary>
-    public Vector RightStick => _pad.Thumbsticks.Count >= 2 ? (_pad.Thumbsticks[1].X, _pad.Thumbsticks[1].Y) : (0, 0);
-
-    /// <summary>
-    /// インデックスを指定してボタンを取得します。
-    /// </summary>
-    /// <param name="index">ボタンのインデックス</param>
-    public GamepadButton this[int index] => _buttons[index];
-
-    /// <summary>
-    /// ボタンの種類を指定してボタンを取得します。
-    /// </summary>
-    /// <param name="type">ボタンの種類</param>
-    public GamepadButton this[GamepadButtonType type] => _buttonMap[type];
+    public Vector RightStick =>
+        _pad.Thumbsticks.Count >= 2 ? (_pad.Thumbsticks[1].X, _pad.Thumbsticks[1].Y) : (0, 0);
 
     /// <summary>
     /// 全てのボタンを取得します。
@@ -97,6 +95,18 @@ public sealed class Gamepad : IDisposable
     public IEnumerable<GamepadButton> AllUpButtons => _buttons.Where(c => c.IsButtonUp);
 
     /// <summary>
+    /// インデックスを指定してボタンを取得します。
+    /// </summary>
+    /// <param name="index">ボタンのインデックス</param>
+    public GamepadButton this[int index] => _buttons[index];
+
+    /// <summary>
+    /// ボタンの種類を指定してボタンを取得します。
+    /// </summary>
+    /// <param name="type">ボタンの種類</param>
+    public GamepadButton this[GamepadButtonType type] => _buttonMap[type];
+
+    /// <summary>
     /// リソースを解放します。
     /// </summary>
     public void Dispose()
@@ -111,21 +121,24 @@ public sealed class Gamepad : IDisposable
     /// <param name="value">振動の強さ (0.0～1.0)</param>
     public void Vibrate(float value)
     {
-        if (!IsVibrationSupported) return;
+        if (!IsVibrationSupported)
+            return;
 
-        foreach (var motor in _pad.VibrationMotors) motor.Speed = value;
+        foreach (var motor in _pad.VibrationMotors)
+            motor.Speed = value;
     }
 
     private void OnPreUpdate()
     {
         for (var i = 0; i < _buttons.Length; i++)
         {
-            var isPressed = i < _buttons.Length - 2
-                ? _pad.Buttons[i].Pressed
-                : _pad.Triggers[i - _buttons.Length + 2].Position >= 1;
+            var isPressed =
+                i < _buttons.Length - 2
+                    ? _pad.Buttons[i].Pressed
+                    : _pad.Triggers[i - _buttons.Length + 2].Position >= 1;
             _buttons[i].IsPressed = isPressed;
             _buttons[i].ElapsedFrameCount = isPressed ? _buttons[i].ElapsedFrameCount + 1 : 0;
-            _buttons[i].ElapsedTime = isPressed ? _buttons[i].ElapsedTime + _window.DeltaTime : 0;
+            _buttons[i].ElapsedTime = isPressed ? _buttons[i].ElapsedTime + _app.Time.DeltaTime : 0;
         }
     }
 
@@ -159,16 +172,12 @@ public sealed class Gamepad : IDisposable
 
     private void ReleaseUnmanagedResources()
     {
-        foreach (var motor in _pad.VibrationMotors) motor.Speed = 0;
+        foreach (var motor in _pad.VibrationMotors)
+            motor.Speed = 0;
         _pad.ButtonDown -= OnButtonDown;
         _pad.ButtonUp -= OnButtonUp;
         _pad.TriggerMoved -= OnTriggerMove;
-        _window.PreUpdate -= OnPreUpdate;
-        _window.PostUpdate -= OnPostUpdate;
-    }
-
-    ~Gamepad()
-    {
-        ReleaseUnmanagedResources();
+        _app.PreUpdate -= OnPreUpdate;
+        _app.PostUpdate -= OnPostUpdate;
     }
 }

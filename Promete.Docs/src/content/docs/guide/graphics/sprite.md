@@ -17,7 +17,7 @@ public class GameScene : Scene
     public override void OnStart()
     {
         // テクスチャを読み込み
-        var texture = Window.TextureFactory.Load("assets/player.png");
+        var texture = App.TextureFactory.Load("assets/player.png");
 
         // スプライトを作成
         var sprite = new Sprite(texture);

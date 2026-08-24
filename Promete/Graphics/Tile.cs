@@ -1,6 +1,5 @@
 using System;
 using Promete.Nodes;
-using Promete.Windowing;
 
 namespace Promete.Graphics;
 
@@ -16,15 +15,15 @@ public class Tile : ITile
     private double _timer;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Tile"/> class.
     /// テクスチャを指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="texture">タイルとして描画されるテクスチャ。</param>
     public Tile(Texture2D texture)
-        : this(texture, false)
-    {
-    }
+        : this(texture, false) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Tile"/> class.
     /// <see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     protected Tile(Texture2D texture, bool b1)
@@ -34,6 +33,7 @@ public class Tile : ITile
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="Tile"/> class.
     /// テクスチャの配列とアニメーション時間を指定して、<see cref="Tile" /> クラスの新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="animations">アニメーション描画されるテクスチャの配列。</param>
@@ -64,9 +64,10 @@ public class Tile : ITile
     /// </summary>
     public double Interval { get; }
 
-    public Texture2D GetTexture(Tilemap map, VectorInt tileLocation, IWindow window)
+    public Texture2D GetTexture(Tilemap map, VectorInt tileLocation)
     {
-        if (_prevFrameCount != window.TotalFrame)
+        var time = PrometeApp.Current.Time;
+        if (_prevFrameCount != time.TotalFrame)
         {
             if (_timer > Interval)
             {
@@ -77,10 +78,10 @@ public class Tile : ITile
             }
 
             Texture = Animations[_animationState];
-            _timer += window.DeltaTime;
+            _timer += time.DeltaTime;
         }
 
-        _prevFrameCount = window.TotalFrame;
+        _prevFrameCount = time.TotalFrame;
         return Texture;
     }
 

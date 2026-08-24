@@ -1,39 +1,48 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 using Promete.Windowing;
 
 namespace Promete.Example.examples.window;
 
 [Demo("window/property.demo", "ウィンドウの情報を変更する")]
-public class property(ConsoleLayer console, Keyboard keyboard) : Scene
+public class Property(ConsoleLayer console, Keyboard keyboard) : Scene
 {
     public override void OnUpdate()
     {
         console.Clear();
-        console.Print($"Position: {Window.Location}");
-        console.Print($"Size: {Window.Size}");
-        console.Print($"ActualSize: {Window.ActualSize}");
-        console.Print($"IsFocused: {Window.IsFocused}");
-        console.Print($"IsVisible: {Window.IsVisible}");
-        console.Print($"UPS: {Window.UpdatePerSeconds}");
-        console.Print($"FPS: {Window.FramePerSeconds}");
-        console.Print($"Mode: {Window.Mode}");
-
+        console.Print($"Position: {View.Location}");
+        console.Print($"Size: {View.Size}");
+        console.Print($"ActualSize: {View.ActualSize}");
+        console.Print($"IsFocused: {View.IsFocused}");
+        console.Print($"IsVisible: {View.IsVisible}");
+        console.Print($"UPS: {Time.UpdatePerSeconds}");
+        console.Print($"FPS: {Time.FramePerSeconds}");
+        console.Print($"Mode: {View.Mode}");
 
         console.Print($"[1]: Set WindowMode to {nameof(WindowMode.Resizable)}");
         console.Print($"[2]: Set WindowMode to {nameof(WindowMode.Fixed)}");
         console.Print($"[3]: Set WindowMode to {nameof(WindowMode.NoFrame)}");
-        console.Print("[4]: Toggle Fullscreen: " + Window.IsFullScreen);
-        console.Print("[5]: Toggle VSync: " + Window.IsVsyncMode);
-        console.Print("[6]: Toggle TopMost: " + Window.TopMost);
+        console.Print("[4]: Toggle Fullscreen: " + View.IsFullScreen);
+
+        // TODO: vsyncmodeを復活させたら修正する
+        // console.Print("[5]: Toggle VSync: " + View.IsVsyncMode);
+        console.Print("[6]: Toggle TopMost: " + View.TopMost);
         console.Print("[ESC]: Exit");
 
-        if (keyboard.Number1.IsKeyDown) Window.Mode = WindowMode.Resizable;
-        if (keyboard.Number2.IsKeyDown) Window.Mode = WindowMode.Fixed;
-        if (keyboard.Number3.IsKeyDown) Window.Mode = WindowMode.NoFrame;
-        if (keyboard.Number4.IsKeyDown) Window.IsFullScreen = !Window.IsFullScreen;
-        if (keyboard.Number5.IsKeyDown) Window.IsVsyncMode = !Window.IsVsyncMode;
-        if (keyboard.Number6.IsKeyDown) Window.TopMost = !Window.TopMost;
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Number1.IsKeyDown)
+            View.Mode = WindowMode.Resizable;
+        if (keyboard.Number2.IsKeyDown)
+            View.Mode = WindowMode.Fixed;
+        if (keyboard.Number3.IsKeyDown)
+            View.Mode = WindowMode.NoFrame;
+        if (keyboard.Number4.IsKeyDown)
+            View.IsFullScreen = !View.IsFullScreen;
+
+        // if (keyboard.Number5.IsKeyDown)
+        //     Window.IsVsyncMode = !Window.IsVsyncMode;
+        if (keyboard.Number6.IsKeyDown)
+            View.TopMost = !View.TopMost;
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 }

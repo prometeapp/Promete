@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 
 namespace Promete.Example.examples.window;
@@ -10,17 +10,22 @@ public class WindowScaleDemoScene(Keyboard keyboard, ConsoleLayer console) : Sce
     {
         console.Clear();
 
-        console.Print($"Current Scale: {Window.Scale}");
+        console.Print($"Current Scale: {View.Scale}");
         console.Print("[1]: Scale 1x");
         console.Print("[2]: Scale 2x");
         console.Print("[3]: Scale 4x");
         console.Print("[4]: Scale 8x");
 
-        if (keyboard.Number1.IsKeyDown) Window.Scale = 1;
-        if (keyboard.Number2.IsKeyDown) Window.Scale = 2;
-        if (keyboard.Number3.IsKeyDown) Window.Scale = 4;
-        if (keyboard.Number4.IsKeyDown) Window.Scale = 8;
+        if (keyboard.Number1.IsKeyDown)
+            View.Scale = 1;
+        if (keyboard.Number2.IsKeyDown)
+            View.Scale = 2;
+        if (keyboard.Number3.IsKeyDown)
+            View.Scale = 4;
+        if (keyboard.Number4.IsKeyDown)
+            View.Scale = 8;
 
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 }

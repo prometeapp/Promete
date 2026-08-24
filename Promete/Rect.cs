@@ -6,6 +6,29 @@ namespace Promete;
 public struct Rect
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="Rect"/> struct.
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="location">位置。</param>
+    /// <param name="size">サイズ。</param>
+    public Rect(Vector location, Vector size)
+    {
+        Location = location;
+        Size = size;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Rect"/> struct.
+    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="left">左の位置。</param>
+    /// <param name="top">上の位置。</param>
+    /// <param name="width">幅。</param>
+    /// <param name="height">高さ。</param>
+    public Rect(float left, float top, float width, float height)
+        : this(new Vector(left, top), new Vector(width, height)) { }
+
+    /// <summary>
     /// この矩形の位置を取得または設定します。
     /// </summary>
     public Vector Location { get; set; }
@@ -75,26 +98,27 @@ public struct Rect
     public Vector Center => Location + (Size / 2);
 
     /// <summary>
-    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// <see cref="Rect" /> を、明示的に <see cref="RectInt" /> に変換します。
     /// </summary>
-    /// <param name="location">位置。</param>
-    /// <param name="size">サイズ。</param>
-    public Rect(Vector location, Vector size)
+    public static explicit operator RectInt(Rect rect)
     {
-        Location = location;
-        Size = size;
+        return new RectInt((int)rect.Left, (int)rect.Top, (int)rect.Width, (int)rect.Height);
     }
 
     /// <summary>
-    /// <see cref="Rect" /> 構造体の新しいインスタンスを初期化します。
+    /// タプルから <see cref="Rect" /> に変換します。
     /// </summary>
-    /// <param name="left">左の位置。</param>
-    /// <param name="top">上の位置。</param>
-    /// <param name="width">幅。</param>
-    /// <param name="height">高さ。</param>
-    public Rect(float left, float top, float width, float height)
-        : this(new Vector(left, top), new Vector(width, height))
+    public static implicit operator Rect((float left, float top, float width, float height) tuple)
     {
+        return new Rect(tuple.left, tuple.top, tuple.width, tuple.height);
+    }
+
+    /// <summary>
+    /// タプルから <see cref="Rect" /> に変換します。
+    /// </summary>
+    public static implicit operator Rect((Vector location, Vector size) tuple)
+    {
+        return new Rect(tuple.location, tuple.size);
     }
 
     public void Deconstruct(out float x, out float y, out float width, out float height)
@@ -118,7 +142,14 @@ public struct Rect
     /// <returns>重なっている場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
     public bool Intersect(Rect rect)
     {
-        return Left < rect.Right && rect.Left < Right && Top < rect.Bottom && rect.Top < Bottom;
+        return Width > 0
+            && Height > 0
+            && rect.Width > 0
+            && rect.Height > 0
+            && Left < rect.Left + rect.Width
+            && rect.Left < Left + Width
+            && Top < rect.Top + rect.Height
+            && rect.Top < Top + Height;
     }
 
     /// <summary>
@@ -129,29 +160,5 @@ public struct Rect
     public Rect Translate(Vector offset)
     {
         return new Rect(Location + offset, Size);
-    }
-
-    /// <summary>
-    /// <see cref="Rect" /> を、明示的に <see cref="RectInt" /> に変換します。
-    /// </summary>
-    public static explicit operator RectInt(Rect rect)
-    {
-        return new RectInt((int)rect.Left, (int)rect.Top, (int)rect.Width, (int)rect.Height);
-    }
-
-    /// <summary>
-    /// タプルから <see cref="Rect" /> に変換します。
-    /// </summary>
-    public static implicit operator Rect((float left, float top, float width, float height) tuple)
-    {
-        return new Rect(tuple.left, tuple.top, tuple.width, tuple.height);
-    }
-
-    /// <summary>
-    /// タプルから <see cref="Rect" /> に変換します。
-    /// </summary>
-    public static implicit operator Rect((Vector location, Vector size) tuple)
-    {
-        return new Rect(tuple.location, tuple.size);
     }
 }

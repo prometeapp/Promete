@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 
 namespace Promete.Example.Kernel;
 
@@ -13,14 +13,17 @@ public class DemoFileSystem
 
     private void Initialize()
     {
-        var scenes = GetType().Assembly.GetTypes()
-            .Select(type => (type, attribute: type.GetCustomAttribute<DemoAttribute>()))
-            .Where(t => t.attribute is not null) as IEnumerable<(Type, DemoAttribute)>;
+        var scenes =
+            GetType()
+                .Assembly.GetTypes()
+                .Select(type => (type, attribute: type.GetCustomAttribute<DemoAttribute>()))
+                .Where(t => t.attribute is not null) as IEnumerable<(Type, DemoAttribute)>;
 
         foreach (var (type, attribute) in scenes)
         {
             var path = attribute.Path;
-            if (path.IndexOf('/') < 0) path = "/" + path;
+            if (path.IndexOf('/') < 0)
+                path = "/" + path;
             var a = path.LastIndexOf('/');
             var folderPath = path.Remove(a);
             var fileName = path[(a + 1)..];
@@ -37,13 +40,17 @@ public class DemoFileSystem
 
     private void Sort(Folder folder)
     {
-        folder.Files.Sort((f1, f2) =>
-        {
-            if (f1.GetType() == f2.GetType()) return string.CompareOrdinal(f1.Name, f2.Name);
+        folder.Files.Sort(
+            (f1, f2) =>
+            {
+                if (f1.GetType() == f2.GetType())
+                    return string.CompareOrdinal(f1.Name, f2.Name);
 
-            return f1 is Folder ? -1 : 1;
-        });
-        foreach (var subFolder in folder.Files.OfType<Folder>()) Sort(subFolder);
+                return f1 is Folder ? -1 : 1;
+            }
+        );
+        foreach (var subFolder in folder.Files.OfType<Folder>())
+            Sort(subFolder);
     }
 
     private Folder CreateOrGetFolder(string path)
@@ -63,6 +70,7 @@ public class DemoFileSystem
                     current = folder;
                     break;
                 }
+
                 case Folder f:
                     current = f;
                     break;

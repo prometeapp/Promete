@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
 using Promete.Nodes;
@@ -6,7 +6,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("graphics/visible.demo", "スプライトの表示・非表示")]
-public class visible : Scene
+public class Visible : Scene
 {
     private readonly ConsoleLayer _console;
     private readonly Keyboard _keyboard;
@@ -14,11 +14,11 @@ public class visible : Scene
 
     private readonly Sprite _sprite;
 
-    public visible(ConsoleLayer console, Keyboard keyboard)
+    public Visible(ConsoleLayer console, Keyboard keyboard)
     {
         _console = console;
         _keyboard = keyboard;
-        _tIchigo = Window.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
 
         _sprite = new Sprite(_tIchigo)
             .Scale(8, 8)

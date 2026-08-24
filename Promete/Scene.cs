@@ -1,4 +1,5 @@
 using System;
+using Promete.Backends;
 using Promete.Nodes;
 using Promete.Windowing;
 
@@ -17,40 +18,36 @@ public abstract class Scene
     protected PrometeApp App =>
         PrometeApp.Current ?? throw new InvalidOperationException("PrometeApp is not initialized.");
 
-    protected IWindow Window => App.Window ?? throw new InvalidOperationException("Window is not initialized.");
+    [Obsolete("IWindow は非推奨になりました。")]
+    protected IWindow Window =>
+        App.Window ?? throw new InvalidOperationException("Window is not initialized.");
+
+    protected IGameView View => App.View;
+
+    protected ITimeProvider Time => App.Time;
 
     /// <summary>
     /// シーンが開始したときに呼び出されます。
     /// </summary>
-    public virtual void OnStart()
-    {
-    }
+    public virtual void OnStart() { }
 
     /// <summary>
     /// アプリケーションのゲームループ毎に呼び出されます。
     /// </summary>
-    public virtual void OnUpdate()
-    {
-    }
+    public virtual void OnUpdate() { }
 
     /// <summary>
     /// シーンが破棄されるときに呼び出されます。
     /// </summary>
-    public virtual void OnDestroy()
-    {
-    }
+    public virtual void OnDestroy() { }
 
     /// <summary>
     /// シーンが一時停止したときに呼び出されます。
     /// </summary>
-    public virtual void OnPause()
-    {
-    }
+    public virtual void OnPause() { }
 
     /// <summary>
     /// シーンが再開したときに呼び出されます。
     /// </summary>
-    public virtual void OnResume()
-    {
-    }
+    public virtual void OnResume() { }
 }

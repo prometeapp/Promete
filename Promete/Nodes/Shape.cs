@@ -1,4 +1,8 @@
 using System.Drawing;
+using System.Numerics;
+using Promete.Graphics;
+using Promete.Graphics.Rendering;
+using Promete.Graphics.Rendering.Commands;
 
 namespace Promete.Nodes;
 
@@ -7,7 +11,17 @@ namespace Promete.Nodes;
 /// </summary>
 public class Shape : Node
 {
-    private Shape(Color c, ShapeType type, int lineWidth, Color? lineColor, params VectorInt[] vertices)
+    private DrawPrimitiveCommand? _cachedCommand;
+    private Matrix4x4 _cachedModelMatrix;
+    private Material? _cachedMaterial;
+
+    private Shape(
+        Color c,
+        ShapeType type,
+        int lineWidth,
+        Color? lineColor,
+        params VectorInt[] vertices
+    )
     {
         Color = c;
         LineWidth = lineWidth;
@@ -41,6 +55,34 @@ public class Shape : Node
     /// 図形の種類を取得します。
     /// </summary>
     public ShapeType Type { get; }
+
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        if (
+            _cachedCommand == null
+            || ModelMatrix != _cachedModelMatrix
+            || !ReferenceEquals(Material, _cachedMaterial)
+        )
+        {
+            var worldVertices = new Vector[Vertices.Length];
+            for (var i = 0; i < Vertices.Length; i++)
+                worldVertices[i] = RenderingHelper.Transform(Vertices[i], this);
+
+            _cachedCommand = new DrawPrimitiveCommand
+            {
+                WorldVertices = worldVertices,
+                ShapeType = Type,
+                Color = Color,
+                LineWidth = LineWidth,
+                LineColor = LineColor,
+                Material = Material,
+            };
+            _cachedModelMatrix = ModelMatrix;
+            _cachedMaterial = Material;
+        }
+
+        queue.Enqueue(_cachedCommand);
+    }
 
     /// <summary>
     /// ピクセルを作成します。
@@ -102,10 +144,19 @@ public class Shape : Node
     /// <param name="lineWidth">枠線の幅</param>
     /// <param name="lineColor">枠線の色</param>
     /// <returns>作成されたShape</returns>
-    public static Shape CreateRect(VectorInt start, VectorInt end, Color color, int lineWidth = 0,
-        Color? lineColor = null)
+    public static Shape CreateRect(
+        VectorInt start,
+        VectorInt end,
+        Color color,
+        int lineWidth = 0,
+        Color? lineColor = null
+    )
     {
-        return new Shape(color, ShapeType.Rect, lineWidth, lineColor,
+        return new Shape(
+            color,
+            ShapeType.Rect,
+            lineWidth,
+            lineColor,
             (start.X, start.Y),
             (start.X, end.Y),
             (end.X, end.Y),
@@ -124,8 +175,15 @@ public class Shape : Node
     /// <param name="lineWidth">枠線の幅</param>
     /// <param name="lineColor">枠線の色</param>
     /// <returns>作成されたShape</returns>
-    public static Shape CreateRect(int sx, int sy, int ex, int ey, Color color, int lineWidth = 0,
-        Color? lineColor = null)
+    public static Shape CreateRect(
+        int sx,
+        int sy,
+        int ex,
+        int ey,
+        Color color,
+        int lineWidth = 0,
+        Color? lineColor = null
+    )
     {
         return CreateRect((sx, sy), (ex, ey), color, lineWidth, lineColor);
     }
@@ -140,8 +198,14 @@ public class Shape : Node
     /// <param name="lineWidth">枠線の幅</param>
     /// <param name="lineColor">枠線の色</param>
     /// <returns>作成されたShape</returns>
-    public static Shape CreateTriangle(VectorInt v1, VectorInt v2, VectorInt v3, Color color, int lineWidth = 0,
-        Color? lineColor = null)
+    public static Shape CreateTriangle(
+        VectorInt v1,
+        VectorInt v2,
+        VectorInt v3,
+        Color color,
+        int lineWidth = 0,
+        Color? lineColor = null
+    )
     {
         return new Shape(color, ShapeType.Triangle, lineWidth, lineColor, v1, v2, v3);
     }
@@ -159,8 +223,17 @@ public class Shape : Node
     /// <param name="lineWidth">枠線の幅</param>
     /// <param name="lineColor">枠線の色</param>
     /// <returns>作成されたShape</returns>
-    public static Shape CreateTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Color color, int lineWidth = 0,
-        Color? lineColor = null)
+    public static Shape CreateTriangle(
+        int x1,
+        int y1,
+        int x2,
+        int y2,
+        int x3,
+        int y3,
+        Color color,
+        int lineWidth = 0,
+        Color? lineColor = null
+    )
     {
         return CreateTriangle((x1, y1), (x2, y2), (x3, y3), color, lineWidth, lineColor);
     }

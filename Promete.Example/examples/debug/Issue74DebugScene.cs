@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Drawing;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
@@ -39,5 +39,3 @@ public class Issue74DebugScene(CoroutineManager coroutine, ConsoleLayer console)
         }
     }
 }
-
-

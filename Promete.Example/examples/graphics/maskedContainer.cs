@@ -8,30 +8,29 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/maskedContainer.demo", "マスクを使って子要素を切り抜く例")]
-public class MaskedContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
+public class MaskedContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse)
+    : Scene
 {
     private Texture2D? _backgroundTexture;
     private Texture2D? _circleMaskTexture;
 
     public override void OnStart()
     {
-        _backgroundTexture = Window.TextureFactory.Load("assets/ichigo2.png");
-        _circleMaskTexture = Window.TextureFactory.Load("assets/circle_mask.png");
+        _backgroundTexture = App.TextureFactory.Load("assets/ichigo2.png");
+        _circleMaskTexture = App.TextureFactory.Load("assets/circle_mask.png");
 
         // ステンシルバッファ方式のデモ
         var stencilContainer = new MaskedContainer(_circleMaskTexture, useAlphaMask: false)
             .Location(100, 100)
             .Size(32, 32);
-        stencilContainer.Add(new Sprite(_backgroundTexture)
-            .Location(0, 0));
+        stencilContainer.Add(new Sprite(_backgroundTexture).Location(0, 0));
         Root.Add(stencilContainer);
 
         // アルファブレンディング方式のデモ
         var alphaContainer = new MaskedContainer(_circleMaskTexture, useAlphaMask: true)
             .Location(450, 100)
             .Size(32, 32);
-        alphaContainer.Add(new Sprite(_backgroundTexture)
-            .Location(0, 0));
+        alphaContainer.Add(new Sprite(_backgroundTexture).Location(0, 0));
         Root.Add(alphaContainer);
 
         console.Print("ステンシルバッファ方式（左）とアルファブレンディング方式（右）の比較");

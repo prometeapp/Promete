@@ -1,15 +1,18 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Promete.Audio;
-using Promete.Headless;
 
 namespace Promete.Test;
 
+/// <summary>
+/// 実際の Vorbis 音源を <see cref="CaptureAudioOutput"/> 経由で再生し、
+/// 実デバイス・実時間なしで <see cref="AudioPlayer"/> の基本操作を検証するテストです。
+/// </summary>
 public class AudioPlayerTests
 {
     [Fact]
     public void VorbisAudioSource_CanLoad()
     {
-        var initialize = () => new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        var initialize = () => new VorbisAudioSource("./assets/amaebi.ogg");
 
         initialize.Should().NotThrow();
     }
@@ -17,9 +20,8 @@ public class AudioPlayerTests
     [Fact]
     public void PlayAndStop()
     {
-        using var app = PrometeApp.Create().BuildWithHeadless();
-        using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var audioPlayer = new AudioPlayer(new CaptureAudioOutput());
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Invoking(x => x.Play(audioSource)).Should().NotThrow();
         audioPlayer.IsPlaying.Should().BeTrue();
@@ -31,9 +33,8 @@ public class AudioPlayerTests
     [Fact]
     public void PauseAndResume()
     {
-        using var app = PrometeApp.Create().BuildWithHeadless();
-        using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var audioPlayer = new AudioPlayer(new CaptureAudioOutput());
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Play(audioSource);
         audioPlayer.IsPausing.Should().BeFalse();
@@ -52,8 +53,8 @@ public class AudioPlayerTests
     [Fact]
     public void PauseAndStop()
     {
-        using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        using var audioPlayer = new AudioPlayer(new CaptureAudioOutput());
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Play(audioSource);
         audioPlayer.IsPausing.Should().BeFalse();
@@ -68,18 +69,23 @@ public class AudioPlayerTests
     }
 
     [Fact]
-    public async Task IsPlayingShouldBeTrueWhenPlayTwice()
+    public void IsPlayingShouldBeTrueWhenPlayTwice()
     {
-        using var audioPlayer = new AudioPlayer();
-        using var audioSource = new VorbisAudioSource("./assets/GB-Action-C02-2.ogg");
+        var output = new CaptureAudioOutput();
+        using var audioPlayer = new AudioPlayer(output);
+        using var audioSource = new VorbisAudioSource("./assets/amaebi.ogg");
 
         audioPlayer.Play(audioSource);
         audioPlayer.IsPlaying.Should().BeTrue();
-        await Task.Delay(2000);
+
+        // 再生途中まで進めてから再度 Play する
+        output.RenderNext(10);
         audioPlayer.Play(audioSource);
         audioPlayer.IsPlaying.Should().BeTrue();
 
-        await Task.Delay(2000);
+        output.RenderNext(10);
+        audioPlayer.IsPlaying.Should().BeTrue();
+
         audioPlayer.Stop();
     }
 }

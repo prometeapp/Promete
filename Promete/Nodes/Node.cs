@@ -1,4 +1,7 @@
+using System;
 using System.Numerics;
+using Promete.Graphics;
+using Promete.Graphics.Rendering;
 
 namespace Promete.Nodes;
 
@@ -7,6 +10,19 @@ namespace Promete.Nodes;
 /// </summary>
 public abstract class Node
 {
+    private Angle _angle;
+
+    private bool _isModelMatrixDirty = true;
+
+    private bool _isPixelSnapEnabled = true;
+
+    private Vector _location;
+    private Vector _pivot = Vector.Zero;
+    private Vector _scale = (1, 1);
+    private VectorInt _size;
+
+    private int _zIndex;
+
     /// <summary>
     /// このノードの名前を取得または設定します。
     /// </summary>
@@ -20,7 +36,8 @@ public abstract class Node
         get => _location;
         set
         {
-            if (_location == value) return;
+            if (_location == value)
+                return;
             _location = value;
             _isModelMatrixDirty = true;
         }
@@ -34,7 +51,8 @@ public abstract class Node
         get => _scale;
         set
         {
-            if (_scale == value) return;
+            if (_scale == value)
+                return;
             _scale = value;
             _isModelMatrixDirty = true;
         }
@@ -48,21 +66,23 @@ public abstract class Node
         get => _size;
         set
         {
-            if (_size == value) return;
+            if (_size == value)
+                return;
             _size = value;
             _isModelMatrixDirty = true;
         }
     }
 
     /// <summary>
-    /// このノードの角度（0-360°）を取得または設定します。
+    /// このノードの角度を取得または設定します。
     /// </summary>
-    public float Angle
+    public Angle Angle
     {
         get => _angle;
         set
         {
-            if (_angle == value) return;
+            if (_angle == value)
+                return;
             _angle = value;
             _isModelMatrixDirty = true;
         }
@@ -72,6 +92,12 @@ public abstract class Node
     /// このノードが破棄されたかどうかを取得します。
     /// </summary>
     public bool IsDestroyed { get; private set; }
+
+    /// <summary>
+    /// このノードに適用するマテリアルを取得または設定します。使用されない場合もあります。
+    /// null の場合はデフォルトシェーダーで描画します。
+    /// </summary>
+    public Material? Material { get; set; }
 
     /// <summary>
     /// このノードの幅を取得または設定します。
@@ -100,7 +126,8 @@ public abstract class Node
         get => _zIndex;
         set
         {
-            if (_zIndex == value) return;
+            if (_zIndex == value)
+                return;
             _zIndex = value;
             Parent?.RequestSorting();
         }
@@ -118,8 +145,28 @@ public abstract class Node
         get => _pivot;
         set
         {
-            if (_pivot == value) return;
+            if (_pivot == value)
+                return;
             _pivot = value;
+            _isModelMatrixDirty = true;
+        }
+    }
+
+    /// <summary>
+    /// このノードの描画位置をピクセル単位にスナップするかどうかを取得または設定します。
+    /// </summary>
+    /// <remarks>
+    /// 有効の場合、モデル行列の平行移動成分が整数に丸められ、ピボットや位置の端数によるにじみを防ぎます。<br />
+    /// 回転や非整数スケールを伴うアニメーションでガタつきが生じる場合は、無効にしてください。
+    /// </remarks>
+    public bool IsPixelSnapEnabled
+    {
+        get => _isPixelSnapEnabled;
+        set
+        {
+            if (_isPixelSnapEnabled == value)
+                return;
+            _isPixelSnapEnabled = value;
             _isModelMatrixDirty = true;
         }
     }
@@ -133,7 +180,7 @@ public abstract class Node
     /// このノードの絶対位置（親ノードの位置を考慮した位置）を取得します。
     /// </summary>
     public Vector AbsoluteLocation =>
-        Parent == null ? Location : Location * Parent.AbsoluteScale + Parent.AbsoluteLocation;
+        Parent == null ? Location : (Location * Parent.AbsoluteScale) + Parent.AbsoluteLocation;
 
     /// <summary>
     /// このノードの絶対スケール（親ノードのスケールを考慮したスケール）を取得します。
@@ -143,7 +190,7 @@ public abstract class Node
     /// <summary>
     /// このノードの絶対角度（親ノードの角度を考慮した角度）を取得します。
     /// </summary>
-    public float AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
+    public Angle AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
 
     /// <summary>
     /// このノードの親ノードを取得します。
@@ -152,64 +199,64 @@ public abstract class Node
 
     internal Matrix4x4 ModelMatrix { get; private set; } = Matrix4x4.Identity;
 
-    private float _angle;
-
-    private bool _isModelMatrixDirty = true;
-
-    private Vector _location;
-    private Vector _scale = (1, 1);
-    private Vector _pivot = Vector.Zero;
-
-    private int _zIndex;
-    private VectorInt _size;
-
     /// <summary>
     /// このノードを破棄します。
     /// </summary>
     public void Destroy()
     {
-        if (IsDestroyed) return;
+        if (IsDestroyed)
+            return;
         IsDestroyed = true;
         OnDestroy();
     }
 
     internal virtual void Update()
     {
-        if (IsDestroyed) return;
+        if (IsDestroyed)
+            return;
         OnUpdate();
     }
 
-    internal void BeforeRender()
+    internal virtual void BeforeRender()
     {
-        if (_isModelMatrixDirty) UpdateModelMatrix();
+        if (_isModelMatrixDirty)
+            UpdateModelMatrix();
         OnPreRender();
         OnRender();
     }
 
+    /// <summary>
+    /// このノードのレンダリングコマンドをキューに収集します。
+    /// </summary>
+    /// <param name="queue">コマンドの収集先キュー。</param>
+    /// <param name="ctx">レンダリングコンテキスト。</param>
+    public virtual void Collect(RenderCommandQueue queue, RenderContext ctx) { }
+
     protected internal virtual void UpdateModelMatrix()
     {
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
-        ModelMatrix = Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0) *
-                      Matrix4x4.CreateScale(Scale.X, Scale.Y, 1) *
-                      Matrix4x4.CreateRotationZ(MathHelper.ToRadian(Angle)) *
-                      Matrix4x4.CreateTranslation(Location.X, Location.Y, 0) *
-                      parentMatrix;
+        var matrix =
+            Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0)
+            * Matrix4x4.CreateScale(Scale.X, Scale.Y, 1)
+            * Matrix4x4.CreateRotationZ(Angle.ToRadians())
+            * Matrix4x4.CreateTranslation(Location.X, Location.Y, 0)
+            * parentMatrix;
+
+        if (IsPixelSnapEnabled)
+        {
+            matrix.M41 = MathF.Round(matrix.M41);
+            matrix.M42 = MathF.Round(matrix.M42);
+        }
+
+        ModelMatrix = matrix;
         _isModelMatrixDirty = false;
     }
 
-    protected virtual void OnUpdate()
-    {
-    }
+    protected virtual void OnUpdate() { }
 
-    protected virtual void OnRender()
-    {
-    }
+    protected virtual void OnRender() { }
 
-    protected virtual void OnPreRender()
-    {
-    }
+    protected virtual void OnPreRender() { }
 
-    protected virtual void OnDestroy()
-    {
-    }
+    protected virtual void OnDestroy() { }
 }

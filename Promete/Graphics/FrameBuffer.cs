@@ -1,32 +1,68 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Drawing;
-using Promete.Internal;
+using Promete.Graphics.Rendering;
 using Promete.Nodes;
 
 namespace Promete.Graphics;
 
 /// <summary>
-/// 子要素をテクスチャにレンダリングする <see cref="Container"/> です。
+/// 子要素をテクスチャにレンダリングできる要素です。
 /// </summary>
 public class FrameBuffer : IEnumerable<Node>, IDisposable
 {
+    private bool _disposed;
+
+    private VectorInt _size;
+
+    private readonly Container _children = [];
+
+    private readonly FrameBufferManager _frameBufferManager;
+    private readonly RenderTexture _renderTexture;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FrameBuffer"/> class.
+    /// 指定したサイズの <see cref="FrameBuffer"/> の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="width">フレームバッファの幅。</param>
+    /// <param name="height">フレームバッファの高さ。</param>
+    public FrameBuffer(int width, int height)
+    {
+        _size = (width, height);
+
+        var provider = PrometeApp.Current.TryGetPlugin<IRenderTextureProvider>(out var p)
+            ? p
+            : throw new InvalidOperationException(
+                "Current backend does not support RenderTexture."
+            );
+
+        _renderTexture = provider.Create((width, height));
+        _frameBufferManager = PrometeApp.Current.GetPlugin<FrameBufferManager>();
+        _frameBufferManager.ActiveFrameBuffers.Add(this);
+
+        _children.Location = (0, height);
+        _children.Scale = (1, -1);
+    }
+
+    /// <summary>
+    /// Finalizes an instance of the <see cref="FrameBuffer"/> class.
+    /// ファイナライザー
+    /// </summary>
+    ~FrameBuffer()
+    {
+        Dispose(false);
+    }
+
     /// <summary>
     /// レンダリングされたテクスチャを取得します。
     /// </summary>
-    public Texture2D Texture { get; internal set; }
+    public Texture2D Texture => _renderTexture.Texture;
 
     /// <summary>
     /// フレームバッファの子ノードの数を取得します。
     /// </summary>
     public int Count => _children.Count;
-
-    /// <summary>
-    /// このフレームバッファの子ノードを取得または設定します。
-    /// </summary>
-    public Node this[int index] => _children[index];
 
     /// <summary>
     /// このフレームバッファのサイズを取得します。
@@ -36,10 +72,11 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         get => _size;
         set
         {
-            if (_size == value) return;
+            if (_size == value)
+                return;
 
             _size = value;
-            _frameBufferProvider.Resize(this);
+            _renderTexture.Resize(value);
             _children.Location = (0, value.Y);
         }
     }
@@ -60,39 +97,24 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     public Color BackgroundColor { get; set; } = Color.Transparent;
 
     /// <summary>
-    /// ソート済みの子ノードのリストを取得します。
+    /// 毎フレーム自動レンダリングするかどうかを取得または設定します（デフォルト: true）。
     /// </summary>
-    public IReadOnlyList<Node> SortedChildren => _children.sortedChildren;
-
-    private bool _disposed;
-
-    private VectorInt _size;
-
-    private readonly Container _children = [];
-
-    private readonly FrameBufferManager _frameBufferManager;
-    private readonly IFrameBufferProvider _frameBufferProvider;
+    public bool AutoRender { get; set; } = true;
 
     /// <summary>
-    /// 指定したサイズの <see cref="FrameBuffer"/> の新しいインスタンスを初期化します。
+    /// レンダリング前に画面をクリアするかどうかを取得または設定します（デフォルト: true）。
     /// </summary>
-    /// <param name="width">フレームバッファの幅。</param>
-    /// <param name="height">フレームバッファの高さ。</param>
-    public FrameBuffer(int width, int height)
-    {
-        _size = (width, height);
-        _frameBufferProvider = PrometeApp.Current.TryGetPlugin<IFrameBufferProvider>(out var provider)
-            ? provider
-            : throw new InvalidOperationException("Current backend does not support FrameBuffer.");
+    public bool AutoClear { get; set; } = true;
 
-        _frameBufferManager = PrometeApp.Current.GetPlugin<FrameBufferManager>();
-        _frameBufferManager.ActiveFrameBuffers.Add(this);
+    /// <summary>
+    /// ソート済みの子ノードのリストを取得します。
+    /// </summary>
+    public IReadOnlyList<Node> SortedChildren => _children.SortedChildren;
 
-        _children.Location = (0, height);
-        _children.Scale = (1, -1);
-
-        Texture = _frameBufferProvider.CreateTexture(this);
-    }
+    /// <summary>
+    /// このフレームバッファの子ノードを取得または設定します。
+    /// </summary>
+    public Node this[int index] => _children[index];
 
     internal void BeforeRender()
     {
@@ -101,12 +123,37 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
 
     internal void Update()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
 
         _children.Update();
     }
 
-    #region IEnumerable<Node>
+    /// <summary>
+    /// 手動レンダリングを実行します。
+    /// </summary>
+    public void Render()
+    {
+        var app = PrometeApp.Current;
+        var queue = app.GetPlugin<RenderCommandQueue>();
+        var view = app.View;
+        var ctx = new RenderContext
+        {
+            WindowSize = view.Size,
+            WindowScale = view.Scale,
+            ActualWidth = view.ActualWidth,
+            ActualHeight = view.ActualHeight,
+        };
+
+        var clearColor = AutoClear ? BackgroundColor : (Color?)null;
+        using var _ = _renderTexture.BeginCapture(clearColor);
+
+        queue.PushScope();
+        foreach (var child in SortedChildren)
+            app.CollectNode(child, queue, ctx);
+        queue.PopScopeAndFlush();
+    }
+
     /// <summary>
     /// 指定したインデックスの位置に子ノードを挿入します。
     /// </summary>
@@ -195,9 +242,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     {
         return _children.GetEnumerator();
     }
-    #endregion
 
-    #region IDisposable
     /// <summary>
     /// このオブジェクトによって使用されているリソースを解放します。
     /// </summary>
@@ -219,7 +264,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         if (disposing)
         {
             // マネージドリソースを解放
-            Texture.Dispose();
+            _renderTexture.Dispose();
             _frameBufferManager.ActiveFrameBuffers.Remove(this);
             foreach (var child in _children)
             {
@@ -227,17 +272,6 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
             }
         }
 
-        // アンマネージドリソースを解放（必要であれば）
-
         _disposed = true;
     }
-
-    /// <summary>
-    /// ファイナライザー
-    /// </summary>
-    ~FrameBuffer()
-    {
-        Dispose(false);
-    }
-    #endregion
 }

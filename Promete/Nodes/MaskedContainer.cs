@@ -1,4 +1,6 @@
 using Promete.Graphics;
+using Promete.Graphics.Rendering;
+using Promete.Graphics.Rendering.Commands;
 
 namespace Promete.Nodes;
 
@@ -18,6 +20,24 @@ namespace Promete.Nodes;
 /// </remarks>
 public class MaskedContainer : Container
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaskedContainer"/> class.
+    /// MaskedContainer の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="maskTexture">マスクに使用するテクスチャ。nullの場合は通常のContainerとして動作します。</param>
+    /// <param name="useAlphaMask">アルファブレンディングを使用するかどうか。デフォルトはfalse（ステンシルバッファ方式）。</param>
+    /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
+    public MaskedContainer(
+        Texture2D? maskTexture = null,
+        bool useAlphaMask = false,
+        bool isTrimmable = false
+    )
+        : base(isTrimmable)
+    {
+        MaskTexture = maskTexture;
+        UseAlphaMask = useAlphaMask;
+    }
+
     /// <summary>
     /// マスクに使用するテクスチャを取得または設定します。
     /// </summary>
@@ -40,16 +60,56 @@ public class MaskedContainer : Container
     /// </remarks>
     public bool UseAlphaMask { get; set; } = false;
 
-    /// <summary>
-    /// MaskedContainer の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="maskTexture">マスクに使用するテクスチャ。nullの場合は通常のContainerとして動作します。</param>
-    /// <param name="useAlphaMask">アルファブレンディングを使用するかどうか。デフォルトはfalse（ステンシルバッファ方式）。</param>
-    /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
-    public MaskedContainer(Texture2D? maskTexture = null, bool useAlphaMask = false, bool isTrimmable = false)
-        : base(isTrimmable)
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        MaskTexture = maskTexture;
-        UseAlphaMask = useAlphaMask;
+        // マスクなしの場合は通常のコンテナとして収集
+        if (MaskTexture is not { } maskTexture)
+        {
+            base.Collect(queue, ctx);
+            return;
+        }
+
+        if (UseAlphaMask)
+        {
+            queue.Enqueue(
+                new BeginAlphaMaskCommand
+                {
+                    Container = this,
+                    MaskTexture = maskTexture,
+                    Context = ctx,
+                }
+            );
+
+            // BeginAlphaMaskCommandRunner が内部で子要素のレンダリングまで完結させる
+        }
+        else
+        {
+            queue.Enqueue(
+                new BeginStencilMaskCommand { Container = this, MaskTexture = maskTexture }
+            );
+
+            if (IsTrimmable)
+            {
+                queue.PushTrim(this, ctx);
+                CollectChildren(queue, ctx);
+                queue.PopTrim();
+            }
+            else
+            {
+                CollectChildren(queue, ctx);
+            }
+
+            queue.Enqueue(new EndMaskCommand());
+        }
+    }
+
+    private void CollectChildren(RenderCommandQueue queue, RenderContext ctx)
+    {
+        foreach (var child in SortedChildren)
+        {
+            if (!child.IsVisible || child.IsDestroyed)
+                continue;
+            child.Collect(queue, ctx);
+        }
     }
 }

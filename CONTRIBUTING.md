@@ -1,31 +1,40 @@
 # コントリビューションの手引き
+
 **コントリビュートにご協力いただきありがとうございます！その前に、このガイドをお読みいただければと思います。**
 
 ## 貢献者へ
+
 あなたがこのプロジェクトに提供したソースコードには、他のコードと同様に LICENSE ファイルに記載されるライセンスが付与されることに同意してください。
 
 ## Issue
+
 新機能の要望やバグ報告などは [GitHub Issues](https://github.com/EbiseLutica/Promete/Issues) にてお願いします。 Issue を作成する前に、重複を避けるため既に存在している同じような Issue が存在しないかどうか検索をしてください。もし存在するならば、リアクションやコメントを用いて upvote してください。
 
 ## 各プロジェクト
+
 本リポジトリは、MSBuildのソリューションを用いており、複数のプロジェクトを持ちます。
-* Promete
-  * Prometeのメインプロジェクトです
-  * ゲームエンジンとしての基本機能は全てこのプロジェクトにあります
-  * NuGetにデプロイする対象です
-* Promete.Example
-  * Prometeの機能を試せるデモ プロジェクトです。
-* Promete.ImGui
-  * PrometeでImGUIを利用できるプラグインのプロジェクトです
-  * NuGetにデプロイする対象です
-* Promete.MeltySynth
-  * Prometeで https://github.com/sinshu/meltysynth/ を利用するデモ
-* Promete.Docs
-  * ドキュメント
+
+- Promete
+    - Prometeのメインプロジェクトです
+    - ゲームエンジンとしての基本機能は全てこのプロジェクトにあります
+    - NuGetにデプロイする対象です
+- Promete.Docs
+    - ドキュメント（後述）
+- Promete.Example
+    - Prometeの機能を試せるデモ プロジェクトです。
+- Promete.ImGui
+    - PrometeでImGUIを利用できるプラグインのプロジェクトです
+    - NuGetにデプロイする対象です
+- Promete.MeltySynth
+    - Prometeで https://github.com/sinshu/meltysynth/ を利用するデモ
+- Promete.Test
+    - Promete用のテストプロジェクト
+    - xUnit + Fluent Assertionsを使用
 
 これら以外のブランチは開発途上であり、ドキュメント化していません。気になる場合はコードを読んでください。
 
 ## 文書化
+
 Promete のドキュメントは、Promete.Docs プロジェクトにて作業しています。
 
 このプロジェクトは、Astroで作成されたドキュメントを含むnode.jsプロジェクトを、MSBuild向けに.esprojファイルを追加して管理しているものです。
@@ -33,39 +42,34 @@ Promete のドキュメントは、Promete.Docs プロジェクトにて作業�
 masterブランチへのpushをトリガーとして、https://promete.app にデプロイされます。
 
 ## 継続的インテグレーション
-Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは  `.github/workflow` にあります。
+
+Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは `.github/workflow` にあります。
 
 ## コーディング規則
-基本的には [C# のコーディング規則(公式)](https://docs.microsoft.com/ja-jp/dotnet/csharp/programming-guide/inside-a-program/coding-conventions) に従います。その上で、次の規約に従うこと
 
-- インデントは4文字の空白文字を用いる。
-- フィールドを `public` にしないこと。
-- アクセス修飾子は必ず省略しないこと。
-- クラスや構造体のメンバーは次の順番で定義すること。
-	- プロパティ
-	- フィールド
-	- コンストラクター
-		- 複数存在する場合は、仮引数の少ない順に並べること。
-	- メソッド
-	- オーバーライドされたメソッド
-	- ネストされたクラス, 構造体, インターフェイス
-	- デリゲート
-- メソッドをオーバーロードする場合は連続して配置すること。
-- 文字列変数は基本的に Null 非許容とし、初期値として空文字列を挿入すること。
+コードフォーマットは [CSharpier](https://csharpier.com/) で管理しています。手動でスタイルを調整する必要はありません。
+
+```bash
+dotnet tool restore
+dotnet csharpier .
+```
 
 ## 設計上の規則
 
 ### 公開APIをSilk.NET等の外部ライブラリに依存させないこと
+
 Prometeでは、Silk.NET等のバックエンドに依存しないようAPIを設計しています。
 
 新しくAPIを追加する場合、引数や戻り値の型として、.NET 標準ライブラリおよびPrometeが提供する型のみを使用するようにし、バックエンドが提供する型は基本的に使用しないでください。<br/>
 ただ、内部的・プラグイン向けと明記している場合や、private、internalなメンバーの場合は使用しても良いです。
 
 ### .NET のアップデート PR を作成しないでください
+
 .NET のアップデートは、[SUPPORT.md](SUPPORT.md) に従ってメンテナーが行います。
 そのため、.NET のアップデートに関する PR は作成しないでください。
 
 ## デプロイ手順
+
 デプロイはメイン開発者の @EbiseLutica が行います。従ってこの項目はフォークされたプロジェクトの管理者向けの情報となります。
 
 1. 最新版の変更がビルドできて、サンプルコードに不具合が発生しないことを確認する
@@ -77,8 +81,16 @@ Prometeでは、Silk.NET等のバックエンドに依存しないようAPIを�
 7. :pray:
 
 ### タグの命名規則
-* Promete 本体（コア）の場合は、 `core-<バージョン>` とする（例：`core-1.0.0`）
-* Promete.ImGui の場合は、 `imgui-<バージョン>` とする（例：`imgui-1.0.0`）
+
+- Promete 本体（コア）の場合は、 `core-<バージョン>` とする（例：`core-1.0.0`）
+- Promete.ImGui の場合は、 `imgui-<バージョン>` とする（例：`imgui-1.0.0`）
+
+### AIエージェント
+
+Claude Code用のスキル `/deploy` を使うことでデプロイを自動化できます。
+
+`/deploy マイナーバージョンを1つあげて` `/deploy リビジョンを1つあげて` などに対応しているはずです。
 
 ## デプロイに問題が起きた場合
+
 TBD

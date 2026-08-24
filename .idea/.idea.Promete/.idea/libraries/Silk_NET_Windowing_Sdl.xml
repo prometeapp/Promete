@@ -1,9 +1,9 @@
 ﻿<component name="libraryTable">
-  <library name="Silk.NET.Windowing.Sdl">
-    <CLASSES>
-      <root url="file://$USER_HOME$/AppData/Local/Temp/JetBrains/xamarinAarPackages/Silk.NET.Windowing.Sdl/classes.jar" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
+    <library name="Silk.NET.Windowing.Sdl">
+        <CLASSES>
+            <root url="file://$USER_HOME$/AppData/Local/Temp/JetBrains/xamarinAarPackages/Silk.NET.Windowing.Sdl/classes.jar" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+    </library>
 </component>

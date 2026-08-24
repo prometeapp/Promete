@@ -16,7 +16,7 @@ public static class MathHelper
     /// <returns>補間された値。</returns>
     public static float Lerp(float time, float start, float end)
     {
-        return start + (end - start) * time;
+        return start + ((end - start) * time);
     }
 
     /// <summary>
@@ -25,11 +25,12 @@ public static class MathHelper
     /// <param name="time">Time.</param>
     /// <param name="start">Start.</param>
     /// <param name="end">End.</param>
+    /// <returns></returns>
     public static float EaseInOut(float time, float start, float end)
     {
         return (time /= 0.5f) < 1
-            ? (end - start) * 0.5f * time * time * time + start
-            : (end - start) * 0.5f * ((time -= 2) * time * time + 2) + start;
+            ? ((end - start) * 0.5f * time * time * time) + start
+            : ((end - start) * 0.5f * (((time -= 2) * time * time) + 2)) + start;
     }
 
     /// <summary>
@@ -41,7 +42,7 @@ public static class MathHelper
     /// <param name="end">End.</param>
     public static float EaseIn(float time, float start, float end)
     {
-        return (end - start) * time * time * time + start;
+        return ((end - start) * time * time * time) + start;
     }
 
     /// <summary>
@@ -53,7 +54,7 @@ public static class MathHelper
     /// <param name="end">End.</param>
     public static float EaseOut(float time, float start, float end)
     {
-        return (end - start) * (--time * time * time + 1) + start;
+        return ((end - start) * ((--time * time * time) + 1)) + start;
     }
 
     /// <summary>
@@ -62,6 +63,7 @@ public static class MathHelper
     /// <param name="time">Time.</param>
     /// <param name="start">Start.</param>
     /// <param name="end">End.</param>
+    /// <returns></returns>
     public static Vector Lerp(float time, Vector start, Vector end)
     {
         return (Lerp(time, start.X, end.X), Lerp(time, start.Y, end.Y));
@@ -73,6 +75,7 @@ public static class MathHelper
     /// <param name="time">Time.</param>
     /// <param name="start">Start.</param>
     /// <param name="end">End.</param>
+    /// <returns></returns>
     public static Vector EaseInOut(float time, Vector start, Vector end)
     {
         return (EaseInOut(time, start.X, end.X), EaseInOut(time, start.Y, end.Y));

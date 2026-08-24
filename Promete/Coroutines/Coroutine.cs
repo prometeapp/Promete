@@ -13,7 +13,14 @@ public class Coroutine : YieldInstruction
     private bool _isExecuting;
     private bool _needsDisposal;
 
+#pragma warning disable SA1401 // Fields should be private (internal field is intentionally exposed; see code review backlog)
     internal bool IsKeepAlive;
+#pragma warning restore SA1401
+
+    internal Coroutine(IEnumerator runningAction)
+    {
+        _runningAction = runningAction;
+    }
 
     /// <summary>
     /// コルーチンが実行中かどうかを示す値を取得します。
@@ -35,14 +42,8 @@ public class Coroutine : YieldInstruction
 
     internal object? Current => _runningAction.Current;
 
-    internal Coroutine(IEnumerator runningAction)
-    {
-        _runningAction = runningAction;
-    }
-
     internal void Start()
     {
-
         IsRunning = true;
     }
 
@@ -63,16 +64,17 @@ public class Coroutine : YieldInstruction
     /// <summary>
     /// コルーチンが完了した後に実行されるコールバックを設定します。
     /// </summary>
+    /// <returns></returns>
     public Coroutine Then(Action callback)
     {
         ThenAction = callback;
         return this;
     }
 
-
     /// <summary>
     /// コルーチンが例外をスローした場合に実行されるコールバックを設定します。
     /// </summary>
+    /// <returns></returns>
     public Coroutine Error(Action<Exception> callback)
     {
         ErrorAction = callback;
@@ -82,6 +84,7 @@ public class Coroutine : YieldInstruction
     /// <summary>
     /// シーンが切り替わっても、コルーチンを破棄せず継続するよう設定します。
     /// </summary>
+    /// <returns></returns>
     public Coroutine KeepAlive(bool keepAlive = true)
     {
         IsKeepAlive = keepAlive;

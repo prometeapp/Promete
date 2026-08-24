@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
 using Promete.Nodes;
@@ -13,12 +13,12 @@ public class ScreenshotTest(Mouse mouse, Keyboard keyboard) : Scene
 
     public override void OnStart()
     {
-        Window.Size = (320, 240);
-        Window.Scale = 2;
+        View.Size = (320, 240);
+        View.Scale = 2;
 
         for (var i = 0; i < 100; i++)
         {
-            var loc = Random.Shared.NextVectorInt(Window.X, Window.Y);
+            var loc = Random.Shared.NextVectorInt(View.X, View.Y);
             var size = Random.Shared.NextVectorInt(64, 64) + (8, 8);
             Root.Add(Shape.CreateRect(loc, loc + size, Random.Shared.NextColor()));
         }
@@ -31,7 +31,7 @@ public class ScreenshotTest(Mouse mouse, Keyboard keyboard) : Scene
         if (keyboard.Space.IsKeyUp)
         {
             _texture?.Dispose();
-            _texture = Window.TakeScreenshot();
+            _texture = View.TakeScreenshot();
             _sprite.Texture = _texture;
             _sprite.Location = (0, 0);
         }
@@ -45,7 +45,7 @@ public class ScreenshotTest(Mouse mouse, Keyboard keyboard) : Scene
 
     public override void OnDestroy()
     {
-        Window.Size = (640, 480);
-        Window.Scale = 1;
+        View.Size = (640, 480);
+        View.Scale = 1;
     }
 }

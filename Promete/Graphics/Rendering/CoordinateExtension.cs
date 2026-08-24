@@ -1,0 +1,29 @@
+namespace Promete.Graphics.Rendering;
+
+/// <summary>
+/// 座標系変換の為のメソッドを提供します。
+/// </summary>
+public static class CoordinateExtension
+{
+    /// <summary>
+    /// スクリーン座標をViewport座標に変換します。
+    /// </summary>
+    /// <returns></returns>
+    public static Vector ToViewportPoint(this Vector dp, float halfWidth, float halfHeight)
+    {
+        return ((dp.X - halfWidth) / halfWidth, -(dp.Y - halfHeight) / halfHeight);
+    }
+
+    /// <summary>
+    /// スクリーン座標をViewport座標に変換します。
+    /// </summary>
+    /// <returns></returns>
+    public static (float, float) ToViewportPoint(
+        this (float, float) dp,
+        float halfWidth,
+        float halfHeight
+    )
+    {
+        return ((dp.Item1 - halfWidth) / halfWidth, -(dp.Item2 - halfHeight) / halfHeight);
+    }
+}

@@ -1,10 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Promete.Backends.SilkNetCommon;
 using Promete.Input.Internal;
-using Promete.Windowing;
 using Silk.NET.Input;
 
 namespace Promete.Input;
@@ -12,8 +11,19 @@ namespace Promete.Input;
 /// <summary>
 /// キーボード入力を提供する Promete プラグインです。このクラスは継承できません。
 /// </summary>
-public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatable
+public sealed partial class Keyboard(PrometeApp app, InputProvider inputProvider)
+    : IInitializable,
+        IUpdatable
 {
+    private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
+    private readonly Queue<char> _keyChars = new();
+    private IKeyboard? _currentKeyboard;
+    private IInputContext? _ctx;
+
+    public event Action<KeyEventArgs>? KeyDown;
+    public event Action<KeyPressEventArgs>? KeyPress;
+    public event Action<KeyEventArgs>? KeyUp;
+
     /// <summary>
     /// 存在する全てのキーコードを列挙します。
     /// </summary>
@@ -42,22 +52,21 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
         get => _currentKeyboard?.ClipboardText;
         set
         {
-            if (value == null || _currentKeyboard == null) return;
+            if (value == null || _currentKeyboard == null)
+                return;
             _currentKeyboard.ClipboardText = value;
         }
     }
-
-    private IKeyboard? _currentKeyboard;
-    private readonly KeyCode[] _allCodes = Enum.GetValues<KeyCode>().Distinct().ToArray();
-    private readonly Queue<char> _keyChars = new();
 
     /// <summary>
     /// キーボードバッファに蓄積されている、入力された文字列を取得します。
     /// 呼び出した時点でバッファはクリアされます。
     /// </summary>
+    /// <returns></returns>
     public string GetString()
     {
-        if (!HasChar()) return "";
+        if (!HasChar())
+            return "";
 
         var buf = new StringBuilder();
         while (HasChar())
@@ -69,6 +78,7 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
     /// キーボードバッファに蓄積されている、入力された文字を取得します。
     /// 呼び出した時点でその文字はバッファから削除されます。
     /// </summary>
+    /// <returns></returns>
     public char GetChar()
     {
         return HasChar() ? _keyChars.Dequeue() : '\0';
@@ -101,8 +111,10 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
 
     public void OnStart()
     {
-        window.PostUpdate += OnPostUpdate;
-        window.Destroy += OnDestroy;
+        app.PostUpdate += OnPostUpdate;
+        app.Destroy += OnDestroy;
+
+        _ctx = inputProvider.CreateInput();
 
         TryFindKeyboard();
     }
@@ -117,44 +129,46 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
             _currentKeyboard = null;
         }
 
-        if (_currentKeyboard == null) TryFindKeyboard();
-        if (_currentKeyboard == null) return;
+        if (_currentKeyboard == null)
+            TryFindKeyboard();
+        if (_currentKeyboard == null)
+            return;
 
-        Parallel.ForEach(_allCodes, keyCode =>
+        foreach (var keyCode in _allCodes)
         {
             var silkKey = keyCode.ToSilk();
-            if (silkKey < 0) return;
+            if (silkKey < 0)
+                continue;
             var isPressed = _currentKeyboard.IsKeyPressed(silkKey);
             var key = KeyOf(keyCode);
             key.IsPressed = isPressed;
             key.ElapsedFrameCount = isPressed ? key.ElapsedFrameCount + 1 : 0;
-            key.ElapsedTime = isPressed ? key.ElapsedTime + window.DeltaTime : 0;
-        });
+            key.ElapsedTime = isPressed ? key.ElapsedTime + app.Time.DeltaTime : 0;
+        }
     }
 
     private void OnPostUpdate()
     {
-        Parallel.ForEach(_allCodes, keyCode =>
+        foreach (var keyCode in _allCodes)
         {
             var key = KeyOf(keyCode);
             key.IsKeyDown = false;
             key.IsKeyUp = false;
-        });
+        }
     }
 
     private void OnDestroy()
     {
-        window.PostUpdate -= OnPostUpdate;
-        window.Destroy -= OnDestroy;
+        app.PostUpdate -= OnPostUpdate;
+        app.Destroy -= OnDestroy;
     }
 
     private void TryFindKeyboard()
     {
-        var input = window._RawInputContext ??
-                    throw new InvalidOperationException($"{nameof(window._RawInputContext)} is null.");
-        if (input.Keyboards.Count == 0) return;
+        if (_ctx.Keyboards.Count == 0)
+            return;
 
-        _currentKeyboard = input.Keyboards[0];
+        _currentKeyboard = _ctx.Keyboards[0];
         _currentKeyboard.KeyDown += OnKeyDown;
         _currentKeyboard.KeyUp += OnKeyUp;
         _currentKeyboard.KeyChar += OnKeyChar;
@@ -177,8 +191,4 @@ public sealed partial class Keyboard(IWindow window) : IInitializable, IUpdatabl
         _keyChars.Enqueue(e);
         KeyPress?.Invoke(new KeyPressEventArgs(e));
     }
-
-    public event Action<KeyEventArgs>? KeyDown;
-    public event Action<KeyPressEventArgs>? KeyPress;
-    public event Action<KeyEventArgs>? KeyUp;
 }

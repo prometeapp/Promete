@@ -3,9 +3,7 @@ title: MaskedContainer
 description: マスク画像を使用して子要素を切り抜いて描画するMaskedContainerノードの使用方法について解説します。
 sidebar:
   order: 10
-  badge: v1.3.0～
 ---
-**Promete v1.3.0からサポート**
 
 `MaskedContainer`は、マスク画像を使用して子要素を切り抜いて描画するコンテナです。`Container`を継承しており、複雑な形状のUI要素、スポットライト効果、画像のトリミングなど、様々な視覚効果を実現できます。
 
@@ -237,7 +235,7 @@ public class WipeTransition : Scene
 var maskedContainer = new MaskedContainer(maskTexture)
     .Location(100, 100)
     .Scale(1.5f)
-    .Angle(45); // 回転も可能
+    .Angle(45.Degrees); // 回転も可能
 
 // トリミング機能も使用可能
 var trimmableContainer = new MaskedContainer(maskTexture, isTrimmable: true);

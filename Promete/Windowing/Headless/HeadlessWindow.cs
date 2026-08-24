@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -8,6 +8,7 @@ using Timer = System.Timers.Timer;
 
 namespace Promete.Windowing.Headless;
 
+[Obsolete]
 public class HeadlessWindow : IWindow
 {
     private readonly Timer _timer = new(1000 / 60f);
@@ -15,6 +16,16 @@ public class HeadlessWindow : IWindow
     private bool _isExitRequested;
 
     private int _scale = 1;
+
+    public event Action? Start;
+    public event Action? Update;
+    public event Action? Render;
+    public event Action? Destroy;
+    public event Action? PreUpdate;
+    public event Action? PostUpdate;
+    public event Action<FileDroppedEventArgs>? FileDropped;
+    public event Action? Resize;
+
     public VectorInt Location { get; set; }
 
     public VectorInt Size { get; set; }
@@ -49,7 +60,10 @@ public class HeadlessWindow : IWindow
         set
         {
             if (value is not 1 and not 2 and not 4 and not 8)
-                throw new ArgumentOutOfRangeException(nameof(value), "Scale must be 1, 2, 4, or 8.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "Scale must be 1, 2, 4, or 8."
+                );
             _scale = value;
         }
     }
@@ -73,10 +87,10 @@ public class HeadlessWindow : IWindow
     public int TargetUps { get; set; }
     public float TimeScale { get; set; } = 1;
     public float PixelRatio => 1;
-    public string Title { get; set; }
+    public string Title { get; set; } = "";
     public WindowMode Mode { get; set; }
-    public IInputContext? _RawInputContext { get; } = new DummyInputContext();
-    public TextureFactory TextureFactory { get; } = new HeadlessTextureFactory();
+    public IInputContext? RawInputContext { get; } = new DummyInputContext();
+    public TextureFactoryBase TextureFactory { get; } = new HeadlessTextureFactory();
 
     /// <summary>
     /// このウィンドウを開き、指定されたオプションでゲームを開始します。
@@ -97,7 +111,8 @@ public class HeadlessWindow : IWindow
         _timer.Elapsed += TimerOnElapsed;
         Start?.Invoke();
         _timer.Start();
-        while (!_isExitRequested) Thread.Sleep(1000);
+        while (!_isExitRequested)
+            Thread.Sleep(1000);
     }
 
     /// <summary>
@@ -124,19 +139,11 @@ public class HeadlessWindow : IWindow
     /// </summary>
     /// <param name="path">保存先のパス</param>
     /// <param name="ct">キャンセレーショントークン</param>
+    /// <returns></returns>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default)
     {
         return Task.Delay(0, ct);
     }
-
-    public event Action? Start;
-    public event Action? Update;
-    public event Action? Render;
-    public event Action? Destroy;
-    public event Action? PreUpdate;
-    public event Action? PostUpdate;
-    public event Action<FileDroppedEventArgs>? FileDropped;
-    public event Action? Resize;
 
     private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
     {
@@ -147,6 +154,7 @@ public class HeadlessWindow : IWindow
         Update?.Invoke();
         PostUpdate?.Invoke();
         Render?.Invoke();
-        if (_isExitRequested) _timer.Stop();
+        if (_isExitRequested)
+            _timer.Stop();
     }
 }

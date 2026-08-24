@@ -1,0 +1,7 @@
+[*.cs]
+# Promete.Test では メンバー並び順ルールを無効化
+dotnet_diagnostic.SA1201.severity = none
+dotnet_diagnostic.SA1202.severity = none
+dotnet_diagnostic.SA1203.severity = none
+dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1214.severity = none

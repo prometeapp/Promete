@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Promete;
@@ -6,11 +6,12 @@ namespace Promete;
 public static class TransformExtension
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector Rotate(this Vector point, float angleInRadian)
+    public static Vector Rotate(this Vector point, Angle angle)
     {
-        var cos = MathF.Cos(angleInRadian);
-        var sin = MathF.Sin(angleInRadian);
-        return (point.X * cos - point.Y * sin, point.X * sin + point.Y * cos);
+        var rad = angle.ToRadians();
+        var cos = MathF.Cos(rad);
+        var sin = MathF.Sin(rad);
+        return ((point.X * cos) - (point.Y * sin), (point.X * sin) + (point.Y * cos));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

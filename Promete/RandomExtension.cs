@@ -11,6 +11,7 @@ public static class RandomExtension
     /// <summary>
     /// ランダムな色を生成します。
     /// </summary>
+    /// <returns></returns>
     public static Color NextColor(this Random r, int max = 256)
     {
         return Color.FromArgb(r.Next(max), r.Next(max), r.Next(max));

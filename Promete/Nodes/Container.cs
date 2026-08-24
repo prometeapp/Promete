@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Promete.Graphics.Rendering;
 
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
 
@@ -11,6 +12,7 @@ namespace Promete.Nodes;
 public class Container : ContainableNode, IEnumerable<Node>
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="Container"/> class.
     /// Container の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="isTrimmable">範囲外に出た子ノードを描画しないかどうか。</param>
@@ -25,18 +27,32 @@ public class Container : ContainableNode, IEnumerable<Node>
     public int Count => children.Count;
 
     /// <summary>
+    /// 範囲外に出た子ノードを描画するかどうかを取得または設定します。
+    /// </summary>
+    public bool IsTrimmable
+    {
+        get => base.IsTrimmable;
+        set => base.IsTrimmable = value;
+    }
+
+    /// <summary>
     /// 指定されたインデックスの子ノードを取得します。
     /// </summary>
     /// <param name="index">取得する子ノードのインデックス</param>
     public Node this[int index] => children[index];
 
-    /// <summary>
-    /// 範囲外に出た子ノードを描画するかどうかを取得または設定します。
-    /// </summary>
-    public bool IsTrimmable
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        get => isTrimmable;
-        set => isTrimmable = value;
+        if (IsTrimmable)
+        {
+            queue.PushTrim(this, ctx);
+            base.Collect(queue, ctx);
+            queue.PopTrim();
+        }
+        else
+        {
+            base.Collect(queue, ctx);
+        }
     }
 
     /// <summary>

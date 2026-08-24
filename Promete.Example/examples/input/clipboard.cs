@@ -1,10 +1,10 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 
 namespace Promete.Example.examples.input;
 
 [Demo("input/clipboard.demo", "クリップボード機能のデモ")]
-public class clipboard(Keyboard keyboard, ConsoleLayer console) : Scene
+public class Clipboard(Keyboard keyboard, ConsoleLayer console) : Scene
 {
     public override void OnStart()
     {
@@ -33,7 +33,8 @@ public class clipboard(Keyboard keyboard, ConsoleLayer console) : Scene
 
         if (isCtrlPressed && keyboard.V.IsKeyDown)
         {
-            var text = keyboard.ClipboardText ?? "(クリップボードが空または、テキスト以外のデータです)";
+            var text =
+                keyboard.ClipboardText ?? "(クリップボードが空または、テキスト以外のデータです)";
             console.Print($"貼り付け: {text}");
         }
     }

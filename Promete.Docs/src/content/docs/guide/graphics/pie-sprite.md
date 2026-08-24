@@ -3,9 +3,7 @@ title: PieSprite
 description: テクスチャを扇状（円グラフ状）に描画するPieSpriteノードの使用方法について解説します。
 sidebar:
   order: 5
-  badge: v1.3.0～
 ---
-**Promete v1.3.0からサポート**
 
 `PieSprite`は、テクスチャを扇状（円グラフ状）に描画するためのノードです。`Sprite`を継承しており、ローディングゲージ、クールダウンタイマー、円グラフなど、進行状況を視覚的に表現する際に便利です。
 

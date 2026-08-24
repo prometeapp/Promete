@@ -9,6 +9,36 @@ namespace Promete;
 public struct VectorInt(int x, int y) : IEquatable<VectorInt>
 {
     /// <summary>
+    /// <c>new VectorInt(0, 0)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Zero = (0, 0);
+
+    /// <summary>
+    /// <c>new VectorInt(1, 1)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt One = (1, 1);
+
+    /// <summary>
+    /// <c>new VectorInt(-1, 0)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Left = (-1, 0);
+
+    /// <summary>
+    /// <c>new VectorInt(0, -1)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Up = (0, -1);
+
+    /// <summary>
+    /// <c>new VectorInt(1, 0)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Right = (1, 0);
+
+    /// <summary>
+    /// <c>new VectorInt(0, 1)</c>を取得します。
+    /// </summary>
+    public static readonly VectorInt Down = (0, 1);
+
+    /// <summary>
     /// このベクトルのX座標を取得または設定します。
     /// </summary>
     public int X { get; set; } = x;
@@ -21,12 +51,25 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルの大きさを取得します。
     /// </summary>
-    public float Magnitude => MathF.Sqrt(X * X + Y * Y);
+    public float Magnitude => MathF.Sqrt((X * X) + (Y * Y));
 
     /// <summary>
     /// このベクトルの単位ベクトルを取得します。
     /// </summary>
     public Vector Normalized => (X / Magnitude, Y / Magnitude);
+
+    public static implicit operator Vector(VectorInt v1)
+    {
+        return new Vector(v1.X, v1.Y);
+    }
+
+    /// <summary>
+    /// タプルからVectorIntに変換します。
+    /// </summary>
+    public static implicit operator VectorInt((int x, int y) v1)
+    {
+        return new VectorInt(v1.x, v1.y);
+    }
 
     public static VectorInt operator +(VectorInt v1, VectorInt v2)
     {
@@ -63,11 +106,6 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
         return (-v1.X, -v1.Y);
     }
 
-    public static implicit operator Vector(VectorInt v1)
-    {
-        return new Vector(v1.X, v1.Y);
-    }
-
     /// <summary>
     /// 2つのベクトルが等しいかどうかを確認します。
     /// </summary>
@@ -85,22 +123,14 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     }
 
     /// <summary>
-    /// タプルからVectorIntに変換します。
-    /// </summary>
-    public static implicit operator VectorInt((int x, int y) v1)
-    {
-        return new VectorInt(v1.x, v1.y);
-    }
-
-    /// <summary>
     /// 2つのベクトルがなす角を取得します。
     /// </summary>
     /// <param name="from">始点。</param>
     /// <param name="to">終点。</param>
-    /// <returns>ラジアン単位の角度。</returns>
-    public static float Angle(VectorInt from, VectorInt to)
+    /// <returns></returns>
+    public static Angle Angle(VectorInt from, VectorInt to)
     {
-        return MathF.Atan2(to.Y - from.Y, to.X - from.X);
+        return MathF.Atan2(to.Y - from.Y, to.X - from.X).Radians;
     }
 
     /// <summary>
@@ -109,24 +139,32 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <param name="to">終点。</param>
     /// <returns>距離。</returns>
     /// </summary>
+    /// <returns></returns>
     public static float Distance(VectorInt from, VectorInt to)
     {
         return MathF.Sqrt(
-            MathF.Abs((to.X - from.X) * (to.X - from.X) + (to.Y - from.Y) * (to.Y - from.Y))
+            MathF.Abs(((to.X - from.X) * (to.X - from.X)) + ((to.Y - from.Y) * (to.Y - from.Y)))
         );
     }
 
     /// <summary>
     /// 2つのベクトルの内積を計算します。
     /// </summary>
+    /// <returns></returns>
     public static int Dot(VectorInt v1, VectorInt v2)
     {
-        return v1.X * v1.Y + v2.X * v2.Y;
+        return (v1.X * v2.X) + (v1.Y * v2.Y);
+    }
+
+    public static VectorInt From(Vector2 vec)
+    {
+        return ((int)vec.X, (int)vec.Y);
     }
 
     /// <summary>
     /// このベクトルと指定したベクトルの内積を計算します。
     /// </summary>
+    /// <returns></returns>
     public int Dot(VectorInt v)
     {
         return Dot(this, v);
@@ -135,6 +173,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このオブジェクトを比較します。
     /// </summary>
+    /// <returns></returns>
     public override bool Equals(object? obj)
     {
         return obj is VectorInt vec && Equals(vec);
@@ -143,15 +182,16 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このオブジェクトを比較します。
     /// </summary>
+    /// <returns></returns>
     public bool Equals(VectorInt other)
     {
-        return X == other.X &&
-               Y == other.Y;
+        return X == other.X && Y == other.Y;
     }
 
     /// <summary>
     /// このオブジェクトのハッシュ値を取得します。
     /// </summary>
+    /// <returns></returns>
     public override int GetHashCode()
     {
         return HashCode.Combine(X, Y);
@@ -160,15 +200,17 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルの角度を取得します。
     /// </summary>
-    public float Angle()
+    /// <returns></returns>
+    public Angle Angle()
     {
-        return MathF.Atan2(Y, X);
+        return Promete.Angle.FromRadians(MathF.Atan2(Y, X));
     }
 
     /// <summary>
     /// このベクトルに対する指定したベクトルの方向を取得します。
     /// </summary>
-    public float Angle(VectorInt to)
+    /// <returns></returns>
+    public Angle Angle(VectorInt to)
     {
         return Angle(this, to);
     }
@@ -176,6 +218,7 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// 2つのベクトル間の距離を取得します。
     /// </summary>
+    /// <returns></returns>
     public float Distance(VectorInt to)
     {
         return Distance(this, to);
@@ -184,17 +227,20 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
+    /// <returns></returns>
     public bool In(Rect rect)
     {
+        if (rect.Size == Zero)
+            return false;
         var topLeft = rect.Location;
         var bottomRight = rect.Location + rect.Size - One;
-        return X >= topLeft.X && X <= bottomRight.X &&
-               Y >= topLeft.Y && Y <= bottomRight.Y;
+        return X >= topLeft.X && X <= bottomRight.X && Y >= topLeft.Y && Y <= bottomRight.Y;
     }
 
     /// <summary>
     /// このベクトルが指定した範囲内にあるかどうかを確認します。
     /// </summary>
+    /// <returns></returns>
     public bool In(Vector location, Vector size)
     {
         return In(new Rect(location, size));
@@ -211,43 +257,9 @@ public struct VectorInt(int x, int y) : IEquatable<VectorInt>
     /// <summary>
     /// このベクトルのフォーマットされた文字列を取得します。
     /// </summary>
+    /// <returns></returns>
     public override string ToString()
     {
         return $"({X}, {Y})";
-    }
-
-    /// <summary>
-    /// <c>new VectorInt(0, 0)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Zero = (0, 0);
-
-    /// <summary>
-    /// <c>new VectorInt(1, 1)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt One = (1, 1);
-
-    /// <summary>
-    /// <c>new VectorInt(-1, 0)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Left = (-1, 0);
-
-    /// <summary>
-    /// <c>new VectorInt(0, -1)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Up = (0, -1);
-
-    /// <summary>
-    /// <c>new VectorInt(1, 0)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Right = (1, 0);
-
-    /// <summary>
-    /// <c>new VectorInt(0, 1)</c>を取得します。
-    /// </summary>
-    public static readonly VectorInt Down = (0, 1);
-
-    public static VectorInt From(Vector2 vec)
-    {
-        return ((int)vec.X, (int)vec.Y);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -7,10 +7,11 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Promete.Backends;
 using Promete.Graphics;
-using Promete.Internal;
+using Promete.Graphics.Fonts;
+using Promete.Graphics.Rendering;
 using Promete.Nodes;
-using Promete.Nodes.Renderer;
 using Promete.Windowing;
 
 namespace Promete;
@@ -20,6 +21,99 @@ namespace Promete;
 /// </summary>
 public sealed class PrometeApp : IDisposable
 {
+    private readonly List<IDisposable> _disposablePlugins = [];
+    private readonly List<IInitializable> _initializablePlugins = [];
+
+    private readonly Thread _mainThread;
+    private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
+    private readonly List<Type> _pluginTypes;
+    private readonly Stack<Scene> _sceneStack = new();
+
+    private readonly ServiceCollection _services;
+    private readonly List<IUpdatable> _updatablePlugins = [];
+    private BackendBase _backend = null!;
+
+    private Scene? _currentScene;
+    private Type? _initialSceneType;
+    private ServiceProvider _provider = null!;
+    private RenderCommandQueue? _renderCommandQueue;
+
+    private IScreenBlitter _screenBlitter;
+    private int _statusCode;
+
+    private PrometeApp(
+        ServiceCollection services,
+        List<Type> pluginTypes,
+        List<Assembly> sceneAssemblies
+    )
+    {
+        _mainThread = Thread.CurrentThread;
+
+        _services = services;
+        _pluginTypes = pluginTypes;
+        RegisterAllScenes(sceneAssemblies);
+        services.AddSingleton(this);
+        services.AddSingleton<FrameBufferManager>();
+#pragma warning disable CS0618 // 型またはメンバーが旧型式です
+        Window = new CompatibleWindow(this);
+        services.AddSingleton(Window);
+#pragma warning restore CS0618 // 型またはメンバーが旧型式です
+    }
+
+    /// <summary>
+    /// ゲームが開始されたときに発生します。
+    /// </summary>
+    public event Action? Start;
+
+    /// <summary>
+    /// ゲームがフレームを更新するときに発生します。
+    /// </summary>
+    public event Action? Update;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングするときに発生します。
+    /// </summary>
+    public event Action? Render;
+
+    /// <summary>
+    /// ゲームが終了したときに発生します。
+    /// </summary>
+    public event Action? Destroy;
+
+    /// <summary>
+    /// ゲームがフレームを更新する前に発生します。
+    /// </summary>
+    public event Action? PreUpdate;
+
+    /// <summary>
+    /// ゲームがフレームを更新した後に発生します。
+    /// </summary>
+    public event Action? PostUpdate;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングする前に発生します。
+    /// </summary>
+    public event Action? PreRender;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングした後に発生します。
+    /// </summary>
+    public event Action? PostRender;
+
+    /// <summary>
+    /// シーンが変更される直前に呼び出されるイベントです。
+    /// </summary>
+    public event Action<SceneTransitionEventArgs>? SceneWillChange;
+
+    /// <summary>
+    /// 実行中の <see cref="PrometeApp" /> を取得します。
+    /// <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
+    /// </summary>
+    public static PrometeApp Current
+    {
+        get => field ?? throw new InvalidOperationException("Promete is not initialized.");
+        private set;
+    }
 
     /// <summary>
     /// 現在読み込まれているシーンのルートコンテナを取得します。
@@ -46,57 +140,38 @@ public sealed class PrometeApp : IDisposable
     /// <summary>
     /// 実行中のPromete ウィンドウを取得します。
     /// </summary>
+    [Obsolete("IWindow is obsoleted and will be removed in Promete v3.")]
     public IWindow Window { get; }
+
+    public ITimeProvider Time { get; private set; } = null!;
+    public IGameView View { get; private set; } = null!;
+    public TextureFactoryBase TextureFactory { get; private set; } = null!;
+
+    /// <summary>
+    /// テキスト描画に使用されるグリフアトラスを取得します。
+    /// </summary>
+    public GlyphAtlas GlyphAtlas { get; private set; } = null!;
 
     /// <summary>
     /// フレームバッファがサポートされているかどうかを取得します。
     /// </summary>
-    public bool IsFrameBufferSupported => _provider.GetService<IFrameBufferProvider>() is not null;
-
-    private Scene? _currentScene;
-    private int _statusCode;
-
-    private static PrometeApp? _current;
-
-    private readonly Thread _mainThread;
-    private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
-    private readonly Stack<Scene> _sceneStack = new();
-
-    private readonly ServiceProvider _provider;
-    private readonly ServiceCollection _services;
-    private readonly Dictionary<Type, NodeRendererBase?> _renderers = new();
-    private readonly Dictionary<Type, Type> _rendererTypes;
-    private readonly List<Type> _pluginTypes;
-    private readonly List<IInitializable> _initializablePlugins = [];
-    private readonly List<IUpdatable> _updatablePlugins = [];
-    private readonly List<IDisposable> _disposablePlugins = [];
-
-    private PrometeApp(ServiceCollection services, Dictionary<Type, Type> rendererTypes, List<Type> pluginTypes)
-    {
-        _mainThread = Thread.CurrentThread;
-
-        _services = services;
-        _rendererTypes = rendererTypes;
-        _pluginTypes = pluginTypes;
-        RegisterAllScenes();
-        services.AddSingleton(this);
-        services.AddSingleton<FrameBufferManager>();
-
-        _provider = services.BuildServiceProvider();
-
-        Current = this;
-        Window = _provider.GetService<IWindow>() ??
-                 throw new InvalidOperationException("There is no IWindow-implemented service in the system.");
-    }
+    public bool IsFrameBufferSupported =>
+        _provider.GetService<IRenderTextureProvider>() is not null;
 
     /// <summary>
-    /// 実行中の <see cref="PrometeApp" /> を取得します。
-    /// <exception cref="InvalidOperationException">Prometeが初期化されていない。</exception>
+    /// スクリーン全体に適用するポストプロセスマテリアルのリストを取得します。
+    /// GL 環境では、リストの順番にエフェクトがチェーン適用されます。
+    /// 各マテリアルのシェーダーは <c>uScreenTexture</c>（sampler2D, slot 0）で前パスの結果を参照できます。
     /// </summary>
-    public static PrometeApp Current
+    public List<Material> PostProcessMaterials { get; } = [];
+
+    /// <summary>
+    /// Promete アプリケーションを作成します。
+    /// </summary>
+    /// <returns></returns>
+    public static PrometeAppBuilder Create()
     {
-        get => _current ?? throw new InvalidOperationException("Promete is not initialized.");
-        private set => _current = value;
+        return new PrometeAppBuilder();
     }
 
     /// <summary>
@@ -107,14 +182,10 @@ public sealed class PrometeApp : IDisposable
         foreach (var plugin in _disposablePlugins)
             plugin.Dispose();
         _provider.Dispose();
-    }
 
-    /// <summary>
-    /// Promete アプリケーションを作成します。
-    /// </summary>
-    public static PrometeAppBuilder Create()
-    {
-        return new PrometeAppBuilder();
+        // 破棄済みのインスタンスが Current として参照され続けないようにする
+        if (Current == this)
+            Current = null!;
     }
 
     /// <summary>
@@ -122,24 +193,11 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <returns>終了ステータスコード。</returns>
-    public int Run<TScene>() where TScene : Scene
+    public int Run<TScene>()
+        where TScene : Scene
     {
-        return Run<TScene>(WindowOptions.Default);
-    }
-
-    /// <summary>
-    /// Promete アプリケーションを実行します。
-    /// </summary>
-    /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
-    /// <param name="opts">ウィンドウのオプション。</param>
-    /// <returns>終了ステータスコード。</returns>
-    public int Run<TScene>(WindowOptions opts) where TScene : Scene
-    {
-        Window.Start += OnStart<TScene>;
-        Window.Update += OnUpdate;
-        Window.Render += OnRender;
-        Window.Destroy += OnDestroy;
-        Window.Run(opts);
+        _initialSceneType = typeof(TScene);
+        _backend.OnStart(this);
         return _statusCode;
     }
 
@@ -149,17 +207,7 @@ public sealed class PrometeApp : IDisposable
     /// <returns>終了ステータスコード。</returns>
     public int Run()
     {
-        return Run(WindowOptions.Default);
-    }
-
-    /// <summary>
-    /// Promete アプリケーションをシーンなしで実行します。
-    /// </summary>
-    /// <param name="opts">ウィンドウのオプション。</param>
-    /// <returns>終了ステータスコード。</returns>
-    public int Run(WindowOptions opts)
-    {
-        return Run<DefaultScene>(opts);
+        return Run<DefaultScene>();
     }
 
     /// <summary>
@@ -169,7 +217,7 @@ public sealed class PrometeApp : IDisposable
     public void Exit(int status = 0)
     {
         _statusCode = status;
-        Window.Exit();
+        _backend.OnExit(this);
     }
 
     /// <summary>
@@ -187,9 +235,11 @@ public sealed class PrometeApp : IDisposable
     /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
     /// <returns>プラグインのインスタンス。</returns>
     /// <exception cref="ArgumentException">指定したプラグインが登録されていない。</exception>
-    public T GetPlugin<T>() where T : class
+    public T GetPlugin<T>()
+        where T : class
     {
-        return _provider.GetService<T>() ?? throw new ArgumentException($"The plugin \"{typeof(T)}\" is not registered.");
+        return _provider.GetService<T>()
+            ?? throw new ArgumentException($"The plugin \"{typeof(T)}\" is not registered.");
     }
 
     /// <summary>
@@ -200,7 +250,9 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="ArgumentException">指定したプラグインが登録されていない。</exception>
     public object GetPlugin(Type type)
     {
-        return TryGetPlugin(type, out var plugin) ? plugin : throw new ArgumentException($"The plugin \"{type}\" is not registered.");
+        return TryGetPlugin(type, out var plugin)
+            ? plugin
+            : throw new ArgumentException($"The plugin \"{type}\" is not registered.");
     }
 
     /// <summary>
@@ -209,7 +261,8 @@ public sealed class PrometeApp : IDisposable
     /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
     /// <param name="plugin">取得したプラグインのインスタンス。</param>
     /// <returns>プラグインが取得できた場合は <see langword="true" />、それ以外の場合は <see langword="false" />。</returns>
-    public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin) where T : class
+    public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin)
+        where T : class
     {
         plugin = _provider.GetService<T>();
         return plugin is not null;
@@ -232,7 +285,8 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">読み込むシーン。</typeparam>
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
-    public void LoadScene<TScene>() where TScene : Scene
+    public void LoadScene<TScene>()
+        where TScene : Scene
     {
         LoadScene(typeof(TScene));
     }
@@ -244,9 +298,12 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
     public void LoadScene(Type typeScene)
     {
+        var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = GetScene(typeScene);
-        SceneWillChange?.Invoke();
+        SceneWillChange?.Invoke(
+            new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
+        );
         _currentScene.OnStart();
     }
 
@@ -265,13 +322,17 @@ public sealed class PrometeApp : IDisposable
     /// <param name="typeScene">読み込むシーン。</param>
     public void PushScene(Type typeScene)
     {
+        var previous = _currentScene;
         if (_currentScene != null)
         {
             _sceneStack.Push(_currentScene);
             _currentScene.OnPause();
         }
+
         _currentScene = GetScene(typeScene);
-        SceneWillChange?.Invoke();
+        SceneWillChange?.Invoke(
+            new SceneTransitionEventArgs(SceneTransitionType.Push, previous, _currentScene)
+        );
         _currentScene.OnStart();
     }
 
@@ -281,11 +342,15 @@ public sealed class PrometeApp : IDisposable
     /// <returns>スタックからシーンをポップできた場合は <see langword="true" />。それ以外の場合は <see langword="false" />。</returns>
     public bool PopScene()
     {
-        if (_sceneStack.Count == 0) return false;
+        if (_sceneStack.Count == 0)
+            return false;
 
+        var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = _sceneStack.Pop();
-        SceneWillChange?.Invoke();
+        SceneWillChange?.Invoke(
+            new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene)
+        );
         _currentScene.OnResume();
         return true;
     }
@@ -302,17 +367,17 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    /// 指定した <see cref="Node" /> を描画します。
+    /// 指定した <see cref="Node" /> のレンダリングコマンドをキューに収集します。
     /// </summary>
-    /// <param name="node">描画対象のノード。</param>
-    public void RenderNode(Node node)
+    /// <param name="node">収集対象のノード。</param>
+    /// <param name="queue">コマンドの収集先キュー。</param>
+    /// <param name="ctx">レンダリングコンテキスト。</param>
+    public void CollectNode(Node node, RenderCommandQueue queue, RenderContext ctx)
     {
-        // ノードが非表示あるいは破棄されている場合は描画しない
-        if (!node.IsVisible || node.IsDestroyed) return;
-
+        if (!node.IsVisible || node.IsDestroyed)
+            return;
         node.BeforeRender();
-        var renderer = ResolveRenderer(node);
-        renderer?.Render(node);
+        node.Collect(queue, ctx);
     }
 
     /// <summary>
@@ -339,33 +404,42 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="InvalidOperationException">メインスレッド以外から呼び出された場合。</exception>
     public void ThrowIfNotMainThread()
     {
-        if (IsMainThread()) return;
+        if (IsMainThread())
+            return;
         throw new InvalidOperationException("This method must be called from the main thread.");
     }
 
-    private void OnStart<TScene>() where TScene : Scene
+    public void OnStart()
     {
         // プラグインのインスタンスを取得し、インターフェース実装によって分類
-        foreach (var instance in _pluginTypes.Select(type => _provider.GetService(type)).OfType<object>())
+        foreach (
+            var instance in _pluginTypes.Select(type => _provider.GetService(type)).OfType<object>()
+        )
         {
-            if (instance is IInitializable initializable) _initializablePlugins.Add(initializable);
-            if (instance is IUpdatable updatable) _updatablePlugins.Add(updatable);
-            if (instance is IDisposable disposable) _disposablePlugins.Add(disposable);
+            if (instance is IInitializable initializable)
+                _initializablePlugins.Add(initializable);
+            if (instance is IUpdatable updatable)
+                _updatablePlugins.Add(updatable);
+            if (instance is IDisposable disposable)
+                _disposablePlugins.Add(disposable);
         }
 
-        foreach (var (nodeType, rendererType) in _rendererTypes)
-            _renderers[nodeType] = _provider.GetService(rendererType) as NodeRendererBase ??
-                                   throw new ArgumentException($"The renderer \"{rendererType}\" is not registered.");
+        // レンダリングキューをキャッシュ
+        _renderCommandQueue = _provider.GetService<RenderCommandQueue>();
 
         // プラグインの初期化
         foreach (var plugin in _initializablePlugins)
             plugin.OnStart();
 
-        LoadScene<TScene>();
+        if (_initialSceneType != null)
+            LoadScene(_initialSceneType);
+        Start?.Invoke();
     }
 
-    private void OnUpdate()
+    public void OnUpdate()
     {
+        PreUpdate?.Invoke();
+
         // 前のフレームでエンキューされたアクションを実行
         ProcessNextFrameQueue();
 
@@ -374,65 +448,127 @@ public sealed class PrometeApp : IDisposable
             plugin.OnUpdate();
 
         UpdateNode(GlobalBackground);
-        if (Root != null) UpdateNode(Root);
+        if (Root != null)
+            UpdateNode(Root);
         UpdateNode(GlobalForeground);
         _currentScene?.OnUpdate();
+        Update?.Invoke();
+
+        PostUpdate?.Invoke();
     }
 
-    private void OnRender()
+    public void OnRender()
     {
-        RenderNode(GlobalBackground);
-        if (Root != null) RenderNode(Root);
-        RenderNode(GlobalForeground);
+        if (_renderCommandQueue == null)
+        {
+            throw new InvalidOperationException("コマンドキューが登録されていません。");
+        }
+
+        // 前フレームの描画命令はすべて処理済みのため、ここでアトラスを整理できる
+        GlyphAtlas.TrimIfNeeded();
+
+        var queue = _renderCommandQueue;
+        var ctx = new RenderContext
+        {
+            WindowSize = View.Size,
+            WindowScale = View.Scale,
+            ActualWidth = View.ActualWidth,
+            ActualHeight = View.ActualHeight,
+        };
+
+        using (_screenBlitter.ScreenRenderTexture.BeginCapture(BackgroundColor))
+        {
+            queue.Clear();
+            PreRender?.Invoke();
+            CollectNode(GlobalBackground, queue, ctx);
+            if (Root != null)
+                CollectNode(Root, queue, ctx);
+            CollectNode(GlobalForeground, queue, ctx);
+            Render?.Invoke();
+
+            queue.ProcessAndFlush();
+        }
+
+        _screenBlitter.BlitToScreen(PostProcessMaterials);
+        PostRender?.Invoke();
     }
 
-    private void OnDestroy()
+    public void OnDestroy()
     {
         _currentScene?.OnDestroy();
         ClearSceneStack();
 
         Dispose();
+        Destroy?.Invoke();
+    }
+
+    private void RegisterBackend(BackendBase backend, WindowOptions opts)
+    {
+        _backend = backend;
+        backend.OnInitialize(this, opts);
+        Time = backend.SetupTimeProvider();
+        View = backend.SetupGameView();
+        TextureFactory = backend.SetupTextureFactory();
+        GlyphAtlas = new GlyphAtlas(TextureFactory);
+        var shaderFactory = backend.SetupShaderFactory();
+        var inputContext = backend.SetupInputProvider();
+        var renderTextureProvider = backend.SetupRenderTextureProvider();
+        _screenBlitter = backend.SetupScreenBlitter();
+
+        _services.AddSingleton(Time);
+        _services.AddSingleton(View);
+        _services.AddSingleton(TextureFactory);
+        _services.AddSingleton(GlyphAtlas);
+        _services.AddSingleton(shaderFactory);
+        _services.AddSingleton(inputContext);
+        _services.AddSingleton(renderTextureProvider);
+        _services.AddSingleton(_screenBlitter);
+        _provider = _services.BuildServiceProvider();
+        Current = this;
     }
 
     private void ProcessNextFrameQueue()
     {
         while (!_nextFrameQueue.IsEmpty)
         {
-            if (!_nextFrameQueue.TryDequeue(out var task)) return;
+            if (!_nextFrameQueue.TryDequeue(out var task))
+                return;
             task();
         }
     }
 
-    private NodeRendererBase? ResolveRenderer(Node node)
-    {
-        var nodeType = node.GetType();
-        if (_renderers.TryGetValue(nodeType, out var renderer)) return renderer;
-
-        // ノードの型が登録されていない場合、親クラスの型が登録されているかを確認する
-        var alternativeRendererType = _renderers.Keys.FirstOrDefault(k => nodeType.IsSubclassOf(k));
-        if (alternativeRendererType is null)
-        {
-            LogHelper.Warn($"The renderer for \"{nodeType}\" is not registered.");
-            _renderers[nodeType] = null;
-            return null;
-        }
-
-        _renderers[nodeType] = _renderers[alternativeRendererType];
-        return _renderers[nodeType];
-    }
-
-    private void RegisterAllScenes()
+    private void RegisterAllScenes(List<Assembly> additionalAssemblies)
     {
         // DefaultScene を明示的に登録
         _services.AddTransient<DefaultScene>();
 
-        var asm = Assembly.GetEntryAssembly() ?? throw new InvalidOperationException("There is no entry assembly.");
-        // Scene 派生クラスを全て取得する
-        var types = asm.GetTypes();
-        foreach (var type in types.Where(t => t.IsSubclassOf(typeof(Scene))))
+        var entryAsm =
+            Assembly.GetEntryAssembly()
+            ?? throw new InvalidOperationException("There is no entry assembly.");
+
+        // エントリアセンブリに加え、UseScenesFrom で指定されたアセンブリも探索する
+        var assemblies = new List<Assembly> { entryAsm };
+        foreach (var asm in additionalAssemblies.Where(asm => asm != entryAsm))
+        {
+            assemblies.Add(asm);
+        }
+
+        foreach (var asm in assemblies)
+        {
+            RegisterScenesIn(asm);
+        }
+    }
+
+    /// <summary>
+    /// 指定したアセンブリの <see cref="Scene"/> 派生クラスを DI に登録する。
+    /// </summary>
+    private void RegisterScenesIn(Assembly assembly)
+    {
+        foreach (var type in assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Scene))))
         {
             // IgnoredSceneAttribute が付与されている場合は無視する
-            if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null) continue;
+            if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null)
+                continue;
 
             // Scene 派生クラスを登録する
             _services.AddTransient(type);
@@ -441,32 +577,21 @@ public sealed class PrometeApp : IDisposable
 
     private Scene GetScene(Type scene)
     {
-        return _provider.GetService(scene) as Scene ??
-               throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
+        return _provider.GetService(scene) as Scene
+            ?? throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
     }
-
-    /// <summary>
-    /// シーンが変更される直前に呼び出されるイベントです。
-    /// </summary>
-    public event Action? SceneWillChange;
 
     /// <summary>
     /// シーンを使用せずにアプリケーションを実行する際に使用されるデフォルトの空のシーン。
     /// </summary>
     [IgnoredScene]
-    private sealed class DefaultScene : Scene
-    {
-    }
+    private sealed class DefaultScene : Scene { }
 
     /// <summary>
     /// Promete アプリケーションを構築するためのビルダークラスです。
     /// </summary>
     public sealed class PrometeAppBuilder
     {
-        private readonly Dictionary<Type, Type> _rendererTypes = [];
-        private readonly ServiceCollection _services;
-        private readonly List<Type> _pluginTypes = [];
-
         private static readonly List<Type> SpecializedPluginInterfaceTypes =
         [
             typeof(IInitializable),
@@ -474,17 +599,49 @@ public sealed class PrometeApp : IDisposable
             typeof(IDisposable),
         ];
 
+        private readonly List<Type> _pluginTypes = [];
+        private readonly List<Assembly> _sceneAssemblies = [];
+        private readonly ServiceCollection _services;
+
         internal PrometeAppBuilder()
         {
             _services = [];
         }
 
         /// <summary>
+        /// 指定したアセンブリに含まれる <see cref="Scene"/> 派生クラスを登録対象に追加します。
+        ///
+        /// 既定ではエントリアセンブリのシーンだけが自動登録されます。
+        /// ゲームをエンジン層とコンテンツ層に分割している場合など、
+        /// エントリアセンブリ以外にシーンを置いているときに使用してください。
+        /// </summary>
+        /// <param name="assembly">シーンを探索するアセンブリ。</param>
+        /// <returns>このビルダーインスタンス。</returns>
+        public PrometeAppBuilder UseScenesFrom(Assembly assembly)
+        {
+            ArgumentNullException.ThrowIfNull(assembly);
+            if (!_sceneAssemblies.Contains(assembly))
+            {
+                _sceneAssemblies.Add(assembly);
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 指定した型が属するアセンブリに含まれる <see cref="Scene"/> 派生クラスを登録対象に追加します。
+        /// </summary>
+        /// <typeparam name="T">登録したいアセンブリに含まれる任意の型。</typeparam>
+        /// <returns>このビルダーインスタンス。</returns>
+        public PrometeAppBuilder UseScenesFrom<T>() => UseScenesFrom(typeof(T).Assembly);
+
+        /// <summary>
         /// 指定した型のプラグインを追加します。
         /// </summary>
         /// <typeparam name="T">追加するプラグインの型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<T>() where T : class
+        public PrometeAppBuilder Use<T>()
+            where T : class
         {
             _services.AddSingleton<T>();
             CheckAndAddPluginTypes(typeof(T));
@@ -497,36 +654,21 @@ public sealed class PrometeApp : IDisposable
         /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
         /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<TPlugin, TImpl>() where TPlugin : class where TImpl : class, TPlugin
+        public PrometeAppBuilder Use<TPlugin, TImpl>()
+            where TPlugin : class
+            where TImpl : class, TPlugin
         {
             _services.AddSingleton<TPlugin, TImpl>();
             CheckAndAddPluginTypes(typeof(TImpl));
             return this;
         }
 
-        /// <summary>
-        /// 指定したノード型とレンダラー型のレンダラーを追加します。
-        /// </summary>
-        /// <typeparam name="TNode">ノードの型。</typeparam>
-        /// <typeparam name="TRenderer">レンダラーの型。</typeparam>
-        /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder UseRenderer<TNode, TRenderer>()
-            where TRenderer : NodeRendererBase
-            where TNode : Node
+        public PrometeApp Build<T>(WindowOptions? opts)
+            where T : BackendBase, new()
         {
-            _rendererTypes[typeof(TNode)] = typeof(TRenderer);
-            return Use<TRenderer>();
-        }
-
-        /// <summary>
-        /// Promete アプリケーションをビルドします。
-        /// </summary>
-        /// <typeparam name="TWindow">ウィンドウの型。</typeparam>
-        /// <returns>構築されたアプリケーション。</returns>
-        public PrometeApp Build<TWindow>() where TWindow : IWindow
-        {
-            _services.AddSingleton(typeof(IWindow), typeof(TWindow));
-            return new PrometeApp(_services, _rendererTypes, _pluginTypes);
+            var app = new PrometeApp(_services, _pluginTypes, _sceneAssemblies);
+            app.RegisterBackend(new T(), opts ?? WindowOptions.Default);
+            return app;
         }
 
         /// <summary>
