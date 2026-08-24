@@ -26,8 +26,6 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
     /// </summary>
     private const int PrivateUseAreaStart = 0xE000;
 
-    private static int _nextSourceId;
-
     private readonly Dictionary<int, BitmapGlyph> _glyphs = new();
     private readonly Dictionary<string, int> _namedGlyphs = new();
     private int _nextPrivateUseCodepoint = PrivateUseAreaStart;
@@ -48,7 +46,7 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
 
         _nativeSize = nativeSize;
         _baseline = baseline ?? nativeSize;
-        SourceId = Interlocked.Increment(ref _nextSourceId);
+        SourceId = GlyphSourceId.Next();
     }
 
     /// <inheritdoc />

@@ -42,7 +42,7 @@ public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
 
         _metricsSource = metricsSource ?? _sources[0];
         _leavesOpen = leavesOpen;
-        SourceId = _sources[0].SourceId;
+        SourceId = GlyphSourceId.Next();
     }
 
     /// <summary>

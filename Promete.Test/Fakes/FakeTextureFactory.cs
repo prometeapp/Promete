@@ -11,6 +11,7 @@ namespace Promete.Test.Fakes;
 public class FakeTextureFactory : TextureFactoryBase
 {
     private readonly Dictionary<int, byte[]> _textures = new();
+    private readonly Dictionary<int, VectorInt> _sizes = new();
     private int _nextHandle = 1;
 
     /// <summary>
@@ -47,6 +48,7 @@ public class FakeTextureFactory : TextureFactoryBase
         var buffer = new byte[size.X * size.Y * 4];
         Array.Copy(bitmap, buffer, Math.Min(bitmap.Length, buffer.Length));
         _textures[handle] = buffer;
+        _sizes[handle] = size;
         return new Texture2D(handle, size, t => DisposedHandles.Add(t.Handle));
     }
 
@@ -71,6 +73,11 @@ public class FakeTextureFactory : TextureFactoryBase
             );
         }
     }
+
+    /// <summary>
+    /// 指定したテクスチャのサイズを取得します。
+    /// </summary>
+    public VectorInt GetSize(int handle) => _sizes[handle];
 
     /// <summary>
     /// 指定したテクスチャの指定位置におけるアルファ値を取得します。

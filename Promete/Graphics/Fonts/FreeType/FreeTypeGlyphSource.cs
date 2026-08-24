@@ -23,8 +23,6 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
     private const int FaceFlagFixedSizes = 1 << 1;
     private const int FaceFlagKerning = 1 << 6;
 
-    private static int _nextSourceId;
-
     private readonly Dictionary<(uint Index, GlyphRenderOptions Options), GlyphInfo> _glyphCache =
         new();
 
@@ -37,7 +35,7 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
     {
         _face = face;
         _fontData = fontData;
-        SourceId = Interlocked.Increment(ref _nextSourceId);
+        SourceId = GlyphSourceId.Next();
 
         FamilyName = Marshal.PtrToStringUTF8((IntPtr)face->family_name) ?? string.Empty;
         StyleName = Marshal.PtrToStringUTF8((IntPtr)face->style_name) ?? string.Empty;
