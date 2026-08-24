@@ -66,6 +66,21 @@ public abstract class TextureFactoryBase
     public abstract Texture2D CreateSolid(Color color, VectorInt size);
 
     /// <summary>
+    /// 既存のテクスチャの一部の領域を、指定したビットマップで書き換えます。
+    /// グリフアトラスのように、1 枚のテクスチャへ内容を追記していく用途で使用します。
+    /// </summary>
+    /// <param name="texture">書き換え対象のテクスチャ。</param>
+    /// <param name="offset">書き換える領域の左上位置。</param>
+    /// <param name="size">書き換える領域のサイズ。</param>
+    /// <param name="bitmap">RGBA8888 形式のビットマップデータ。</param>
+    public abstract void Update(
+        Texture2D texture,
+        VectorInt offset,
+        VectorInt size,
+        byte[] bitmap
+    );
+
+    /// <summary>
     /// [内部的に使用。] ImageSharp の Image からテクスチャを生成します。
     /// </summary>
     internal abstract Texture2D LoadFromImageSharpImage(Image image);

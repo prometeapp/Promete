@@ -52,6 +52,10 @@ public class HeadlessTextureFactory : TextureFactoryBase
         return default;
     }
 
+    public override void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap)
+    {
+    }
+
     internal override Texture2D LoadFromImageSharpImage(Image image)
     {
         return default;

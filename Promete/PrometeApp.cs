@@ -9,6 +9,7 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Promete.Backends;
 using Promete.Graphics;
+using Promete.Graphics.Fonts;
 using Promete.Graphics.Rendering;
 using Promete.Nodes;
 using Promete.Windowing;
@@ -145,6 +146,11 @@ public sealed class PrometeApp : IDisposable
     public ITimeProvider Time { get; private set; } = null!;
     public IGameView View { get; private set; } = null!;
     public TextureFactoryBase TextureFactory { get; private set; } = null!;
+
+    /// <summary>
+    /// テキスト描画に使用されるグリフアトラスを取得します。
+    /// </summary>
+    public GlyphAtlas GlyphAtlas { get; private set; } = null!;
 
     /// <summary>
     /// フレームバッファがサポートされているかどうかを取得します。
@@ -458,6 +464,9 @@ public sealed class PrometeApp : IDisposable
             throw new InvalidOperationException("コマンドキューが登録されていません。");
         }
 
+        // 前フレームの描画命令はすべて処理済みのため、ここでアトラスを整理できる
+        GlyphAtlas.TrimIfNeeded();
+
         var queue = _renderCommandQueue;
         var ctx = new RenderContext
         {
@@ -500,6 +509,7 @@ public sealed class PrometeApp : IDisposable
         Time = backend.SetupTimeProvider();
         View = backend.SetupGameView();
         TextureFactory = backend.SetupTextureFactory();
+        GlyphAtlas = new GlyphAtlas(TextureFactory);
         var shaderFactory = backend.SetupShaderFactory();
         var inputContext = backend.SetupInputProvider();
         var renderTextureProvider = backend.SetupRenderTextureProvider();
@@ -508,6 +518,7 @@ public sealed class PrometeApp : IDisposable
         _services.AddSingleton(Time);
         _services.AddSingleton(View);
         _services.AddSingleton(TextureFactory);
+        _services.AddSingleton(GlyphAtlas);
         _services.AddSingleton(shaderFactory);
         _services.AddSingleton(inputContext);
         _services.AddSingleton(renderTextureProvider);
