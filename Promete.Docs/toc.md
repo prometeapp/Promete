@@ -14,6 +14,7 @@
     - テクスチャ `/guide/graphics/textures`
     - ノードとは？ `/guide/graphics/nodes`
     - Sprite `/guide/graphics/sprite`
+    - DeformedSprite `/guide/graphics/deformed-sprite`
     - Text `/guide/graphics/text`
     - Tilemap `/guide/graphics/tilemap`
     - Shape `/guide/graphics/shape`
