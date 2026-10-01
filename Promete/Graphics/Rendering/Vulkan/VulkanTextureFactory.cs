@@ -79,6 +79,22 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
         return Create(arr, size);
     }
 
+    public override void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap)
+    {
+        if (size.X <= 0 || size.Y <= 0)
+            return;
+
+        app.ThrowIfNotMainThread();
+        resources.UpdateTexture(
+            texture.Handle,
+            offset.X,
+            offset.Y,
+            (uint)size.X,
+            (uint)size.Y,
+            bitmap
+        );
+    }
+
     internal override Texture2D LoadFromImageSharpImage(Image image)
     {
         using var img = image.CloneAs<Rgba32>();

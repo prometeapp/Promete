@@ -59,6 +59,31 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
     }
 
     /// <summary>
+    /// 既存テクスチャの矩形領域を書き換えます。グリフアトラスの追記に使います。
+    /// </summary>
+    public void UpdateTexture(
+        int id,
+        int offsetX,
+        int offsetY,
+        uint width,
+        uint height,
+        ReadOnlySpan<byte> rgba
+    )
+    {
+        EnsureInitialized();
+
+        UploadPixels(
+            _textures[id].Image,
+            rgba,
+            width,
+            height,
+            offsetX,
+            offsetY,
+            ImageLayout.General
+        );
+    }
+
+    /// <summary>
     /// 既存のイメージ (RenderTexture 等) をテーブルに登録し、ID を返します。
     /// </summary>
     public int Register(Image image, DeviceMemory memory, ImageView view, bool ownsImage)
@@ -259,6 +284,25 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
 
     private void UploadPixels(Image image, ReadOnlySpan<byte> rgba, uint width, uint height)
     {
+        UploadPixels(image, rgba, width, height, 0, 0, ImageLayout.Undefined);
+    }
+
+    /// <summary>
+    /// ステージングバッファ経由でイメージの矩形領域を書き換えます。
+    /// <paramref name="oldLayout"/> は書き換え前のレイアウトで、新規作成なら
+    /// <see cref="ImageLayout.Undefined"/>、既存テクスチャの更新なら
+    /// <see cref="ImageLayout.General"/> を渡します。
+    /// </summary>
+    private void UploadPixels(
+        Image image,
+        ReadOnlySpan<byte> rgba,
+        uint width,
+        uint height,
+        int offsetX,
+        int offsetY,
+        ImageLayout oldLayout
+    )
+    {
         var vk = _ctx.Vk;
         var device = _ctx.Device;
         var size = (ulong)(width * height * 4);
@@ -283,10 +327,12 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
             _ctx.TransitionImageLayout(
                 cmd,
                 image,
-                ImageLayout.Undefined,
+                oldLayout,
                 ImageLayout.TransferDstOptimal,
-                PipelineStageFlags.TopOfPipeBit,
-                0,
+                oldLayout == ImageLayout.Undefined
+                    ? PipelineStageFlags.TopOfPipeBit
+                    : PipelineStageFlags.FragmentShaderBit,
+                oldLayout == ImageLayout.Undefined ? 0 : AccessFlags.ShaderReadBit,
                 PipelineStageFlags.TransferBit,
                 AccessFlags.TransferWriteBit
             );
@@ -297,7 +343,7 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
                 BufferRowLength = 0,
                 BufferImageHeight = 0,
                 ImageSubresource = new ImageSubresourceLayers(ImageAspectFlags.ColorBit, 0, 0, 1),
-                ImageOffset = new Offset3D(0, 0, 0),
+                ImageOffset = new Offset3D(offsetX, offsetY, 0),
                 ImageExtent = new Extent3D(width, height, 1),
             };
             vk.CmdCopyBufferToImage(
