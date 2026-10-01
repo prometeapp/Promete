@@ -63,6 +63,15 @@ Prometeでは、Silk.NET等のバックエンドに依存しないようAPIを�
 新しくAPIを追加する場合、引数や戻り値の型として、.NET 標準ライブラリおよびPrometeが提供する型のみを使用するようにし、バックエンドが提供する型は基本的に使用しないでください。<br/>
 ただ、内部的・プラグイン向けと明記している場合や、private、internalなメンバーの場合は使用しても良いです。
 
+### Silk.NET はフォークを使っています
+
+Promete が参照する Silk.NET は net10.0 専用のフォーク (`prometeapp/Silk.NET`) です。
+パッケージ ID は `Promete.Silk.*` ですが、アセンブリ名と名前空間は `Silk.NET.*` のままなので、
+コード上の `using` は upstream と同じです。
+
+バージョンを上げる場合はフォーク側でタグを打って publish してから、
+`Promete/Promete.csproj` と `Promete.ImGui/Promete.ImGui.csproj` の参照を更新してください。
+
 ### .NET のアップデート PR を作成しないでください
 
 .NET のアップデートは、[SUPPORT.md](SUPPORT.md) に従ってメンテナーが行います。
