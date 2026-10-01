@@ -193,7 +193,9 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <returns>終了ステータスコード。</returns>
-    public int Run<TScene>()
+    public int Run<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
+    >()
         where TScene : Scene
     {
         _initialSceneType = typeof(TScene);
@@ -285,7 +287,9 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">読み込むシーン。</typeparam>
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
-    public void LoadScene<TScene>()
+    public void LoadScene<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
+    >()
         where TScene : Scene
     {
         LoadScene(typeof(TScene));
@@ -311,7 +315,9 @@ public sealed class PrometeApp : IDisposable
     /// 現在のシーンをプッシュし、新たなシーンを読み込みます。
     /// </summary>
     /// <typeparam name="TScene">読み込むシーン。</typeparam>
-    public void PushScene<TScene>()
+    public void PushScene<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
+    >()
     {
         PushScene(typeof(TScene));
     }
@@ -640,7 +646,13 @@ public sealed class PrometeApp : IDisposable
         /// </summary>
         /// <typeparam name="T">追加するプラグインの型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<T>()
+        /// <remarks>
+        /// 型引数の注釈は必須。これがないとトリマーにコンストラクタの要求が伝わらず、
+        /// トリム時や NativeAOT でプラグインの生成に失敗する。
+        /// </remarks>
+        public PrometeAppBuilder Use<
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T
+        >()
             where T : class
         {
             _services.AddSingleton<T>();
@@ -654,7 +666,13 @@ public sealed class PrometeApp : IDisposable
         /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
         /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<TPlugin, TImpl>()
+        /// <remarks>
+        /// <inheritdoc cref="Use{T}" path="/remarks" />
+        /// </remarks>
+        public PrometeAppBuilder Use<
+            TPlugin,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImpl
+        >()
             where TPlugin : class
             where TImpl : class, TPlugin
         {
