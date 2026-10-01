@@ -68,33 +68,33 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    コンストラクタで `IWindow` を受け取っていたシーンは、コンストラクタから削除して `View` / `Time` プロパティを直接使うように変更してください。
 
    <Tabs>
-  <TabItem label="v1">
-```csharp
-public class MainScene(IWindow window) : Scene
-{
-    public override void OnUpdate()
-    {
-        var dt = window.DeltaTime;
-        var size = window.Size;
-        window.Title = "My Game";
-    }
-}
-```
-  </TabItem>
-  <TabItem label="v2">
-```csharp
-public class MainScene() : Scene
-{
-    public override void OnUpdate()
-    {
-        var dt = Time.DeltaTime;
-        var size = View.Size;
-        View.Title = "My Game";
-    }
-}
-```
-  </TabItem>
-</Tabs>
+     <TabItem label="v1">
+     ```csharp
+     public class MainScene(IWindow window) : Scene
+     {
+         public override void OnUpdate()
+         {
+             var dt = window.DeltaTime;
+             var size = window.Size;
+             window.Title = "My Game";
+         }
+     }
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     public class MainScene() : Scene
+     {
+         public override void OnUpdate()
+         {
+             var dt = Time.DeltaTime;
+             var size = View.Size;
+             View.Title = "My Game";
+         }
+     }
+     ```
+     </TabItem>
+   </Tabs>
 
 4. **`TextureFactory` の参照先を変更する**
 
@@ -102,10 +102,14 @@ public class MainScene() : Scene
 
    <Tabs>
      <TabItem label="v1">
-       ```csharp var texture = Window.TextureFactory.Load("image.png"); ```
+     ```csharp
+     var texture = Window.TextureFactory.Load("image.png");
+     ```
      </TabItem>
      <TabItem label="v2">
-       ```csharp var texture = App.TextureFactory.Load("image.png"); ```
+     ```csharp
+     var texture = App.TextureFactory.Load("image.png");
+     ```
      </TabItem>
    </Tabs>
 
@@ -128,24 +132,23 @@ public class MainScene() : Scene
    拡張プロパティ `.Degrees` / `.Radians` を使って `Angle` を生成してください。
 
    <Tabs>
-  <TabItem label="v1">
-```csharp
-sprite.Angle = 90f;
-sprite.Angle += 1f;
-```
-  </TabItem>
-  <TabItem label="v2">
-```csharp
-sprite.Angle = 90.Degrees;           // int から度数法
-sprite.Angle = 90.0f.Degrees;        // float から度数法
-sprite.Angle += 1.Degrees;
-sprite.Angle = MathF.PI.Radians;     // float からラジアン
+     <TabItem label="v1">
+     ```csharp
+     sprite.Angle = 90f;
+     sprite.Angle += 1f;
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     sprite.Angle = 90.Degrees;           // int から度数法
+     sprite.Angle = 90.0f.Degrees;        // float から度数法
+     sprite.Angle += 1.Degrees;
+     sprite.Angle = MathF.PI.Radians;     // float からラジアン
 
-   // 静的メソッドも引き続き使用可能
-   sprite.Angle = Angle.FromDegrees(90);
-   sprite.Angle = Angle.FromRadians(MathF.PI / 2);
-
-   ````
+     // 静的メソッドも引き続き使用可能
+     sprite.Angle = Angle.FromDegrees(90);
+     sprite.Angle = Angle.FromRadians(MathF.PI / 2);
+     ```
      </TabItem>
    </Tabs>
 
@@ -153,21 +156,20 @@ sprite.Angle = MathF.PI.Radians;     // float からラジアン
 
    <Tabs>
      <TabItem label="v1">
-   ```csharp
-   float angle = 0;
-   angle += Window.DeltaTime * 90;
-   sprite.Angle = angle;
-   ````
-
+     ```csharp
+     float angle = 0;
+     angle += Window.DeltaTime * 90;
+     sprite.Angle = angle;
+     ```
      </TabItem>
-  <TabItem label="v2">
-```csharp
-float angle = 0;
-angle += Time.DeltaTime * 90;
-sprite.Angle = angle.Degrees;
-```
-  </TabItem>
-</Tabs>
+     <TabItem label="v2">
+     ```csharp
+     float angle = 0;
+     angle += Time.DeltaTime * 90;
+     sprite.Angle = angle.Degrees;
+     ```
+     </TabItem>
+   </Tabs>
 
    `float` として取り出す場合は `ToDegrees()` / `ToRadians()` メソッドを使います。
 
@@ -180,12 +182,16 @@ sprite.Angle = angle.Degrees;
 
    <Tabs>
      <TabItem label="v1">
-       ```csharp float angle = player.Location.Angle(mouse.Position);
-       sprite.Angle = angle; ```
+     ```csharp
+     float angle = player.Location.Angle(mouse.Position);
+     sprite.Angle = angle;
+     ```
      </TabItem>
      <TabItem label="v2">
-       ```csharp Angle angle = player.Location.Angle(mouse.Position);
-       sprite.Angle = angle; ```
+     ```csharp
+     Angle angle = player.Location.Angle(mouse.Position);
+     sprite.Angle = angle;
+     ```
      </TabItem>
    </Tabs>
 
@@ -197,39 +203,37 @@ sprite.Angle = angle.Degrees;
    OpenGLバックエンドでは次のように変更してください。
 
    <Tabs>
-  <TabItem label="v1">
-```csharp
-var app = PrometeApp.Create()
-  .BuildWithOpenGLDesktop();
+     <TabItem label="v1">
+     ```csharp
+     var app = PrometeApp.Create()
+       .BuildWithOpenGLDesktop();
 
-   return app.Run(WindowOptions.Default with
-   {
-   Title = "Promete Demo",
-   Mode = WindowMode.Resizable,
-   TargetFps = 0,
-   TargetUps = 0,
-   IsVsyncMode = false,
-   });
-
-   ````
+     return app.Run(WindowOptions.Default with
+     {
+         Title = "Promete Demo",
+         Mode = WindowMode.Resizable,
+         TargetFps = 0,
+         TargetUps = 0,
+         IsVsyncMode = false,
+     });
+     ```
      </TabItem>
      <TabItem label="v2">
-   ```csharp
-   var app = PrometeApp.Create()
-     .BuildWithOpenGLDesktop(WindowOptions.Default with
-   {
-     Title = "Promete Demo",
-     Mode = WindowMode.Resizable,
-     TargetFps = 0,
-     TargetUps = 0,
-     IsVsyncMode = false,
-   });
+     ```csharp
+     var app = PrometeApp.Create()
+       .BuildWithOpenGLDesktop(WindowOptions.Default with
+     {
+       Title = "Promete Demo",
+       Mode = WindowMode.Resizable,
+       TargetFps = 0,
+       TargetUps = 0,
+       IsVsyncMode = false,
+     });
 
-   return app.Run();
-   ````
-
+     return app.Run();
+     ```
      </TabItem>
-</Tabs>
+   </Tabs>
 
 7. **ビルドエラーと警告を確認する**
 
@@ -256,39 +260,40 @@ var app = PrometeApp.Create()
     代わりに、ノード自身が `Collect()` メソッドをオーバーライドしてレンダリングコマンドをキューに追加する方式に変わりました。
 
     <Tabs>
-   <TabItem label="v1">
-     ```csharp
-     public class MyNode : Node { ... }
+      <TabItem label="v1">
+      ```csharp
+      public class MyNode : Node { ... }
 
-         public class MyNodeRenderer : NodeRendererBase
-         {
-             public override void Render(Node node) { ... }
-         }
+          public class MyNodeRenderer : NodeRendererBase
+          {
+              public override void Render(Node node) { ... }
+          }
 
-         app.UseRenderer<MyNode, MyNodeRenderer>();
-         ```
+          app.UseRenderer<MyNode, MyNodeRenderer>();
+          ```
 
-       </TabItem>
-   <TabItem label="v2">
-     ```csharp
-     public class MyNode : Node
-     {
-         public override void Collect(RenderCommandQueue queue, RenderContext ctx)
-         {
-             queue.Enqueue(new DrawTextureCommand
-             {
-                 Texture = _texture,
-                 ModelMatrix = ModelMatrix,
-                 TintColor = Color.White,
-                 Width = Size.X,
-                 Height = Size.Y,
-             });
-         }
-     }
-     ```
-  </TabItem>
-</Tabs>
-登録コード（`UseRenderer<,>()`）はすべて削除してください。
+      </TabItem>
+      <TabItem label="v2">
+      ```csharp
+      public class MyNode : Node
+      {
+          public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+          {
+              queue.Enqueue(new DrawTextureCommand
+              {
+                  Texture = _texture,
+                  ModelMatrix = ModelMatrix,
+                  TintColor = Color.White,
+                  Width = Size.X,
+                  Height = Size.Y,
+              });
+          }
+      }
+      ```
+      </TabItem>
+    </Tabs>
+
+    登録コード（`UseRenderer<,>()`）はすべて削除してください。
 
 2.  **バックエンドを `BackendBase` に移行する**
     v1 では `IWindow` インターフェースを直接実装してバックエンドを構成していましたが、v2 では `BackendBase` 抽象クラスを継承する方式に変わりました。
