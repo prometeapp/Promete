@@ -13,4 +13,16 @@
         <!-- IDE スタイルルールをビルド時にも適用する -->
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
+    <!-- アナライザは ProjectReference では推移しないため、リポジトリ内では全 C#
+         プロジェクトに配る。外部には Promete パッケージ経由で届く。 -->
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(MSBuildProjectName)' != 'Promete.SceneGen'">
+        <ProjectReference
+            Include="$(MSBuildThisFileDirectory)Promete.SceneGen/Promete.SceneGen.csproj"
+            OutputItemType="Analyzer"
+            ReferenceOutputAssembly="false"
+            UndefineProperties="TargetFramework;RuntimeIdentifier;SelfContained;PublishAot;PublishTrimmed;PublishSingleFile"
+        />
+        <!-- ジェネレータが集約の有無を判断するために参照する -->
+        <CompilerVisibleProperty Include="OutputType" />
+    </ItemGroup>
 </Project>

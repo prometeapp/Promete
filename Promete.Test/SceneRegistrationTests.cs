@@ -95,7 +95,7 @@ public class SceneRegistrationTests
     /// <summary>
     /// エントリアセンブリの外側に置かれたシーンを模したもの。
     /// </summary>
-    private sealed class ExternalAssemblyScene : Scene
+    internal sealed class ExternalAssemblyScene : Scene
     {
         public static bool HasStarted { get; set; }
 
