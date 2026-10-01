@@ -121,12 +121,7 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
     /// <param name="path">画像のパス。</param>
     /// <param name="bearing">ベースライン原点から画像左上までのオフセット。既定では画像の下端がベースラインに揃います。</param>
     /// <param name="advance">送り幅。省略した場合は画像の幅が使われます。</param>
-    public void Register(
-        int codepoint,
-        string path,
-        VectorInt? bearing = null,
-        int? advance = null
-    )
+    public void Register(int codepoint, string path, VectorInt? bearing = null, int? advance = null)
     {
         using var image = Image.Load<Rgba32>(path);
         var size = new VectorInt(image.Width, image.Height);
@@ -142,12 +137,7 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
     /// <param name="bearing">ベースライン原点から画像左上までのオフセット。</param>
     /// <param name="advance">送り幅。省略した場合は画像の幅が使われます。</param>
     /// <returns>割り当てられたコードポイント。</returns>
-    public int Register(
-        string name,
-        string path,
-        VectorInt? bearing = null,
-        int? advance = null
-    )
+    public int Register(string name, string path, VectorInt? bearing = null, int? advance = null)
     {
         using var image = Image.Load<Rgba32>(path);
         var size = new VectorInt(image.Width, image.Height);
@@ -300,7 +290,11 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
     {
         for (var i = 0; i < text.Length; )
         {
-            if (char.IsHighSurrogate(text[i]) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+            if (
+                char.IsHighSurrogate(text[i])
+                && i + 1 < text.Length
+                && char.IsLowSurrogate(text[i + 1])
+            )
             {
                 yield return char.ConvertToUtf32(text[i], text[i + 1]);
                 i += 2;

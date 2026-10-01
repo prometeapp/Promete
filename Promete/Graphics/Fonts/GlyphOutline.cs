@@ -31,7 +31,13 @@ internal static class GlyphOutline
         for (var y = 0; y < height; y++)
         for (var x = 0; x < width; x++)
         {
-            var alpha = MaxAlphaAround(source, x - thickness, y - thickness, thickness, squaredThickness);
+            var alpha = MaxAlphaAround(
+                source,
+                x - thickness,
+                y - thickness,
+                thickness,
+                squaredThickness
+            );
             if (alpha == 0)
                 continue;
 

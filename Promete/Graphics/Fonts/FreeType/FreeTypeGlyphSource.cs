@@ -292,9 +292,7 @@ public sealed unsafe class FreeTypeGlyphSource : IGlyphSource
                     break;
 
                 default:
-                    throw new FontException(
-                        $"未対応のピクセル形式です。({bitmap.pixel_mode})"
-                    );
+                    throw new FontException($"未対応のピクセル形式です。({bitmap.pixel_mode})");
             }
         }
 

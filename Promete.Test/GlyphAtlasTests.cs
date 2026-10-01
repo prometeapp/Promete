@@ -68,7 +68,9 @@ public class GlyphAtlasTests
             .Select(c => fixture.Add(c).Texture.Handle)
             .Distinct();
 
-        handles.Should().ContainSingle("バッチ描画のため、全グリフが同一テクスチャに収まる必要がある");
+        handles
+            .Should()
+            .ContainSingle("バッチ描画のため、全グリフが同一テクスチャに収まる必要がある");
         fixture.Atlas.PageCount.Should().Be(1);
     }
 

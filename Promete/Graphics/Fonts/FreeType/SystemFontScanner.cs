@@ -87,7 +87,12 @@ internal static unsafe class SystemFontScanner
 
         foreach (var file in files)
         {
-            if (Array.Exists(FontExtensions, ext => file.EndsWith(ext, StringComparison.OrdinalIgnoreCase)))
+            if (
+                Array.Exists(
+                    FontExtensions,
+                    ext => file.EndsWith(ext, StringComparison.OrdinalIgnoreCase)
+                )
+            )
                 yield return file;
         }
     }
@@ -121,12 +126,7 @@ internal static unsafe class SystemFontScanner
         fixed (byte* p = pathBytes)
         {
             FT_FaceRec_* opened;
-            var error = FT.FT_New_Face(
-                FreeTypeContext.Library,
-                p,
-                (IntPtr)faceIndex,
-                &opened
-            );
+            var error = FT.FT_New_Face(FreeTypeContext.Library, p, (IntPtr)faceIndex, &opened);
 
             face = opened;
             return error == FT_Error.FT_Err_Ok;

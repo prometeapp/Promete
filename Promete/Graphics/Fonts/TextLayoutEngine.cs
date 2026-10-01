@@ -125,16 +125,24 @@ public static class TextLayoutEngine
             case "color":
                 return string.IsNullOrEmpty(decoration.Attribute)
                     ? attribute
-                    : attribute with { Color = ParseColor(decoration.Attribute) };
+                    : attribute with
+                    {
+                        Color = ParseColor(decoration.Attribute),
+                    };
 
             case "size":
-                return float.TryParse(
-                    decoration.Attribute,
-                    NumberStyles.Float,
-                    CultureInfo.InvariantCulture,
-                    out var size
-                ) && size > 0
-                    ? attribute with { Options = attribute.Options with { Size = size } }
+                return
+                    float.TryParse(
+                        decoration.Attribute,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out var size
+                    )
+                    && size > 0
+                    ? attribute with
+                    {
+                        Options = attribute.Options with { Size = size },
+                    }
                     : attribute;
 
             case "tex":
@@ -145,7 +153,10 @@ public static class TextLayoutEngine
                 if (font.Source is not INamedGlyphSource named)
                     return attribute;
                 return named.TryGetCodepointByName(decoration.Attribute, out var codepoint)
-                    ? attribute with { SubstituteCodepoint = codepoint }
+                    ? attribute with
+                    {
+                        SubstituteCodepoint = codepoint,
+                    }
                     : attribute;
             }
 
@@ -192,7 +203,9 @@ public static class TextLayoutEngine
 
         for (var i = 0; i < text.Length; )
         {
-            var isSurrogatePair = char.IsHighSurrogate(text[i]) && i + 1 < text.Length
+            var isSurrogatePair =
+                char.IsHighSurrogate(text[i])
+                && i + 1 < text.Length
                 && char.IsLowSurrogate(text[i + 1]);
             var codepoint = isSurrogatePair ? char.ConvertToUtf32(text[i], text[i + 1]) : text[i];
             var length = isSurrogatePair ? 2 : 1;
@@ -214,7 +227,8 @@ public static class TextLayoutEngine
             }
 
             // 外字が割り当てられている場合は、置換文字の代わりにそのグリフを描画する
-            var resolved = attribute.SubstituteCodepoint >= 0 ? attribute.SubstituteCodepoint : codepoint;
+            var resolved =
+                attribute.SubstituteCodepoint >= 0 ? attribute.SubstituteCodepoint : codepoint;
 
             // 外字を解決できなかった置換文字は、フォントが字形を持っていても描画しない
             var isUnresolvedPlaceholder =
@@ -311,18 +325,30 @@ public static class TextLayoutEngine
     private static bool IsWideCharacter(int codepoint)
     {
         return codepoint
-            is >= 0x1100 and <= 0x115F // ハングル字母
-                or >= 0x2E80 and <= 0x303E // CJK 部首・記号
-                or >= 0x3041 and <= 0x33FF // かな・ハングル・CJK 互換
-                or >= 0x3400 and <= 0x4DBF // CJK 拡張 A
-                or >= 0x4E00 and <= 0x9FFF // CJK 統合漢字
-                or >= 0xA000 and <= 0xA4CF // イ文字
-                or >= 0xAC00 and <= 0xD7A3 // ハングル音節
-                or >= 0xF900 and <= 0xFAFF // CJK 互換漢字
-                or >= 0xFE30 and <= 0xFE4F // CJK 互換形
-                or >= 0xFF00 and <= 0xFF60 // 全角形
-                or >= 0xFFE0 and <= 0xFFE6
-                or >= 0x20000 and <= 0x3FFFD; // CJK 拡張 B 以降
+            is >= 0x1100
+                and <= 0x115F // ハングル字母
+                or >= 0x2E80
+                and <= 0x303E // CJK 部首・記号
+                or >= 0x3041
+                and <= 0x33FF // かな・ハングル・CJK 互換
+                or >= 0x3400
+                and <= 0x4DBF // CJK 拡張 A
+                or >= 0x4E00
+                and <= 0x9FFF // CJK 統合漢字
+                or >= 0xA000
+                and <= 0xA4CF // イ文字
+                or >= 0xAC00
+                and <= 0xD7A3 // ハングル音節
+                or >= 0xF900
+                and <= 0xFAFF // CJK 互換漢字
+                or >= 0xFE30
+                and <= 0xFE4F // CJK 互換形
+                or >= 0xFF00
+                and <= 0xFF60 // 全角形
+                or >= 0xFFE0
+                and <= 0xFFE6
+                or >= 0x20000
+                and <= 0x3FFFD; // CJK 拡張 B 以降
     }
 
     /// <summary>
@@ -402,9 +428,10 @@ public static class TextLayoutEngine
             return;
         }
 
-        var attribute = items.Count > lastLine.Start
-            ? items[^1].Attribute
-            : new CharAttribute(font.RenderOptions, options.TextColor);
+        var attribute =
+            items.Count > lastLine.Start
+                ? items[^1].Attribute
+                : new CharAttribute(font.RenderOptions, options.TextColor);
 
         var ellipsisAttributes = new CharAttribute[options.Ellipsis.Length];
         Array.Fill(ellipsisAttributes, attribute);

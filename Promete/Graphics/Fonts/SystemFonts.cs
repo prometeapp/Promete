@@ -14,8 +14,8 @@ namespace Promete.Graphics.Fonts;
 /// </remarks>
 public static class SystemFonts
 {
-    private static readonly Lazy<IReadOnlyList<SystemFontInfo>> LazyFonts = new(
-        () => SystemFontScanner.Scan()
+    private static readonly Lazy<IReadOnlyList<SystemFontInfo>> LazyFonts = new(() =>
+        SystemFontScanner.Scan()
     );
 
     private static readonly Lazy<

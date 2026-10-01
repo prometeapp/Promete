@@ -38,7 +38,10 @@ public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
     {
         _sources = sources.ToArray();
         if (_sources.Length == 0)
-            throw new ArgumentException("グリフソースを 1 つ以上指定してください。", nameof(sources));
+            throw new ArgumentException(
+                "グリフソースを 1 つ以上指定してください。",
+                nameof(sources)
+            );
 
         _metricsSource = metricsSource ?? _sources[0];
         _leavesOpen = leavesOpen;
@@ -90,7 +93,10 @@ public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
     {
         foreach (var source in _sources)
         {
-            if (source is INamedGlyphSource named && named.TryGetCodepointByName(name, out codepoint))
+            if (
+                source is INamedGlyphSource named
+                && named.TryGetCodepointByName(name, out codepoint)
+            )
                 return true;
         }
 
@@ -111,7 +117,10 @@ public sealed class CompositeGlyphSource : IGlyphSource, INamedGlyphSource
     {
         foreach (var source in _sources)
         {
-            if (source.TryGetGlyph(left, options, out _) && source.TryGetGlyph(right, options, out _))
+            if (
+                source.TryGetGlyph(left, options, out _)
+                && source.TryGetGlyph(right, options, out _)
+            )
                 return source.GetKerning(left, right, options);
         }
 

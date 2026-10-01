@@ -52,10 +52,9 @@ public class SystemFontsTests
     public void スタイルが存在しない場合は通常のスタイルで代替される()
     {
         // 太字を持たないファミリーを探す
-        var familyName = SystemFonts
-            .Families.FirstOrDefault(f =>
-                SystemFonts.GetAll(f).All(info => info.Style == FontStyle.Normal)
-            );
+        var familyName = SystemFonts.Families.FirstOrDefault(f =>
+            SystemFonts.GetAll(f).All(info => info.Style == FontStyle.Normal)
+        );
 
         if (familyName is null)
             return;
@@ -115,10 +114,9 @@ public class SystemFontsTests
     public void 専用の字形を持つスタイルは合成されない()
     {
         // 太字の字形を持つファミリーを探す
-        var familyName = SystemFonts
-            .Families.FirstOrDefault(f =>
-                SystemFonts.GetAll(f).Any(info => info.Style == FontStyle.Bold)
-            );
+        var familyName = SystemFonts.Families.FirstOrDefault(f =>
+            SystemFonts.GetAll(f).Any(info => info.Style == FontStyle.Bold)
+        );
 
         if (familyName is null)
             return;

@@ -187,11 +187,7 @@ public class TextLayoutEngineTests
     [Fact]
     public void 右揃えではグリフが右に寄る()
     {
-        var left = TextLayoutEngine.Layout(
-            "A",
-            Font,
-            new TextRenderingOptions { Size = (200, 0) }
-        );
+        var left = TextLayoutEngine.Layout("A", Font, new TextRenderingOptions { Size = (200, 0) });
         var right = TextLayoutEngine.Layout(
             "A",
             Font,

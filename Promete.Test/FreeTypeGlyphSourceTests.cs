@@ -233,7 +233,11 @@ public class FreeTypeGlyphSourceTests
         a.SourceId.Should().NotBe(b.SourceId);
     }
 
-    private static GlyphBitmap Rasterize(IGlyphSource source, int codepoint, GlyphRenderOptions options)
+    private static GlyphBitmap Rasterize(
+        IGlyphSource source,
+        int codepoint,
+        GlyphRenderOptions options
+    )
     {
         source.TryGetGlyph(codepoint, options, out var glyph).Should().BeTrue();
         return source.Rasterize(glyph, options);
