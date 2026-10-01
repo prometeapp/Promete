@@ -230,7 +230,9 @@ internal sealed unsafe class VulkanMaterialSystem : IDisposable
         };
         var result = vk.AllocateDescriptorSets(device, in allocInfo, out var set);
         if (result != Result.Success)
-            throw new InvalidOperationException($"ディスクリプタセットの確保に失敗しました: {result}");
+            throw new InvalidOperationException(
+                $"ディスクリプタセットの確保に失敗しました: {result}"
+            );
 
         var bufferInfo = new DescriptorBufferInfo
         {

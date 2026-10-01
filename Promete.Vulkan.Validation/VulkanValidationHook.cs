@@ -87,7 +87,9 @@ public sealed unsafe class VulkanValidationHook : IVulkanInstanceHook, IDisposab
 
         if (result != Result.Success)
         {
-            Console.Error.WriteLine($"[Promete] デバッグメッセンジャーの作成に失敗しました: {result}");
+            Console.Error.WriteLine(
+                $"[Promete] デバッグメッセンジャーの作成に失敗しました: {result}"
+            );
             _debugUtils.Dispose();
             _debugUtils = null;
         }

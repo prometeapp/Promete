@@ -104,7 +104,9 @@ internal sealed unsafe class VulkanMaskedContainerHelper(
 
         EnsureInitialized();
 
-        var pipeline = pipelines.GetStencilWritePipeline(VulkanPipelineProvider.PassClass.Offscreen);
+        var pipeline = pipelines.GetStencilWritePipeline(
+            VulkanPipelineProvider.PassClass.Offscreen
+        );
         var maskSet = resources.GetDescriptorSet(maskTexture.Handle);
         DrawQuad(pipeline, pipelines.StencilWriteLayout, node, [maskSet]);
     }
@@ -220,15 +222,33 @@ internal sealed unsafe class VulkanMaskedContainerHelper(
 
         Span<float> vertices =
         [
-            1.0f, 0.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
-            0.0f, 1.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 0.0f, 0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f,
         ];
         Span<uint> indices = [0, 1, 3, 1, 2, 3];
 
-        (_quadVbo, _quadVboMemory) = CreateStaticBuffer<float>(vertices, BufferUsageFlags.VertexBufferBit);
-        (_quadEbo, _quadEboMemory) = CreateStaticBuffer<uint>(indices, BufferUsageFlags.IndexBufferBit);
+        (_quadVbo, _quadVboMemory) = CreateStaticBuffer<float>(
+            vertices,
+            BufferUsageFlags.VertexBufferBit
+        );
+        (_quadEbo, _quadEboMemory) = CreateStaticBuffer<uint>(
+            indices,
+            BufferUsageFlags.IndexBufferBit
+        );
         _initialized = true;
     }
 

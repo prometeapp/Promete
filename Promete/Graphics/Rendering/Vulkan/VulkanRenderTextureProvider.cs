@@ -141,7 +141,8 @@ internal sealed unsafe class VulkanRenderTextureProvider(
                 PipelineStageFlags.TopOfPipeBit,
                 0,
                 PipelineStageFlags.EarlyFragmentTestsBit | PipelineStageFlags.LateFragmentTestsBit,
-                AccessFlags.DepthStencilAttachmentWriteBit | AccessFlags.DepthStencilAttachmentReadBit,
+                AccessFlags.DepthStencilAttachmentWriteBit
+                    | AccessFlags.DepthStencilAttachmentReadBit,
                 stencilAspect
             )
         );

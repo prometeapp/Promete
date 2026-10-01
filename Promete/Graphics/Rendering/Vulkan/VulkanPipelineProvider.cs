@@ -22,10 +22,19 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         Pipeline
     > _cache = [];
     private readonly Dictionary<
-        (int ShaderId, CustomKind Kind, PassClass Pass, StencilMode Stencil, PrimitiveTopology Topology),
+        (
+            int ShaderId,
+            CustomKind Kind,
+            PassClass Pass,
+            StencilMode Stencil,
+            PrimitiveTopology Topology
+        ),
         Pipeline
     > _customCache = [];
-    private readonly Dictionary<(int ShaderId, CustomKind Kind), PipelineLayout> _customLayoutCache = [];
+    private readonly Dictionary<
+        (int ShaderId, CustomKind Kind),
+        PipelineLayout
+    > _customLayoutCache = [];
 
     private PipelineLayout _textureLayout;
     private PipelineLayout _primitiveLayout;
@@ -144,7 +153,6 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         }
     }
 
-
     /// <summary>アルファマスク合成用のパイプラインレイアウトを取得します。</summary>
     public PipelineLayout MaskedLayout
     {
@@ -219,11 +227,24 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         int shaderId,
         PassClass pass,
         StencilMode stencil = StencilMode.None
-    ) => GetOrCreateCustom(shaderId, CustomKind.Sprite, pass, stencil, PrimitiveTopology.TriangleList);
+    ) =>
+        GetOrCreateCustom(
+            shaderId,
+            CustomKind.Sprite,
+            pass,
+            stencil,
+            PrimitiveTopology.TriangleList
+        );
 
     /// <summary>カスタムシェーダーによるフルスクリーンブリット用のパイプラインを取得します。</summary>
     public Pipeline GetCustomBlitPipeline(int shaderId, PassClass pass) =>
-        GetOrCreateCustom(shaderId, CustomKind.Blit, pass, StencilMode.None, PrimitiveTopology.TriangleList);
+        GetOrCreateCustom(
+            shaderId,
+            CustomKind.Blit,
+            pass,
+            StencilMode.None,
+            PrimitiveTopology.TriangleList
+        );
 
     /// <summary>カスタムシェーダーによる扇形テクスチャ描画用のパイプラインを取得します。</summary>
     public Pipeline GetCustomPiePipeline(
@@ -378,7 +399,11 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
 
         // masked: set0 = content, set1 = mask, push constant = mat4 + vec4 (両ステージ, 80 bytes)
         {
-            var twoTextureLayouts = stackalloc DescriptorSetLayout[2] { textureSetLayout, textureSetLayout };
+            var twoTextureLayouts = stackalloc DescriptorSetLayout[2]
+            {
+                textureSetLayout,
+                textureSetLayout,
+            };
             var pushConstant = new PushConstantRange(
                 ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
                 0,
@@ -606,12 +631,16 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
     )
     {
         var vertSpv = _compiler.Compile(
-            EmbeddedResource.GetResourceAsString($"Promete.Resources.shaders.vulkan.{vertexShaderName}.vert"),
+            EmbeddedResource.GetResourceAsString(
+                $"Promete.Resources.shaders.vulkan.{vertexShaderName}.vert"
+            ),
             ShaderKind.VertexShader,
             $"{vertexShaderName}.vert"
         );
         var fragSpv = _compiler.Compile(
-            EmbeddedResource.GetResourceAsString($"Promete.Resources.shaders.vulkan.{fragmentShaderName}.frag"),
+            EmbeddedResource.GetResourceAsString(
+                $"Promete.Resources.shaders.vulkan.{fragmentShaderName}.frag"
+            ),
             ShaderKind.FragmentShader,
             $"{fragmentShaderName}.frag"
         );
@@ -621,7 +650,16 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
 
         try
         {
-            return CreatePipeline(vertModule, fragModule, layout, pass, topology, enableBlend, vertexLayout, stencil);
+            return CreatePipeline(
+                vertModule,
+                fragModule,
+                layout,
+                pass,
+                topology,
+                enableBlend,
+                vertexLayout,
+                stencil
+            );
         }
         finally
         {
@@ -688,12 +726,42 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 bindings[1] = new VertexInputBindingDescription(1, 96, VertexInputRate.Instance);
                 attributes[0] = new VertexInputAttributeDescription(0, 0, Format.R32G32Sfloat, 0);
                 attributes[1] = new VertexInputAttributeDescription(1, 0, Format.R32G32Sfloat, 8);
-                attributes[2] = new VertexInputAttributeDescription(2, 1, Format.R32G32B32A32Sfloat, 0);
-                attributes[3] = new VertexInputAttributeDescription(3, 1, Format.R32G32B32A32Sfloat, 16);
-                attributes[4] = new VertexInputAttributeDescription(4, 1, Format.R32G32B32A32Sfloat, 32);
-                attributes[5] = new VertexInputAttributeDescription(5, 1, Format.R32G32B32A32Sfloat, 48);
-                attributes[6] = new VertexInputAttributeDescription(6, 1, Format.R32G32B32A32Sfloat, 64);
-                attributes[7] = new VertexInputAttributeDescription(7, 1, Format.R32G32B32A32Sfloat, 80);
+                attributes[2] = new VertexInputAttributeDescription(
+                    2,
+                    1,
+                    Format.R32G32B32A32Sfloat,
+                    0
+                );
+                attributes[3] = new VertexInputAttributeDescription(
+                    3,
+                    1,
+                    Format.R32G32B32A32Sfloat,
+                    16
+                );
+                attributes[4] = new VertexInputAttributeDescription(
+                    4,
+                    1,
+                    Format.R32G32B32A32Sfloat,
+                    32
+                );
+                attributes[5] = new VertexInputAttributeDescription(
+                    5,
+                    1,
+                    Format.R32G32B32A32Sfloat,
+                    48
+                );
+                attributes[6] = new VertexInputAttributeDescription(
+                    6,
+                    1,
+                    Format.R32G32B32A32Sfloat,
+                    64
+                );
+                attributes[7] = new VertexInputAttributeDescription(
+                    7,
+                    1,
+                    Format.R32G32B32A32Sfloat,
+                    80
+                );
                 bindingCount = 2;
                 attributeCount = 8;
                 break;
@@ -853,9 +921,16 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 CodeSize = (nuint)spirv.Length,
                 PCode = (uint*)code,
             };
-            var result = _ctx.Vk.CreateShaderModule(_ctx.Device, in createInfo, null, out var module);
+            var result = _ctx.Vk.CreateShaderModule(
+                _ctx.Device,
+                in createInfo,
+                null,
+                out var module
+            );
             if (result != Result.Success)
-                throw new InvalidOperationException($"シェーダーモジュールの作成に失敗しました: {result}");
+                throw new InvalidOperationException(
+                    $"シェーダーモジュールの作成に失敗しました: {result}"
+                );
             return module;
         }
     }

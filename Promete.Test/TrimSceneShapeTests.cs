@@ -53,7 +53,9 @@ public class TrimSceneShapeTests(ITestOutputHelper output)
         output.WriteLine($"  緑の帯の実体  : 画面 x={InnerScreenX}..{InnerScreenX + InnerWidth}");
 
         // 外側の帯は外側トリムを超えて見えてはならない
-        (o.X + o.Width).Should().BeLessThanOrEqualTo(outerX + OuterWidth);
+        (o.X + o.Width)
+            .Should()
+            .BeLessThanOrEqualTo(outerX + OuterWidth);
     }
 
     private sealed class CapturingRunner(List<BeginTrimCommand> sink)

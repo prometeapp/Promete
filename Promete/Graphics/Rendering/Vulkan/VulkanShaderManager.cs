@@ -30,10 +30,7 @@ internal sealed unsafe class VulkanShaderManager(VulkanContext ctx) : IDisposabl
         var (fragBlocks, fragSamplers) = SpirvReflector.Reflect(fragSpv);
 
         // 両ステージの Uniform ブロックを統合 (規約: set=1, binding=0)
-        var blocks = vertBlocks
-            .Concat(fragBlocks)
-            .Where(b => b is { Set: 1, Binding: 0 })
-            .ToList();
+        var blocks = vertBlocks.Concat(fragBlocks).Where(b => b is { Set: 1, Binding: 0 }).ToList();
 
         SpirvReflector.UniformBlock? merged = null;
         if (blocks.Count > 0)
@@ -142,7 +139,9 @@ internal sealed unsafe class VulkanShaderManager(VulkanContext ctx) : IDisposabl
             };
             var result = ctx.Vk.CreateShaderModule(ctx.Device, in createInfo, null, out var module);
             if (result != Result.Success)
-                throw new InvalidOperationException($"シェーダーモジュールの作成に失敗しました: {result}");
+                throw new InvalidOperationException(
+                    $"シェーダーモジュールの作成に失敗しました: {result}"
+                );
             return module;
         }
     }

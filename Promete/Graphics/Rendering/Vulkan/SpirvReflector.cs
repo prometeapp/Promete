@@ -30,8 +30,7 @@ internal static class SpirvReflector
     /// <summary>
     /// SPIR-V から Uniform ブロック (storage class Uniform) の一覧を抽出します。
     /// </summary>
-    public static List<UniformBlock> ReflectUniformBlocks(byte[] spirv) =>
-        Reflect(spirv).Blocks;
+    public static List<UniformBlock> ReflectUniformBlocks(byte[] spirv) => Reflect(spirv).Blocks;
 
     /// <summary>
     /// SPIR-V から Uniform ブロックとサンプラー変数の一覧を抽出します。
@@ -69,7 +68,11 @@ internal static class SpirvReflector
                     names[words[index + 1]] = ReadString(words, index + 2, index + wordCount);
                     break;
                 case OpMemberName:
-                    memberNames[(words[index + 1], words[index + 2])] = ReadString(words, index + 3, index + wordCount);
+                    memberNames[(words[index + 1], words[index + 2])] = ReadString(
+                        words,
+                        index + 3,
+                        index + wordCount
+                    );
                     break;
                 case OpMemberDecorate when words[index + 3] == DecorationOffset:
                     memberOffsets[(words[index + 1], words[index + 2])] = words[index + 4];

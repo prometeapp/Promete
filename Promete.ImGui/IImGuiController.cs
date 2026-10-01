@@ -15,8 +15,9 @@ internal interface IImGuiController : IDisposable
 /// <summary>
 /// Silk.NET の OpenGL 用 ImGuiController のアダプターです。
 /// </summary>
-internal sealed class OpenGLImGuiController(Silk.NET.OpenGL.Extensions.ImGui.ImGuiController controller)
-    : IImGuiController
+internal sealed class OpenGLImGuiController(
+    Silk.NET.OpenGL.Extensions.ImGui.ImGuiController controller
+) : IImGuiController
 {
     public void Update(float deltaTime) => controller.Update(deltaTime);
 

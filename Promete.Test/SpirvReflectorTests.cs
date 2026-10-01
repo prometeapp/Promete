@@ -199,9 +199,7 @@ public class SpirvReflectorTests
         var act = () => SpirvReflector.Reflect(ToBytes(words));
 
         act.Should()
-            .NotThrow<IndexOutOfRangeException>(
-                "ReadString の終端は配列長でクランプすべき"
-            );
+            .NotThrow<IndexOutOfRangeException>("ReadString の終端は配列長でクランプすべき");
     }
 
     /// <summary>

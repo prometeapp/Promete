@@ -126,7 +126,11 @@ internal sealed class VulkanScreenBlitter : IScreenBlitter
         LastBlitSource = src;
     }
 
-    private unsafe void BindSourceTexture(CommandBuffer cmd, RenderTexture src, PipelineLayout layout)
+    private unsafe void BindSourceTexture(
+        CommandBuffer cmd,
+        RenderTexture src,
+        PipelineLayout layout
+    )
     {
         var descriptorSet = _resources.GetDescriptorSet(src.Texture.Handle);
         _ctx.Vk.CmdBindDescriptorSets(

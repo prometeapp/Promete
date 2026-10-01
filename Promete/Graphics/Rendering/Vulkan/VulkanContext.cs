@@ -33,7 +33,6 @@ internal sealed unsafe class VulkanContext : IDisposable
     private KhrSurface _khrSurface = null!;
     private KhrSwapchain _khrSwapchain = null!;
 
-
     private Instance _instance;
     private SurfaceKHR _surface;
     private PhysicalDevice _physicalDevice;
@@ -203,7 +202,9 @@ internal sealed unsafe class VulkanContext : IDisposable
         }
 
         if (result != Result.Success && result != Result.SuboptimalKhr)
-            throw new InvalidOperationException($"スワップチェーンイメージの取得に失敗しました: {result}");
+            throw new InvalidOperationException(
+                $"スワップチェーンイメージの取得に失敗しました: {result}"
+            );
 
         vk.ResetFences(_device, 1, in fence);
 
@@ -391,7 +392,10 @@ internal sealed unsafe class VulkanContext : IDisposable
             Usage = usage,
             SharingMode = SharingMode.Exclusive,
         };
-        ThrowIfFailed(vk.CreateBuffer(_device, in createInfo, null, out var buffer), "バッファの作成");
+        ThrowIfFailed(
+            vk.CreateBuffer(_device, in createInfo, null, out var buffer),
+            "バッファの作成"
+        );
 
         vk.GetBufferMemoryRequirements(_device, buffer, out var requirements);
         var allocInfo = new MemoryAllocateInfo
@@ -400,7 +404,10 @@ internal sealed unsafe class VulkanContext : IDisposable
             AllocationSize = requirements.Size,
             MemoryTypeIndex = FindMemoryType(requirements.MemoryTypeBits, properties),
         };
-        ThrowIfFailed(vk.AllocateMemory(_device, in allocInfo, null, out var memory), "メモリの確保");
+        ThrowIfFailed(
+            vk.AllocateMemory(_device, in allocInfo, null, out var memory),
+            "メモリの確保"
+        );
         vk.BindBufferMemory(_device, buffer, memory, 0);
         return (buffer, memory);
     }
@@ -430,7 +437,10 @@ internal sealed unsafe class VulkanContext : IDisposable
             SharingMode = SharingMode.Exclusive,
             InitialLayout = ImageLayout.Undefined,
         };
-        ThrowIfFailed(vk.CreateImage(_device, in createInfo, null, out var image), "イメージの作成");
+        ThrowIfFailed(
+            vk.CreateImage(_device, in createInfo, null, out var image),
+            "イメージの作成"
+        );
 
         vk.GetImageMemoryRequirements(_device, image, out var requirements);
         var allocInfo = new MemoryAllocateInfo
@@ -442,7 +452,10 @@ internal sealed unsafe class VulkanContext : IDisposable
                 MemoryPropertyFlags.DeviceLocalBit
             ),
         };
-        ThrowIfFailed(vk.AllocateMemory(_device, in allocInfo, null, out var memory), "メモリの確保");
+        ThrowIfFailed(
+            vk.AllocateMemory(_device, in allocInfo, null, out var memory),
+            "メモリの確保"
+        );
         vk.BindImageMemory(_device, image, memory, 0);
         return (image, memory);
     }
@@ -550,7 +563,10 @@ internal sealed unsafe class VulkanContext : IDisposable
             CommandBufferCount = 1,
             PCommandBuffers = &cmd,
         };
-        ThrowIfFailed(vk.QueueSubmit(_graphicsQueue, 1, in submitInfo, default), "転送コマンドの送信");
+        ThrowIfFailed(
+            vk.QueueSubmit(_graphicsQueue, 1, in submitInfo, default),
+            "転送コマンドの送信"
+        );
         vk.QueueWaitIdle(_graphicsQueue);
         vk.FreeCommandBuffers(_device, _transientPool, 1, in cmd);
     }
@@ -582,18 +598,7 @@ internal sealed unsafe class VulkanContext : IDisposable
             SrcAccessMask = srcAccess,
             DstAccessMask = dstAccess,
         };
-        Vk.CmdPipelineBarrier(
-            cmd,
-            srcStage,
-            dstStage,
-            0,
-            0,
-            null,
-            0,
-            null,
-            1,
-            in barrier
-        );
+        Vk.CmdPipelineBarrier(cmd, srcStage, dstStage, 0, 0, null, 0, null, 1, in barrier);
     }
 
     /// <summary>
@@ -858,9 +863,8 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         // フックが要求するレイヤーのうち、実際に利用できるものだけを有効化する
         var enabledLayers = FilterAvailableLayers(_hook?.GetRequestedLayers());
-        var layersPtr = enabledLayers.Length > 0
-            ? (byte**)SilkMarshal.StringArrayToPtr(enabledLayers)
-            : null;
+        var layersPtr =
+            enabledLayers.Length > 0 ? (byte**)SilkMarshal.StringArrayToPtr(enabledLayers) : null;
 
         var extensions = new List<string>();
         for (var i = 0u; i < extensionCount; i++)
@@ -1024,7 +1028,12 @@ internal sealed unsafe class VulkanContext : IDisposable
             if ((families[i].QueueFlags & QueueFlags.GraphicsBit) == 0)
                 continue;
 
-            _khrSurface.GetPhysicalDeviceSurfaceSupport(device, i, _surface, out var presentSupported);
+            _khrSurface.GetPhysicalDeviceSurfaceSupport(
+                device,
+                i,
+                _surface,
+                out var presentSupported
+            );
             if (!presentSupported)
                 continue;
 
@@ -1152,7 +1161,10 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         foreach (var f in formats)
         {
-            if (f.Format == Format.B8G8R8A8Unorm && f.ColorSpace == ColorSpaceKHR.SpaceSrgbNonlinearKhr)
+            if (
+                f.Format == Format.B8G8R8A8Unorm
+                && f.ColorSpace == ColorSpaceKHR.SpaceSrgbNonlinearKhr
+            )
                 return f;
         }
 
@@ -1166,11 +1178,21 @@ internal sealed unsafe class VulkanContext : IDisposable
             return PresentModeKHR.FifoKhr;
 
         uint count = 0;
-        _khrSurface.GetPhysicalDeviceSurfacePresentModes(_physicalDevice, _surface, ref count, null);
+        _khrSurface.GetPhysicalDeviceSurfacePresentModes(
+            _physicalDevice,
+            _surface,
+            ref count,
+            null
+        );
         var modes = new PresentModeKHR[count];
         fixed (PresentModeKHR* p = modes)
         {
-            _khrSurface.GetPhysicalDeviceSurfacePresentModes(_physicalDevice, _surface, ref count, p);
+            _khrSurface.GetPhysicalDeviceSurfacePresentModes(
+                _physicalDevice,
+                _surface,
+                ref count,
+                p
+            );
         }
 
         foreach (var mode in modes)
@@ -1215,7 +1237,9 @@ internal sealed unsafe class VulkanContext : IDisposable
             }
         }
 
-        throw new NotSupportedException("ステンシルアタッチメントに使用できるフォーマットがありません。");
+        throw new NotSupportedException(
+            "ステンシルアタッチメントに使用できるフォーマットがありません。"
+        );
     }
 
     private void CreateRenderPasses()
@@ -1435,7 +1459,10 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         fixed (CommandBuffer* p = _commandBuffers)
         {
-            ThrowIfFailed(Vk.AllocateCommandBuffers(_device, in allocInfo, p), "コマンドバッファの確保");
+            ThrowIfFailed(
+                Vk.AllocateCommandBuffers(_device, in allocInfo, p),
+                "コマンドバッファの確保"
+            );
         }
     }
 
@@ -1456,11 +1483,21 @@ internal sealed unsafe class VulkanContext : IDisposable
         for (var i = 0; i < FramesInFlight; i++)
         {
             ThrowIfFailed(
-                vk.CreateSemaphore(_device, in semaphoreInfo, null, out _imageAvailableSemaphores[i]),
+                vk.CreateSemaphore(
+                    _device,
+                    in semaphoreInfo,
+                    null,
+                    out _imageAvailableSemaphores[i]
+                ),
                 "セマフォの作成"
             );
             ThrowIfFailed(
-                vk.CreateSemaphore(_device, in semaphoreInfo, null, out _renderFinishedSemaphores[i]),
+                vk.CreateSemaphore(
+                    _device,
+                    in semaphoreInfo,
+                    null,
+                    out _renderFinishedSemaphores[i]
+                ),
                 "セマフォの作成"
             );
             ThrowIfFailed(

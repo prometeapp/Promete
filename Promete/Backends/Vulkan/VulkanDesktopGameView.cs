@@ -214,8 +214,16 @@ public class VulkanDesktopGameView : IGameView
         // ポストプロセス適用後の最終ブリット元を読み出す（表示内容と一致させる）
         var source = _screenBlitter!.LastBlitSource ?? _screenBlitter.ScreenRenderTexture;
         var target = _renderTextureProvider!.GetTarget(source);
-        var pixels = _context!.ReadImagePixels(target.Image, target.Extent.Width, target.Extent.Height);
-        return Image.LoadPixelData<Rgba32>(pixels, (int)target.Extent.Width, (int)target.Extent.Height);
+        var pixels = _context!.ReadImagePixels(
+            target.Image,
+            target.Extent.Width,
+            target.Extent.Height
+        );
+        return Image.LoadPixelData<Rgba32>(
+            pixels,
+            (int)target.Extent.Width,
+            (int)target.Extent.Height
+        );
     }
 
     private void OnLoad()

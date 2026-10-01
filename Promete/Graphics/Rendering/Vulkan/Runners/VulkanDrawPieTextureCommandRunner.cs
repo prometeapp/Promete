@@ -83,9 +83,7 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
 
         EnsureInitialized();
 
-        var model =
-            Matrix4x4.CreateScale(width, height, 1)
-            * modelMatrix;
+        var model = Matrix4x4.CreateScale(width, height, 1) * modelMatrix;
 
         var extent = ctx.CurrentTargetExtent;
         var projection = Matrix4x4.CreateOrthographicOffCenter(
@@ -125,7 +123,10 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
             )
             : pipelines.GetPiePipeline(VulkanPipelineProvider.PassClass.Offscreen, stencil);
         var layout = useCustom
-            ? pipelines.GetCustomLayout(material!.Shader.Handle, VulkanPipelineProvider.CustomKind.Pie)
+            ? pipelines.GetCustomLayout(
+                material!.Shader.Handle,
+                VulkanPipelineProvider.CustomKind.Pie
+            )
             : pipelines.PieLayout;
         vk.CmdBindPipeline(cmd, PipelineBindPoint.Graphics, pipeline);
         vk.CmdPushConstants(
@@ -165,15 +166,33 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
 
         Span<float> vertices =
         [
-            1.0f, 0.0f, 1.0f, 0.0f, // 右上
-            1.0f, 1.0f, 1.0f, 1.0f, // 右下
-            0.0f, 1.0f, 0.0f, 1.0f, // 左下
-            0.0f, 0.0f, 0.0f, 0.0f, // 左上
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f, // 右上
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f, // 右下
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f, // 左下
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f, // 左上
         ];
         Span<uint> indices = [0, 1, 3, 1, 2, 3];
 
-        (_quadVbo, _quadVboMemory) = CreateStaticBuffer<float>(vertices, BufferUsageFlags.VertexBufferBit);
-        (_quadEbo, _quadEboMemory) = CreateStaticBuffer<uint>(indices, BufferUsageFlags.IndexBufferBit);
+        (_quadVbo, _quadVboMemory) = CreateStaticBuffer<float>(
+            vertices,
+            BufferUsageFlags.VertexBufferBit
+        );
+        (_quadEbo, _quadEboMemory) = CreateStaticBuffer<uint>(
+            indices,
+            BufferUsageFlags.IndexBufferBit
+        );
         _initialized = true;
     }
 

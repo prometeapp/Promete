@@ -95,7 +95,12 @@ internal sealed unsafe class VulkanDrawPrimitiveCommandRunner(
         vk.CmdDraw(cmd, vertexCount, 1, 0, 0);
     }
 
-    private void DrawStroke(Span<float> vertices, int lineWidth, Color? lineColor, Material? material)
+    private void DrawStroke(
+        Span<float> vertices,
+        int lineWidth,
+        Color? lineColor,
+        Material? material
+    )
     {
         if (lineWidth <= 0 || lineColor is not { } lc)
             return;

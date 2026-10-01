@@ -75,8 +75,7 @@ public class VulkanMaskRestoreDebugScene(ConsoleLayer console, Keyboard keyboard
     private void PrintState(string label)
     {
         var hasParent = _masked.Parent is not null;
-        var restored =
-            _masked.Location == InitialLocation && _masked.Scale.X == 2 && hasParent;
+        var restored = _masked.Location == InitialLocation && _masked.Scale.X == 2 && hasParent;
 
         console.Print(
             $"{label}: loc={_masked.Location} scale={_masked.Scale} parent={(hasParent ? "有" : "null")} "

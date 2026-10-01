@@ -226,6 +226,9 @@ public class VulkanDemoShaderCompileTests
 
         samplers
             .Should()
-            .Contain(s => s.Set == 32, "この値が上限チェックなしに stackalloc とレイアウト生成へ渡る (指摘#08)");
+            .Contain(
+                s => s.Set == 32,
+                "この値が上限チェックなしに stackalloc とレイアウト生成へ渡る (指摘#08)"
+            );
     }
 }

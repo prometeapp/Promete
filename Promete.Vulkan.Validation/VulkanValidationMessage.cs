@@ -13,7 +13,4 @@ public enum VulkanValidationLevel
 /// <summary>バリデーションレイヤーからのメッセージ。</summary>
 /// <param name="Level">深刻度。</param>
 /// <param name="Message">本文。</param>
-public readonly record struct VulkanValidationMessage(
-    VulkanValidationLevel Level,
-    string Message
-);
+public readonly record struct VulkanValidationMessage(VulkanValidationLevel Level, string Message);

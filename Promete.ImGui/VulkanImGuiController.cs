@@ -68,7 +68,11 @@ internal sealed unsafe class VulkanImGuiController : IImGuiController
     private int _fontTextureId;
     private bool _disposed;
 
-    public VulkanImGuiController(VulkanDesktopGameView view, IInputContext input, Action onConfigure)
+    public VulkanImGuiController(
+        VulkanDesktopGameView view,
+        IInputContext input,
+        Action onConfigure
+    )
     {
         _view = view;
         _ctx =
@@ -188,7 +192,11 @@ internal sealed unsafe class VulkanImGuiController : IImGuiController
         // シェーダー
         using var compiler = new VulkanShaderCompiler();
         var vertSpv = compiler.Compile(VertexShaderSource, ShaderKind.VertexShader, "imgui.vert");
-        var fragSpv = compiler.Compile(FragmentShaderSource, ShaderKind.FragmentShader, "imgui.frag");
+        var fragSpv = compiler.Compile(
+            FragmentShaderSource,
+            ShaderKind.FragmentShader,
+            "imgui.frag"
+        );
         var vertModule = CreateShaderModule(vertSpv);
         var fragModule = CreateShaderModule(fragSpv);
 
@@ -278,7 +286,11 @@ internal sealed unsafe class VulkanImGuiController : IImGuiController
             PAttachments = &blendAttachment,
         };
 
-        var dynamicStates = stackalloc DynamicState[2] { DynamicState.Viewport, DynamicState.Scissor };
+        var dynamicStates = stackalloc DynamicState[2]
+        {
+            DynamicState.Viewport,
+            DynamicState.Scissor,
+        };
         var dynamicState = new PipelineDynamicStateCreateInfo
         {
             SType = StructureType.PipelineDynamicStateCreateInfo,
@@ -303,14 +315,23 @@ internal sealed unsafe class VulkanImGuiController : IImGuiController
             Subpass = 0,
         };
 
-        var result = vk.CreateGraphicsPipelines(device, default, 1, in createInfo, null, out _pipeline);
+        var result = vk.CreateGraphicsPipelines(
+            device,
+            default,
+            1,
+            in createInfo,
+            null,
+            out _pipeline
+        );
 
         Silk.NET.Core.Native.SilkMarshal.Free((nint)entryPoint);
         vk.DestroyShaderModule(device, vertModule, null);
         vk.DestroyShaderModule(device, fragModule, null);
 
         if (result != Result.Success)
-            throw new InvalidOperationException($"ImGui パイプラインの作成に失敗しました: {result}");
+            throw new InvalidOperationException(
+                $"ImGui パイプラインの作成に失敗しました: {result}"
+            );
     }
 
     private ShaderModule CreateShaderModule(byte[] spirv)
@@ -323,9 +344,16 @@ internal sealed unsafe class VulkanImGuiController : IImGuiController
                 CodeSize = (nuint)spirv.Length,
                 PCode = (uint*)code,
             };
-            var result = _ctx.Vk.CreateShaderModule(_ctx.Device, in createInfo, null, out var module);
+            var result = _ctx.Vk.CreateShaderModule(
+                _ctx.Device,
+                in createInfo,
+                null,
+                out var module
+            );
             if (result != Result.Success)
-                throw new InvalidOperationException($"シェーダーモジュールの作成に失敗しました: {result}");
+                throw new InvalidOperationException(
+                    $"シェーダーモジュールの作成に失敗しました: {result}"
+                );
             return module;
         }
     }

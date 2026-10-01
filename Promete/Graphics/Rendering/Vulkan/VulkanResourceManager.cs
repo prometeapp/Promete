@@ -229,7 +229,9 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
         };
         var result = _ctx.Vk.AllocateDescriptorSets(_ctx.Device, in allocInfo, out var set);
         if (result != Result.Success)
-            throw new InvalidOperationException($"ディスクリプタセットの確保に失敗しました: {result}");
+            throw new InvalidOperationException(
+                $"ディスクリプタセットの確保に失敗しました: {result}"
+            );
 
         UpdateTextureDescriptorSet(set, view);
         return set;
@@ -298,7 +300,14 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
                 ImageOffset = new Offset3D(0, 0, 0),
                 ImageExtent = new Extent3D(width, height, 1),
             };
-            vk.CmdCopyBufferToImage(cmd, staging, image, ImageLayout.TransferDstOptimal, 1, in region);
+            vk.CmdCopyBufferToImage(
+                cmd,
+                staging,
+                image,
+                ImageLayout.TransferDstOptimal,
+                1,
+                in region
+            );
 
             // サンプリング時のレイアウト管理を単純化するため General に統一する
             _ctx.TransitionImageLayout(

@@ -70,7 +70,12 @@ public class VulkanDesktopBackend : BackendBase
         _resources = new VulkanResourceManager(_context);
         _shaderManager = new VulkanShaderManager(_context);
         _materialSystem = new VulkanMaterialSystem(_context, _shaderManager, _resources);
-        _pipelines = new VulkanPipelineProvider(_context, _resources, _shaderManager, _materialSystem);
+        _pipelines = new VulkanPipelineProvider(
+            _context,
+            _resources,
+            _shaderManager,
+            _materialSystem
+        );
         _time = new SilkNetCommonTimeProvider(_nativeWindow);
         _gameView = new VulkanDesktopGameView(_app, _nativeWindow);
         _textureFactory = new VulkanTextureFactory(_app, _resources);
@@ -150,7 +155,12 @@ public class VulkanDesktopBackend : BackendBase
         queue.RegisterRunnerRange(
             _textureRunner,
             _pieRunner,
-            new VulkanDrawPrimitiveCommandRunner(_context, _pipelines, _shaderManager, _materialSystem),
+            new VulkanDrawPrimitiveCommandRunner(
+                _context,
+                _pipelines,
+                _shaderManager,
+                _materialSystem
+            ),
             new VulkanBeginTrimCommandRunner(_context),
             new VulkanEndTrimCommandRunner(_context),
             new VulkanBeginStencilMaskCommandRunner(_context, _maskHelper),

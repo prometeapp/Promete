@@ -199,10 +199,22 @@ internal sealed unsafe class VulkanDrawTextureBatchedCommandRunner
         // 単位クワッドの頂点データ（位置 + UV）
         Span<float> vertices =
         [
-            1.0f, 0.0f, 1.0f, 0.0f, // 右下
-            1.0f, 1.0f, 1.0f, 1.0f, // 右上
-            0.0f, 1.0f, 0.0f, 1.0f, // 左上
-            0.0f, 0.0f, 0.0f, 0.0f, // 左下
+            1.0f,
+            0.0f,
+            1.0f,
+            0.0f, // 右下
+            1.0f,
+            1.0f,
+            1.0f,
+            1.0f, // 右上
+            0.0f,
+            1.0f,
+            0.0f,
+            1.0f, // 左上
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f, // 左下
         ];
         Span<uint> indices = [0, 1, 3, 1, 2, 3];
 

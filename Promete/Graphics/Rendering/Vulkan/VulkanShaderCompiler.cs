@@ -47,9 +47,7 @@ internal sealed unsafe class VulkanShaderCompiler : IDisposable
             var status = _shaderc.ResultGetCompilationStatus(result);
             if (status != CompilationStatus.Success)
             {
-                var message = SilkMarshal.PtrToString(
-                    (nint)_shaderc.ResultGetErrorMessage(result)
-                );
+                var message = SilkMarshal.PtrToString((nint)_shaderc.ResultGetErrorMessage(result));
                 throw new InvalidOperationException(
                     $"シェーダーのコンパイルエラー ({name}): {message}"
                 );
@@ -59,7 +57,12 @@ internal sealed unsafe class VulkanShaderCompiler : IDisposable
             var bytes = new byte[length];
             fixed (byte* dst = bytes)
             {
-                System.Buffer.MemoryCopy(_shaderc.ResultGetBytes(result), dst, (long)length, (long)length);
+                System.Buffer.MemoryCopy(
+                    _shaderc.ResultGetBytes(result),
+                    dst,
+                    (long)length,
+                    (long)length
+                );
             }
 
             return bytes;

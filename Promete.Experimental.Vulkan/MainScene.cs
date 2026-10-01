@@ -20,8 +20,14 @@ public class MainScene(ImGuiPlugin imGui) : Scene
     private const int Phase1Frame = 60;
     private const int Phase2Frame = 120;
 
-    private static readonly string ScreenshotPath1 = Path.Combine(AppContext.BaseDirectory, "vulkan_test.png");
-    private static readonly string ScreenshotPath2 = Path.Combine(AppContext.BaseDirectory, "vulkan_test_postprocess.png");
+    private static readonly string ScreenshotPath1 = Path.Combine(
+        AppContext.BaseDirectory,
+        "vulkan_test.png"
+    );
+    private static readonly string ScreenshotPath2 = Path.Combine(
+        AppContext.BaseDirectory,
+        "vulkan_test_postprocess.png"
+    );
 
     private const string InstancedVertexShader = """
         #version 450
@@ -231,7 +237,9 @@ public class MainScene(ImGuiPlugin imGui) : Scene
             .Compile();
         var extraMaterial = new Material(_extraTextureShader);
         extraMaterial["uExtraTexture"] = App.TextureFactory.CreateSolid(Color.Lime, (40, 40));
-        var extraSprite = new Sprite(App.TextureFactory.CreateSolid(Color.White, (40, 40))).Location(560, 50);
+        var extraSprite = new Sprite(
+            App.TextureFactory.CreateSolid(Color.White, (40, 40))
+        ).Location(560, 50);
         extraSprite.Material = extraMaterial;
         Root.Add(extraSprite);
 
@@ -311,15 +319,51 @@ public class MainScene(ImGuiPlugin imGui) : Scene
             _failures += Verify(img, 100, 310, Color.Magenta, "FrameBuffer 上部 (マゼンタ帯)");
             _failures += Verify(img, 100, 380, Color.Yellow, "FrameBuffer 下部 (黄背景)");
             _failures += Verify(img, 320, 330, Color.Cyan, "PieSprite 右上 1/4 (シアン)");
-            _failures += Verify(img, 280, 370, Color.DarkSlateBlue, "PieSprite 左下 (背景=切り抜き)");
-            _failures += Verify(img, 475, 175, Color.FromArgb(255, 102, 0), "カスタムマテリアル (uOverrideColor)");
+            _failures += Verify(
+                img,
+                280,
+                370,
+                Color.DarkSlateBlue,
+                "PieSprite 左下 (背景=切り抜き)"
+            );
+            _failures += Verify(
+                img,
+                475,
+                175,
+                Color.FromArgb(255, 102, 0),
+                "カスタムマテリアル (uOverrideColor)"
+            );
             _failures += Verify(img, 470, 350, Color.Orange, "ステンシルマスク 左半分 (表示)");
-            _failures += Verify(img, 530, 350, Color.DarkSlateBlue, "ステンシルマスク 右半分 (非表示)");
+            _failures += Verify(
+                img,
+                530,
+                350,
+                Color.DarkSlateBlue,
+                "ステンシルマスク 右半分 (非表示)"
+            );
             _failures += Verify(img, 575, 410, Color.HotPink, "アルファマスク 左半分 (表示)");
-            _failures += Verify(img, 605, 410, Color.DarkSlateBlue, "アルファマスク 右半分 (非表示)");
-            _failures += Verify(img, 80, 450, Color.FromArgb(128, 0, 128), "Primitive カスタムマテリアル (uFillColor)");
+            _failures += Verify(
+                img,
+                605,
+                410,
+                Color.DarkSlateBlue,
+                "アルファマスク 右半分 (非表示)"
+            );
+            _failures += Verify(
+                img,
+                80,
+                450,
+                Color.FromArgb(128, 0, 128),
+                "Primitive カスタムマテリアル (uFillColor)"
+            );
             _failures += Verify(img, 580, 70, Color.Lime, "Texture2D Uniform (uExtraTexture)");
-            _failures += Verify(img, 615, 255, Color.FromArgb(255, 20, 148), "Pie カスタムマテリアル (uPieColor)");
+            _failures += Verify(
+                img,
+                615,
+                255,
+                Color.FromArgb(255, 20, 148),
+                "Pie カスタムマテリアル (uPieColor)"
+            );
 
             // フェーズ2: 色反転ポストプロセスを適用
             App.PostProcessMaterials.Add(new Material(_invertShader!));
