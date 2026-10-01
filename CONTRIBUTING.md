@@ -82,6 +82,19 @@ Promete が参照する Silk.NET は net10.0 専用のフォーク (`prometeapp/
 `analyzers/dotnet/cs` 経由で、設定は `build/Promete.props` の
 `CompilerVisibleProperty` で渡しています。
 
+このリポジトリ内では、ジェネレータは `Directory.Build.props` の
+`ProjectReference` で全 C# プロジェクトに配っています。そのため
+`PublishAot` や `PublishTrimmed` をコマンドラインで渡すと、グローバル
+プロパティとして `Promete.SceneGen` にも波及し `NETSDK1207` で失敗します。
+
+```
+# NG
+dotnet publish Promete.Example -p:PublishAot=true
+```
+
+csproj の `PropertyGroup` に書いてください。利用者にはパッケージ経由で
+届くので、この制約はリポジトリ内のビルドだけの話です。
+
 ### .NET のアップデート PR を作成しないでください
 
 .NET のアップデートは、[SUPPORT.md](SUPPORT.md) に従ってメンテナーが行います。
