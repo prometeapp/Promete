@@ -7,6 +7,7 @@ using Promete.Graphics.Rendering.Vulkan.Runners;
 using Promete.Windowing;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
+using Silk.NET.Windowing.Sdl;
 using IWindow = Silk.NET.Windowing.IWindow;
 using WindowOptions = Promete.Windowing.WindowOptions;
 
@@ -56,6 +57,11 @@ public class VulkanDesktopBackend : BackendBase
         silkOptions.FramesPerSecond = opts.TargetFps;
         silkOptions.UpdatesPerSecond = opts.TargetUps;
         silkOptions.VSync = opts.IsVsyncMode;
+
+        // GLFW は macOS で Vulkan を扱えない (ローダーを libvulkan.1.dylib という名前で
+        // しか探さない)。SDL は libMoltenVK.dylib を直接探す候補に入れているので、
+        // Vulkan バックエンドでは SDL を優先する。
+        SdlWindowing.Use();
 
         _nativeWindow = Window.Create(silkOptions);
 
