@@ -4,9 +4,7 @@
          専用なので出力から外す。osx の libMoltenVK.dylib だけ残る。 -->
     <Target Name="PrometeRemoveMoltenVKStaticLibraries" AfterTargets="ResolveReferences">
         <ItemGroup>
-            <ReferenceCopyLocalPaths
-                Remove="@(ReferenceCopyLocalPaths->WithMetadataValue('Filename', 'libMoltenVK')->WithMetadataValue('Extension', '.a'))"
-            />
+            <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths->WithMetadataValue('Filename', 'libMoltenVK')->WithMetadataValue('Extension', '.a'))" />
         </ItemGroup>
     </Target>
 </Project>
