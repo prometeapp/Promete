@@ -230,6 +230,29 @@ Promete は `Backends/BackendBase` 抽象クラスの実装を通じて複数の
 - `SetupShaderFactory()` - シェーダーAPI (`IShaderFactory`)
 - `OnInitialize()` / `OnStart()` / `OnExit()` - 初期化・起動・終了処理
 
+### Silk.NET フォークへの依存
+
+Promete は Silk.NET の net10.0 専用フォーク (`prometeapp/Silk.NET`) を使います。
+パッケージ ID は `Promete.Silk.*`、バージョンは `2.23.0-prmt.1.0.0` です。upstream の
+`Silk.NET.*` は nuget.org でプレフィックス予約されているため別 ID で配布しています。
+
+**アセンブリ名と名前空間は `Silk.NET.*` のまま**なので、`using Silk.NET.OpenGL;` のような
+コードは変更不要です。違うのは `PackageReference` の ID だけです。
+
+ネイティブバイナリはフォークしていないので、`Ultz.Native.GLFW` や
+`Silk.NET.OpenAL.Soft.Native` など upstream のパッケージを参照しています。
+
+### バックエンドの明示登録
+
+`OpenGLDesktopBackend.OnInitialize` は `RegisterSilkBackends()` で GLFW と SDL を
+明示的に登録します。Silk.NET は既定ではバックエンドのアセンブリ名を文字列で
+`Assembly.Load` して探索しますが、トリマーはその文字列を追えないため、トリム時には
+バックエンドのアセンブリごと削除され、NativeAOT では探索が機能しません。
+
+登録順はリフレクション探索と同じ GLFW → SDL なので、選ばれるバックエンドは変わりません。
+いずれも冪等なメソッドを使っています。`ShouldLoadFirstPartyPlatforms` は二度目の呼び出しで
+例外を投げるため使っていません。
+
 ## デモシステム (Promete.Example)
 
 サンプルは自動メニュー生成のために `[Demo]` 属性を使用します:
