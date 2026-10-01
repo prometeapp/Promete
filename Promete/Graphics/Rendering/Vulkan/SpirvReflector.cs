@@ -59,41 +59,46 @@ internal static class SpirvReflector
         {
             var opcode = words[index] & 0xFFFF;
             var wordCount = (int)(words[index] >> 16);
-            if (wordCount == 0)
+
+            // 宣言長が 0 だと前進できず、残りワード数を超えていると読み出しが
+            // 境界を越えるため、どちらも打ち切る。
+            if (wordCount < 1 || index + wordCount > words.Length)
                 break;
 
+            // 各 case の when はオペランドを読むのに必要な命令長を満たすかの検査。
+            // 満たさない命令は読み飛ばす。
             switch (opcode)
             {
-                case OpName:
+                case OpName when wordCount >= 3:
                     names[words[index + 1]] = ReadString(words, index + 2, index + wordCount);
                     break;
-                case OpMemberName:
+                case OpMemberName when wordCount >= 4:
                     memberNames[(words[index + 1], words[index + 2])] = ReadString(
                         words,
                         index + 3,
                         index + wordCount
                     );
                     break;
-                case OpMemberDecorate when words[index + 3] == DecorationOffset:
+                case OpMemberDecorate when wordCount >= 5 && words[index + 3] == DecorationOffset:
                     memberOffsets[(words[index + 1], words[index + 2])] = words[index + 4];
                     break;
                 case OpDecorate when wordCount >= 4:
                     decorations[(words[index + 1], words[index + 2])] = words[index + 3];
                     break;
-                case OpTypeStruct:
+                case OpTypeStruct when wordCount >= 2:
                     structTypes.Add(words[index + 1]);
                     break;
-                case OpTypeImage:
-                case OpTypeSampledImage:
+                case OpTypeImage or OpTypeSampledImage when wordCount >= 2:
                     imageTypes.Add(words[index + 1]);
                     break;
-                case OpTypePointer:
+                case OpTypePointer when wordCount >= 4:
                     pointerTargets[words[index + 1]] = (words[index + 2], words[index + 3]);
                     break;
-                case OpVariable when words[index + 3] == StorageClassUniform:
+                case OpVariable when wordCount >= 4 && words[index + 3] == StorageClassUniform:
                     uniformVariables.Add((words[index + 2], words[index + 1]));
                     break;
-                case OpVariable when words[index + 3] == StorageClassUniformConstant:
+                case OpVariable
+                    when wordCount >= 4 && words[index + 3] == StorageClassUniformConstant:
                     samplerVariables.Add((words[index + 2], words[index + 1]));
                     break;
             }
@@ -157,7 +162,8 @@ internal static class SpirvReflector
 
     private static string ReadString(uint[] words, int start, int end)
     {
-        var bytes = new List<byte>((end - start) * 4);
+        end = Math.Min(end, words.Length);
+        var bytes = new List<byte>(Math.Max((end - start) * 4, 0));
         for (var i = start; i < end; i++)
         {
             var word = words[i];
