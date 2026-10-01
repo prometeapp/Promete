@@ -266,6 +266,14 @@ public sealed class PrometeApp : IDisposable
     public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin)
         where T : class
     {
+        // バックエンドの OnInitialize はサービスプロバイダ構築前に走るため、
+        // そこから呼ばれた場合は未解決として扱う。
+        if (_provider is null)
+        {
+            plugin = null;
+            return false;
+        }
+
         plugin = _provider.GetService<T>();
         return plugin is not null;
     }
