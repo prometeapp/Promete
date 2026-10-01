@@ -8,7 +8,7 @@ public sealed class BeginTrimCommand : IRenderCommand
     /// <summary>トリム矩形のX座標（物理ピクセル、左端基準）</summary>
     public required int X { get; init; }
 
-    /// <summary>トリム矩形のY座標（物理ピクセル、下端基準）</summary>
+    /// <summary>トリム矩形のY座標（物理ピクセル、左上原点・上端基準）</summary>
     public required int Y { get; init; }
 
     /// <summary>トリム矩形の幅（物理ピクセル）</summary>

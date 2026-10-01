@@ -1,28 +1,43 @@
 using Promete;
 using Promete.Coroutines;
 using Promete.Example;
+using Promete.Example.Kernel;
 using Promete.GLDesktop;
 using Promete.ImGui;
 using Promete.Input;
+using Promete.Vulkan.Validation;
+using Promete.VulkanDesktop;
 using Promete.Windowing;
 
-var app = PrometeApp
+// --vulkan フラグで実験的な Vulkan バックエンドを使用する
+DemoKernel.UseVulkan = args.Contains("--vulkan");
+
+// --validation フラグで Vulkan バリデーションレイヤーを有効化する (要 Vulkan SDK)
+var useValidation = args.Contains("--validation");
+
+var builder = PrometeApp
     .Create()
     .Use<Keyboard>()
     .Use<Mouse>()
     .Use<Gamepads>()
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
-    .Use<ImGuiPlugin>()
-    .BuildWithOpenGLDesktop(
-        WindowOptions.Default with
-        {
-            Title = "Promete Demo",
-            Mode = WindowMode.Resizable,
-            TargetFps = 0,
-            TargetUps = 0,
-            IsVsyncMode = false,
-        }
-    );
+    .Use<ImGuiPlugin>();
+
+if (DemoKernel.UseVulkan && useValidation)
+    builder = builder.UseVulkanValidation();
+
+var options = WindowOptions.Default with
+{
+    Title = DemoKernel.UseVulkan ? "Promete Demo (Vulkan)" : "Promete Demo",
+    Mode = WindowMode.Resizable,
+    TargetFps = 0,
+    TargetUps = 0,
+    IsVsyncMode = false,
+};
+
+var app = DemoKernel.UseVulkan
+    ? builder.BuildWithVulkanDesktop(options)
+    : builder.BuildWithOpenGLDesktop(options);
 
 return app.Run<MainScene>();

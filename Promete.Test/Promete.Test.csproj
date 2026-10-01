@@ -7,6 +7,12 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
+
+        <!-- dotnet test ではエントリアセンブリがテストホストになり、
+             DependencyContext.Default がテストアセンブリを記述しない。そのため Silk は
+             runtimes/<rid>/native からネイティブを解決できない。RID を指定して出力直下へ
+             平坦化し、Silk の BaseDirectoryResolver に拾わせる。 -->
+        <RuntimeIdentifier>$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     </PropertyGroup>
 
     <ItemGroup>

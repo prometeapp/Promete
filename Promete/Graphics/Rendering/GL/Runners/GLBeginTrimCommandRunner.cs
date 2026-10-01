@@ -15,7 +15,12 @@ public class GLBeginTrimCommandRunner(IGameView view) : CommandRunner<BeginTrimC
     public override void Execute(BeginTrimCommand command)
     {
         var gl = _view.GL;
+
+        // コマンドの座標は左上原点。GL の Scissor は左下原点なので Y を反転する
+        var viewportHeight = GLHelper.GetViewport(gl).Y;
+        var flippedY = viewportHeight - command.Y - command.Height;
+
         gl.Enable(GLEnum.ScissorTest);
-        gl.Scissor(command.X, command.Y, (uint)command.Width, (uint)command.Height);
+        gl.Scissor(command.X, flippedY, (uint)command.Width, (uint)command.Height);
     }
 }

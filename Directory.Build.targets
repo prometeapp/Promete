@@ -1,0 +1,8 @@
+<Project>
+    <!-- パッケージ利用者には Promete の buildTransitive 経由で届くが、リポジトリ内は
+         ProjectReference なので自動 import されない。ここで明示的に取り込む。 -->
+    <Import
+        Project="$(MSBuildThisFileDirectory)Promete/build/Promete.targets"
+        Condition="'$(MSBuildProjectName)' != 'Promete.SceneGen'"
+    />
+</Project>

@@ -103,7 +103,7 @@ queue.Enqueue(new DrawPieTextureCommand
 `BeginTrimCommand` / `EndTrimCommand` で描画範囲を矩形に制限します。`Container` ノードの実装で使用されます。
 
 ```csharp
-// トリム開始（物理ピクセル座標で指定）
+// トリム開始（物理ピクセル座標・左上原点で指定）
 queue.Enqueue(new BeginTrimCommand
 {
     X = physicalX,
@@ -151,7 +151,7 @@ public override void Collect(RenderCommandQueue queue, RenderContext ctx)
 ```csharp
 public class MyCommandRunner : CommandRunner<MyCommand>
 {
-    protected override void Execute(MyCommand command, RenderContext ctx)
+    public override void Execute(MyCommand command)
     {
         // コマンドの実行処理
     }
