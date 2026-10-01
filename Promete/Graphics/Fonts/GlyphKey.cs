@@ -6,8 +6,4 @@ namespace Promete.Graphics.Fonts;
 /// <param name="SourceId">グリフを提供した <see cref="IGlyphSource" /> の ID。</param>
 /// <param name="GlyphIndex">ソース内におけるグリフのインデックス。</param>
 /// <param name="Options">ラスタライズ時のオプション。</param>
-internal readonly record struct GlyphKey(
-    int SourceId,
-    uint GlyphIndex,
-    GlyphRenderOptions Options
-);
+internal readonly record struct GlyphKey(int SourceId, uint GlyphIndex, GlyphRenderOptions Options);

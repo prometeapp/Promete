@@ -2,9 +2,9 @@ name: Lint
 
 on:
   push:
-    branches: ["main", "master", "develop"]
+    branches: ["main", "master", "develop", "v2"]
   pull_request:
-    branches: ["main", "master", "develop"]
+    branches: ["main", "master", "develop", "v2"]
 
 jobs:
   lint:

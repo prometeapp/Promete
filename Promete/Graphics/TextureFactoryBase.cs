@@ -73,12 +73,7 @@ public abstract class TextureFactoryBase
     /// <param name="offset">書き換える領域の左上位置。</param>
     /// <param name="size">書き換える領域のサイズ。</param>
     /// <param name="bitmap">RGBA8888 形式のビットマップデータ。</param>
-    public abstract void Update(
-        Texture2D texture,
-        VectorInt offset,
-        VectorInt size,
-        byte[] bitmap
-    );
+    public abstract void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap);
 
     /// <summary>
     /// [内部的に使用。] ImageSharp の Image からテクスチャを生成します。

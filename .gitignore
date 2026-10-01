@@ -67,3 +67,6 @@ Thumbs.db
 .claude/settings.local.json
 
 **/.idea/**/deviceManager.xml
+
+# npm lockfile (this repo uses pnpm)
+package-lock.json
