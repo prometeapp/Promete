@@ -27,6 +27,23 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- ソースジェネレータと、その設定を利用者のコンパイルへ届ける -->
+        <None
+            Include="../Promete.SceneGen/bin/$(Configuration)/netstandard2.0/Promete.SceneGen.dll"
+            Pack="true"
+            PackagePath="analyzers/dotnet/cs"
+            Visible="false"
+        />
+        <None Include="build/Promete.props" Pack="true" PackagePath="build" Visible="false" />
+        <None
+            Include="build/Promete.props"
+            Pack="true"
+            PackagePath="buildTransitive"
+            Visible="false"
+        />
+    </ItemGroup>
+
+    <ItemGroup>
         <EmbeddedResource Include="Resources\shaders\*.vert" />
         <EmbeddedResource Include="Resources\shaders\*.frag" />
     </ItemGroup>

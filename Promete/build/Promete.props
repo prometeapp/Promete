@@ -1,0 +1,7 @@
+<Project>
+    <!-- Promete.SceneGen が集約の有無を判断するために OutputType を参照する。
+       CompilerVisibleProperty を宣言しないとジェネレータ側には何も届かない。 -->
+    <ItemGroup>
+        <CompilerVisibleProperty Include="OutputType" />
+    </ItemGroup>
+</Project>

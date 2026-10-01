@@ -7,6 +7,7 @@
       "Promete.HeadlessTest\\Promete.HeadlessTest.csproj",
       "Promete.ImGui\\Promete.ImGui.csproj",
       "Promete.MeltySynth\\Promete.MeltySynth.csproj",
+      "Promete.SceneGen\\Promete.SceneGen.csproj",
       "Promete.Test\\Promete.Test.csproj"
     ]
   }
