@@ -23,7 +23,7 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor _unreachableScene = new(
         "PROMETE0001",
         "シーンを自動登録できない",
-        "シーン '{0}' は生成コードから参照できないため自動登録されません。internal 以上の可視性にしてください。",
+        "シーン '{0}' は生成コードから参照できないため自動登録されません。private / protected なネストや file ローカルをやめ、internal 以上の可視性にしてください。",
         "Promete.SceneGen",
         DiagnosticSeverity.Warning,
         true
@@ -117,12 +117,16 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// 生成コードから参照できる可視性かどうか。private / protected なネスト型は参照できない。
+    /// 生成コードから参照できる可視性かどうか。private / protected なネスト型と、
+    /// 宣言ファイルの外から参照できない file ローカル型は参照できない。
     /// </summary>
     private static bool IsAccessibleWithinAssembly(INamedTypeSymbol type)
     {
         for (ISymbol? s = type; s is not null and not INamespaceSymbol; s = s.ContainingSymbol)
         {
+            if (s is INamedTypeSymbol { IsFileLocal: true })
+                return false;
+
             switch (s.DeclaredAccessibility)
             {
                 case Accessibility.Public:
@@ -149,29 +153,80 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
     }
 
     /// <summary>
-    /// シーン型と DI コンストラクタを文字列へ落とす。MS.DI と同じく引数が最も多い
-    /// 公開コンストラクタを選ぶ。
+    /// シーン型とファクトリ本体を文字列へ落とす。シンボルを持ち回らないことで
+    /// インクリメンタル性を保つ。
     /// </summary>
     private static SceneInfo Describe(INamedTypeSymbol type, bool accessible)
     {
         var name = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-        var ctor = type
+        var ctors = type
             .InstanceConstructors.Where(c => c.DeclaredAccessibility == Accessibility.Public)
             .OrderByDescending(c => c.Parameters.Length)
-            .FirstOrDefault();
-
-        if (ctor is null)
-            return new SceneInfo(name, ImmutableArray<string>.Empty, false, accessible);
-
-        var parameters = ctor
-            .Parameters.Select(p =>
-                p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            .Select(c =>
+                c.Parameters.Select(p =>
+                        p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                    )
+                    .ToImmutableArray()
             )
-            .ToImmutableArray();
+            .ToList();
 
-        return new SceneInfo(name, parameters, true, accessible);
+        if (ctors.Count == 0)
+            return new SceneInfo(name, string.Empty, false, accessible);
+
+        return new SceneInfo(name, BuildFactoryBody(name, ctors), true, accessible);
     }
+
+    /// <summary>
+    /// ファクトリ本体を組み立てる。公開コンストラクタが複数ある場合、MS.DI は引数を
+    /// 解決できないコンストラクタを飛ばして次を試すため、その挙動を再現する。
+    /// </summary>
+    private static string BuildFactoryBody(string name, List<ImmutableArray<string>> ctors)
+    {
+        // 単一のコンストラクタなら解決失敗時のエラーが具体的な GetRequiredService に任せる。
+        if (ctors.Count == 1)
+            return $"        return new {name}({Required(ctors[0])});";
+
+        var sb = new StringBuilder();
+
+        for (var i = 0; i < ctors.Count; i++)
+        {
+            var parameters = ctors[i];
+            if (parameters.Length == 0)
+                continue;
+
+            var conditions = parameters.Select(
+                (t, j) => $"sp.GetService(typeof({t})) is {t} a{i}_{j}"
+            );
+            var arguments = string.Join(", ", parameters.Select((_, j) => $"a{i}_{j}"));
+
+            sb.AppendLine($"        if ({string.Join("\n            && ", conditions)})");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            return new {name}({arguments});");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+        }
+
+        // どれも解決できなかった場合の着地点。引数なしがあればそれ、無ければ引数が
+        // 最も多いものを GetRequiredService で呼んで具体的な例外を投げさせる。
+        var last = ctors[ctors.Count - 1];
+        sb.Append(
+            last.Length == 0
+                ? $"        return new {name}();"
+                : $"        return new {name}({Required(ctors[0])});"
+        );
+
+        return sb.ToString();
+    }
+
+    private static string Required(ImmutableArray<string> parameters) =>
+        string.Join(
+            ", ",
+            parameters.Select(t =>
+                "global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions"
+                + $".GetRequiredService<{t}>(sp)"
+            )
+        );
 
     /// <summary>
     /// 参照アセンブリから Scene 派生を集める。Promete を参照していないアセンブリは
@@ -327,18 +382,11 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
         sb.AppendLine("    [global::System.Runtime.CompilerServices.ModuleInitializer]");
         sb.AppendLine("    internal static void Register()");
         sb.AppendLine("    {");
-        foreach (var scene in registrable)
+        for (var i = 0; i < registrable.Count; i++)
         {
-            var args = string.Join(
-                ", ",
-                scene.ParameterTypes.Select(t =>
-                    "global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions"
-                    + $".GetRequiredService<{t}>(sp)"
-                )
-            );
             sb.AppendLine(
-                $"        global::Promete.SceneRegistry.Add(typeof({scene.TypeName}), "
-                    + $"static sp => new {scene.TypeName}({args}));"
+                $"        global::Promete.SceneRegistry.Add(typeof({registrable[i].TypeName}), "
+                    + $"Create{i});"
             );
         }
 
@@ -346,6 +394,19 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
             sb.AppendLine("        // 登録対象のシーンは無い");
 
         sb.AppendLine("    }");
+
+        for (var i = 0; i < registrable.Count; i++)
+        {
+            sb.AppendLine();
+            sb.AppendLine(
+                $"    private static global::Promete.Scene Create{i}"
+                    + "(global::System.IServiceProvider sp)"
+            );
+            sb.AppendLine("    {");
+            sb.AppendLine(registrable[i].FactoryBody);
+            sb.AppendLine("    }");
+        }
+
         sb.AppendLine("}");
 
         spc.AddSource("GeneratedSceneRegistry.g.cs", sb.ToString());
@@ -353,7 +414,7 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
 
     private readonly record struct SceneInfo(
         string TypeName,
-        ImmutableArray<string> ParameterTypes,
+        string FactoryBody,
         bool HasPublicConstructor,
         bool Accessible
     );
