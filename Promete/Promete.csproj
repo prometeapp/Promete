@@ -36,8 +36,15 @@
             Visible="false"
         />
         <None Include="build/Promete.props" Pack="true" PackagePath="build" Visible="false" />
+        <None Include="build/Promete.targets" Pack="true" PackagePath="build" Visible="false" />
         <None
             Include="build/Promete.props"
+            Pack="true"
+            PackagePath="buildTransitive"
+            Visible="false"
+        />
+        <None
+            Include="build/Promete.targets"
             Pack="true"
             PackagePath="buildTransitive"
             Visible="false"
@@ -68,7 +75,10 @@
             Version="2.23.0-prmt.1.0.0"
         />
         <PackageReference Include="Promete.Silk.Shaderc" Version="2.23.0-prmt.1.0.0" />
-        <!-- ネイティブは無改変なので upstream をそのまま使う。 -->
+        <!-- ネイティブは無改変なので upstream をそのまま使う。
+             MoltenVK は macOS に Vulkan が無いため必須。Silk が libMoltenVK.dylib を
+             名前で直接探すので、ローダーや ICD JSON は要らない。 -->
+        <PackageReference Include="Silk.NET.MoltenVK.Native" Version="2.23.0" />
         <PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
         <PackageReference Include="Silk.NET.Shaderc.Native" Version="2.23.0" />
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
