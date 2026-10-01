@@ -13,11 +13,11 @@ public class DemoFileSystem
 
     private void Initialize()
     {
-        var scenes =
-            GetType()
-                .Assembly.GetTypes()
-                .Select(type => (type, attribute: type.GetCustomAttribute<DemoAttribute>()))
-                .Where(t => t.attribute is not null) as IEnumerable<(Type, DemoAttribute)>;
+        var scenes = SceneRegistry
+            .GetSceneTypes(GetType().Assembly)
+            .Select(type => (type, attribute: type.GetCustomAttribute<DemoAttribute>()))
+            .Where(t => t.attribute is not null)
+            .Select(t => (t.type, t.attribute!));
 
         foreach (var (type, attribute) in scenes)
         {

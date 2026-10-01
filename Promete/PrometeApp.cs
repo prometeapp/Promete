@@ -9,6 +9,7 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Promete.Backends;
 using Promete.Graphics;
+using Promete.Graphics.Fonts;
 using Promete.Graphics.Rendering;
 using Promete.Nodes;
 using Promete.Windowing;
@@ -147,6 +148,11 @@ public sealed class PrometeApp : IDisposable
     public TextureFactoryBase TextureFactory { get; private set; } = null!;
 
     /// <summary>
+    /// テキスト描画に使用されるグリフアトラスを取得します。
+    /// </summary>
+    public GlyphAtlas GlyphAtlas { get; private set; } = null!;
+
+    /// <summary>
     /// フレームバッファがサポートされているかどうかを取得します。
     /// </summary>
     public bool IsFrameBufferSupported =>
@@ -187,7 +193,9 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <returns>終了ステータスコード。</returns>
-    public int Run<TScene>()
+    public int Run<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
+    >()
         where TScene : Scene
     {
         _initialSceneType = typeof(TScene);
@@ -279,7 +287,9 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">読み込むシーン。</typeparam>
     /// <exception cref="ArgumentException">指定したシーンが存在しない。</exception>
-    public void LoadScene<TScene>()
+    public void LoadScene<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
+    >()
         where TScene : Scene
     {
         LoadScene(typeof(TScene));
@@ -305,7 +315,9 @@ public sealed class PrometeApp : IDisposable
     /// 現在のシーンをプッシュし、新たなシーンを読み込みます。
     /// </summary>
     /// <typeparam name="TScene">読み込むシーン。</typeparam>
-    public void PushScene<TScene>()
+    public void PushScene<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
+    >()
     {
         PushScene(typeof(TScene));
     }
@@ -458,6 +470,9 @@ public sealed class PrometeApp : IDisposable
             throw new InvalidOperationException("コマンドキューが登録されていません。");
         }
 
+        // 前フレームの描画命令はすべて処理済みのため、ここでアトラスを整理できる
+        GlyphAtlas.TrimIfNeeded();
+
         var queue = _renderCommandQueue;
         var ctx = new RenderContext
         {
@@ -500,6 +515,7 @@ public sealed class PrometeApp : IDisposable
         Time = backend.SetupTimeProvider();
         View = backend.SetupGameView();
         TextureFactory = backend.SetupTextureFactory();
+        GlyphAtlas = new GlyphAtlas(TextureFactory);
         var shaderFactory = backend.SetupShaderFactory();
         var inputContext = backend.SetupInputProvider();
         var renderTextureProvider = backend.SetupRenderTextureProvider();
@@ -508,6 +524,7 @@ public sealed class PrometeApp : IDisposable
         _services.AddSingleton(Time);
         _services.AddSingleton(View);
         _services.AddSingleton(TextureFactory);
+        _services.AddSingleton(GlyphAtlas);
         _services.AddSingleton(shaderFactory);
         _services.AddSingleton(inputContext);
         _services.AddSingleton(renderTextureProvider);
@@ -553,14 +570,10 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     private void RegisterScenesIn(Assembly assembly)
     {
-        foreach (var type in assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Scene))))
+        foreach (var (type, factory) in SceneRegistry.GetScenesIn(assembly))
         {
-            // IgnoredSceneAttribute が付与されている場合は無視する
-            if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null)
-                continue;
-
-            // Scene 派生クラスを登録する
-            _services.AddTransient(type);
+            // ファクトリを渡すので DI 側がコンストラクタをリフレクションで探す必要がない。
+            _services.AddTransient(type, factory);
         }
     }
 
@@ -609,6 +622,10 @@ public sealed class PrometeApp : IDisposable
         public PrometeAppBuilder UseScenesFrom(Assembly assembly)
         {
             ArgumentNullException.ThrowIfNull(assembly);
+
+            // ライブラリ内の internal なシーンは、そのアセンブリに触れるまで登録されない。
+            SceneRegistry.EnsureRegistered(assembly);
+
             if (!_sceneAssemblies.Contains(assembly))
             {
                 _sceneAssemblies.Add(assembly);
@@ -629,7 +646,13 @@ public sealed class PrometeApp : IDisposable
         /// </summary>
         /// <typeparam name="T">追加するプラグインの型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<T>()
+        /// <remarks>
+        /// 型引数の注釈は必須。これがないとトリマーにコンストラクタの要求が伝わらず、
+        /// トリム時や NativeAOT でプラグインの生成に失敗する。
+        /// </remarks>
+        public PrometeAppBuilder Use<
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T
+        >()
             where T : class
         {
             _services.AddSingleton<T>();
@@ -643,7 +666,13 @@ public sealed class PrometeApp : IDisposable
         /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
         /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
         /// <returns>このビルダーインスタンス。</returns>
-        public PrometeAppBuilder Use<TPlugin, TImpl>()
+        /// <remarks>
+        /// <inheritdoc cref="Use{T}" path="/remarks" />
+        /// </remarks>
+        public PrometeAppBuilder Use<
+            TPlugin,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImpl
+        >()
             where TPlugin : class
             where TImpl : class, TPlugin
         {

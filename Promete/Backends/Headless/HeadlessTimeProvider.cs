@@ -2,6 +2,14 @@ namespace Promete.Backends.Headless;
 
 public class HeadlessTimeProvider : ITimeProvider
 {
+    /// <summary>
+    /// FPS / UPS を集計する間隔（秒）。
+    /// </summary>
+    private const float CountingInterval = 1f;
+
+    private long _frameCount;
+    private float _elapsedTime;
+
     public float TotalTime { get; private set; }
     public float TotalTimeWithoutScale { get; private set; }
     public float DeltaTime { get; private set; }
@@ -18,7 +26,16 @@ public class HeadlessTimeProvider : ITimeProvider
         TotalTimeWithoutScale += (float)delta;
         DeltaTime = (float)delta * TimeScale;
         TotalFrame++;
-        FramePerSeconds = delta > 0 ? (long)(1.0 / delta) : TargetFps;
-        UpdatePerSeconds = FramePerSeconds;
+
+        // 1秒間に処理されたフレーム数を数え、区切りごとに FPS / UPS として反映する
+        _frameCount++;
+        _elapsedTime += (float)delta;
+        if (_elapsedTime >= CountingInterval)
+        {
+            FramePerSeconds = _frameCount;
+            UpdatePerSeconds = _frameCount;
+            _frameCount = 0;
+            _elapsedTime -= CountingInterval;
+        }
     }
 }

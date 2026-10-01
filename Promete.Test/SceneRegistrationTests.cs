@@ -13,7 +13,8 @@ public class SceneRegistrationTests
         // テストアセンブリはエントリアセンブリではないため、既定では登録されない
         var act = () => app.LoadScene<ExternalAssemblyScene>();
 
-        act.Should().Throw<ArgumentException>("エントリアセンブリ以外のシーンは既定では登録されないはず");
+        act.Should()
+            .Throw<ArgumentException>("エントリアセンブリ以外のシーンは既定では登録されないはず");
     }
 
     [Fact]
@@ -94,7 +95,7 @@ public class SceneRegistrationTests
     /// <summary>
     /// エントリアセンブリの外側に置かれたシーンを模したもの。
     /// </summary>
-    private sealed class ExternalAssemblyScene : Scene
+    internal sealed class ExternalAssemblyScene : Scene
     {
         public static bool HasStarted { get; set; }
 

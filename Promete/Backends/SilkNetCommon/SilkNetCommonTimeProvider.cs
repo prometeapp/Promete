@@ -2,7 +2,17 @@ namespace Promete.Backends.SilkNetCommon;
 
 public class SilkNetCommonTimeProvider : ITimeProvider
 {
+    /// <summary>
+    /// FPS / UPS を集計する間隔（秒）。
+    /// </summary>
+    private const float CountingInterval = 1f;
+
     private readonly Silk.NET.Windowing.IWindow _window;
+
+    private long _renderFrameCount;
+    private float _renderElapsedTime;
+    private long _updateFrameCount;
+    private float _updateElapsedTime;
 
     public SilkNetCommonTimeProvider(Silk.NET.Windowing.IWindow window)
     {
@@ -38,7 +48,16 @@ public class SilkNetCommonTimeProvider : ITimeProvider
         TotalTime += (float)delta * TimeScale;
         TotalTimeWithoutScale += (float)delta;
         TotalFrame++;
-        FramePerSeconds = (int)(1 / delta);
+
+        // 1秒間に描画されたフレーム数を数え、区切りごとに FPS として反映する
+        _renderFrameCount++;
+        _renderElapsedTime += (float)delta;
+        if (_renderElapsedTime >= CountingInterval)
+        {
+            FramePerSeconds = _renderFrameCount;
+            _renderFrameCount = 0;
+            _renderElapsedTime -= CountingInterval;
+        }
     }
 
     private void OnUpdate(double delta)
@@ -46,6 +65,14 @@ public class SilkNetCommonTimeProvider : ITimeProvider
         var deltaTime = (float)delta;
         DeltaTime = deltaTime * TimeScale;
 
-        UpdatePerSeconds = (int)(1 / delta);
+        // 1秒間に更新された回数を数え、区切りごとに UPS として反映する
+        _updateFrameCount++;
+        _updateElapsedTime += deltaTime;
+        if (_updateElapsedTime >= CountingInterval)
+        {
+            UpdatePerSeconds = _updateFrameCount;
+            _updateFrameCount = 0;
+            _updateElapsedTime -= CountingInterval;
+        }
     }
 }

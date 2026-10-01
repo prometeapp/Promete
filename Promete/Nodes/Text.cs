@@ -1,5 +1,4 @@
 using System.Drawing;
-using Promete.Graphics;
 using Promete.Graphics.Fonts;
 using Promete.Graphics.Rendering;
 using Promete.Graphics.Rendering.Commands;
@@ -9,6 +8,10 @@ namespace Promete.Nodes;
 /// <summary>
 /// テキストを表示するノード
 /// </summary>
+/// <remarks>
+/// テキストはグリフ単位でグリフアトラスから読み出して描画されます。
+/// 内容を変更してもテクスチャは再生成されず、レイアウトのみが再計算されます。
+/// </remarks>
 public class Text : Node
 {
     private string _content;
@@ -28,20 +31,20 @@ public class Text : Node
         _font = font ?? Font.GetDefault();
         Options.TextColor = color ?? Color.White;
 
-        RenderTexture();
+        UpdateLayout();
     }
 
     /// <summary>
-    /// レンダリングされたテキストのテクスチャ
+    /// レイアウト済みのテキストを取得します。
     /// </summary>
-    public Texture2D? RenderedTexture { get; private set; }
+    public TextLayout Layout { get; private set; } = TextLayout.Empty;
 
     /// <summary>
     /// ノードのサイズ
     /// </summary>
     public override VectorInt Size
     {
-        get => RenderedTexture?.Size ?? (0, 0);
+        get => Layout.Size;
         set => PreferredSize = value;
     }
 
@@ -91,7 +94,7 @@ public class Text : Node
     }
 
     /// <summary>
-    /// ボーダーの色
+    /// 縁取りの色
     /// </summary>
     public Color? BorderColor
     {
@@ -106,7 +109,7 @@ public class Text : Node
     }
 
     /// <summary>
-    /// ボーダーの太さ
+    /// 縁取りの太さ
     /// </summary>
     public int BorderThickness
     {
@@ -151,16 +154,76 @@ public class Text : Node
     }
 
     /// <summary>
-    /// ワードラップの有効/無効
+    /// 文字間隔
     /// </summary>
-    public bool WordWrap
+    public float LetterSpacing
     {
-        get => Options.WordWrap;
+        get => Options.LetterSpacing;
         set
         {
-            if (Options.WordWrap == value)
+            if (Options.LetterSpacing.Equals(value))
                 return;
-            Options.WordWrap = value;
+            Options.LetterSpacing = value;
+            _isUpdateRequested = true;
+        }
+    }
+
+    /// <summary>
+    /// テキストを折り返す方法
+    /// </summary>
+    public WrapMode WrapMode
+    {
+        get => Options.WrapMode;
+        set
+        {
+            if (Options.WrapMode == value)
+                return;
+            Options.WrapMode = value;
+            _isUpdateRequested = true;
+        }
+    }
+
+    /// <summary>
+    /// 禁則処理の方法
+    /// </summary>
+    public KinsokuMode KinsokuMode
+    {
+        get => Options.KinsokuMode;
+        set
+        {
+            if (Options.KinsokuMode == value)
+                return;
+            Options.KinsokuMode = value;
+            _isUpdateRequested = true;
+        }
+    }
+
+    /// <summary>
+    /// 表示する最大の行数。0 の場合は制限しない
+    /// </summary>
+    public int MaxLines
+    {
+        get => Options.MaxLines;
+        set
+        {
+            if (Options.MaxLines == value)
+                return;
+            Options.MaxLines = value;
+            _isUpdateRequested = true;
+        }
+    }
+
+    /// <summary>
+    /// 行数の制限によって省略が発生した場合に、末尾へ挿入する文字列
+    /// </summary>
+    public string Ellipsis
+    {
+        get => Options.Ellipsis;
+        set
+        {
+            if (Options.Ellipsis == value)
+                return;
+            Options.Ellipsis = value;
             _isUpdateRequested = true;
         }
     }
@@ -222,17 +285,49 @@ public class Text : Node
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        if (RenderedTexture is not { } tex)
+        if (Layout.Glyphs.Count == 0)
+            return;
+
+        var atlas = PrometeApp.Current.GlyphAtlas;
+
+        // 縁取りは全文字分を先に描く。文字ごとに重ねると、隣の文字の本体が縁に隠れてしまう
+        if (Options.BorderColor is { } borderColor && Options.BorderThickness > 0)
+        {
+            foreach (var placed in Layout.Glyphs)
+            {
+                var options = placed.Options with { BorderThickness = Options.BorderThickness };
+                Enqueue(queue, atlas.GetOrAdd(placed.Glyph, options), placed.Position, borderColor);
+            }
+        }
+
+        foreach (var placed in Layout.Glyphs)
+            Enqueue(
+                queue,
+                atlas.GetOrAdd(placed.Glyph, placed.Options),
+                placed.Position,
+                placed.Color
+            );
+    }
+
+    private void Enqueue(
+        RenderCommandQueue queue,
+        GlyphEntry entry,
+        VectorInt position,
+        Color color
+    )
+    {
+        if (entry.IsEmpty)
             return;
 
         queue.Enqueue(
             new DrawTextureCommand
             {
-                Texture = tex,
+                Texture = entry.Texture,
                 ModelMatrix = ModelMatrix,
-                TintColor = Color.White,
-                Width = Size.X,
-                Height = Size.Y,
+                TintColor = color,
+                Width = entry.Size.X,
+                Height = entry.Size.Y,
+                Pivot = position + entry.Bearing,
             }
         );
     }
@@ -241,27 +336,16 @@ public class Text : Node
     {
         if (!_isUpdateRequested)
             return;
-        RenderTexture();
+        UpdateLayout();
         _isUpdateRequested = false;
     }
 
-    protected override void OnDestroy()
-    {
-        RenderedTexture?.Dispose();
-    }
-
     /// <summary>
-    /// テクスチャをレンダリングする
+    /// テキストのレイアウトを再計算します。
     /// </summary>
-    public void RenderTexture()
+    public void UpdateLayout()
     {
-        var oldTexture = RenderedTexture;
-        RenderedTexture = _font.GenerateTexture(
-            PrometeApp.Current.TextureFactory,
-            Content,
-            Options
-        );
+        Layout = TextLayoutEngine.Layout(Content, _font, Options);
         UpdateModelMatrix();
-        oldTexture?.Dispose();
     }
 }

@@ -168,6 +168,35 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         }
     }
 
+    public override unsafe void Update(
+        Texture2D texture,
+        VectorInt offset,
+        VectorInt size,
+        byte[] bitmap
+    )
+    {
+        if (size.X <= 0 || size.Y <= 0)
+            return;
+
+        app.ThrowIfNotMainThread();
+        fixed (byte* b = bitmap)
+        {
+            GL.ActiveTexture(GLEnum.Texture0);
+            GL.BindTexture(GLEnum.Texture2D, (uint)texture.Handle);
+            GL.TexSubImage2D(
+                GLEnum.Texture2D,
+                0,
+                offset.X,
+                offset.Y,
+                (uint)size.X,
+                (uint)size.Y,
+                GLEnum.Rgba,
+                GLEnum.UnsignedByte,
+                b
+            );
+        }
+    }
+
     private unsafe int GenerateTexture(byte[] bitmap, uint width, uint height)
     {
         app.ThrowIfNotMainThread();

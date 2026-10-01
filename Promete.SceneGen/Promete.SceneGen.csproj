@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- Roslyn がコンパイラプロセスにロードするため netstandard2.0 固定 -->
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IsPackable>false</IsPackable>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- 診断 ID のリリース追跡（RS2008） -->
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference
+            Include="Microsoft.CodeAnalysis.CSharp"
+            Version="4.8.0"
+            PrivateAssets="all"
+        />
+        <PackageReference
+            Include="Microsoft.CodeAnalysis.Analyzers"
+            Version="3.11.0"
+            PrivateAssets="all"
+        />
+    </ItemGroup>
+</Project>

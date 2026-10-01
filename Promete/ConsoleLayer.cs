@@ -109,16 +109,7 @@ public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
 
     private int CalculateMaxLine()
     {
-        var textToTest = "";
-        var l = 0;
-        Rect bounds;
-        do
-        {
-            textToTest += "A\n";
-            bounds = _text.Font.GetTextBounds(textToTest, _text.Options);
-            l++;
-        } while (bounds.Height < view.Height);
-
-        return l - 1;
+        var lineHeight = _text.Font.Metrics.LineHeight * _text.Options.LineSpacing;
+        return lineHeight > 0 ? (int)(view.Height / lineHeight) : 1;
     }
 }
