@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <!-- Roslyn がコンパイラプロセスにロードするため netstandard2.0 固定。動かせない制約。 -->
+        <!-- Roslyn がコンパイラプロセスにロードするため netstandard2.0 固定 -->
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
@@ -9,6 +9,11 @@
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     </PropertyGroup>
+
+    <ItemGroup>
+        <!-- 診断 ID のリリース追跡（RS2008） -->
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference

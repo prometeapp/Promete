@@ -570,14 +570,10 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     private void RegisterScenesIn(Assembly assembly)
     {
-        foreach (var type in assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Scene))))
+        foreach (var (type, factory) in SceneRegistry.GetScenesIn(assembly))
         {
-            // IgnoredSceneAttribute が付与されている場合は無視する
-            if (type.GetCustomAttribute<IgnoredSceneAttribute>() is not null)
-                continue;
-
-            // Scene 派生クラスを登録する
-            _services.AddTransient(type);
+            // ファクトリを渡すので DI 側がコンストラクタをリフレクションで探す必要がない。
+            _services.AddTransient(type, factory);
         }
     }
 
@@ -626,6 +622,10 @@ public sealed class PrometeApp : IDisposable
         public PrometeAppBuilder UseScenesFrom(Assembly assembly)
         {
             ArgumentNullException.ThrowIfNull(assembly);
+
+            // ライブラリ内の internal なシーンは、そのアセンブリに触れるまで登録されない。
+            SceneRegistry.EnsureRegistered(assembly);
+
             if (!_sceneAssemblies.Contains(assembly))
             {
                 _sceneAssemblies.Add(assembly);
