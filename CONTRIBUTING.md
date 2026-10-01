@@ -72,6 +72,16 @@ Promete が参照する Silk.NET は net10.0 専用のフォーク (`prometeapp/
 バージョンを上げる場合はフォーク側でタグを打って publish してから、
 `Promete/Promete.csproj` と `Promete.ImGui/Promete.ImGui.csproj` の参照を更新してください。
 
+### Promete.SceneGen は netstandard2.0 を維持すること
+
+ソースジェネレータは Roslyn がコンパイラプロセスにロードするため、
+`Promete.SceneGen` のターゲットフレームワークは `netstandard2.0` 固定です。
+`record` などが要求する型は `IsExternalInit.cs` で補っています。
+
+生成コードは利用者のコンパイルで動きます。配布はパッケージの
+`analyzers/dotnet/cs` 経由で、設定は `build/Promete.props` の
+`CompilerVisibleProperty` で渡しています。
+
 ### .NET のアップデート PR を作成しないでください
 
 .NET のアップデートは、[SUPPORT.md](SUPPORT.md) に従ってメンテナーが行います。
