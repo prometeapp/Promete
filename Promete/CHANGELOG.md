@@ -33,20 +33,20 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
 - `TextureFactoryBase` に抽象メンバー `Update(Texture2D, VectorInt, VectorInt, byte[])` を追加しました
     - グリフアトラスへの部分書き込みに使用します
     - 独自のバックエンドを実装している場合は、このメンバーの実装が必要です
-- シーンの自動登録を、実行時のリフレクションからコンパイル時のソースジェネレータ (`Promete.SceneGen`) に移行しました
-    - シーンは `internal` 以上の可視性が必要です。生成コードは同一アセンブリのトップレベルクラスに置かれるため、`private` なネスト型は参照できず自動登録の対象外になります (`PROMETE0001` の警告が出ます)
-    - コンパイル時に参照が存在しないアセンブリ (実行時に読み込むプラグイン等) のシーンは、原理的に列挙できません
-    - エントリアセンブリ以外にシーンを置く場合は、従来どおり `UseScenesFrom` でそのアセンブリを指定してください
-- 依存する Silk.NET を、net10.0 専用のフォーク (`prometeapp/Silk.NET`) に差し替えました
-    - パッケージ ID は `Promete.Silk.*` です。upstream の `Silk.NET.*` は nuget.org でプレフィックスが予約されているため、別 ID で配布しています
-    - **アセンブリ名と名前空間は `Silk.NET.*` のまま**なので、`using Silk.NET.OpenGL;` のようなコードは変更不要です
-    - Silk.NET を直接参照しているプロジェクトは、`PackageReference` の ID を `Promete.Silk.*` に揃えてください。upstream のものと併用すると、同じアセンブリ名が二重に持ち込まれます
 - オーディオシステムを再設計しました
     - `IAudioSource` をfloat32・フレーム単位の契約に変更しました
         - `int? Frames`（総フレーム数。未確定・無限ストリームの場合は`null`）、`Channels`、`SampleRate`、`FillSamples(Span<float> buffer, int offsetFrames)` を実装します
         - `Bits` プロパティを廃止しました
     - `AudioPlayer` は常駐のレンダーループ（pull型）で動作するようになりました。常に音声出力を続け、停止中は無音を出力します
     - 再生はステレオ出力に固定されます
+- シーンの自動登録を、実行時のリフレクションからコンパイル時のソースジェネレータ (`Promete.SceneGen`) に移行しました
+    - シーンは `internal` 以上の可視性が必要です。生成コードは同一アセンブリのトップレベルクラスに置かれるため、`private` なネスト型は参照できず自動登録の対象外になります (`PROMETE0001` の警告が出ます)
+    - コンパイル時に参照が存在しないアセンブリ (実行時に読み込むプラグイン等) のシーンは、原理的に列挙できません
+    - エントリアセンブリ以外にシーンを置く場合は、従来どおり `UseScenesFrom` でそのアセンブリを指定してください
+- 内部的に依存するグラフィックスライブラリ Silk.NET を net10.0 および NativeAOT に対応させるため、専用のフォーク (`prometeapp/Silk.NET`) に差し替えました
+    - パッケージ ID は `Promete.Silk.*` です。upstream の `Silk.NET.*` は nuget.org でプレフィックスが予約されているため、別 ID で配布しています
+    - 推移的依存で使用している場合、 **アセンブリ名と名前空間は `Silk.NET.*` のまま**なので、`using Silk.NET.OpenGL;` のようなコードは変更不要です
+    - Silk.NET を直接参照しているプロジェクトは、`PackageReference` の ID を `Promete.Silk.*` に揃えてください。upstream のものと併用すると、同じアセンブリ名が二重に持ち込まれます
 
 ### Features
 
