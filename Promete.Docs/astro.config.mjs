@@ -33,7 +33,7 @@ export default defineConfig({
       '@/styles/global.scss',
     ],
     head: [
-      {tag: 'link', attrs: {rel: 'stylesheet', href: 'https://koruri.chillout.chat/koruri.css'}},
+      {tag: 'link', attrs: {rel: 'stylesheet', href: 'https://koruri.shrimpia.network/koruri.css'}},
     ],
     components: {
       Head: '@/components/Head.astro',
