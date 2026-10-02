@@ -5,6 +5,7 @@ using Promete.Graphics.Rendering;
 using Promete.Graphics.Rendering.Vulkan;
 using Promete.Graphics.Rendering.Vulkan.Runners;
 using Promete.Windowing;
+using Silk.NET.Input.Sdl;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 using Silk.NET.Windowing.Sdl;
@@ -60,8 +61,12 @@ public class VulkanDesktopBackend : BackendBase
 
         // GLFW は macOS で Vulkan を扱えない (ローダーを libvulkan.1.dylib という名前で
         // しか探さない)。SDL は libMoltenVK.dylib を直接探す候補に入れているので、
-        // Vulkan バックエンドでは SDL を優先する。
+        // Vulkan バックエンドでは SDL を優先する。Use は SDL を明示登録しつつ
+        // ウィンドウ側のリフレクション探索を無効化するため、トリムにも耐える。
         SdlWindowing.Use();
+
+        // 入力側は別系統の探索なので、こちらも明示登録する。冪等。
+        SdlInput.RegisterPlatform();
 
         _nativeWindow = Window.Create(silkOptions);
 
