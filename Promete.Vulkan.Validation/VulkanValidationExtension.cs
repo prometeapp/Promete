@@ -21,6 +21,8 @@ public static class VulkanValidationExtension
         this PrometeApp.PrometeAppBuilder builder
     )
     {
-        return builder.Use<IVulkanInstanceHook, VulkanValidationHook>();
+        // バックエンドの初期化中に参照されるため、インスタンスとして登録する。
+        // 型で登録するとサービスプロバイダ構築前には取り出せない。
+        return builder.Use<IVulkanInstanceHook>(new VulkanValidationHook());
     }
 }

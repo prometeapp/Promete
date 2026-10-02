@@ -258,6 +258,26 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
+    /// サービスコレクションからインスタンス登録されたプラグインを探します。
+    /// プロバイダ構築前でも解決できる唯一の登録形式。
+    /// </summary>
+    private bool TryGetRegisteredInstance<T>([NotNullWhen(true)] out T? plugin)
+        where T : class
+    {
+        foreach (var descriptor in _services)
+        {
+            if (descriptor.ServiceType == typeof(T) && descriptor.ImplementationInstance is T found)
+            {
+                plugin = found;
+                return true;
+            }
+        }
+
+        plugin = null;
+        return false;
+    }
+
+    /// <summary>
     /// 指定した型のプラグインを取得を試みます。
     /// </summary>
     /// <typeparam name="T">指定対象のプラグインを表す型。</typeparam>
@@ -266,12 +286,11 @@ public sealed class PrometeApp : IDisposable
     public bool TryGetPlugin<T>([NotNullWhen(true)] out T? plugin)
         where T : class
     {
-        // バックエンドの OnInitialize はサービスプロバイダ構築前に走るため、
-        // そこから呼ばれた場合は未解決として扱う。
+        // バックエンドの OnInitialize はサービスプロバイダ構築前に走る。その時点では
+        // インスタンスとして登録されたプラグインだけを解決できる。
         if (_provider is null)
         {
-            plugin = null;
-            return false;
+            return TryGetRegisteredInstance(out plugin);
         }
 
         plugin = _provider.GetService<T>();
@@ -677,6 +696,27 @@ public sealed class PrometeApp : IDisposable
         /// <remarks>
         /// <inheritdoc cref="Use{T}" path="/remarks" />
         /// </remarks>
+        /// <summary>
+        /// 生成済みのプラグインを追加します。
+        /// </summary>
+        /// <typeparam name="TPlugin">プラグインとして公開する型。</typeparam>
+        /// <param name="instance">登録するインスタンス。</param>
+        /// <returns>このビルダーインスタンス。</returns>
+        /// <remarks>
+        /// インスタンス登録はサービスプロバイダ構築前でも解決できるため、バックエンドの
+        /// 初期化中に参照されるプラグイン (<c>IVulkanInstanceHook</c> 等) はこの形式で
+        /// 登録する必要があります。
+        /// </remarks>
+        public PrometeAppBuilder Use<TPlugin>(TPlugin instance)
+            where TPlugin : class
+        {
+            ArgumentNullException.ThrowIfNull(instance);
+
+            _services.AddSingleton(instance);
+            CheckAndAddPluginTypes(instance.GetType());
+            return this;
+        }
+
         public PrometeAppBuilder Use<
             TPlugin,
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImpl
