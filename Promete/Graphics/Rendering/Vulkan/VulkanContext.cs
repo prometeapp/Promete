@@ -60,6 +60,9 @@ internal sealed unsafe class VulkanContext : IDisposable
     private VulkanFrameArena[] _arenas = [];
 
     private Semaphore[] _imageAvailableSemaphores = [];
+
+    // プレゼントの完了は取得 (Acquire) でしか分からないため、フレームスロット単位で使い回すと
+    // プレゼントエンジンが待機中のセマフォを再度シグナルしてしまう。スワップチェーンイメージごとに持つ
     private Semaphore[] _renderFinishedSemaphores = [];
     private Fence[] _inFlightFences = [];
 
@@ -155,6 +158,7 @@ internal sealed unsafe class VulkanContext : IDisposable
         CreateLogicalDevice();
         CreateSwapchain();
         CreateImageViews();
+        CreateRenderFinishedSemaphores();
         ChooseStencilFormat();
         CreateRenderPasses();
         CreateFramebuffers();
@@ -247,7 +251,7 @@ internal sealed unsafe class VulkanContext : IDisposable
         _targetStack.Clear();
 
         var waitSemaphore = _imageAvailableSemaphores[_currentFrame];
-        var signalSemaphore = _renderFinishedSemaphores[_currentFrame];
+        var signalSemaphore = _renderFinishedSemaphores[_currentImageIndex];
         var waitStage = PipelineStageFlags.ColorAttachmentOutputBit;
 
         var submitInfo = new SubmitInfo
@@ -716,7 +720,6 @@ internal sealed unsafe class VulkanContext : IDisposable
         for (var i = 0; i < FramesInFlight; i++)
         {
             vk.DestroySemaphore(_device, _imageAvailableSemaphores[i], null);
-            vk.DestroySemaphore(_device, _renderFinishedSemaphores[i], null);
             vk.DestroyFence(_device, _inFlightFences[i], null);
         }
 
@@ -1517,7 +1520,6 @@ internal sealed unsafe class VulkanContext : IDisposable
     {
         var vk = Vk;
         _imageAvailableSemaphores = new Semaphore[FramesInFlight];
-        _renderFinishedSemaphores = new Semaphore[FramesInFlight];
         _inFlightFences = new Fence[FramesInFlight];
 
         var semaphoreInfo = new SemaphoreCreateInfo { SType = StructureType.SemaphoreCreateInfo };
@@ -1539,17 +1541,26 @@ internal sealed unsafe class VulkanContext : IDisposable
                 "セマフォの作成"
             );
             ThrowIfFailed(
-                vk.CreateSemaphore(
+                vk.CreateFence(_device, in fenceInfo, null, out _inFlightFences[i]),
+                "フェンスの作成"
+            );
+        }
+    }
+
+    private void CreateRenderFinishedSemaphores()
+    {
+        var semaphoreInfo = new SemaphoreCreateInfo { SType = StructureType.SemaphoreCreateInfo };
+        _renderFinishedSemaphores = new Semaphore[_swapchainImages.Length];
+        for (var i = 0; i < _renderFinishedSemaphores.Length; i++)
+        {
+            ThrowIfFailed(
+                Vk.CreateSemaphore(
                     _device,
                     in semaphoreInfo,
                     null,
                     out _renderFinishedSemaphores[i]
                 ),
                 "セマフォの作成"
-            );
-            ThrowIfFailed(
-                vk.CreateFence(_device, in fenceInfo, null, out _inFlightFences[i]),
-                "フェンスの作成"
             );
         }
     }
@@ -1566,6 +1577,7 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         CreateSwapchain();
         CreateImageViews();
+        CreateRenderFinishedSemaphores();
         CreateFramebuffers();
     }
 
@@ -1577,11 +1589,14 @@ internal sealed unsafe class VulkanContext : IDisposable
             vk.DestroyFramebuffer(_device, framebuffer, null);
         foreach (var view in _swapchainImageViews)
             vk.DestroyImageView(_device, view, null);
+        foreach (var semaphore in _renderFinishedSemaphores)
+            vk.DestroySemaphore(_device, semaphore, null);
 
         _khrSwapchain.DestroySwapchain(_device, _swapchain, null);
 
         _framebuffers = [];
         _swapchainImageViews = [];
         _swapchainImages = [];
+        _renderFinishedSemaphores = [];
     }
 }
