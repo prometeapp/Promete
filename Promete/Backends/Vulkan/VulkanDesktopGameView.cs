@@ -25,9 +25,17 @@ public class VulkanDesktopGameView : IGameView
     private VulkanScreenBlitter? _screenBlitter;
     private TextureFactoryBase? _textureFactory;
 
-    public VulkanDesktopGameView(PrometeApp app, IWindow window)
+    private VectorInt _size;
+    private int _scale;
+
+    public VulkanDesktopGameView(PrometeApp app, IWindow window, VectorInt size, int scale)
     {
         NativeWindow = window;
+        // SDL は GLFW と違って起動直後に Resize を発火しないため、OnResize による
+        // 逆算をあてにできない。論理サイズとスケールはオプションの値で初期化しておく。
+        // ネイティブウィンドウはまだ生成前なので、セッター経由でサイズ反映はしない。
+        _size = size;
+        _scale = scale;
         _app = app;
         NativeWindow.Load += OnLoad;
         NativeWindow.Resize += OnResize;
@@ -48,22 +56,22 @@ public class VulkanDesktopGameView : IGameView
 
     public VectorInt Size
     {
-        get;
+        get => _size;
         set
         {
-            if (field == value)
+            if (_size == value)
                 return;
-            field = value;
+            _size = value;
             UpdateWindowSize();
         }
-    } = (640, 480);
+    }
 
     public VectorInt ActualSize =>
         new VectorInt(NativeWindow.FramebufferSize.X, NativeWindow.FramebufferSize.Y) / Scale;
 
     public int Scale
     {
-        get;
+        get => _scale;
         set
         {
             if (value is not 1 and not 2 and not 4 and not 8)
@@ -71,10 +79,10 @@ public class VulkanDesktopGameView : IGameView
                     nameof(value),
                     "Scale must be 1, 2, 4, or 8."
                 );
-            field = value;
+            _scale = value;
             UpdateWindowSize();
         }
-    } = 1;
+    }
 
     public int X
     {

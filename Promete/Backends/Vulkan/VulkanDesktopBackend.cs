@@ -88,7 +88,7 @@ public class VulkanDesktopBackend : BackendBase
             _materialSystem
         );
         _time = new SilkNetCommonTimeProvider(_nativeWindow);
-        _gameView = new VulkanDesktopGameView(_app, _nativeWindow);
+        _gameView = new VulkanDesktopGameView(_app, _nativeWindow, opts.Size, opts.Scale);
         _textureFactory = new VulkanTextureFactory(_app, _resources);
         _renderTextureProvider = new VulkanRenderTextureProvider(_context, _resources);
         _screenBlitter = new VulkanScreenBlitter(
