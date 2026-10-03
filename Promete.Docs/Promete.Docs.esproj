@@ -3,8 +3,6 @@
     <StartupCommand>pnpm run dev</StartupCommand>
   </PropertyGroup>
   <ItemGroup>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="src/**/*" />
     <Folder Include="public/**/*" />
     <Folder Include="assets/**/*" />

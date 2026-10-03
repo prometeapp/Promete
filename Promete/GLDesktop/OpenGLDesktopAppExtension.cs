@@ -1,8 +1,8 @@
-﻿using Promete.Graphics;
-using Promete.Nodes;
-using Promete.Nodes.Renderer.GL;
-using Promete.Nodes.Renderer.GL.Helper;
-using Promete.Windowing.GLDesktop;
+using Promete.Backends.GL;
+using Promete.Graphics.Rendering;
+using Promete.Graphics.Rendering.GL;
+using Promete.Graphics.Rendering.GL.Runners;
+using Promete.Windowing;
 
 namespace Promete.GLDesktop;
 
@@ -16,23 +16,39 @@ public static class OpenGLDesktopAppExtension
     /// </summary>
     /// <param name="builder">PrometeAppのビルダー</param>
     /// <returns>構築されたPrometeAppインスタンス</returns>
-    public static PrometeApp BuildWithOpenGLDesktop(this PrometeApp.PrometeAppBuilder builder)
+    public static PrometeApp BuildWithOpenGLDesktop(
+        this PrometeApp.PrometeAppBuilder builder,
+        WindowOptions? opts = null
+    )
     {
-        return builder
-            .UseRenderer<ContainableNode, GLContainbleNodeRenderer>()
-            .UseRenderer<Container, GLContainbleNodeRenderer>()
-            .UseRenderer<MaskedContainer, GLMaskedContainerRenderer>()
-            .UseRenderer<NineSliceSprite, GLNineSliceSpriteRenderer>()
-            .UseRenderer<PieSprite, GLPieSpriteRenderer>()
-            .UseRenderer<Shape, GLShapeRenderer>()
-            .UseRenderer<Sprite, GLSpriteRenderer>()
-            .UseRenderer<Text, GLTextRenderer>()
-            .UseRenderer<Tilemap, GLTilemapRenderer>()
-            .Use<IFrameBufferProvider, GLFrameBufferProvider>()
-            .Use<GLTextureRendererHelper>()
-            .Use<GLPieSpriteRendererHelper>()
-            .Use<GLPrimitiveRendererHelper>()
+        var app = builder
             .Use<GLMaskedContainerHelper>()
-            .Build<OpenGLDesktopWindow>();
+            .Use<GLRenderState>()
+            .Use<RenderCommandQueue>()
+            // GL CommandRunner 群
+            .Use<GLDrawTextureBatchedCommandRunner>()
+            .Use<GLDrawPrimitiveCommandRunner>()
+            .Use<GLBeginTrimCommandRunner>()
+            .Use<GLEndTrimCommandRunner>()
+            .Use<GLBeginStencilMaskCommandRunner>()
+            .Use<GLBeginAlphaMaskCommandRunner>()
+            .Use<GLEndMaskCommandRunner>()
+            .Use<GLDrawPieTextureCommandRunner>()
+            .Build<OpenGLDesktopBackend>(opts);
+
+        // ビルド後にランナーをキューへ一括紐付け
+        app.GetPlugin<RenderCommandQueue>()
+            .RegisterRunnerRange(
+                app.GetPlugin<GLDrawTextureBatchedCommandRunner>(),
+                app.GetPlugin<GLDrawPrimitiveCommandRunner>(),
+                app.GetPlugin<GLBeginTrimCommandRunner>(),
+                app.GetPlugin<GLEndTrimCommandRunner>(),
+                app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
+                app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
+                app.GetPlugin<GLEndMaskCommandRunner>(),
+                app.GetPlugin<GLDrawPieTextureCommandRunner>()
+            );
+
+        return app;
     }
 }

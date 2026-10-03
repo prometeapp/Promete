@@ -1,4 +1,4 @@
-﻿namespace Promete.Markup;
+namespace Promete.Markup;
 
 /// <summary>
 /// PTMLの装飾情報を表すレコード。

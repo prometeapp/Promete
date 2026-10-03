@@ -36,7 +36,7 @@ public class HelloWorldScene(Keyboard keyboard, ConsoleLayer console) : Scene
     {
         if (keyboard.Escape.IsKeyDown)
         {
-            Window.Close();
+            App.Exit();
         }
     }
 }

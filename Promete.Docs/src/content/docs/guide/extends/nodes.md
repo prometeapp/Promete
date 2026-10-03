@@ -9,7 +9,7 @@ sidebar:
 ここでは、基本的なカスタムノードの作り方と、シーンでの利用例を解説します。
 
 ノードは `Node` クラスを継承して作成します。
-必要に応じて `OnUpdate` や `OnRender` などのメソッドをオーバーライドして、独自の動作や描画を実装します。
+必要に応じて `OnUpdate` などのメソッドをオーバーライドして、独自の動作を実装します。
 
 ```csharp
 using Promete.Nodes;
@@ -19,11 +19,6 @@ public class MyNode : Node
     protected override void OnUpdate()
     {
         // 毎フレームの処理
-    }
-
-    protected override void OnRender()
-    {
-        // 独自の描画処理
     }
 }
 ```
@@ -43,4 +38,4 @@ public class MainScene : Scene
 
 ## レンダリング
 
-純粋な `Node` クラスから派生した場合、ノードレンダラーを独自に実装して登録する必要があります。詳細は[カスタムノードレンダラー](/guide/extends/renderers)のページを参照してください。
+独自の描画処理を行うには、`Collect()` メソッドをオーバーライドして、レンダリングコマンドをキューに追加します。詳細は[カスタムノードレンダラー](/guide/extends/renderers)のページを参照してください。

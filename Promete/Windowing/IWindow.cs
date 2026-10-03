@@ -9,8 +9,49 @@ namespace Promete.Windowing;
 /// <summary>
 /// ゲーム実行用のウィンドウを表します。
 /// </summary>
+[Obsolete("IWindowは非推奨になりました。")]
 public interface IWindow
 {
+    /// <summary>
+    /// ゲームが開始されたときに発生します。
+    /// </summary>
+    public event Action? Start;
+
+    /// <summary>
+    /// ゲームがフレームを更新するときに発生します。
+    /// </summary>
+    public event Action? Update;
+
+    /// <summary>
+    /// ゲームがフレームをレンダリングするときに発生します。
+    /// </summary>
+    public event Action? Render;
+
+    /// <summary>
+    /// ゲームが終了したときに発生します。
+    /// </summary>
+    public event Action? Destroy;
+
+    /// <summary>
+    /// ゲームがフレームを更新する前に発生します。
+    /// </summary>
+    public event Action? PreUpdate;
+
+    /// <summary>
+    /// ゲームがフレームを更新した後に発生します。
+    /// </summary>
+    public event Action? PostUpdate;
+
+    /// <summary>
+    /// ユーザーがウィンドウにファイルをドロップしたときに発生します。
+    /// </summary>
+    public event Action<FileDroppedEventArgs>? FileDropped;
+
+    /// <summary>
+    /// ゲームウィンドウがリサイズされたときに発生します。
+    /// </summary>
+    public event Action? Resize;
+
     /// <summary>
     /// ゲームウィンドウの位置を取得または設定します。
     /// </summary>
@@ -150,12 +191,12 @@ public interface IWindow
     /// INTERNAL API (使用しないでください)
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public IInputContext? _RawInputContext { get; }
+    public IInputContext? RawInputContext { get; }
 
     /// <summary>
     /// INTERNAL API (使用しないでください)
     /// </summary>
-    public TextureFactory TextureFactory { get; }
+    public TextureFactoryBase TextureFactory { get; }
 
     /// <summary>
     /// このウィンドウを開き、ゲームを開始します。
@@ -178,45 +219,6 @@ public interface IWindow
     /// </summary>
     /// <param name="path">パス</param>
     /// <param name="ct">このタスクのキャンセレーショントークン</param>
+    /// <returns></returns>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default);
-
-    /// <summary>
-    /// ゲームが開始されたときに発生します。
-    /// </summary>
-    public event Action? Start;
-
-    /// <summary>
-    /// ゲームがフレームを更新するときに発生します。
-    /// </summary>
-    public event Action? Update;
-
-    /// <summary>
-    /// ゲームがフレームをレンダリングするときに発生します。
-    /// </summary>
-    public event Action? Render;
-
-    /// <summary>
-    /// ゲームが終了したときに発生します。
-    /// </summary>
-    public event Action? Destroy;
-
-    /// <summary>
-    /// ゲームがフレームを更新する前に発生します。
-    /// </summary>
-    public event Action? PreUpdate;
-
-    /// <summary>
-    /// ゲームがフレームを更新した後に発生します。
-    /// </summary>
-    public event Action? PostUpdate;
-
-    /// <summary>
-    /// ユーザーがウィンドウにファイルをドロップしたときに発生します。
-    /// </summary>
-    public event Action<FileDroppedEventArgs>? FileDropped;
-
-    /// <summary>
-    /// ゲームウィンドウがリサイズされたときに発生します。
-    /// </summary>
-    public event Action? Resize;
 }

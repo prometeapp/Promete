@@ -1,10 +1,10 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 
 namespace Promete.Example.examples.async;
 
 [Demo("/async/run_task.demo", "重たいTaskを動かします。")]
-public class run_task(ConsoleLayer console, Keyboard keyboard) : Scene
+public class Run_task(ConsoleLayer console, Keyboard keyboard) : Scene
 {
     public override void OnStart()
     {
@@ -14,19 +14,17 @@ public class run_task(ConsoleLayer console, Keyboard keyboard) : Scene
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
 
-        if (keyboard.Space.IsKeyDown) _ = RunTaskAsync();
+        if (keyboard.Space.IsKeyDown)
+            _ = RunTaskAsync();
     }
 
     private async Task RunTaskAsync()
     {
         console.Clear();
-        await Task.WhenAll(
-            Enumerable
-                .Range(1, 5)
-                .Select(i => Task.Run(() => HeavyWorker(i)))
-        );
+        await Task.WhenAll(Enumerable.Range(1, 5).Select(i => Task.Run(() => HeavyWorker(i))));
         Print("[MAIN]: Done all tasks!");
         Print("Press [ESC] to exit");
     }

@@ -5,10 +5,10 @@ namespace Promete.Input;
 /// </summary>
 public struct KeyPressEventArgs
 {
-    public char KeyChar { get; }
-
     internal KeyPressEventArgs(char ch)
     {
         KeyChar = ch;
     }
+
+    public char KeyChar { get; }
 }

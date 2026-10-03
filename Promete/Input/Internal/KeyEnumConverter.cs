@@ -123,7 +123,7 @@ internal static class KeyEnumConverter
             KeyCode.Period => Silk.NET.Input.Key.Period,
             KeyCode.Slash => Silk.NET.Input.Key.Slash,
             KeyCode.BackSlash => Silk.NET.Input.Key.BackSlash,
-            _ => Silk.NET.Input.Key.Unknown
+            _ => Silk.NET.Input.Key.Unknown,
         };
     }
 
@@ -248,7 +248,7 @@ internal static class KeyEnumConverter
             Silk.NET.Input.Key.AltRight => KeyCode.AltRight,
             Silk.NET.Input.Key.SuperRight => KeyCode.WinRight,
             Silk.NET.Input.Key.Menu => KeyCode.Menu,
-            _ => KeyCode.Unknown
+            _ => KeyCode.Unknown,
         };
     }
 }

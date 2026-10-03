@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
 using Promete.Nodes;
@@ -29,8 +29,9 @@ public class Issue44DebugScene : Scene
 
         Root = [_sprite];
 
-        var textureFactory = Window.TextureFactory;
-        _textures = [
+        var textureFactory = App.TextureFactory;
+        _textures =
+        [
             textureFactory.Load("./assets/anim1.png"),
             textureFactory.Load("./assets/anim2.png"),
             textureFactory.Load("./assets/anim3.png"),
@@ -41,7 +42,7 @@ public class Issue44DebugScene : Scene
 
     public override void OnUpdate()
     {
-        _time += Window.DeltaTime;
+        _time += Time.DeltaTime;
         if (_time >= 0.2f)
         {
             _time = 0;

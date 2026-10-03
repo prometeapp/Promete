@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 using Promete.Nodes;
 
@@ -8,7 +8,9 @@ namespace Promete.Example.examples.debug;
 public class TextPivotTestScene : Scene
 {
     private readonly Keyboard _keyboard;
-    private readonly Text _textTopLeft, _textCenter, _textBottomRight;
+    private readonly Text _textTopLeft;
+    private readonly Text _textCenter;
+    private readonly Text _textBottomRight;
     private int _counter;
     private float _time;
 
@@ -27,17 +29,12 @@ public class TextPivotTestScene : Scene
             .Location(288, 192)
             .Pivot(HorizontalAlignment.Right, VerticalAlignment.Center);
 
-        Root =
-        [
-            _textTopLeft,
-            _textCenter,
-            _textBottomRight
-        ];
+        Root = [_textTopLeft, _textCenter, _textBottomRight];
     }
 
     public override void OnUpdate()
     {
-        _time += Window.DeltaTime;
+        _time += Time.DeltaTime;
         if (_time >= 0.5f)
         {
             _time = 0;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,27 +10,62 @@ namespace Promete.Markup;
 public static class PtmlParser
 {
     /// <summary>
+    /// 単独タグが挿入する置換文字。この文字 1 つが、タグに対応する 1 文字分の内容を表します。
+    /// </summary>
+    public const char ObjectReplacementCharacter = '￼';
+
+    /// <summary>
+    /// 既定で終了タグを必要としないタグの名前。
+    /// </summary>
+    public static readonly IReadOnlySet<string> DefaultVoidTags = new HashSet<string>(
+        StringComparer.OrdinalIgnoreCase
+    )
+    {
+        "tex",
+    };
+
+    private enum State
+    {
+        PlainText,
+        StartTagName,
+        Attribute,
+        EndTagName,
+        EscapeSequence,
+    }
+
+    /// <summary>
     /// PTMLを解析します。
     /// </summary>
     /// <param name="ptml">PTML文字列。</param>
     /// <param name="throwsIfError">エラーがあったときに例外をスローするかどうか。</param>
     /// <returns></returns>
     /// <exception cref="PtmlParserException"><paramref name="throwsIfError" />が<c>true</c>であれば、エラーがあったときにスローされます。</exception>
-    public static (string plainText, IReadOnlyList<PtmlDecoration> decorations) Parse(string ptml,
-        bool throwsIfError = false)
+    public static (string plainText, IReadOnlyList<PtmlDecoration> decorations) Parse(
+        string ptml,
+        bool throwsIfError = false,
+        IReadOnlySet<string>? voidTags = null
+    )
     {
+        voidTags ??= DefaultVoidTags;
+
         // プレーンテキストの部分を格納。最終的にreturnする。
         var plainTextBuilder = new StringBuilder();
+
         // 解析したタグを格納。最終的にreturnする
         var decorations = new List<PtmlDecoration>();
+
         // 解析した開始タグを格納。Peekすることで終了タグを解析し、終了タグが一致したらPopしてdecorationsへ
         var decorationStack = new Stack<PtmlDecoration>();
+
         // タグ解析時点のプレーンテキスト位置を格納。
         var rangeStartStack = new Stack<int>();
+
         // タグ名を一時保管する。タグ記法が終わったらclear
         var tagNameBuilder = new StringBuilder();
+
         // 属性を一時保管する。タグ記法が終わったらclear
         var attributeBuilder = new StringBuilder();
+
         // エスケープシーケンスを一時保管する。エスケープシーケンスが終わったらclear
         var escapeBuilder = new StringBuilder();
 
@@ -93,7 +128,10 @@ public static class PtmlParser
                         if (c == '/')
                         {
                             if (tagNameBuilder.Length > 0)
-                                throw new PtmlParserException("Invalid token /. Expected tag name.", i);
+                                throw new PtmlParserException(
+                                    "Invalid token /. Expected tag name.",
+                                    i
+                                );
 
                             // 終了タグの場合、先にpushしたrangeStartを破棄する
                             _ = rangeStartStack.Pop();
@@ -104,7 +142,10 @@ public static class PtmlParser
                         if (c == '=')
                         {
                             if (tagNameBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token =. Expected tag name.", i);
+                                throw new PtmlParserException(
+                                    "Invalid token =. Expected tag name.",
+                                    i
+                                );
                             state = State.Attribute;
                             continue;
                         }
@@ -112,9 +153,24 @@ public static class PtmlParser
                         if (c == '>')
                         {
                             if (tagNameBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token >. Expected tag name.", i);
+                                throw new PtmlParserException(
+                                    "Invalid token >. Expected tag name.",
+                                    i
+                                );
 
-                            decorationStack.Push(new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString()));
+                            if (voidTags.Contains(tagName))
+                                AppendVoidTag(
+                                    plainTextBuilder,
+                                    decorations,
+                                    rangeStartStack,
+                                    tagName,
+                                    attributeBuilder.ToString()
+                                );
+                            else
+                                decorationStack.Push(
+                                    new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString())
+                                );
+
                             tagNameBuilder.Clear();
                             attributeBuilder.Clear();
                             state = State.PlainText;
@@ -129,8 +185,24 @@ public static class PtmlParser
                         if (c == '>')
                         {
                             if (attributeBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token >. Expected attribute.", i);
-                            decorationStack.Push(new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString()));
+                                throw new PtmlParserException(
+                                    "Invalid token >. Expected attribute.",
+                                    i
+                                );
+
+                            if (voidTags.Contains(tagName))
+                                AppendVoidTag(
+                                    plainTextBuilder,
+                                    decorations,
+                                    rangeStartStack,
+                                    tagName,
+                                    attributeBuilder.ToString()
+                                );
+                            else
+                                decorationStack.Push(
+                                    new PtmlDecoration(0, 0, tagName, attributeBuilder.ToString())
+                                );
+
                             tagNameBuilder.Clear();
                             attributeBuilder.Clear();
                             state = State.PlainText;
@@ -143,11 +215,21 @@ public static class PtmlParser
                         if (c == '>')
                         {
                             if (tagNameBuilder.Length == 0)
-                                throw new PtmlParserException("Invalid token >. Expected tag name.", i);
-                            if (!decorationStack.TryPop(out var startTag) ||
-                                !startTag.TagName.Equals(tagName, StringComparison.OrdinalIgnoreCase))
                                 throw new PtmlParserException(
-                                    $"End tag \"{tagName}\" does not match to \"{startTag.TagName}\"", i);
+                                    "Invalid token >. Expected tag name.",
+                                    i
+                                );
+                            if (
+                                !decorationStack.TryPop(out var startTag)
+                                || !startTag.TagName.Equals(
+                                    tagName,
+                                    StringComparison.OrdinalIgnoreCase
+                                )
+                            )
+                                throw new PtmlParserException(
+                                    $"End tag \"{tagName}\" does not match to \"{startTag.TagName}\"",
+                                    i
+                                );
                             startTag.Start = rangeStartStack.Pop();
                             startTag.End = plainTextBuilder.Length;
                             decorations.Add(startTag);
@@ -185,23 +267,37 @@ public static class PtmlParser
 
             // 閉じられていないタグを順番に末尾に追加する
             while (decorationStack.TryPop(out var startTag))
-                decorations.Add(startTag with { Start = rangeStartStack.Pop(), End = plainTextBuilder.Length });
+                decorations.Add(
+                    startTag with
+                    {
+                        Start = rangeStartStack.Pop(),
+                        End = plainTextBuilder.Length,
+                    }
+                );
         }
         catch (PtmlParserException)
         {
-            if (throwsIfError) throw;
+            if (throwsIfError)
+                throw;
             return (ptml, []);
         }
 
         return (plainTextBuilder.ToString(), decorations.AsReadOnly());
     }
 
-    private enum State
+    /// <summary>
+    /// 終了タグを持たないタグを、1 文字分の置換文字として本文へ挿入します。
+    /// </summary>
+    private static void AppendVoidTag(
+        StringBuilder plainTextBuilder,
+        List<PtmlDecoration> decorations,
+        Stack<int> rangeStartStack,
+        string tagName,
+        string attribute
+    )
     {
-        PlainText,
-        StartTagName,
-        Attribute,
-        EndTagName,
-        EscapeSequence
+        var start = rangeStartStack.Pop();
+        plainTextBuilder.Append(ObjectReplacementCharacter);
+        decorations.Add(new PtmlDecoration(start, start + 1, tagName, attribute));
     }
 }

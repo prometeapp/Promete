@@ -4,6 +4,7 @@ description: Prometeのプラグインシステムと依存性注入の仕組み
 sidebar:
   order: 2
 ---
+
 import { Badge } from "@astrojs/starlight/components";
 
 Prometeは**DIコンテナをベースとしたプラグインシステム**を採用しています。このシステムにより、必要な機能のみを選択してゲームに組み込むことができ、環境の差異に対応したり、不要な機能を削減して最適化を図ることができます。
@@ -74,7 +75,7 @@ public class MainScene(Keyboard keyboard, Mouse mouse, AudioPlayer audio) : Scen
 }
 ```
 
-### メソッドを用いた取得（安全）
+### メソッドを用いた取得
 
 実行時にプラグインのインスタンスを取得することもできます。
 
@@ -99,7 +100,6 @@ public class DynamicScene : Scene
 }
 ```
 
-### メソッドを用いた取得（例外スローあり）
 `TryGetPlugin`ではなく、存在しない場合に例外をスローする`GetPlugin`も利用できます。
 
 ```csharp
@@ -166,6 +166,7 @@ public class SettingsScene(GameSettings settings, Keyboard keyboard) : Scene
 ```
 
 ## プラグインのインスタンス化タイミング
+
 プラグインは、基本的に他のプラグインやシーンなどに初めて注入されるときにインスタンス化されます。
 
 ゲーム開始時に全てのインスタンスが生成されるわけではないので、
@@ -173,21 +174,14 @@ public class SettingsScene(GameSettings settings, Keyboard keyboard) : Scene
 
 なお、次に述べる「特別なインターフェイス」を実装したプラグインに限り、ゲーム開始時にインスタンス化されます。
 
-## 特別なインターフェイス <Badge text="v1.2.1～" />
+## 特別なインターフェイス
 
 特別なインターフェイスをプラグインに実装することで、ゲーム開始時、ゲームループ、ゲーム終了時の処理を記述できます。
 
 これにより、シーンにある `OnStart` `OnUpdate` などと同等のライフサイクルをプラグインに持たせることができます。
 
-:::caution[コンストラクタに注意]
-特別なインターフェイスを実装したプラグインは、ゲーム開始よりも前にそのコンストラクタが呼び出されます。
-
-このようなプラグインでは、ゲーム開始よりも前に呼ぶとエラーとなるような処理（例：テクスチャの生成）をコンストラクタで記述してはいけません。
-
-なお、<Badge text="v1.3.0" /> からコンストラクタがゲーム開始後に呼ばれるようになったため、テクスチャの生成などの処理を記述可能になりました。
-:::
-
 ### IInitializable
+
 `IInitializable` インターフェイスを実装することで、ゲーム開始時に呼び出されるメソッドを定義できます。
 
 ```csharp
@@ -201,6 +195,7 @@ public class TestPlugin : IInitializable
 ```
 
 ### IUpdatable
+
 `IUpdatable` インターフェイスを実装することで、ゲームループ（フレーム更新）ごとに呼び出されるメソッドを定義できます。
 
 ```csharp
@@ -209,6 +204,20 @@ public class TestPlugin : IInitializable
     public void OnStart()
     {
         Console.WriteLine("ゲームが起動しました。");
+    }
+}
+```
+
+### System.IDisposable
+
+`System.IDisposable` インターフェイスを実装している場合、エンジンはDisposeを自動的に呼び出します。ネイティブリソースの破棄に利用してください。
+
+```csharp
+public class TestPlugin : IDisposable
+{
+    public void Dispose()
+    {
+        // ネイティブリソースの破棄など
     }
 }
 ```

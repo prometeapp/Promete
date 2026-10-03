@@ -245,6 +245,25 @@ App.PushScene<PauseMenuScene>();  // ポーズメニューを重ねる
 App.PopScene();                    // ポーズメニューを閉じる
 ```
 
+#### シーンの登録
+
+`Scene` 派生クラスは**エントリアセンブリのものだけが自動的に DI へ登録**されます。
+そのため通常は登録を意識する必要はありません。
+
+エントリアセンブリの外にシーンを置いている場合（ゲームをエンジン層とコンテンツ層の
+2プロジェクトに分割し、共通シーンをエンジン側に置いた場合など）は、`UseScenesFrom` で
+探索対象のアセンブリを追加してください。指定しないと `LoadScene` が
+`The scene "Xxx" is not registered.` で失敗します。
+
+```csharp
+var app = PrometeApp.Create()
+    .UseScenesFrom(typeof(LoadingScene).Assembly)  // アセンブリを直接指定
+    .UseScenesFrom<LoadingScene>()                 // 型からアセンブリを指定（同じ意味）
+    .BuildWithVulkanDesktop(opts);
+```
+
+登録から除外したいシーンには `[IgnoredScene]` を付けます。
+
 ### プラグインシステム
 
 PrometeはMicrosoft.Extensions.DependencyInjectionをベースとしたDIコンテナを採用しています。
@@ -385,7 +404,7 @@ window.FileDropped += (sender, e) =>
 // 位置・変形
 node.Location = (100, 200);      // 位置（Vector型）
 node.Scale = (2.0f, 2.0f);       // スケール（Vector型）
-node.Angle = 45;                 // 回転角度（度数 0-360°、float型）
+node.Angle = 45.Degrees;         // 回転角度（Angle型。.Degrees/.Radians拡張で生成）
 node.Pivot = (0.5f, 0.5f);       // 回転・スケールの中心点（0-1の相対座標）
 
 // サイズ
@@ -406,7 +425,7 @@ Node? parent = node.Parent;      // 親ノードへの参照
 // 絶対座標（読み取り専用）
 Vector absLocation = node.AbsoluteLocation;
 Vector absScale = node.AbsoluteScale;
-float absAngle = node.AbsoluteAngle;
+Angle absAngle = node.AbsoluteAngle;
 ```
 
 #### Setup API（メソッドチェーン）
@@ -417,7 +436,7 @@ float absAngle = node.AbsoluteAngle;
 var sprite = new Sprite(texture)
     .Location(100, 200)
     .Scale(2.0f)
-    .Angle(45)  // 45度
+    .Angle(45.Degrees)  // 45度
     .Pivot(0.5f, 0.5f)
     .ZIndex(10)
     .Visible(true);
@@ -431,7 +450,7 @@ var sprite = new Sprite(texture)
 var parent = new Container()
     .Location(200, 100)
     .Scale(2.0f)
-    .Angle(30);  // 30度
+    .Angle(30.Degrees);  // 30度
 
 var child = new Sprite(texture)
     .Location(50, 0);  // 親からの相対座標
@@ -931,8 +950,47 @@ audio.FinishPlaying += (sender, e) =>
 
 #### 対応フォーマット
 
-- WAV (WaveAudioSource)
+- WAV (WaveAudioSource) - 8/16/24/32bit PCM、32bit float に対応
 - Ogg Vorbis (VorbisAudioSource)
+
+`IAudioSource`はfloat32・フレーム単位の契約です（`Bits`プロパティは廃止）。再生は常にステレオ出力に固定されます。
+
+#### バッファサイズと常駐レンダーループ
+
+`AudioPlayer`は生成と同時に常駐のレンダーループ（pull型）を開始し、再生していない間も無音を出力し続けます。
+
+```csharp
+audio.BufferSize = 1024; // デフォルト1024フレーム（44.1kHzで約23ms、実効レイテンシ約70ms）
+```
+
+複数の`AudioPlayer`を同時に使用できます（BGM用・SE用など）。内部で共有される`AudioDevice`がALCコンテキストを共有します。
+
+#### PlayOneShotのfollowsMasterGain
+
+```csharp
+// followsMasterGain: true にすると、audio.Gain が乗算される
+audio.PlayOneShot(sfx, gain: 0.8f, followsMasterGain: true);
+```
+
+#### DSPフィルター
+
+`audio.Filters`（`ObservableCollection<IAudioFilter>`）にフィルターを追加すると、出力段にDSPエフェクトを適用できます。
+
+```csharp
+using Promete.Audio.Filters;
+
+var lowPass = new LowPassFilter { CutoffFrequency = 800f, Resonance = 0.707f };
+var delay = new DelayFilter { Time = 0.3f, Feedback = 0.4f, Mix = 0.5f };
+var distortion = new DistortionFilter { Drive = 2f, Level = 1f };
+
+audio.Filters.Add(lowPass);
+audio.Filters.Add(delay);
+```
+
+- 標準フィルターは`LowPassFilter`（Cutoff/Resonance/Mix）、`DelayFilter`（Time/Feedback/Mix）、`DistortionFilter`（Drive/Level）の3種類（`Promete.Audio.Filters`名前空間）
+- フィルターは再生停止中・無音中も毎バッファ呼び出され続けるため、ディレイの残響などがStop()後も自然に鳴り切る
+- パイプラインが自動的にフィルターの`Reset()`を呼ぶことはない（明示的に呼び出す必要がある）
+- パンはconstant-powerのソフトウェア実装で、ステレオ音源にも効く
 
 ---
 
@@ -998,6 +1056,36 @@ var text = new Text("Hello", customFont, Color.White);
 
 ## 数学ユーティリティ
 
+### Angle
+
+角度を表す構造体です。内部的には度数法で値を保持します。
+
+```csharp
+// 生成
+Angle a1 = Angle.FromDegrees(45);     // 度数法
+Angle a2 = Angle.FromRadians(MathF.PI); // ラジアン
+
+// 拡張メソッドによる糖衣構文（推奨）
+Angle a3 = 45.Degrees;                // int から度数法
+Angle a4 = 45.0f.Degrees;            // float から度数法
+Angle a5 = MathF.PI.Radians;         // float からラジアン
+
+// プロパティ
+float deg = a3.ToDegrees();  // 度数法の値を取得
+float rad = a3.ToRadians();  // ラジアンの値を取得
+
+// 算術演算
+Angle sum = a1 + a2;          // 加算
+Angle diff = a1 - a2;         // 減算
+Angle scaled = a1 * 2.0f;     // スカラー倍
+Angle divided = a1 / 2.0f;    // スカラー除算
+Angle wrapped = a1 % 360f;    // 剰余（正規化に使用）
+Angle neg = -a1;              // 符号反転
+
+// 定数
+Angle.Zero  // 0度
+```
+
 ### Vector / VectorInt
 
 2D座標やベクトルを表します。
@@ -1019,12 +1107,12 @@ Vector scaled = v * 2.0f;
 Vector divided = v / 2.0f;
 
 // 静的メソッド
-float angle = Vector.Angle(from, to);    // 角度（ラジアン）
+Angle angle = Vector.Angle(from, to);    // 角度
 float distance = Vector.Distance(v1, v2); // 距離
 float dot = Vector.Dot(v1, v2);          // 内積
 
 // インスタンスメソッド
-float angleToTarget = v.Angle(target);
+Angle angleToTarget = v.Angle(target);
 float distToTarget = v.Distance(target);
 bool inRect = v.In(rect);                // 矩形内判定
 
@@ -1219,13 +1307,31 @@ public class CustomAudioSource : IAudioSource
 {
     public int SampleRate { get; }
     public int Channels { get; }
-    public int Bits { get; }
-    public int? Samples { get; }
+    public int? Frames { get; } // 未確定・無限ストリームの場合は null
 
-    public (int size, bool isFinished) FillSamples(Span<short> buffer, int offset)
+    public (int FilledFrames, bool IsFinished) FillSamples(Span<float> buffer, int offsetFrames)
     {
-        // サンプルデータを buffer に書き込む
-        // 戻り値: (書き込んだサンプル数, 終端に達したか)
+        // チャンネルインターリーブ形式の float PCM（-1.0～1.0）を buffer に書き込む
+        // 戻り値: (書き込んだフレーム数, 終端に達したか)
+    }
+}
+```
+
+### カスタムオーディオフィルター
+
+`IAudioFilter`を実装すると、`AudioPlayer.Filters`に追加できる独自のDSPフィルターを作成できます。
+
+```csharp
+public class CustomFilter : IAudioFilter
+{
+    public void Process(Span<float> buffer, int channels, int sampleRate)
+    {
+        // buffer（チャンネルインターリーブ形式のfloat PCM）をインプレースで加工する
+    }
+
+    public void Reset()
+    {
+        // ディレイラインなどの内部状態を消去する
     }
 }
 ```
@@ -1271,7 +1377,9 @@ public class CustomAudioSource : IAudioSource
 - `AudioPlayer` - オーディオ再生
 - `IAudioSource` - 音源インターフェース
 - `VorbisAudioSource` - Ogg Vorbis音源
-- `WaveAudioSource` - WAV音源
+- `WaveAudioSource` - WAV音源（8/16/24/32bit PCM、32bit float対応）
+- `IAudioFilter` - DSPフィルターインターフェース
+- `DelayFilter` / `LowPassFilter` / `DistortionFilter` - 標準DSPフィルター（`Promete.Audio.Filters`名前空間）
 
 #### テキスト
 - `ConsoleLayer` - コンソール表示
@@ -1326,10 +1434,11 @@ bool Contains(Node node)
 
 // AudioPlayer
 void Play(IAudioSource source, int? loop = null)
-void PlayOneShot(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0)
+void PlayOneShot(IAudioSource source, float gain = 1, float pitch = 1, float pan = 0, bool followsMasterGain = false)
 void Stop(float fadeTime = 0)
 void Pause()
 void Resume()
+ObservableCollection<IAudioFilter> Filters { get; }
 
 // Keyboard
 string GetString()

@@ -1,5 +1,4 @@
 using System;
-using Silk.NET.OpenGL;
 
 namespace Promete.Graphics;
 
@@ -8,6 +7,26 @@ namespace Promete.Graphics;
 /// </summary>
 public readonly struct Texture2D : IDisposable
 {
+    private readonly Action<Texture2D> _onDispose;
+
+    internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose)
+        : this(handle, size, onDispose, (0, 0), (1, 1)) { }
+
+    internal Texture2D(
+        int handle,
+        VectorInt size,
+        Action<Texture2D> onDispose,
+        Vector uvStart,
+        Vector uvEnd
+    )
+    {
+        Handle = handle;
+        Size = size;
+        _onDispose = onDispose;
+        UvStart = uvStart;
+        UvEnd = uvEnd;
+    }
+
     /// <summary>
     /// このテクスチャのOpenGLハンドルを取得します。
     /// </summary>
@@ -18,14 +37,15 @@ public readonly struct Texture2D : IDisposable
     /// </summary>
     public VectorInt Size { get; }
 
-    private readonly Action<Texture2D> _onDispose;
+    /// <summary>
+    /// このテクスチャの左上のUV座標を取得します。
+    /// </summary>
+    public Vector UvStart { get; }
 
-    internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose)
-    {
-        Handle = handle;
-        Size = size;
-        _onDispose = onDispose;
-    }
+    /// <summary>
+    /// このテクスチャの右下のUV座標を取得します。
+    /// </summary>
+    public Vector UvEnd { get; }
 
     /// <summary>
     /// この <see cref="Texture2D" /> を破棄します。

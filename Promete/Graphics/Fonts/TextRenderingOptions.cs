@@ -11,27 +11,52 @@ public sealed class TextRenderingOptions : ICloneable
     /// <summary>
     /// テキストの色を取得または設定します。
     /// </summary>
-    public Color TextColor { get; set; }
+    public Color TextColor { get; set; } = Color.White;
 
     /// <summary>
-    /// 境界線の色を取得または設定します。
+    /// 縁取りの色を取得または設定します。
     /// </summary>
     public Color? BorderColor { get; set; }
 
     /// <summary>
-    /// 境界線の太さを取得または設定します。
+    /// 縁取りの太さを取得または設定します。
     /// </summary>
     public int BorderThickness { get; set; } = 1;
 
     /// <summary>
-    /// 行の高さを取得または設定します。
+    /// 行の高さの倍率を取得または設定します。
     /// </summary>
     public float LineSpacing { get; set; } = 1;
 
     /// <summary>
-    /// 文字を自動的に折り返すかどうかを取得または設定します。
+    /// 文字間に追加する余白を取得または設定します。
     /// </summary>
-    public bool WordWrap { get; set; }
+    public float LetterSpacing { get; set; }
+
+    /// <summary>
+    /// カーニングを適用するかどうかを取得または設定します。
+    /// </summary>
+    public bool UseKerning { get; set; } = true;
+
+    /// <summary>
+    /// テキストを折り返す方法を取得または設定します。
+    /// </summary>
+    public WrapMode WrapMode { get; set; } = WrapMode.None;
+
+    /// <summary>
+    /// 表示する最大の行数を取得または設定します。0 の場合は制限しません。
+    /// </summary>
+    public int MaxLines { get; set; }
+
+    /// <summary>
+    /// 行数の制限によって省略が発生した場合に、末尾へ挿入する文字列を取得または設定します。
+    /// </summary>
+    public string Ellipsis { get; set; } = "…";
+
+    /// <summary>
+    /// 禁則処理の方法を取得または設定します。
+    /// </summary>
+    public KinsokuMode KinsokuMode { get; set; } = KinsokuMode.Standard;
 
     /// <summary>
     /// 縦方向の位置を取得または設定します。
@@ -44,8 +69,8 @@ public sealed class TextRenderingOptions : ICloneable
     public HorizontalAlignment HorizontalAlignment { get; set; } = HorizontalAlignment.Left;
 
     /// <summary>
-    /// レンダリング時のテクスチャデータのサイズを取得または設定します。
-    /// (0, 0)を指定した場合は、テキストが収まる範囲に自動整形します。
+    /// テキストを配置する領域のサイズを取得または設定します。
+    /// (0, 0) を指定した場合は、テキストが収まる範囲に自動整形します。
     /// </summary>
     public VectorInt Size { get; set; }
 
@@ -67,7 +92,12 @@ public sealed class TextRenderingOptions : ICloneable
             BorderColor = BorderColor,
             BorderThickness = BorderThickness,
             LineSpacing = LineSpacing,
-            WordWrap = WordWrap,
+            LetterSpacing = LetterSpacing,
+            UseKerning = UseKerning,
+            WrapMode = WrapMode,
+            MaxLines = MaxLines,
+            Ellipsis = Ellipsis,
+            KinsokuMode = KinsokuMode,
             VerticalAlignment = VerticalAlignment,
             HorizontalAlignment = HorizontalAlignment,
             Size = Size,

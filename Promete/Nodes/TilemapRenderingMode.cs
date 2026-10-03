@@ -18,5 +18,5 @@ public enum TilemapRenderingMode
     /// <summary>
     /// スキャン方式でタイルをレンダリングします。
     /// </summary>
-    Scan
+    Scan,
 }

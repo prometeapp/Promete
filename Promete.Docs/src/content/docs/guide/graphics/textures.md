@@ -7,9 +7,9 @@ sidebar:
 
 テクスチャは、2Dゲームにおいて画像を表現するためのリソースです。キャラクター、背景、UI要素など、画面に表示される視覚的な要素はすべてテクスチャとして管理されます。
 
-Prometeでは、`Texture2D`構造体がテクスチャを表現し、`TextureFactory`クラスがテクスチャの生成と読み込みを担当します。
+Prometeでは、`Texture2D`構造体がテクスチャを表現し、`TextureFactoryBase`クラスがテクスチャの生成と読み込みを担当します。
 
-`TextureFactory` は、`IWindow`インターフェースの`TextureFactory`プロパティを通じてアクセスできます。通常、シーン内では`Window.TextureFactory`で利用します。
+`TextureFactoryBase` は、シーン内では`App.TextureFactory`でアクセスできます。また、コンストラクタ経由でDI注入して利用することもできます。
 
 ## 基本的なテクスチャ読み込み
 画像ファイルをテクスチャとして読み込む場合、パスを指定するか、`Stream` インスタンスを渡します。
@@ -31,7 +31,7 @@ public class TextureLoadExample : Scene
     public override void OnStart()
     {
         // PNG、JPEG、BMPなどの画像ファイルを読み込み
-        _playerTexture = Window.TextureFactory.Load("assets/player.png");
+        _playerTexture = App.TextureFactory.Load("assets/player.png");
 
         // スプライトを作成してテクスチャを設定
         _playerSprite = new Sprite(_playerTexture)
@@ -67,7 +67,7 @@ public class StreamLoadExample : Scene
         using var resourceStream = assembly.GetManifestResourceStream("MyGame.Assets.embedded_texture.png");
         if (resourceStream == null) return;
 
-        var texture = Window.TextureFactory.Load(resourceStream);
+        var texture = App.TextureFactory.Load(resourceStream);
         var sprite = new Sprite(texture).Location(50, 50);
         Root.Add(sprite);
     }
@@ -90,7 +90,7 @@ public class SpriteSheetExample : Scene
     public override void OnStart()
     {
         // 3x1のスプライトシートを読み込み（各アイコンは32x32ピクセル）
-        _iconTextures = Window.TextureFactory.LoadSpriteSheet(
+        _iconTextures = App.TextureFactory.LoadSpriteSheet(
             "assets/icons.png",
             horizontalCount: 3,
             verticalCount: 1,
@@ -135,7 +135,7 @@ public class SolidTextureExample : Scene
     public override void OnStart()
     {
         // 赤色の64x64ピクセルテクスチャを生成
-        var redTexture = Window.TextureFactory.CreateSolid(
+        var redTexture = App.TextureFactory.CreateSolid(
             Color.Red,
             size: (64, 64)
         );
@@ -174,7 +174,7 @@ public class BitmapTextureExample : Scene
         bitmap[1, 1, 2] = 0;   // B
         bitmap[1, 1, 3] = 255; // A
 
-        var texture = Window.TextureFactory.Create(bitmap);
+        var texture = App.TextureFactory.Create(bitmap);
         var sprite = new Sprite(texture)
             .Location(50, 50)
             .Scale(32, 32); // 拡大して見やすくする
@@ -200,7 +200,7 @@ public class NineSliceExample : Scene
     {
         // 9スライステクスチャを読み込み
         // left=8, top=8, right=8, bottom=8 の境界を指定
-        var nineSlice = Window.TextureFactory.Load9Sliced(
+        var nineSlice = App.TextureFactory.Load9Sliced(
             "assets/panel.png",
             left: 8, top: 8, right: 8, bottom: 8
         );
@@ -241,9 +241,9 @@ public class ResourceManagement : Scene
     public override void OnStart()
     {
         // 複数のテクスチャを読み込み
-        _textures.Add(Window.TextureFactory.Load("assets/bg.png"));
-        _textures.Add(Window.TextureFactory.Load("assets/player.png"));
-        _textures.Add(Window.TextureFactory.Load("assets/enemy.png"));
+        _textures.Add(App.TextureFactory.Load("assets/bg.png"));
+        _textures.Add(App.TextureFactory.Load("assets/player.png"));
+        _textures.Add(App.TextureFactory.Load("assets/enemy.png"));
     }
 
     public override void OnDestroy()
@@ -272,7 +272,7 @@ public class TextureReuse : Scene
     public override void OnStart()
     {
         // 一度だけテクスチャを読み込み
-        _coinTexture = Window.TextureFactory.Load("assets/coin.png");
+        _coinTexture = App.TextureFactory.Load("assets/coin.png");
 
         // 複数のスプライトで同じテクスチャを使用
         for (int i = 0; i < 10; i++)

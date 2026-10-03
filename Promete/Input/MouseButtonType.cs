@@ -1,4 +1,4 @@
-﻿namespace Promete.Input;
+namespace Promete.Input;
 
 /// <summary>
 /// マウスボタンの種類を表します。
@@ -28,5 +28,5 @@ public enum MouseButtonType
     /// <summary>
     /// サイドボタン2。
     /// </summary>
-    Side2 = 4
+    Side2 = 4,
 }

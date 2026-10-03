@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// Copyright (c) PlaceholderCompany. All rights reserved.
 
 using MeltySynth;
 using Promete;
@@ -6,8 +6,7 @@ using Promete.Audio;
 using Promete.GLDesktop;
 using Promete.MeltySynth;
 
-var app = PrometeApp.Create()
-    .BuildWithOpenGLDesktop();
+var app = PrometeApp.Create().BuildWithOpenGLDesktop();
 
 return app.Run<MainScene>();
 

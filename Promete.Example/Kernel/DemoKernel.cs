@@ -1,4 +1,4 @@
-﻿namespace Promete.Example.Kernel;
+namespace Promete.Example.Kernel;
 
 public static class DemoKernel
 {
@@ -7,4 +7,6 @@ public static class DemoKernel
     public static Folder CurrentFolder { get; set; } = FileSystem.Root;
 
     public static int CurrentIndex { get; set; }
+
+    public static bool UseVulkan { get; set; }
 }

@@ -1,0 +1,28 @@
+{
+  "sidebar": [
+    {
+      "label": "入門編",
+      "autogenerate": { "directory": "guide/intro" }
+    },
+    {
+      "label": "機能編",
+      "items": [
+        { "label": "コア", "autogenerate": { "directory": "guide/manual" } },
+        { "label": "グラフィック", "autogenerate": { "directory": "guide/graphics" } },
+        { "label": "テキスト", "autogenerate": { "directory": "guide/text" } },
+        { "label": "入力", "autogenerate": { "directory": "guide/input" } },
+        { "label": "オーディオ", "autogenerate": { "directory": "guide/audio" } },
+        { "label": "数学", "autogenerate": { "directory": "guide/math" } },
+        { "label": "その他", "autogenerate": { "directory": "guide/other" } }
+      ]
+    },
+    {
+      "label": "プラグイン",
+      "autogenerate": { "directory": "guide/plugins" }
+    },
+    {
+      "label": "エンジンを拡張する",
+      "autogenerate": { "directory": "guide/extends" }
+    }
+  ]
+}

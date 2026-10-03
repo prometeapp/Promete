@@ -1,4 +1,4 @@
-﻿namespace Promete;
+namespace Promete;
 
 public interface IInitializable
 {

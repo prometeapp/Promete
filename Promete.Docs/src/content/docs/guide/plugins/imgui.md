@@ -21,7 +21,7 @@ dotnet add package Promete.ImGui
 
 ## 動作要件
 
-- .NET 8
+- .NET 10
 - Promete最新版
 - OpenGL Desktop バックエンド
 
