@@ -25,6 +25,9 @@ internal sealed unsafe class VulkanContext : IDisposable
     /// <summary>オフスクリーンレンダーターゲットのカラーフォーマット。</summary>
     public const Format OffscreenFormat = Format.R8G8B8A8Unorm;
 
+    private const string PortabilityEnumerationExtensionName = "VK_KHR_portability_enumeration";
+    private const string PortabilitySubsetExtensionName = "VK_KHR_portability_subset";
+
     private readonly IWindow _window;
     private readonly IVulkanInstanceHook? _hook;
     private readonly Stack<VulkanRenderTarget> _targetStack = new();
@@ -878,11 +881,22 @@ internal sealed unsafe class VulkanContext : IDisposable
                     extensions.Add(extension);
         }
 
+        // Vulkan ローダー経由 (macOS で Vulkan SDK を入れた環境など) では、MoltenVK のような
+        // portability ドライバは明示的に要求しないと列挙されない。
+        // MoltenVK を直接読み込んでいる場合も拡張として公開されているので、指定して害はない
+        var flags = InstanceCreateFlags.None;
+        if (GetInstanceExtensionNames().Contains(PortabilityEnumerationExtensionName))
+        {
+            extensions.Add(PortabilityEnumerationExtensionName);
+            flags |= InstanceCreateFlags.EnumeratePortabilityBitKhr;
+        }
+
         var extensionsPtr = (byte**)SilkMarshal.StringArrayToPtr(extensions);
 
         var createInfo = new InstanceCreateInfo
         {
             SType = StructureType.InstanceCreateInfo,
+            Flags = flags,
             PApplicationInfo = &appInfo,
             EnabledExtensionCount = (uint)extensions.Count,
             PpEnabledExtensionNames = extensionsPtr,
@@ -1045,7 +1059,10 @@ internal sealed unsafe class VulkanContext : IDisposable
         return false;
     }
 
-    private bool SupportsSwapchain(PhysicalDevice device)
+    private bool SupportsSwapchain(PhysicalDevice device) =>
+        GetDeviceExtensionNames(device).Contains(KhrSwapchain.ExtensionName);
+
+    private HashSet<string> GetDeviceExtensionNames(PhysicalDevice device)
     {
         var vk = Vk;
 
@@ -1057,14 +1074,38 @@ internal sealed unsafe class VulkanContext : IDisposable
             vk.EnumerateDeviceExtensionProperties(device, (byte*)null, ref count, p);
         }
 
+        var names = new HashSet<string>();
         foreach (var ext in extensions)
         {
             var name = SilkMarshal.PtrToString((nint)ext.ExtensionName);
-            if (name == KhrSwapchain.ExtensionName)
-                return true;
+            if (name is not null)
+                names.Add(name);
         }
 
-        return false;
+        return names;
+    }
+
+    private HashSet<string> GetInstanceExtensionNames()
+    {
+        var vk = Vk;
+
+        uint count = 0;
+        vk.EnumerateInstanceExtensionProperties((byte*)null, ref count, null);
+        var extensions = new ExtensionProperties[count];
+        fixed (ExtensionProperties* p = extensions)
+        {
+            vk.EnumerateInstanceExtensionProperties((byte*)null, ref count, p);
+        }
+
+        var names = new HashSet<string>();
+        foreach (var ext in extensions)
+        {
+            var name = SilkMarshal.PtrToString((nint)ext.ExtensionName);
+            if (name is not null)
+                names.Add(name);
+        }
+
+        return names;
     }
 
     private void CreateLogicalDevice()
@@ -1080,7 +1121,13 @@ internal sealed unsafe class VulkanContext : IDisposable
             PQueuePriorities = &queuePriority,
         };
 
-        var extensionsPtr = (byte**)SilkMarshal.StringArrayToPtr([KhrSwapchain.ExtensionName]);
+        List<string> extensions = [KhrSwapchain.ExtensionName];
+
+        // MoltenVK などの portability ドライバでは、この拡張を有効化することが仕様上必須
+        if (GetDeviceExtensionNames(_physicalDevice).Contains(PortabilitySubsetExtensionName))
+            extensions.Add(PortabilitySubsetExtensionName);
+
+        var extensionsPtr = (byte**)SilkMarshal.StringArrayToPtr(extensions);
         PhysicalDeviceFeatures features = default;
 
         var createInfo = new DeviceCreateInfo
@@ -1088,7 +1135,7 @@ internal sealed unsafe class VulkanContext : IDisposable
             SType = StructureType.DeviceCreateInfo,
             QueueCreateInfoCount = 1,
             PQueueCreateInfos = &queueCreateInfo,
-            EnabledExtensionCount = 1,
+            EnabledExtensionCount = (uint)extensions.Count,
             PpEnabledExtensionNames = extensionsPtr,
             PEnabledFeatures = &features,
         };
