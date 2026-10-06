@@ -1,0 +1,55 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import BlogPostMeta from '../../components/blog/BlogPostMeta.astro';
+import {getBlogPosts, getBlogPostUrl} from '../../utils/blog';
+
+const posts = await getBlogPosts();
+---
+
+<!-- starlight-versions がサイドバーをバージョンごとのグループに分けて扱うため、独自のサイドバーは渡さない -->
+<StarlightPage
+  frontmatter={{
+    title: 'ブログ',
+    description: 'Promete の開発に関するお知らせや記事',
+    tableOfContents: false,
+    prev: false,
+    next: false,
+  }}
+>
+  {
+    posts.length === 0 ? (
+      <p>まだ記事はありません。</p>
+    ) : (
+      <ul class="blog-post-list">
+        {posts.map((post) => (
+          <li>
+            <a href={getBlogPostUrl(post)}>{post.data.title}</a>
+            <BlogPostMeta post={post} />
+            {post.data.description && <p>{post.data.description}</p>}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</StarlightPage>
+
+<style>
+  .blog-post-list {
+    padding: 0;
+    list-style: none;
+  }
+
+  .blog-post-list > li {
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+
+  .blog-post-list > li > a {
+    font-size: var(--sl-text-h4);
+    font-weight: 600;
+  }
+
+  .blog-post-list > li > :global(*) {
+    margin-top: 0.25rem;
+  }
+</style>

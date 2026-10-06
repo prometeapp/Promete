@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "docs",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "Promete.Docs", "dev"],
+      "port": 4322,
+      "autoPort": true
+    }
+  ]
+}

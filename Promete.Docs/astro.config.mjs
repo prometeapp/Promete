@@ -101,6 +101,10 @@ export default defineConfig({
         label: '更新履歴',
         link: '/changelog',
       },
+      {
+        label: 'ブログ',
+        link: '/blog/',
+      },
     ],
   })],
   markdown: {

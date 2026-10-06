@@ -1,0 +1,31 @@
+---
+import type {BlogPost} from '../../utils/blog';
+import {formatBlogDate} from '../../utils/blog';
+
+interface Props {
+  post: BlogPost;
+}
+
+const {date, authors, draft} = Astro.props.post.data;
+---
+
+<p class="blog-post-meta">
+  <time datetime={date.toISOString()}>{formatBlogDate(date)}</time>
+  {authors && authors.length > 0 && <span>{authors.join('、')}</span>}
+  {draft && <span class="draft">下書き</span>}
+</p>
+
+<style>
+  .blog-post-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+  }
+
+  .draft {
+    color: var(--sl-color-orange);
+    font-weight: 600;
+  }
+</style>

@@ -55,6 +55,24 @@ dotnet run tools/sync-docs-skill.cs
 git config core.hooksPath .githooks
 ```
 
+### ブログ
+
+ブログ記事は `Promete.Docs/src/content/blog/` に Markdown（`.md`）または MDX（`.mdx`）で置きます。このフォルダからの相対パスが URL になります（例: `2026/agent-skills.md` → `/blog/2026/agent-skills/`）。
+
+```md
+---
+title: 記事のタイトル
+description: 一覧に表示される概要（省略可）
+date: 2026-10-06
+authors: [Ebise Lutica]
+draft: true
+---
+
+本文
+```
+
+`date` は公開日で、一覧は新しい順に並びます。`draft: true` の記事は開発サーバー（`pnpm dev`）でのみ表示され、公開サイトには出ません。MDX では、ドキュメントと同じく Starlight のコンポーネント（`Aside` など）を使えます。
+
 ## 継続的インテグレーション
 
 Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは `.github/workflow` にあります。

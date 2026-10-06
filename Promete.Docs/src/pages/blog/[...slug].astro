@@ -1,0 +1,32 @@
+---
+import type {GetStaticPaths, InferGetStaticPropsType} from 'astro';
+import {render} from 'astro:content';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import BlogPostMeta from '../../components/blog/BlogPostMeta.astro';
+import {getBlogPosts} from '../../utils/blog';
+
+export const getStaticPaths = (async () => {
+  const posts = await getBlogPosts();
+  return posts.map((post) => ({params: {slug: post.id}, props: {post}}));
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const {post} = Astro.props;
+const {Content, headings} = await render(post);
+---
+
+<!-- ドキュメントのページ送りは記事と無関係なので出さない -->
+<StarlightPage
+  frontmatter={{
+    title: post.data.title,
+    description: post.data.description,
+    prev: false,
+    next: false,
+  }}
+  headings={headings}
+>
+  <BlogPostMeta post={post} />
+  <Content />
+  <p><a href="/blog/">← 記事一覧に戻る</a></p>
+</StarlightPage>
