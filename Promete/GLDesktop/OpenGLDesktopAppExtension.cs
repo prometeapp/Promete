@@ -33,6 +33,7 @@ public static class OpenGLDesktopAppExtension
             .Use<GLBeginAlphaMaskCommandRunner>()
             .Use<GLEndMaskCommandRunner>()
             .Use<GLDrawPieTextureCommandRunner>()
+            .Use<GLDrawDeformedTextureCommandRunner>()
             .Build<OpenGLDesktopBackend>(opts);
 
         // ビルド後にランナーをキューへ一括紐付け
@@ -45,7 +46,8 @@ public static class OpenGLDesktopAppExtension
                 app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
                 app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
                 app.GetPlugin<GLEndMaskCommandRunner>(),
-                app.GetPlugin<GLDrawPieTextureCommandRunner>()
+                app.GetPlugin<GLDrawPieTextureCommandRunner>(),
+                app.GetPlugin<GLDrawDeformedTextureCommandRunner>()
             );
 
         return app;

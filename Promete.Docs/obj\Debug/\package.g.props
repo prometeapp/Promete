@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <PropertyGroup>
+    <PackageJsonName Condition="$(PackageJsonName) == ''">promete-docs</PackageJsonName>
+    <PackageJsonVersion Condition="$(PackageJsonVersion) == ''">1.0.0</PackageJsonVersion>
+    <PackageJsonDescription Condition="$(PackageJsonDescription) == ''"></PackageJsonDescription>
+    <PackageJsonScriptsDev Condition="$(PackageJsonScriptsDev) == ''">astro dev</PackageJsonScriptsDev>
+    <PackageJsonScriptsStart Condition="$(PackageJsonScriptsStart) == ''">astro dev</PackageJsonScriptsStart>
+    <PackageJsonScriptsBuild Condition="$(PackageJsonScriptsBuild) == ''">astro build</PackageJsonScriptsBuild>
+    <PackageJsonScriptsPreview Condition="$(PackageJsonScriptsPreview) == ''">astro preview</PackageJsonScriptsPreview>
+    <PackageJsonKeywords Condition="$(PackageJsonKeywords) == ''">[]</PackageJsonKeywords>
+    <PackageJsonAuthor Condition="$(PackageJsonAuthor) == ''"></PackageJsonAuthor>
+    <PackageJsonLicense Condition="$(PackageJsonLicense) == ''">MIT</PackageJsonLicense>
+    <PackageJsonDependenciesAstrojsStarlight Condition="$(PackageJsonDependenciesAstrojsStarlight) == ''">^0.38.2</PackageJsonDependenciesAstrojsStarlight>
+    <PackageJsonDependenciesAstro Condition="$(PackageJsonDependenciesAstro) == ''">^6.0.8</PackageJsonDependenciesAstro>
+    <PackageJsonDependenciesPlaywright Condition="$(PackageJsonDependenciesPlaywright) == ''">^1.49.0</PackageJsonDependenciesPlaywright>
+    <PackageJsonDependenciesRehypeMermaid Condition="$(PackageJsonDependenciesRehypeMermaid) == ''">^2.1.0</PackageJsonDependenciesRehypeMermaid>
+    <PackageJsonDependenciesSassEmbedded Condition="$(PackageJsonDependenciesSassEmbedded) == ''">^1.81.0</PackageJsonDependenciesSassEmbedded>
+    <PackageJsonDependenciesStarlightVersions Condition="$(PackageJsonDependenciesStarlightVersions) == ''">^0.8.1</PackageJsonDependenciesStarlightVersions>
+    <PackageJsonPackagemanager Condition="$(PackageJsonPackagemanager) == ''">pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319</PackageJsonPackagemanager>
+  </PropertyGroup>
+</Project>
