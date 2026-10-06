@@ -35,7 +35,7 @@ public class GameScene : Scene
     {
         // 9スライステクスチャを読み込み
         // 左16px、上16px、右16px、下16pxをマージンとして指定
-        var nineSliceTexture = Window.TextureFactory.Load9Sliced(
+        var nineSliceTexture = App.TextureFactory.Load9Sliced(
             "assets/ui/button.png",
             left: 16,
             top: 16,

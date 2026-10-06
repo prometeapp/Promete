@@ -17,7 +17,7 @@ public class GameScene : Scene
     public override void OnStart()
     {
         // テクスチャを読み込み
-        var texture = Window.TextureFactory.Load("assets/gauge.png");
+        var texture = App.TextureFactory.Load("assets/gauge.png");
 
         // PieSpriteを作成
         var pieSprite = new PieSprite(texture);
@@ -69,10 +69,10 @@ public class LoadingScene : Scene
 
     public override void OnStart()
     {
-        var texture = Window.TextureFactory.Load("assets/loading.png");
+        var texture = App.TextureFactory.Load("assets/loading.png");
 
         _loadingGauge = new PieSprite(texture)
-            .Location(Window.Width / 2, Window.Height / 2)
+            .Location(View.Width / 2, View.Height / 2)
             .Pivot(0.5f, 0.5f); // 中心を基準点に
 
         Root.Add(_loadingGauge);
@@ -158,12 +158,12 @@ public class SkillButton(Keyboard keyboard) : Container
     public override void OnStart()
     {
         // スキルアイコン
-        var iconTexture = Window!.TextureFactory.Load("assets/skill_icon.png");
+        var iconTexture = App.TextureFactory.Load("assets/skill_icon.png");
         var icon = new Sprite(iconTexture);
         Add(icon);
 
         // クールダウンオーバーレイ（半透明の黒）
-        var overlayTexture = Window.TextureFactory.Load("assets/black_circle.png");
+        var overlayTexture = App.TextureFactory.Load("assets/black_circle.png");
         _cooldownOverlay = new PieSprite(overlayTexture)
             .TintColor(Color.FromArgb(128, 0, 0, 0)); // 半透明
 
@@ -219,7 +219,7 @@ public class CircularHealthBar : Container
 
     public override void OnStart()
     {
-        var gaugeTexture = Window!.TextureFactory.Load("assets/hp_gauge.png");
+        var gaugeTexture = App.TextureFactory.Load("assets/hp_gauge.png");
 
         _hpGauge = new PieSprite(gaugeTexture)
             .Pivot(0.5f, 0.5f);

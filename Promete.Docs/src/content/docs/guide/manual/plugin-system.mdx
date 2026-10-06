@@ -159,7 +159,7 @@ public class SettingsScene(GameSettings settings, Keyboard keyboard) : Scene
         if (keyboard.F11.IsKeyDown)
         {
             settings.IsFullScreen = !settings.IsFullScreen;
-            Window.IsFullScreen = settings.IsFullScreen;
+            View.IsFullScreen = settings.IsFullScreen;
         }
     }
 }

@@ -17,13 +17,13 @@ public class GameScene : Scene
     public override void OnStart()
     {
         // マスク画像を読み込み（明るい部分が表示される）
-        var maskTexture = Window.TextureFactory.Load("assets/circle_mask.png");
+        var maskTexture = App.TextureFactory.Load("assets/circle_mask.png");
 
         // MaskedContainerを作成
         var maskedContainer = new MaskedContainer(maskTexture);
 
         // 子要素を追加
-        var background = new Sprite(Window.TextureFactory.Load("assets/background.png"));
+        var background = new Sprite(App.TextureFactory.Load("assets/background.png"));
         maskedContainer.Add(background);
 
         // シーンに追加
@@ -54,7 +54,7 @@ public class GameScene : Scene
 よって、マスクのグレーな値は全て白として認識されます。
 
 ```csharp title="ステンシルバッファ方式"
-var maskTexture = Window.TextureFactory.Load("assets/mask.png");
+var maskTexture = App.TextureFactory.Load("assets/mask.png");
 
 // デフォルトでステンシルバッファ方式
 var container = new MaskedContainer(maskTexture, useAlphaMask: false);
@@ -70,7 +70,7 @@ Root.Add(container);
 `UseAlphaMask`を`true`に設定すると、フレームバッファを使用したアルファブレンディング方式に切り替わります。グラデーションマスクや部分透明に対応しています。
 
 ```csharp title="アルファブレンディング方式"
-var maskTexture = Window.TextureFactory.Load("assets/gradient_mask.png");
+var maskTexture = App.TextureFactory.Load("assets/gradient_mask.png");
 
 // アルファブレンディング方式を使用
 var container = new MaskedContainer(maskTexture, useAlphaMask: true);
@@ -88,14 +88,14 @@ public class GameScene : Scene
     public override void OnStart()
     {
         // 円形のマスク画像を読み込み
-        var maskTexture = Window.TextureFactory.Load("assets/circle_mask.png");
+        var maskTexture = App.TextureFactory.Load("assets/circle_mask.png");
 
         // MaskedContainerを作成
         var profileIcon = new MaskedContainer(maskTexture)
             .Location(100, 100);
 
         // プロフィール画像を追加
-        var profileImage = new Sprite(Window.TextureFactory.Load("assets/profile.png"))
+        var profileImage = new Sprite(App.TextureFactory.Load("assets/profile.png"))
             .Size(100, 100); // マスクと同じサイズ
 
         profileIcon.Add(profileImage);
@@ -117,11 +117,11 @@ public class SpotlightScene(Mouse mouse) : Scene
     public override void OnStart()
     {
         // 暗い背景
-        var darkBackground = new Sprite(Window.TextureFactory.Load("assets/dark_room.png"));
+        var darkBackground = new Sprite(App.TextureFactory.Load("assets/dark_room.png"));
         Root.Add(darkBackground);
 
         // スポットライトマスク（グラデーション円）
-        var maskTexture = Window.TextureFactory.Load("assets/spotlight_gradient.png");
+        var maskTexture = App.TextureFactory.Load("assets/spotlight_gradient.png");
         _spotlightMask = new Sprite(maskTexture)
             .Pivot(0.5f, 0.5f); // 中心を基準点に
 
@@ -129,7 +129,7 @@ public class SpotlightScene(Mouse mouse) : Scene
         _spotlightContainer = new MaskedContainer(maskTexture, useAlphaMask: true);
 
         // 照らされる部分（明るい画像）
-        var litBackground = new Sprite(Window.TextureFactory.Load("assets/lit_room.png"));
+        var litBackground = new Sprite(App.TextureFactory.Load("assets/lit_room.png"));
         _spotlightContainer.Add(litBackground);
 
         Root.Add(_spotlightContainer);
@@ -154,14 +154,14 @@ public class GameScene : Scene
     public override void OnStart()
     {
         // カスタム形状のマスク（例: 六角形）
-        var maskTexture = Window.TextureFactory.Load("assets/hexagon_mask.png");
+        var maskTexture = App.TextureFactory.Load("assets/hexagon_mask.png");
 
         // MaskedContainerを作成
         var customPanel = new MaskedContainer(maskTexture)
             .Location(200, 150);
 
         // 背景
-        var background = new Sprite(Window.TextureFactory.Load("assets/panel_bg.png"))
+        var background = new Sprite(App.TextureFactory.Load("assets/panel_bg.png"))
             .Size(200, 200)
             .TintColor(Color.FromArgb(180, 100, 150, 200)); // 半透明の色
 
@@ -194,10 +194,10 @@ public class WipeTransition : Scene
     public override void OnStart()
     {
         // 次のシーンの内容
-        var nextSceneContent = new Sprite(Window.TextureFactory.Load("assets/next_scene.png"));
+        var nextSceneContent = new Sprite(App.TextureFactory.Load("assets/next_scene.png"));
 
         // ワイプマスク（横に広がる矩形）
-        var maskTexture = Window.TextureFactory.Load("assets/wipe_mask.png");
+        var maskTexture = App.TextureFactory.Load("assets/wipe_mask.png");
         _wipeMask = new Sprite(maskTexture)
             .Scale(0.0f, 1.0f); // 初期状態: 横幅0
 

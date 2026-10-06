@@ -19,7 +19,7 @@ public class GameScene : Scene
         var tilemap = new Tilemap(tileSize: (16, 16));
 
         // テクスチャからタイルを作成
-        var grassTexture = Window.TextureFactory.Load("assets/grass.png");
+        var grassTexture = App.TextureFactory.Load("assets/grass.png");
         var grassTile = new Tile(grassTexture);
 
         // タイルを配置
@@ -73,7 +73,7 @@ tilemap.Fill(5, 5, 15, 10, wallTile);
 
 ```csharp title="基本的なタイルの作成"
 // 単一テクスチャのタイル
-var texture = Window.TextureFactory.Load("assets/stone.png");
+var texture = App.TextureFactory.Load("assets/stone.png");
 var stoneTile = new Tile(texture);
 
 // タイルを配置
@@ -84,9 +84,9 @@ tilemap.SetTile(x, y, stoneTile);
 
 ```csharp title="アニメーションタイルの作成"
 // アニメーション用テクスチャを読み込み
-var frame1 = Window.TextureFactory.Load("assets/water_1.png");
-var frame2 = Window.TextureFactory.Load("assets/water_2.png");
-var frame3 = Window.TextureFactory.Load("assets/water_3.png");
+var frame1 = App.TextureFactory.Load("assets/water_1.png");
+var frame2 = App.TextureFactory.Load("assets/water_2.png");
+var frame3 = App.TextureFactory.Load("assets/water_3.png");
 
 // アニメーションタイルを作成（0.5秒間隔でアニメーション）
 var waterTile = new Tile([frame1, frame2, frame3], 0.5f);

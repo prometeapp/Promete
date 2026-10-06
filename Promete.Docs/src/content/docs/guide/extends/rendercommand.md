@@ -136,11 +136,17 @@ queue.Enqueue(new EndTrimCommand
 
 `Collect()` の第2引数 `RenderContext` は描画時のコンテキスト情報を持ちます。
 
+| プロパティ | 内容 |
+|----------|------|
+| `WindowSize` | ウィンドウのサイズ（論理ピクセル） |
+| `WindowScale` | ウィンドウのスケール |
+| `ActualWidth` / `ActualHeight` | ウィンドウの実際のサイズ（物理ピクセル） |
+
 ```csharp
 public override void Collect(RenderCommandQueue queue, RenderContext ctx)
 {
-    // FrameBuffer内かどうかの確認
-    bool inFrameBuffer = ctx.FrameBuffer is not null;
+    // 物理ピクセル単位で計算が必要な場合に使う
+    var scale = ctx.ActualWidth / (float)ctx.WindowSize.X;
 }
 ```
 
