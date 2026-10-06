@@ -1,0 +1,2 @@
+<!-- リポジトリ直下の Directory.Build.targets (Promete.targets の import) をツールに適用しないため、探索をここで止める -->
+<Project />

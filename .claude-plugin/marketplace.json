@@ -1,0 +1,19 @@
+{
+  "name": "promete",
+  "description": "Promete ゲームエンジン公式の Agent Skills",
+  "owner": {
+    "name": "prometeapp"
+  },
+  "plugins": [
+    {
+      "name": "promete",
+      "source": "./plugins/promete",
+      "description": "Promete ゲームエンジンの API と使い方"
+    },
+    {
+      "name": "promete-v2-migration",
+      "source": "./plugins/promete-v2-migration",
+      "description": "Promete v1 のプロジェクトを v2 に移行する"
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 ---
 name: deploy
 description: Promete のリリースデプロイを行う。バージョン更新・コミット・タグ作成・push を CONTRIBUTING.md 準拠の手順で実行する。ユーザーが「デプロイして」「リリースして」「バージョンを上げて公開」「core-x.y.z のタグを切って」などと言った場合、必ずこのスキルを使用すること。
+metadata:
+  internal: true
 ---
 
 # Promete デプロイ

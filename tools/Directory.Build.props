@@ -1,0 +1,2 @@
+<!-- リポジトリ直下の Directory.Build.props (StyleCop や SceneGen の参照) をツールに適用しないため、探索をここで止める -->
+<Project />

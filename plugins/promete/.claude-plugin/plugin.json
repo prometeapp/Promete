@@ -1,0 +1,10 @@
+{
+  "name": "promete",
+  "description": "Promete ゲームエンジンの API と使い方",
+  "author": {
+    "name": "prometeapp"
+  },
+  "homepage": "https://promete.app",
+  "repository": "https://github.com/prometeapp/Promete",
+  "license": "MIT"
+}

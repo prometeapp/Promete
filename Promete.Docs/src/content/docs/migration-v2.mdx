@@ -10,10 +10,22 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
 このガイドでは、Promete v1 で作られたプロジェクトを v2 に移行する手順を解説します。
 
 <Aside type="tip">
-  Claude CodeなどのAIエージェントを用いて、お使いのプロジェクトをv2へ移行する場合は、
-  必要に応じてLLM向けのドキュメントを使用できます。以下からダウンロードできます。
+  Claude Code などの AI エージェントでお使いのプロジェクトを v2 へ移行する場合は、移行用の Agent Skill を使用できます。
 
-  <a href="/assets/migration-v2-llm.md" download>migration-v2-llm.md</a>
+  Claude Code では、次のコマンドでインストールできます。
+
+  ```
+  /plugin marketplace add prometeapp/Promete
+  /plugin install promete-v2-migration@promete
+  ```
+
+  Codex・Cursor・GitHub Copilot などのエージェントでは、次のコマンドでインストールできます。
+
+  ```sh
+  npx skills add prometeapp/Promete --skill promete-v2-migration
+  ```
+
+  インストール後、エージェントに「Promete を v2 に移行して」と依頼してください。
 </Aside>
 
 ## アプリケーション開発者向け手順
@@ -82,6 +94,12 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    | `window.PreUpdate` / `PostUpdate`（イベント）                         | `App.PreUpdate` / `PostUpdate`                                   |
    | `window.Exit()`                                                       | `App.Exit()`                                                     |
    | `window.IsVsyncMode`                                                  | 起動時の `WindowOptions.IsVsyncMode` のみ（実行中の変更は不可） |
+
+   <Aside type="caution">
+     `window.Render` と `App.Render` は、呼ばれるタイミングが異なります。v1 の `window.Render` はシーンの描画が終わった後に呼ばれていましたが、v2 の `App.Render` はシーンの描画コマンドを集めた後、それを実行する前に呼ばれます。
+
+     `Render` イベントで OpenGL を直接呼び出し、画面に重ねて描画していた場合は、シーンの描画が終わった後に呼ばれる `App.PostRender` に移してください。
+   </Aside>
 
    コンストラクタで `IWindow` を受け取っていたシーンは、コンストラクタから削除して `View` / `Time` プロパティを直接使うように変更してください。
 
@@ -155,6 +173,27 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    ```
 
    `TextureFactory` 型を明示して変数やフィールドに受けている場合は、型名を `TextureFactoryBase` に変更してください。
+
+   また、`LoadSpriteSheet` の挙動が変わっています。v1 ではセルごとに独立したテクスチャを作っていましたが、v2 では画像全体を1枚のテクスチャとして読み込み、全セルがそれを共有します。そのため、セルを1つ `Dispose` すると、同じスプライトシートの全セルが使えなくなります。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     foreach (var cell in cells)
+     {
+         cell.Dispose();
+     }
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     // どれか1つを1回だけ破棄すれば、全セルが解放されます
+     cells[0].Dispose();
+     ```
+     </TabItem>
+   </Tabs>
+
+   一部のセルだけを破棄して、残りのセルを使い続けることはできません。
 
 5. **`Angle` 型の変更に対応する**
 
@@ -602,7 +641,7 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    - `buffer` の長さは呼び出しごとに変わります。`buffer.Length` を超えて書き込まないでください
    - `FillSamples` はオーディオスレッドから呼ばれます。ファイル読み込みなど、ブロックする処理を行わないでください
    - 終端でないのに要求より少ないフレーム数を返した場合、残りは無音で埋められます
-   - 3チャンネル以上の音源は、`Play` では先頭の2チャンネルだけが再生され、`PlayOneShot` では `NotSupportedException` になります
+   - 3チャンネル以上の音源は、`Play` では先頭の2チャンネルだけが再生されます。`PlayOneShotAsync` では `NotSupportedException` になり、`PlayOneShot` では例外にならず何も再生されません
 
 4. **独自のフォント（`IFont`）を `IGlyphSource` に移行する**
 
