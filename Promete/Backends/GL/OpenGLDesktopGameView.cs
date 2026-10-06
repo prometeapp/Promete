@@ -1,15 +1,14 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Promete.Graphics;
+using Promete.Graphics.Imaging;
 using Promete.Platforms;
 using Promete.Windowing;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using IWindow = Silk.NET.Windowing.IWindow;
 
 namespace Promete.Backends.GL;
@@ -159,13 +158,15 @@ public class OpenGLDesktopGameView : IGameView
 
     public Texture2D TakeScreenshot()
     {
-        return _textureFactory.LoadFromImageSharpImage(TakeScreenshotAsImage());
+        return _textureFactory.LoadFromImage(TakeScreenshotAsImage());
     }
 
     public async Task SaveScreenshotAsync(string path, CancellationToken ct = default)
     {
         var img = TakeScreenshotAsImage();
-        await img.SaveAsPngAsync(path, ct);
+        await using var stream = File.Create(path);
+        PngEncoder.Encode(img, stream);
+        await stream.FlushAsync(ct);
     }
 
     public void UpdateWindowSize()
@@ -177,7 +178,7 @@ public class OpenGLDesktopGameView : IGameView
         _screenshotBuffer = new byte[fb.X * fb.Y * Scale * 4];
     }
 
-    private unsafe Image<Rgba32> TakeScreenshotAsImage()
+    private unsafe RgbaImage TakeScreenshotAsImage()
     {
         fixed (byte* buffer = _screenshotBuffer)
         {
@@ -192,13 +193,10 @@ public class OpenGLDesktopGameView : IGameView
             );
         }
 
-        var img = Image.LoadPixelData<Rgba32>(
-            _screenshotBuffer,
-            ActualWidth * Scale,
-            ActualHeight * Scale
-        );
-        img.Mutate(i => i.Flip(FlipMode.Vertical));
-        return img;
+        var width = ActualWidth * Scale;
+        var height = ActualHeight * Scale;
+        var pixels = _screenshotBuffer.AsSpan(0, width * height * 4).ToArray();
+        return new RgbaImage(width, height, pixels).FlipVertical();
     }
 
     private void OnLoad()

@@ -1,12 +1,10 @@
 using System.Drawing;
 using System.Numerics;
 using Promete.Graphics;
+using Promete.Graphics.Imaging;
 using Promete.ImGui;
 using Promete.Nodes;
-using SixLabors.ImageSharp.PixelFormats;
 using Color = System.Drawing.Color;
-using ImageSharpImage = SixLabors.ImageSharp.Image;
-using Rgba32Image = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 
 namespace Promete.Experimental.Vulkan;
 
@@ -307,8 +305,8 @@ public class MainScene(ImGuiPlugin imGui) : Scene
     {
         try
         {
-            await Window.SaveScreenshotAsync(ScreenshotPath1);
-            using var img = ImageSharpImage.Load<Rgba32>(ScreenshotPath1);
+            await View.SaveScreenshotAsync(ScreenshotPath1);
+            var img = ImageDecoder.Decode(ScreenshotPath1);
 
             Console.WriteLine("[MainScene] --- フェーズ1: 通常描画 ---");
             _failures += Verify(img, 10, 10, Color.DarkSlateBlue, "背景 (左上)");
@@ -380,8 +378,8 @@ public class MainScene(ImGuiPlugin imGui) : Scene
     {
         try
         {
-            await Window.SaveScreenshotAsync(ScreenshotPath2);
-            using var img = ImageSharpImage.Load<Rgba32>(ScreenshotPath2);
+            await View.SaveScreenshotAsync(ScreenshotPath2);
+            var img = ImageDecoder.Decode(ScreenshotPath2);
 
             Console.WriteLine("[MainScene] --- フェーズ2: ポストプロセス (色反転) ---");
             var invBg = Color.FromArgb(255 - 72, 255 - 61, 255 - 139);
@@ -430,9 +428,9 @@ public class MainScene(ImGuiPlugin imGui) : Scene
         return App.TextureFactory.Create(arr, size);
     }
 
-    private static int Verify(Rgba32Image img, int x, int y, Color expected, string label)
+    private static int Verify(RgbaImage img, int x, int y, Color expected, string label)
     {
-        var actual = img[x, y];
+        var actual = img.GetPixel(x, y);
         var ok =
             Math.Abs(actual.R - expected.R) <= 2
             && Math.Abs(actual.G - expected.G) <= 2

@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
+using Promete.Graphics.Imaging;
 
 namespace Promete.Graphics.Fonts;
 
@@ -93,7 +90,7 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
         if (cellSize.X <= 0 || cellSize.Y <= 0)
             throw new ArgumentOutOfRangeException(nameof(cellSize));
 
-        using var image = Image.Load<Rgba32>(stream);
+        var image = ImageDecoder.Decode(stream);
         var source = new BitmapGlyphSource(cellSize.Y, baseline);
         var columns = image.Width / cellSize.X;
         if (columns <= 0)
@@ -107,7 +104,7 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
             if (y + cellSize.Y > image.Height)
                 throw new ArgumentException("画像に対して文字数が多すぎます。", nameof(characters));
 
-            source.Register(rune, Crop(image, x, y, cellSize), cellSize);
+            source.Register(rune, image.Crop(x, y, cellSize.X, cellSize.Y).Pixels, cellSize);
             index++;
         }
 
@@ -123,9 +120,9 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
     /// <param name="advance">送り幅。省略した場合は画像の幅が使われます。</param>
     public void Register(int codepoint, string path, VectorInt? bearing = null, int? advance = null)
     {
-        using var image = Image.Load<Rgba32>(path);
+        var image = ImageDecoder.Decode(path);
         var size = new VectorInt(image.Width, image.Height);
-        Register(codepoint, Crop(image, 0, 0, size), size, bearing, advance);
+        Register(codepoint, image.Pixels, size, bearing, advance);
     }
 
     /// <summary>
@@ -139,9 +136,9 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
     /// <returns>割り当てられたコードポイント。</returns>
     public int Register(string name, string path, VectorInt? bearing = null, int? advance = null)
     {
-        using var image = Image.Load<Rgba32>(path);
+        var image = ImageDecoder.Decode(path);
         var size = new VectorInt(image.Width, image.Height);
-        return Register(name, Crop(image, 0, 0, size), size, bearing, advance);
+        return Register(name, image.Pixels, size, bearing, advance);
     }
 
     /// <summary>
@@ -304,18 +301,6 @@ public sealed class BitmapGlyphSource : IGlyphSource, INamedGlyphSource
             yield return text[i];
             i++;
         }
-    }
-
-    private static byte[] Crop(Image<Rgba32> image, int x, int y, VectorInt size)
-    {
-        var pixels = new byte[size.X * size.Y * 4];
-        for (var row = 0; row < size.Y; row++)
-        {
-            var span = image.DangerousGetPixelRowMemory(y + row).Span.Slice(x, size.X);
-            MemoryMarshal.AsBytes(span).CopyTo(pixels.AsSpan(row * size.X * 4));
-        }
-
-        return pixels;
     }
 
     /// <summary>

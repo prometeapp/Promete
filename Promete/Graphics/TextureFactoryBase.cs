@@ -1,10 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+using Promete.Graphics.Imaging;
 using Color = System.Drawing.Color;
+using Rectangle = System.Drawing.Rectangle;
 
 namespace Promete.Graphics;
 
@@ -76,9 +75,12 @@ public abstract class TextureFactoryBase
     public abstract void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap);
 
     /// <summary>
-    /// ImageSharp の Image からテクスチャを生成します。
+    /// デコード済みの画像からテクスチャを生成します。
     /// </summary>
-    protected internal abstract Texture2D LoadFromImageSharpImage(Image image);
+    internal Texture2D LoadFromImage(RgbaImage image)
+    {
+        return Create(image.Pixels, (image.Width, image.Height));
+    }
 
     /// <summary>
     /// 指定したパスから 9 スライステクスチャを読み込みます。
@@ -86,7 +88,7 @@ public abstract class TextureFactoryBase
     /// <returns></returns>
     public virtual Texture9Sliced Load9Sliced(string path, int left, int top, int right, int bottom)
     {
-        return Load9Sliced(Image.Load(path), left, top, right, bottom);
+        return Load9Sliced(ImageDecoder.Decode(path), left, top, right, bottom);
     }
 
     /// <summary>
@@ -101,20 +103,11 @@ public abstract class TextureFactoryBase
         int bottom
     )
     {
-        return Load9Sliced(Image.Load(stream), left, top, right, bottom);
+        return Load9Sliced(ImageDecoder.Decode(stream), left, top, right, bottom);
     }
 
-    protected virtual Texture9Sliced Load9Sliced(
-        Image bitmap,
-        int left,
-        int top,
-        int right,
-        int bottom
-    )
+    private Texture9Sliced Load9Sliced(RgbaImage img, int left, int top, int right, int bottom)
     {
-        using var img = bitmap.CloneAs<Rgba32>();
-        bitmap.Dispose();
-
         var size = (img.Width, img.Height);
 
         if (left > img.Width)
@@ -126,25 +119,21 @@ public abstract class TextureFactoryBase
         if (bottom > img.Height - top)
             throw new ArgumentException(null, nameof(bottom));
 
-        var atlas = new[]
+        var atlas = new Rectangle[]
         {
-            new Rectangle(0, 0, left, top),
-            new Rectangle(left, 0, img.Width - left - right, top),
-            new Rectangle(img.Width - right, 0, right, top),
-            new Rectangle(0, top, left, img.Height - top - bottom),
-            new Rectangle(left, top, img.Width - left - right, img.Height - top - bottom),
-            new Rectangle(img.Width - right, top, right, img.Height - top - bottom),
-            new Rectangle(0, img.Height - bottom, left, bottom),
-            new Rectangle(left, img.Height - bottom, img.Width - left - right, bottom),
-            new Rectangle(img.Width - right, img.Height - bottom, right, bottom),
+            new(0, 0, left, top),
+            new(left, 0, img.Width - left - right, top),
+            new(img.Width - right, 0, right, top),
+            new(0, top, left, img.Height - top - bottom),
+            new(left, top, img.Width - left - right, img.Height - top - bottom),
+            new(img.Width - right, top, right, img.Height - top - bottom),
+            new(0, img.Height - bottom, left, bottom),
+            new(left, img.Height - bottom, img.Width - left - right, bottom),
+            new(img.Width - right, img.Height - bottom, right, bottom),
         };
 
         var texture = atlas
-            .Select(rect =>
-            {
-                using var locked = img.Clone(ctx => ctx.Crop(rect));
-                return LoadFromImageSharpImage(locked);
-            })
+            .Select(rect => LoadFromImage(img.Crop(rect.X, rect.Y, rect.Width, rect.Height)))
             .ToArray();
 
         return new Texture9Sliced(texture, size);

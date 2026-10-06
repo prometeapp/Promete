@@ -1,10 +1,6 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
+using Promete.Graphics.Imaging;
 using Color = System.Drawing.Color;
 
 namespace Promete.Graphics.Rendering.Vulkan;
@@ -17,12 +13,12 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
 {
     public override Texture2D Load(string path)
     {
-        return LoadFromImageSharpImage(Image.Load(path));
+        return LoadFromImage(ImageDecoder.Decode(path));
     }
 
     public override Texture2D Load(Stream stream)
     {
-        return LoadFromImageSharpImage(Image.Load(stream));
+        return LoadFromImage(ImageDecoder.Decode(stream));
     }
 
     public override Texture2D[] LoadSpriteSheet(
@@ -32,7 +28,7 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
         VectorInt size
     )
     {
-        return LoadSpriteSheet(Image.Load(path), horizontalCount, verticalCount, size);
+        return LoadSpriteSheet(ImageDecoder.Decode(path), horizontalCount, verticalCount, size);
     }
 
     public override Texture2D[] LoadSpriteSheet(
@@ -42,7 +38,7 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
         VectorInt size
     )
     {
-        return LoadSpriteSheet(Image.Load(stream), horizontalCount, verticalCount, size);
+        return LoadSpriteSheet(ImageDecoder.Decode(stream), horizontalCount, verticalCount, size);
     }
 
     public override Texture2D Create(byte[] bitmap, VectorInt size)
@@ -95,19 +91,8 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
         );
     }
 
-    protected internal override Texture2D LoadFromImageSharpImage(Image image)
-    {
-        using var img = image.CloneAs<Rgba32>();
-
-        var rgbaBytes = MemoryMarshal
-            .AsBytes(img.GetPixelMemoryGroup().ToArray()[0].Span)
-            .ToArray();
-        image.Dispose();
-        return Create(rgbaBytes, (img.Width, img.Height));
-    }
-
     private Texture2D[] LoadSpriteSheet(
-        Image bmp,
+        RgbaImage bmp,
         int horizontalCount,
         int verticalCount,
         VectorInt size
@@ -115,7 +100,7 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
     {
         var width = (float)bmp.Width;
         var height = (float)bmp.Height;
-        var handle = LoadFromImageSharpImage(bmp).Handle;
+        var handle = LoadFromImage(bmp).Handle;
 
         var textures = new Texture2D[verticalCount * horizontalCount];
         for (var y = 0; y < verticalCount; y++)
@@ -143,7 +128,6 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
             }
         }
 
-        bmp.Dispose();
         return textures;
     }
 

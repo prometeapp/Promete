@@ -1,6 +1,5 @@
 using System.Drawing;
 using Promete.Graphics;
-using SixLabors.ImageSharp;
 using Color = System.Drawing.Color;
 
 namespace Promete.Test.Fakes;
@@ -86,7 +85,4 @@ public class FakeTextureFactory : TextureFactoryBase
     {
         return _textures[handle][(((position.Y * size.X) + position.X) * 4) + 3];
     }
-
-    protected internal override Texture2D LoadFromImageSharpImage(Image image) =>
-        throw new NotSupportedException();
 }

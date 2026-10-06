@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Promete.Graphics.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using Promete.Graphics.Imaging;
 
 namespace Promete.Test;
 
@@ -227,19 +226,22 @@ public class BitmapGlyphSourceTests
         bool markCells = false
     )
     {
-        using var image = new Image<Rgba32>(cellSize.X * columns, cellSize.Y * rows);
+        var width = cellSize.X * columns;
+        var pixels = new byte[width * cellSize.Y * rows * 4];
         if (markCells)
         {
             for (var i = 0; i < columns * rows; i++)
             {
                 var x = (i % columns) * cellSize.X;
                 var y = (i / columns) * cellSize.Y;
-                image[x, y] = new Rgba32((byte)(i * 10), 0, 0, 255);
+                var offset = ((y * width) + x) * 4;
+                pixels[offset] = (byte)(i * 10);
+                pixels[offset + 3] = 255;
             }
         }
 
         var stream = new MemoryStream();
-        image.SaveAsPng(stream);
+        PngEncoder.Encode(new RgbaImage(width, cellSize.Y * rows, pixels), stream);
         stream.Position = 0;
         return stream;
     }

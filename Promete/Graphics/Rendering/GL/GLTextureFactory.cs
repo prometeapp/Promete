@@ -1,13 +1,8 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using Promete.Graphics;
+using Promete.Graphics.Imaging;
 using Silk.NET.OpenGL;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using Color = System.Drawing.Color;
 
 namespace Promete.Windowing.GLDesktop;
@@ -18,12 +13,12 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
 
     public override Texture2D Load(string path)
     {
-        return LoadFromImageSharpImage(Image.Load(path));
+        return LoadFromImage(ImageDecoder.Decode(path));
     }
 
     public override Texture2D Load(Stream stream)
     {
-        return LoadFromImageSharpImage(Image.Load(stream));
+        return LoadFromImage(ImageDecoder.Decode(stream));
     }
 
     public override Texture2D[] LoadSpriteSheet(
@@ -33,7 +28,7 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         VectorInt size
     )
     {
-        return LoadSpriteSheet(Image.Load(path), horizontalCount, verticalCount, size);
+        return LoadSpriteSheet(ImageDecoder.Decode(path), horizontalCount, verticalCount, size);
     }
 
     public override Texture2D[] LoadSpriteSheet(
@@ -43,7 +38,7 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         VectorInt size
     )
     {
-        return LoadSpriteSheet(Image.Load(stream), horizontalCount, verticalCount, size);
+        return LoadSpriteSheet(ImageDecoder.Decode(stream), horizontalCount, verticalCount, size);
     }
 
     public override Texture2D Create(byte[] bitmap, VectorInt size)
@@ -84,19 +79,8 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         return Create(arr);
     }
 
-    protected internal override Texture2D LoadFromImageSharpImage(Image image)
-    {
-        using var img = image.CloneAs<Rgba32>();
-
-        var rgbaBytes = MemoryMarshal
-            .AsBytes(img.GetPixelMemoryGroup().ToArray()[0].Span)
-            .ToArray();
-        image.Dispose();
-        return Create(rgbaBytes, (img.Width, img.Height));
-    }
-
     private Texture2D[] LoadSpriteSheet(
-        Image bmp,
+        RgbaImage bmp,
         int horizontalCount,
         int verticalCount,
         VectorInt size
@@ -104,7 +88,7 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
     {
         var width = (float)bmp.Width;
         var height = (float)bmp.Height;
-        var handle = LoadFromImageSharpImage(bmp).Handle;
+        var handle = LoadFromImage(bmp).Handle;
 
         var textures = new Texture2D[verticalCount * horizontalCount];
         for (var y = 0; y < verticalCount; y++)
@@ -132,40 +116,7 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
             }
         }
 
-        bmp.Dispose();
         return textures;
-    }
-
-    private Texture2D[] LoadSpriteSheetLegacy(
-        Image bmp,
-        int horizontalCount,
-        int verticalCount,
-        VectorInt size
-    )
-    {
-        using (bmp)
-        {
-            using var img = bmp.CloneAs<Rgba32>();
-            var textures = new Texture2D[verticalCount * horizontalCount];
-
-            for (var y = 0; y < verticalCount; y++)
-            for (var x = 0; x < horizontalCount; x++)
-            {
-                var (px, py) = (x * size.X, y * size.Y);
-                if (px + size.X > img.Width)
-                    throw new ArgumentException(null, nameof(horizontalCount));
-
-                if (py + size.Y > img.Height)
-                    throw new ArgumentException(null, nameof(verticalCount));
-
-                using var cropped = img.Clone(ctx =>
-                    ctx.Crop(new Rectangle(px, py, size.X, size.Y))
-                );
-                textures[(y * horizontalCount) + x] = LoadFromImageSharpImage(cropped);
-            }
-
-            return textures.ToArray();
-        }
     }
 
     public override unsafe void Update(

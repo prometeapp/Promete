@@ -42,8 +42,9 @@ Promete v1 のプロジェクトを v2 に移行する。v2 では `IWindow` が
 - `Silk.NET.*` を直接参照している場合は、パッケージ ID を `Promete.Silk.*` (例: `Promete.Silk.OpenGL`) に揃える。upstream と併用すると同名アセンブリが二重に入る。アセンブリ名と名前空間は `Silk.NET.*` のままなので、`using` の変更は不要
 - **推移的に入っていたパッケージが減っている。** csproj に直接参照がなくても、コード中の `using SixLabors.` / `using Silk.NET.` を検索して確認する
   - v1 の Promete は `SixLabors.ImageSharp.Drawing` (`SixLabors.Fonts` を含む) と `Silk.NET` メタパッケージを参照していたため、利用側は直接参照なしにこれらを使えていた
-  - v2 で推移的に入るのは `SixLabors.ImageSharp` と、`Promete.Silk.{Windowing, Input, OpenGL, OpenAL, Maths, Vulkan, Vulkan.Extensions.KHR, Shaderc}` だけ
-  - `SixLabors.Fonts` / `SixLabors.ImageSharp.Drawing` を使っている場合は、自分で `PackageReference` を追加する
+  - v2 で推移的に入るのは `Promete.Silk.{Windowing, Input, OpenGL, OpenAL, Maths, Vulkan, Vulkan.Extensions.KHR, Shaderc}` だけ。`SixLabors.*` は一切入らない
+  - `SixLabors.ImageSharp` / `SixLabors.Fonts` / `SixLabors.ImageSharp.Drawing` を使っている場合は、自分で `PackageReference` を追加する
+  - 画像の読み込みは Promete 自前の実装になり、対応形式は PNG と BMP のみ。JPEG / GIF などを `Load` している場合は PNG へ変換する
   - 上記以外の Silk.NET のサブシステムを使っている場合は、upstream の `Silk.NET.*` ではなく `Promete.Silk.*` を、Promete と同じバージョン (`2.23.0-prmt.1.0.0`) で追加する
 - `Microsoft.Extensions.DependencyInjection` を直接参照している場合は、Promete v2 が要求する 10.x 以上にする。8.x のままだとダウングレード警告 (NU1605) になる
 - `global.json` で .NET SDK のバージョンを固定している場合は、.NET 10 SDK に更新する

@@ -61,7 +61,8 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    v2 では依存パッケージも変わっています。次に当てはまる場合は、プロジェクト側の参照を調整してください。
 
    - **Silk.NET を直接参照している**: Promete v2 は Silk.NET のフォークを使っており、パッケージ ID は `Promete.Silk.*` です（例：`Promete.Silk.OpenGL`）。upstream の `Silk.NET.*` と併用すると同じアセンブリ名が二重に持ち込まれるため、`PackageReference` の ID を `Promete.Silk.*` に揃えてください。アセンブリ名と名前空間は `Silk.NET.*` のままなので、`using` の変更は不要です。
-   - **`SixLabors.Fonts` や `SixLabors.ImageSharp.Drawing` を使っている**: v2 の Promete はこれらに依存しなくなったため、推移的には入ってきません。必要なら自分で `PackageReference` を追加してください（`SixLabors.ImageSharp` は引き続き Promete が参照しています）。
+   - **`SixLabors.ImageSharp` / `SixLabors.Fonts` / `SixLabors.ImageSharp.Drawing` を使っている**: v2 の Promete はこれらに依存しなくなったため、推移的には入ってきません。必要なら自分で `PackageReference` を追加してください。
+   - **PNG / BMP 以外の画像を読み込んでいる**: v2 の画像読み込みは Promete 自身が実装しており、対応形式は PNG と BMP のみです。JPEG や GIF などは `Load` が `NotSupportedException` をスローするので、PNG へ変換してください。
 
 3. **`IWindow` の参照を `View` / `Time` / `App` に置き換える**
 
@@ -717,7 +718,7 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    - **呼び出し順**: `OnInitialize` → 各 `Setup*` の順で呼ばれ、その後に DI コンテナが構築されます。`OnInitialize` の時点で取得できるプラグインは、`Use<T>(instance)` でインスタンスとして登録されたものだけです
    - **ゲームループ**: `OnStart` では、`app.OnStart()` を1度呼んだ後、ゲームループの中で `app.OnUpdate()` / `app.OnRender()` を呼び出してください。終了時には `app.OnDestroy()` を呼んでください
    - **コマンドランナー**: 描画は手順1のコマンドで行われます。`RenderCommandQueue` は `Build<T>()` が自動的に登録するので、`app.GetPlugin<RenderCommandQueue>()` で取得し、標準のコマンドに対応するランナーを `RegisterRunner` で登録してください。テクスチャの描画は、連続する `DrawTextureCommand` をまとめた `DrawTextureBatchedCommand` として届きます
-   - **`TextureFactoryBase`**: v1 の `TextureFactory` から名前が変わりました。テクスチャの一部を書き換える抽象メソッド `Update(Texture2D, VectorInt, VectorInt, byte[])` が追加されたほか、`LoadFromImageSharpImage(Image)` も `protected override` で実装する必要があります。テクスチャは `new Texture2D(handle, size, onDispose)` で生成します
+   - **`TextureFactoryBase`**: v1 の `TextureFactory` から名前が変わりました。テクスチャの一部を書き換える抽象メソッド `Update(Texture2D, VectorInt, VectorInt, byte[])` が追加されました。v1 にあった `LoadFromImageSharpImage(Image)` は廃止されたため、実装は不要です。テクスチャは `new Texture2D(handle, size, onDispose)` で生成します
    - **`IRenderTextureProvider`**: v1 の `IFrameBufferProvider` とはメンバーがまったく異なるため、作り直しになります。`Create` では `new RenderTexture(size, texture, this)` を返し、`Resize` でテクスチャを作り直した場合は `RenderTexture.Texture` を差し替えてください
    - **`IShaderFactory`**: `Compile` でシェーダーをコンパイルし、`ShaderProgram.SetCompiledData(handle, onDispose)` で結果を設定してください。マテリアルの Uniform 値は `Material.Uniforms` で取得できます
 

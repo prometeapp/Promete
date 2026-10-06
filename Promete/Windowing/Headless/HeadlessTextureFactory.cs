@@ -1,6 +1,5 @@
 using System.IO;
 using Promete.Graphics;
-using SixLabors.ImageSharp;
 using Color = System.Drawing.Color;
 
 namespace Promete.Windowing.Headless;
@@ -58,9 +57,4 @@ public class HeadlessTextureFactory : TextureFactoryBase
         VectorInt size,
         byte[] bitmap
     ) { }
-
-    protected internal override Texture2D LoadFromImageSharpImage(Image image)
-    {
-        return default;
-    }
 }

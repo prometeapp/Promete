@@ -1,14 +1,14 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Promete.Graphics;
+using Promete.Graphics.Imaging;
 using Promete.Graphics.Rendering.Vulkan;
 using Promete.Platforms;
 using Promete.Windowing;
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using IWindow = Silk.NET.Windowing.IWindow;
 
 namespace Promete.Backends.Vulkan;
@@ -176,14 +176,16 @@ public class VulkanDesktopGameView : IGameView
     public Texture2D TakeScreenshot()
     {
         EnsureRenderingResources();
-        return _textureFactory!.LoadFromImageSharpImage(TakeScreenshotAsImage());
+        return _textureFactory!.LoadFromImage(TakeScreenshotAsImage());
     }
 
     public async Task SaveScreenshotAsync(string path, CancellationToken ct = default)
     {
         EnsureRenderingResources();
         var img = TakeScreenshotAsImage();
-        await img.SaveAsPngAsync(path, ct);
+        await using var stream = File.Create(path);
+        PngEncoder.Encode(img, stream);
+        await stream.FlushAsync(ct);
     }
 
     public void UpdateWindowSize()
@@ -217,7 +219,7 @@ public class VulkanDesktopGameView : IGameView
             );
     }
 
-    private Image<Rgba32> TakeScreenshotAsImage()
+    private RgbaImage TakeScreenshotAsImage()
     {
         // ポストプロセス適用後の最終ブリット元を読み出す（表示内容と一致させる）
         var source = _screenBlitter!.LastBlitSource ?? _screenBlitter.ScreenRenderTexture;
@@ -227,11 +229,7 @@ public class VulkanDesktopGameView : IGameView
             target.Extent.Width,
             target.Extent.Height
         );
-        return Image.LoadPixelData<Rgba32>(
-            pixels,
-            (int)target.Extent.Width,
-            (int)target.Extent.Height
-        );
+        return new RgbaImage((int)target.Extent.Width, (int)target.Extent.Height, pixels);
     }
 
     private void OnLoad()
