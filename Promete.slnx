@@ -1,23 +1,23 @@
 <Solution>
-  <Configurations>
-    <Platform Name="Any CPU" />
-    <Platform Name="x64" />
-    <Platform Name="x86" />
-  </Configurations>
-  <Project Path="Promete.Docs/Promete.Docs.esproj">
-    <Build Solution="*|Any CPU" />
-    <Deploy Solution="*|Any CPU" />
-  </Project>
-  <Project Path="Promete.Example/Promete.Example.csproj" />
-  <Project Path="Promete.Experimental.Vulkan/Promete.Experimental.Vulkan.csproj" />
-  <Project Path="Promete.HeadlessTest/Promete.HeadlessTest.csproj" />
-  <Project Path="Promete.ImGui/Promete.ImGui.csproj" />
-  <Project Path="Promete.MeltySynth/Promete.MeltySynth.csproj" />
-  <Project Path="Promete.SceneGen/Promete.SceneGen.csproj" />
-  <Project Path="Promete.Test/Promete.Test.csproj" />
-  <Project Path="Promete.Vulkan.Validation/Promete.Vulkan.Validation.csproj" />
-  <Project Path="Promete/Promete.csproj" />
-  <Properties Name="MonoDevelopProperties">
-    <Property Name="version" Value="0.7.0" />
-  </Properties>
+    <Configurations>
+        <Platform Name="Any CPU" />
+        <Platform Name="x64" />
+        <Platform Name="x86" />
+    </Configurations>
+    <Project Path="Promete.Docs/Promete.Docs.esproj">
+        <Build Solution="*|Any CPU" />
+        <Deploy Solution="*|Any CPU" />
+    </Project>
+    <Project Path="Promete.Example/Promete.Example.csproj" />
+    <Project Path="Promete.Experimental.Vulkan/Promete.Experimental.Vulkan.csproj" />
+    <Project Path="Promete.HeadlessTest/Promete.HeadlessTest.csproj" />
+    <Project Path="Promete.ImGui/Promete.ImGui.csproj" />
+    <Project Path="Promete.MeltySynth/Promete.MeltySynth.csproj" />
+    <Project Path="Promete.SceneGen/Promete.SceneGen.csproj" />
+    <Project Path="Promete.Test/Promete.Test.csproj" />
+    <Project Path="Promete.Vulkan.Validation/Promete.Vulkan.Validation.csproj" />
+    <Project Path="Promete/Promete.csproj" />
+    <Properties Name="MonoDevelopProperties">
+        <Property Name="version" Value="0.7.0" />
+    </Properties>
 </Solution>
