@@ -8,7 +8,8 @@ sidebar:
 ImGUIプラグイン（Promete.ImGui）を利用することで、アプリケーションにImGUIベースのUIを組み込むことができます。
 
 :::caution
-本プラグインは、OpenGLDesktopバックエンド限定で動作します。
+本プラグインは、OpenGL Desktop バックエンド（`BuildWithOpenGLDesktop()`）または Vulkan Desktop バックエンド（`BuildWithVulkanDesktop()`）で動作します。
+それ以外のバックエンドでは、起動時に `NotSupportedException` がスローされます。
 :::
 
 ## インストール
@@ -23,7 +24,7 @@ dotnet add package Promete.ImGui
 
 - .NET 10
 - Promete最新版
-- OpenGL Desktop バックエンド
+- OpenGL Desktop バックエンド、または Vulkan Desktop バックエンド
 
 ## 基本の使い方
 
@@ -31,6 +32,7 @@ ImGuiPluginをアプリケーションに登録し、シーンでインジェク
 
 ```csharp
 using Promete;
+using Promete.GLDesktop;
 using Promete.ImGui;
 
 var app = PrometeApp.Create()
@@ -57,13 +59,17 @@ class MainScene(ImGuiPlugin imgui) : Scene
 
 ImGuiPluginを継承し、`OnConfigure`メソッドをオーバーライドすることでImGuiの初期設定をカスタマイズできます。
 
+`ImGuiPlugin` のコンストラクタは `PrometeApp` と `InputProvider` を受け取るため、継承したクラスでも同じ引数を受け取り、基底クラスへ渡す必要があります。これらはDIによって自動的に注入されます。
+
 初期設定の具体的な説明については、ImGui.NETのドキュメント等を参照してください。本ドキュメントでは割愛します。
 
 ```csharp
+using Promete;
+using Promete.Backends.SilkNetCommon;
 using Promete.ImGui;
 using ImGuiNET;
 
-public class MyImGuiPlugin : ImGuiPlugin
+public class MyImGuiPlugin(PrometeApp app, InputProvider provider) : ImGuiPlugin(app, provider)
 {
     protected override void OnConfigure(ImGuiIOPtr io)
     {
@@ -73,7 +79,7 @@ public class MyImGuiPlugin : ImGuiPlugin
 }
 ```
 
-アプリケーション登録時に `Use<MyImGuiPlugin>()` として利用できます。
+アプリケーション登録時に `Use<MyImGuiPlugin>()` として利用できます。シーンでは `MyImGuiPlugin` 型として受け取ってください。
 
 ```csharp
 var app = PrometeApp.Create()
@@ -100,6 +106,6 @@ imgui.Render += () =>
 
 ## ノート
 
-- ImGuiPluginはOpenGL Desktopバックエンドでのみ利用可能です
+- ImGuiPluginはOpenGL DesktopバックエンドとVulkan Desktopバックエンドで利用可能です
 - シーン破棄時は `imgui.Render -= ...` でイベント解除を推奨します
 - ImGuiの初期設定をカスタマイズしたい場合はImGuiPluginを継承し、OnConfigureをオーバーライドしてください
