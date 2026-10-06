@@ -1,0 +1,34 @@
+name: Docs Skill Sync
+
+on:
+  push:
+    branches: ["main", "master", "develop", "v2"]
+    paths:
+      - "Promete.Docs/src/content/docs/guide/**"
+      - "plugins/promete/**"
+      - "tools/sync-docs-skill.cs"
+      - ".github/workflows/docs-skill.yml"
+  pull_request:
+    branches: ["main", "master", "develop", "v2"]
+    paths:
+      - "Promete.Docs/src/content/docs/guide/**"
+      - "plugins/promete/**"
+      - "tools/sync-docs-skill.cs"
+      - ".github/workflows/docs-skill.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Check that the promete skill is in sync with the docs
+        run: dotnet run tools/sync-docs-skill.cs -- --check

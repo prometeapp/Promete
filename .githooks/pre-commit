@@ -1,0 +1,8 @@
+#!/bin/sh
+# ドキュメントのガイドに変更がコミットされるとき、Agent Skill「promete」の references を同期してコミットに含める。
+# 有効にするには、リポジトリで一度だけ `git config core.hooksPath .githooks` を実行する。
+
+if git diff --cached --name-only | grep -qE '^(Promete\.Docs/src/content/docs/guide/|plugins/promete/|tools/sync-docs-skill\.cs)'; then
+    dotnet run tools/sync-docs-skill.cs || exit 1
+    git add plugins/promete/skills/promete
+fi

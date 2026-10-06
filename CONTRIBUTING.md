@@ -41,6 +41,20 @@ Promete のドキュメントは、Promete.Docs プロジェクトにて作業�
 
 masterブランチへのpushをトリガーとして、https://promete.app にデプロイされます。
 
+### Agent Skill との同期
+
+ガイド（`Promete.Docs/src/content/docs/guide/`）は、AI エージェント向けの Agent Skill「promete」（`plugins/promete/skills/promete/`）の references としてもコピーして配布しています。ガイドを編集したら、次のコマンドで同期してください。ページ索引（`SKILL.md` の生成部分）も更新されます。
+
+```bash
+dotnet run tools/sync-docs-skill.cs
+```
+
+同期漏れは CI で検出されます。次のコマンドで git hook を有効にしておくと、ガイドの変更をコミットするときに自動で同期されます。
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## 継続的インテグレーション
 
 Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは `.github/workflow` にあります。

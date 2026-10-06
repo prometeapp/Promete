@@ -1,0 +1,10 @@
+{
+  "name": "promete-v2-migration",
+  "description": "Promete v1 のプロジェクトを v2 に移行する",
+  "author": {
+    "name": "prometeapp"
+  },
+  "homepage": "https://github.com/prometeapp/Promete",
+  "repository": "https://github.com/prometeapp/Promete",
+  "license": "MIT"
+}

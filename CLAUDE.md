@@ -303,7 +303,10 @@ NativeAOT ではシーン型ごと削除されて一覧が空になります。
 - ドキュメントは**初学者向け**に、段階的な説明で記述されています
 - メインドキュメントは `Promete.Docs/` にあります (Astro/Starlightフレームワーク)
 - 目次構造は `Promete.Docs/toc.md` で定義されています
-- LLM向けの包括的なドキュメントは `docs-llm.md` にあります (AI支援のためプロジェクトにコピー)
+- 利用者向けの Agent Skill を `plugins/` に置き、`.claude-plugin/marketplace.json` で配布している
+  - `promete`: ガイドのコピーを references に持つ。**ガイドを編集したら `dotnet run tools/sync-docs-skill.cs` で同期すること** (CI の Docs Skill Sync で検出される)。`references/` と `SKILL.md` の索引部分は生成物なので直接編集しない
+  - `promete-v2-migration`: 移行ガイド (`migration-v2.mdx`) を元にした手書きのスキル。移行ガイドを直したら、こちらも合わせて直す
+- `.claude/skills/` は開発用のスキル。`metadata.internal: true` を付けて配布対象から外す
 
 ## 言語とコミュニケーション
 
