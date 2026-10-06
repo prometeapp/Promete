@@ -1,6 +1,6 @@
 {
   "solution": {
-    "path": "Promete.sln",
+    "path": "Promete.slnx",
     "projects": [
       "Promete\\Promete.csproj",
       "Promete.Example\\Promete.Example.csproj",

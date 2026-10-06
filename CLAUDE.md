@@ -16,7 +16,7 @@
 ### ソリューション全体のビルド
 
 ```bash
-dotnet build Promete.sln
+dotnet build Promete.slnx
 ```
 
 ### 特定のプロジェクトをビルド
