@@ -1,5 +1,4 @@
 using Promete.Backends.Vulkan;
-using Promete.Graphics.Rendering;
 using Promete.Windowing;
 
 namespace Promete.VulkanDesktop;
@@ -26,6 +25,6 @@ public static class VulkanDesktopAppExtension
     )
     {
         // TODO: Phase 3 で Vulkan の CommandRunner 群を登録する
-        return builder.Use<RenderCommandQueue>().Build<VulkanDesktopBackend>(opts);
+        return builder.Build<VulkanDesktopBackend>(opts);
     }
 }

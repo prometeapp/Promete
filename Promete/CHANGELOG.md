@@ -121,6 +121,7 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
     - `ShaderProgram.SetCompiledData`、`Material.Uniforms`
     - `DrawTextureBatchedCommand`
     - `TextureFactoryBase.LoadFromImageSharpImage` (`protected internal`)
+- `Build<T>()` が `RenderCommandQueue` を自動的に登録するようにしました
 
 ### Bug Fixes
 

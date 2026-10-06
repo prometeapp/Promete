@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Promete.Backends;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -732,6 +733,8 @@ public sealed class PrometeApp : IDisposable
         public PrometeApp Build<T>(WindowOptions? opts)
             where T : BackendBase, new()
         {
+            // 描画ループはコマンドキューを前提とするため、バックエンドを問わず登録する
+            _services.TryAddSingleton<RenderCommandQueue>();
             var app = new PrometeApp(_services, _pluginTypes, _sceneAssemblies);
             app.RegisterBackend(new T(), opts ?? WindowOptions.Default);
             return app;
