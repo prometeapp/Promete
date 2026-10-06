@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Promete.Graphics.Rendering;
 
 #pragma warning disable CS0618 // 型またはメンバーが旧型式です
 
@@ -11,12 +12,16 @@ namespace Promete.Nodes;
 /// </summary>
 public abstract class ContainableNode : Node
 {
-    [Obsolete("直接このフィールドは操作しないでください。代わりにAdd, Remove, Clear, Insertを使用してください。")]
+#pragma warning disable SA1401 // Fields should be private (legacy non-private fields; see code review backlog)
+    [Obsolete(
+        "直接このフィールドは操作しないでください。代わりにAdd, Remove, Clear, Insertを使用してください。"
+    )]
     protected readonly ObservableCollection<Node> children = [];
 
     private bool _isSortingRequested = true;
-    protected internal bool isTrimmable;
-    protected internal Node[] sortedChildren = [];
+    protected internal bool IsTrimmable;
+    protected internal Node[] SortedChildren = [];
+#pragma warning restore SA1401
 
     protected ContainableNode()
     {
@@ -35,17 +40,40 @@ public abstract class ContainableNode : Node
     {
         SortChildrenIfNeeded();
         base.Update();
-        for (var i = 0; i < sortedChildren.Length; i++)
+        for (var i = 0; i < SortedChildren.Length; i++)
         {
-            if (children.Count <= i) break;
+            if (children.Count <= i)
+                break;
             children[i].Update();
         }
 
         // 破棄された子ノードを削除
         for (var i = children.Count - 1; i >= 0; i--)
         {
-            if (!children[i].IsDestroyed) continue;
+            if (!children[i].IsDestroyed)
+                continue;
             children.RemoveAt(i);
+        }
+    }
+
+    internal override void BeforeRender()
+    {
+        base.BeforeRender();
+        foreach (var child in SortedChildren)
+        {
+            if (!child.IsVisible || child.IsDestroyed)
+                continue;
+            child.BeforeRender();
+        }
+    }
+
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+    {
+        foreach (var child in SortedChildren)
+        {
+            if (!child.IsVisible || child.IsDestroyed)
+                continue;
+            child.Collect(queue, ctx);
         }
     }
 
@@ -57,22 +85,27 @@ public abstract class ContainableNode : Node
     protected internal override void UpdateModelMatrix()
     {
         base.UpdateModelMatrix();
-        foreach (var child in children) child.UpdateModelMatrix();
+        foreach (var child in children)
+            child.UpdateModelMatrix();
     }
 
     protected void SortChildrenIfNeeded()
     {
         // ソートが要求されている場合、ソートを行う
-         if (!_isSortingRequested) return;
-         sortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
-         _isSortingRequested = false;
+        if (!_isSortingRequested)
+            return;
+        SortedChildren = children.OrderBy(c => c.ZIndex).ToArray();
+        _isSortingRequested = false;
     }
 
     protected void Add(Node node)
     {
         if (node == this)
         {
-            throw new ArgumentException("ノードの子要素に自分自身を追加することはできません。", nameof(node));
+            throw new ArgumentException(
+                "ノードの子要素に自分自身を追加することはできません。",
+                nameof(node)
+            );
         }
 
         node.Parent?.Remove(node);
@@ -90,16 +123,20 @@ public abstract class ContainableNode : Node
 
     protected void Clear()
     {
-        foreach (var child in children) child.Parent = null;
+        foreach (var child in children)
+            child.Parent = null;
         children.Clear();
-        sortedChildren = [];
+        SortedChildren = [];
     }
 
     protected void Insert(int index, Node node)
     {
         if (node == this)
         {
-            throw new ArgumentException("ノードの子要素に自分自身を追加することはできません。", nameof(node));
+            throw new ArgumentException(
+                "ノードの子要素に自分自身を追加することはできません。",
+                nameof(node)
+            );
         }
 
         node.Parent?.Remove(node);
@@ -111,6 +148,7 @@ public abstract class ContainableNode : Node
 
     protected override void OnDestroy()
     {
-        foreach (var child in children) child.Destroy();
+        foreach (var child in children)
+            child.Destroy();
     }
 }

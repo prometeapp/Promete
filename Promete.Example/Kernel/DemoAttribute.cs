@@ -1,4 +1,4 @@
-﻿namespace Promete.Example.Kernel;
+namespace Promete.Example.Kernel;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class DemoAttribute(string path, string description) : Attribute

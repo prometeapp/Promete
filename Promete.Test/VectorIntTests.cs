@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 
 namespace Promete.Test;
 
@@ -101,8 +101,8 @@ public class VectorIntTests
         var v1 = new VectorInt(1, 1);
         var v2 = new VectorInt(1, 5);
 
-        v1.Angle().Should().Be(45 * MathF.PI / 180);
-        v1.Angle(v2).Should().Be(90 * MathF.PI / 180);
+        v1.Angle().Should().Be(Promete.Angle.FromDegrees(45));
+        v1.Angle(v2).Should().Be(Promete.Angle.FromDegrees(90));
     }
 
     [Fact]
@@ -117,10 +117,11 @@ public class VectorIntTests
     [Fact]
     public void Dot()
     {
-        var v1 = new VectorInt(2, 5);
-        var v2 = new VectorInt(5, 5);
+        var v1 = new VectorInt(1, 2);
+        var v2 = new VectorInt(3, 4);
 
-        v1.Dot(v2).Should().Be(35);
+        v1.Dot(v2).Should().Be(11);
+        VectorInt.Dot(v1, v2).Should().Be(11);
     }
 
     [Fact]
@@ -156,5 +157,16 @@ public class VectorIntTests
 
         n.X.Should().Be(1);
         n.Y.Should().Be(2);
+    }
+
+    [Fact]
+    public void InShouldNotBeTruthyByZeroSizeRect()
+    {
+        var rect = new RectInt(5, 5, 0, 0);
+        var vec1 = new VectorInt(5, 5);
+        var vec2 = new VectorInt(4, 4);
+
+        vec1.In(rect).Should().BeFalse();
+        vec2.In(rect).Should().BeFalse();
     }
 }

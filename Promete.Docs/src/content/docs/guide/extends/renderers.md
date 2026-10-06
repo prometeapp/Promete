@@ -1,29 +1,65 @@
 ---
-title: カスタムノードレンダラー
-description: Prometeで独自のノードレンダラーを実装し、描画処理を拡張する方法を解説します。
+title: カスタムノードのレンダリング
+description: Prometeでカスタムノードに描画処理を実装する方法を解説します。
 sidebar:
   order: 2
 ---
 
-独自にノードを作成した場合は、そのノードを描画するためのロジックを「ノードレンダラー」として実装し、エンジンに登録する必要があります。
-また、既存のノードを独自のレンダラーに差し替えることも可能です。
+カスタムノードに描画処理を追加するには、`Node` クラスの `Collect()` メソッドをオーバーライドして、`RenderCommandQueue` にレンダリングコマンドを追加します。
 
-ノードレンダラーは `NodeRendererBase` を継承して作成し、`Render(Node node)` メソッドを実装します。
-`node` 引数は描画対象のノードです。
-必要に応じて型チェックやキャストを行い、描画処理を記述します。
+## 基本的な使い方
 
-ノードの描画処理は、バックエンド固有のものとなります。現状存在するOpenGLバックエンド向けのレンダラーの場合、Silk.NETのOpenGL機能を用いて描画を行う必要があります。詳しくは、Prometeのソースコードを参照してください。ここでは、OpenGLに関する解説は割愛します。
+`Collect()` メソッドは描画フェーズに呼び出されます。引数の `queue` にコマンドを追加することで描画を行います。
 
 ```csharp
 using Promete.Nodes;
-using Promete.Nodes.Renderer;
+using Promete.Graphics.Rendering;
+using Promete.Graphics.Rendering.Commands;
 
-public class MyNodeRenderer : NodeRendererBase
+public class MyNode : Node
 {
-    public override void Render(Node node)
+    private Texture2D _texture;
+
+    public override void Collect(RenderCommandQueue queue, RenderContext ctx)
     {
-        if (node is not MyNode myNode) return;
-        // myNodeの情報を使って独自の描画処理
+        queue.Enqueue(new DrawTextureCommand
+        {
+            Texture = _texture,
+            Location = AbsoluteLocation,
+            Scale = AbsoluteScale,
+            Angle = AbsoluteAngle,
+            Size = Size,
+            TintColor = Color.White,
+            ZIndex = AbsoluteZIndex,
+        });
     }
 }
 ```
+
+## レンダリングコマンドの種類
+
+| コマンド | 用途 |
+|----------|------|
+| `DrawTextureCommand` | テクスチャ描画（自動バッチング対応） |
+| `DrawPrimitiveCommand` | プリミティブ図形（矩形・円・三角形）の描画 |
+| `DrawPieTextureCommand` | 扇形テクスチャの描画 |
+| `BeginTrimCommand` / `EndTrimCommand` | シザーテスト（描画範囲の制限） |
+| `BeginStencilMaskCommand` / `EndStencilMaskCommand` | ステンシルマスク |
+| `BeginAlphaMaskCommand` / `EndAlphaMaskCommand` | アルファマスク |
+
+## RenderContext
+
+`RenderContext` は描画時のコンテキスト情報を保持します。
+
+```csharp
+public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+{
+    // 現在のビューポートサイズなどの情報を参照できる
+    var viewportSize = ctx.FrameBuffer?.Size ?? ctx.ViewportSize;
+}
+```
+
+## ノート
+
+- `AbsoluteLocation`・`AbsoluteScale`・`AbsoluteAngle` などの `Absolute*` プロパティを使用することで、親ノードの変形が反映された座標を取得できます
+- レンダリングはバックエンド固有の処理を直接書く必要はなく、コマンドをキューに追加するだけでエンジンが描画を行います

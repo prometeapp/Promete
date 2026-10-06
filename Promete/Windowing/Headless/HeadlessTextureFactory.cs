@@ -1,11 +1,11 @@
-﻿using System.IO;
+using System.IO;
 using Promete.Graphics;
 using SixLabors.ImageSharp;
 using Color = System.Drawing.Color;
 
 namespace Promete.Windowing.Headless;
 
-public class HeadlessTextureFactory : TextureFactory
+public class HeadlessTextureFactory : TextureFactoryBase
 {
     public override Texture2D Load(string path)
     {
@@ -17,12 +17,22 @@ public class HeadlessTextureFactory : TextureFactory
         return default;
     }
 
-    public override Texture2D[] LoadSpriteSheet(string path, int horizontalCount, int verticalCount, VectorInt size)
+    public override Texture2D[] LoadSpriteSheet(
+        string path,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         return new Texture2D[horizontalCount * verticalCount];
     }
 
-    public override Texture2D[] LoadSpriteSheet(Stream stream, int horizontalCount, int verticalCount, VectorInt size)
+    public override Texture2D[] LoadSpriteSheet(
+        Stream stream,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
     {
         return new Texture2D[horizontalCount * verticalCount];
     }
@@ -42,7 +52,14 @@ public class HeadlessTextureFactory : TextureFactory
         return default;
     }
 
-    internal override Texture2D LoadFromImageSharpImage(Image image)
+    public override void Update(
+        Texture2D texture,
+        VectorInt offset,
+        VectorInt size,
+        byte[] bitmap
+    ) { }
+
+    protected internal override Texture2D LoadFromImageSharpImage(Image image)
     {
         return default;
     }

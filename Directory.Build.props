@@ -1,0 +1,36 @@
+<Project>
+    <ItemGroup>
+        <PackageReference
+            Include="StyleCop.Analyzers"
+            Version="1.2.0-beta.556"
+            PrivateAssets="all"
+            IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive"
+        />
+        <!-- StyleCop 設定ファイルをすべてのプロジェクトに適用 -->
+        <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" />
+    </ItemGroup>
+    <PropertyGroup>
+        <!-- IDE スタイルルールをビルド時にも適用する -->
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
+    <!-- アナライザは ProjectReference では推移しないため、リポジトリ内では全 C#
+         プロジェクトに配る。外部には Promete パッケージ経由で届く。 -->
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(MSBuildProjectName)' != 'Promete.SceneGen'">
+        <ProjectReference
+            Include="$(MSBuildThisFileDirectory)Promete.SceneGen/Promete.SceneGen.csproj"
+            OutputItemType="Analyzer"
+            ReferenceOutputAssembly="false"
+            UndefineProperties="TargetFramework;RuntimeIdentifier;SelfContained;PublishAot;PublishTrimmed;PublishSingleFile"
+        />
+        <!-- ジェネレータが集約の有無を判断するために参照する -->
+        <CompilerVisibleProperty Include="OutputType" />
+    </ItemGroup>
+    <!-- JavaScript Project System の SDK は package.g.props の出力先を
+         "$(IntermediateOutputPath)\package.g.props" とハードコードしている。macOS では
+         この "\" がファイル名の一部になり、obj\Debug/\package.g.props という
+         ゴミが毎回できる。SDK 側の target は上書きできないので、中間出力を
+         リポジトリ外へ逃がす。 -->
+    <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.esproj'">
+        <BaseIntermediateOutputPath>$([System.IO.Path]::Combine($([System.IO.Path]::GetTempPath()), 'promete-esproj', $(MSBuildProjectName)))/</BaseIntermediateOutputPath>
+    </PropertyGroup>
+</Project>

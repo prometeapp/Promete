@@ -1,4 +1,4 @@
-﻿using Promete.Example.Kernel;
+using Promete.Example.Kernel;
 using Promete.Input;
 
 namespace Promete.Example.examples.input;
@@ -22,11 +22,13 @@ public class GamepadExampleScene(ConsoleLayer console, Keyboard keyboard, Gamepa
         console.Print($"Left Stick: {CurrentPad.LeftStick}");
         console.Print($"Right Stick: {CurrentPad.RightStick}");
 
-
-        console.Print($"\n{"Button Type",-12} Pressed Down  Up");
+        console.Print($"\n{"Button Type", -12} Pressed Down  Up");
         foreach (var btn in CurrentPad.AllButtons)
-            console.Print($"{btn.Type.ToString(),-12} {btn.IsPressed,-7} {btn.IsButtonDown,-5} {btn.IsButtonUp,-5}");
+            console.Print(
+                $"{btn.Type.ToString(), -12} {btn.IsPressed, -7} {btn.IsButtonDown, -5} {btn.IsButtonUp, -5}"
+            );
 
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 }

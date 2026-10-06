@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using Promete.Example.Kernel;
 using Promete.Graphics.Fonts;
 using Promete.Input;
@@ -20,10 +20,10 @@ public class NineSliceSpriteTest(ConsoleLayer console, Keyboard keyboard) : Scen
     {
         console.Print("Press ESC to return");
 
-        var font = Font.GetDefault(18);
+        var font = Graphics.Fonts.Font.GetDefault(18);
 
-        var normalSprite = Window.TextureFactory.Load("assets/rect.png");
-        var nineSliceSprite = Window.TextureFactory.Load9Sliced("assets/rect.png", 16, 16, 16, 16);
+        var normalSprite = App.TextureFactory.Load("assets/rect.png");
+        var nineSliceSprite = App.TextureFactory.Load9Sliced("assets/rect.png", 16, 16, 16, 16);
 
         _sprite = new Sprite(normalSprite);
         _nineSlice = new NineSliceSprite(nineSliceSprite);
@@ -45,13 +45,17 @@ public class NineSliceSpriteTest(ConsoleLayer console, Keyboard keyboard) : Scen
 
     private void UpdateLocation()
     {
-        _sprite.Location = (Window.Width / 4 - 128, 64);
-        _nineSlice.Location = (Window.Width / 4 + 32, 64);
+        _sprite.Location = ((View.Width / 4) - 128, 64);
+        _nineSlice.Location = ((View.Width / 4) + 32, 64);
 
         _t1.Location = (_sprite.Location.X, _sprite.Location.Y - 24);
         _t2.Location = (_nineSlice.Location.X, _nineSlice.Location.Y - 24);
 
-        _sprite.Width = _nineSlice.Width = (int)(64 + 64 * Math.Abs(Math.Sin(Window.TotalTime * 2)));
-        _sprite.Height = _nineSlice.Height = (int)(64 + 256 * Math.Abs(Math.Sin(Window.TotalTime * 2)));
+        _sprite.Width = _nineSlice.Width = (int)(
+            64 + (64 * Math.Abs(Math.Sin(Time.TotalTime * 2)))
+        );
+        _sprite.Height = _nineSlice.Height = (int)(
+            64 + (256 * Math.Abs(Math.Sin(Time.TotalTime * 2)))
+        );
     }
 }

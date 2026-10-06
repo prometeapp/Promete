@@ -107,7 +107,7 @@ public class SpriteScene : Scene
     public override void OnStart()
     {
         // テクスチャを読み込み
-        _texture = Window.TextureFactory.Load("assets/player.png");
+        _texture = App.TextureFactory.Load("assets/player.png");
 
         // スプライトを作成
         _sprite = new Sprite(_texture)
@@ -155,18 +155,30 @@ App.PushScene<SettingsScene>();
 App.PopScene();
 ```
 
-## AppとWindowへのアクセス
+## App・View・Timeへのアクセス
 
-シーン内部では、現在の `PrometeApp` `IWindow` インスタンスにそれぞれ `App` プロパティ、`Window` プロパティでアクセスできます。
+シーン内部では、`App`・`View`・`Time` の3つのプロパティでそれぞれのインスタンスにアクセスできます。
+
+| プロパティ | 型 | 用途 |
+|---|---|---|
+| `App` | `PrometeApp` | シーン遷移、テクスチャファクトリーなど |
+| `View` | `IGameView` | ウィンドウのサイズ・タイトル・表示状態 |
+| `Time` | `ITimeProvider` | フレーム時間・FPS・タイムスケール |
 
 ```csharp
 public override void OnStart()
 {
     // ウィンドウタイトルを変更
-    Window.Title = "ゲーム画面";
+    View.Title = "ゲーム画面";
 
     // ウィンドウサイズを取得
-    var size = Window.Size;
+    var size = View.Size;
     console.Print($"ウィンドウサイズ: {size.X} x {size.Y}");
+}
+
+public override void OnUpdate()
+{
+    // デルタタイムを取得
+    var dt = Time.DeltaTime;
 }
 ```

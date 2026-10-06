@@ -4,9 +4,9 @@
 
 ## プロジェクト概要
 
-**Promete** は .NET 8以降向けの2Dゲームエンジンで、ギリシャ神話のプロメテウスに由来します。階層的なノードシステムとDIベースのプラグインアーキテクチャを通じて、シンプルさ、拡張性、ピクセルパーフェクトな2Dグラフィックスを重視しています。
+**Promete** は .NET 10以降向けの2Dゲームエンジン。階層ノードシステムとDIベースのプラグインアーキテクチャを通じて、シンプルさ、拡張性、ピクセルパーフェクトな2Dグラフィックスを重視しています。
 
-- **主要言語**: C# (.NET 8)
+- **主要言語**: C# (.NET 10)
 - **グラフィックスバックエンド**: OpenGL (Silk.NET経由)
 - **アーキテクチャ**: DIコンテナベース (Microsoft.Extensions.DependencyInjection)
 - **ライセンス**: MIT
@@ -14,11 +14,13 @@
 ## ビルドとテストコマンド
 
 ### ソリューション全体のビルド
+
 ```bash
 dotnet build Promete.sln
 ```
 
 ### 特定のプロジェクトをビルド
+
 ```bash
 # メインライブラリ
 dotnet build Promete/Promete.csproj
@@ -28,16 +30,34 @@ dotnet build Promete.Example/Promete.Example.csproj
 ```
 
 ### サンプルの実行
+
 ```bash
 dotnet run --project Promete.Example/
 ```
 
 ### テストの実行
+
 ```bash
 dotnet test Promete.Test/Promete.Test.csproj
 ```
 
 注意: テストは xUnit と FluentAssertions を使用しています。テストスイートは現在開発中です。
+
+### NativeAOT で publish する
+
+`PublishAot` は**コマンドラインではなく csproj に書いてください**。
+
+```xml
+<PublishAot>true</PublishAot>
+```
+
+```bash
+dotnet publish Promete.Example/Promete.Example.csproj -c Release -r osx-arm64
+```
+
+`-p:PublishAot=true` で渡すとグローバルプロパティになり、netstandard2.0 の
+`Promete.SceneGen` にも伝播して Restore のグラフ走査で `NETSDK1207` になります。
+この段階では `ProjectReference` の `UndefineProperties` が効きません。
 
 ## プロジェクト構造
 
@@ -46,18 +66,24 @@ Promete/                    - メインゲームエンジンライブラリ
 ├── Audio/                  - オーディオ再生システム (OpenAL)
 ├── Coroutines/             - Unity風コルーチンシステム
 ├── Graphics/               - テクスチャ、フォント、フレームバッファ管理
+│   └── Rendering/          - レンダリングコマンドキューと CommandRunner 実装
+│       └── GL/             - OpenGL固有のランナー・ファクトリ実装
 ├── Input/                  - キーボード、マウス、ゲームパッド入力
 ├── Nodes/                  - 描画可能なノード階層 (Sprite, Text等)
-│   └── Renderer/           - OpenGLレンダリング実装
-├── Windowing/              - ウィンドウ管理抽象化
-│   ├── GLDesktop/          - OpenGLデスクトップバックエンド
-│   └── Headless/           - ヘッドレスバックエンド (テスト用)
-└── GLDesktop/              - デスクトップ固有の拡張
+├── Backends/               - バックエンド抽象化 (BackendBase) と各バックエンド実装
+│   ├── GL/                 - OpenGLデスクトップバックエンド実装
+│   ├── Headless/           - ヘッドレスバックエンド実装
+│   └── SilkNetCommon/      - Silk.NET系バックエンド共通処理
+├── Windowing/              - ウィンドウ関連の型 (IWindow は非推奨、WindowOptions 等を提供)
+├── GLDesktop/              - OpenGLデスクトップ用ビルド拡張 (BuildWithOpenGLDesktop)
+└── Headless/               - ヘッドレス用ビルド拡張 (BuildWithHeadless)
 
+Promete.SceneGen/           - シーンレジストリのソースジェネレータ (netstandard2.0)
 Promete.Example/            - [Demo]属性を使用したデモプロジェクト
 Promete.ImGui/              - ImGui統合プラグイン
 Promete.MeltySynth/         - MIDI/SoundFontプラグイン
 Promete.Test/               - xUnitテストスイート
+Promete.HeadlessTest/       - ヘッドレスバックエンド用テストプロジェクト
 Promete.Docs/               - ドキュメントサイト (Astro/Starlight)
 ```
 
@@ -68,6 +94,7 @@ Promete.Docs/               - ドキュメントサイト (Astro/Starlight)
 Promete は Microsoft.Extensions.DependencyInjection を基盤として使用しています。すべての機能は「プラグイン」としてDIコンテナを通じて登録されます。
 
 **プラグイン登録パターン:**
+
 ```csharp
 var app = PrometeApp.Create()
     .Use<Keyboard>()          // シングルトンとして登録
@@ -77,6 +104,7 @@ var app = PrometeApp.Create()
 ```
 
 **シーンでのプラグイン取得:**
+
 ```csharp
 // コンストラクタ注入 (推奨 - C# 12のプライマリコンストラクタを使用)
 public class MainScene(Keyboard keyboard, AudioPlayer audio) : Scene
@@ -87,9 +115,12 @@ public class MainScene(Keyboard keyboard, AudioPlayer audio) : Scene
 
 ### 2. シーン管理
 
-シーンはゲームの状態や画面を表します。エントリアセンブリからリフレクションによって自動的に検出・登録されます。
+シーンはゲームの状態や画面を表します。`Promete.SceneGen` がコンパイル時に `Scene` 派生クラスを
+列挙し、DI ファクトリつきで `SceneRegistry` へ登録するコードを生成します。実行時の
+リフレクションは使いません。
 
 **シーンのライフサイクル:**
+
 - `OnStart()` - シーン読み込み時に1度だけ呼ばれる (リソース初期化)
 - `OnUpdate()` - 毎フレーム呼ばれる (ゲームロジック)
 - `OnDestroy()` - シーン破棄時に呼ばれる (クリーンアップ)
@@ -97,19 +128,30 @@ public class MainScene(Keyboard keyboard, AudioPlayer audio) : Scene
 - `OnResume()` - プッシュされたシーンから戻った時に呼ばれる
 
 **シーンナビゲーション:**
+
 ```csharp
 App.LoadScene<TitleScene>();    // 現在のシーンを置き換え
 App.PushScene<PauseScene>();    // 現在のシーンの上にスタック (現在のシーンは一時停止)
 App.PopScene();                 // 最上位のシーンを削除して前のシーンを再開
 ```
 
-**重要:** シーンは `Transient` サービスとして登録されるため、毎回新しいインスタンスが作成されます。自動登録を防ぐには `[IgnoredScene]` 属性を追加してください。
+**重要:** シーンは `Transient` サービスとして登録されるため、毎回新しいインスタンスが作成されます。
+自動登録を防ぐには `[IgnoredScene]` 属性を追加してください。
+
+シーンは `internal` 以上の可視性が必要です。生成コードは同一アセンブリのトップレベルクラスに
+置かれるため、`private` なネスト型は参照できず自動登録の対象外になります。その場合は
+`PROMETE0001` の警告が出ます。
+
+エントリアセンブリ以外にシーンを置く場合は `UseScenesFrom` でそのアセンブリを指定してください。
+コンパイル時に参照が存在しないアセンブリ (実行時に読み込むプラグイン等) のシーンは、原理的に
+列挙できません。
 
 ### 3. ノード階層システム
 
 ノードは描画可能な要素のコアです。親子階層を形成し、変形 (位置、回転、スケール) が継承されます。
 
 **ノードの種類:**
+
 - `Container` - 子ノードをグループ化 (視覚的表現なし)
 - `Sprite` - テクスチャを表示
 - `Text` - フォントでテキストを描画
@@ -118,12 +160,14 @@ App.PopScene();                 // 最上位のシーンを削除して前のシ
 - `NineSliceSprite` - 9スライステクスチャでスケーラブルなUI要素
 
 **座標系:**
+
 - 原点 (0, 0) は左上
 - X軸: 右が正
 - Y軸: 下が正
 - 回転: 時計回りが正 (ラジアン)
 
 **変形の階層:**
+
 ```csharp
 var parent = new Container().Location(100, 100).Scale(2.0f);
 var child = new Sprite(texture).Location(50, 0); // 親からの相対座標
@@ -131,21 +175,29 @@ parent.Add(child);
 // child.AbsoluteLocation は親の変形を反映した結果になる
 ```
 
-### 4. レンダラーシステム
+### 4. レンダリングシステム
 
-各ノードタイプには対応する `NodeRenderer` があり、OpenGL描画を処理します。レンダラーはアプリ初期化時に登録されます:
+描画はコマンドキューパターンで実装されています。各ノードは `Collect(RenderCommandQueue, RenderContext)` をオーバーライドしてレンダリングコマンドを発行し、`CommandRunner<T>` がコマンドを受け取って実際のOpenGL呼び出しを実行します。
 
 ```csharp
-app.UseRenderer<CustomNode, CustomNodeRenderer>();
+// ノード側: Collect でコマンドをキューに積む
+public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+{
+    queue.Enqueue(new DrawTextureCommand { Texture = ..., ModelMatrix = ModelMatrix, ... });
+}
+
+// ランナーの登録は RenderCommandQueue に対して行う
+queue.RegisterRunner<DrawTextureBatchedCommand>(new GLDrawTextureBatchedCommandRunner(view));
 ```
 
-標準レンダラーはバックエンド (例: `BuildWithOpenGLDesktop()`) によって自動的に登録されます。
+`DrawTextureCommand` は同一テクスチャハンドル・同一マテリアルの連続するコマンドが自動的に `DrawTextureBatchedCommand` にバッチ化され、インスタンシング描画されます。標準ランナーはバックエンド (例: `BuildWithOpenGLDesktop()`) によって自動的に登録されます。
 
 ## 重要な実装パターン
 
 ### Setup API (メソッドチェーン)
 
 ノードは流暢な初期化をサポートしています:
+
 ```csharp
 var sprite = new Sprite(texture)
     .Location(100, 200)
@@ -156,9 +208,14 @@ var sprite = new Sprite(texture)
 
 すべての Setup API メソッドはノードインスタンスを返すため、チェーンできます。
 
+### LoadSpriteSheet の挙動
+
+`TextureFactory.LoadSpriteSheet` は画像ファイルを**1枚のGLテクスチャ（アトラス）**としてアップロードし、各セルに対応する `Texture2D` を `UvStart`/`UvEnd` だけ異なる形で返します。全セルが同じ `Handle` を共有するため、Tilemapで使用すると同一バッチにまとめてインスタンシング描画されます。UV 境界の浮動小数点誤差による隣接タイルへのブリーディングを防ぐため、ハーフテクセルインセットが適用されています。
+
 ### リソース管理
 
 テクスチャなどの IDisposable リソースは手動で破棄する必要があります:
+
 ```csharp
 public override void OnDestroy()
 {
@@ -170,6 +227,7 @@ public override void OnDestroy()
 ### NextFrame パターン
 
 コールバック中にシーン状態を変更する操作は `App.NextFrame()` を使用してください:
+
 ```csharp
 App.NextFrame(() => {
     App.LoadScene<GameScene>();
@@ -184,20 +242,49 @@ App.NextFrame(() => {
 
 ## バックエンドシステム
 
-Promete は `IWindow` 実装を通じて複数のバックエンドをサポートしています:
+Promete は `Backends/BackendBase` 抽象クラスの実装を通じて複数のバックエンドをサポートしています (旧 `IWindow` は非推奨・後方互換のため残置のみ):
 
-- **OpenGL Desktop** (`BuildWithOpenGLDesktop()`): Windows/macOS/Linux対応のプロダクション向け
-- **Headless** (`BuildWithHeadless()`): グラフィックスなしでテストするための実験的なスタブバックエンド
+- **OpenGL Desktop** (`BuildWithOpenGLDesktop()`): `Backends/GL/OpenGLDesktopBackend` — Windows/macOS/Linux対応のプロダクション向け
+- **Headless** (`BuildWithHeadless()`): `Backends/Headless/HeadlessBackend` — グラフィックスなしで動作するバックエンド (`Promete.HeadlessTest` でテスト)
 
-バックエンドの責務:
-- ウィンドウの作成と管理
-- 入力ハンドリング
-- レンダリングコンテキストのセットアップ
-- テクスチャ読み込み実装
+`BackendBase` の責務 (各 `Setup*` メソッドで提供):
+
+- `SetupTimeProvider()` - 時間情報 (`ITimeProvider`)
+- `SetupGameView()` - ゲーム画面アクセス (`IGameView`)
+- `SetupInputProvider()` - 入力ハンドリング (`InputProvider`)
+- `SetupScreenBlitter()` - 画面転送 (`IScreenBlitter`)
+- `SetupTextureFactory()` - テクスチャ読み込み (`TextureFactoryBase`)
+- `SetupRenderTextureProvider()` - RenderTexture機能 (`IRenderTextureProvider`)
+- `SetupShaderFactory()` - シェーダーAPI (`IShaderFactory`)
+- `OnInitialize()` / `OnStart()` / `OnExit()` - 初期化・起動・終了処理
+
+### Silk.NET フォークへの依存
+
+Promete は Silk.NET の net10.0 専用フォーク (`prometeapp/Silk.NET`) を使います。
+パッケージ ID は `Promete.Silk.*`、バージョンは `2.23.0-prmt.1.0.0` です。upstream の
+`Silk.NET.*` は nuget.org でプレフィックス予約されているため別 ID で配布しています。
+
+**アセンブリ名と名前空間は `Silk.NET.*` のまま**なので、`using Silk.NET.OpenGL;` のような
+コードは変更不要です。違うのは `PackageReference` の ID だけです。
+
+ネイティブバイナリはフォークしていないので、`Ultz.Native.GLFW` や
+`Silk.NET.OpenAL.Soft.Native` など upstream のパッケージを参照しています。
+
+### バックエンドの明示登録
+
+`OpenGLDesktopBackend.OnInitialize` は `RegisterSilkBackends()` で GLFW と SDL を
+明示的に登録します。Silk.NET は既定ではバックエンドのアセンブリ名を文字列で
+`Assembly.Load` して探索しますが、トリマーはその文字列を追えないため、トリム時には
+バックエンドのアセンブリごと削除され、NativeAOT では探索が機能しません。
+
+登録順はリフレクション探索と同じ GLFW → SDL なので、選ばれるバックエンドは変わりません。
+いずれも冪等なメソッドを使っています。`ShouldLoadFirstPartyPlatforms` は二度目の呼び出しで
+例外を投げるため使っていません。
 
 ## デモシステム (Promete.Example)
 
 サンプルは自動メニュー生成のために `[Demo]` 属性を使用します:
+
 ```csharp
 [Demo("/category/name", "Description")]
 public class MyDemo(Keyboard keyboard) : Scene
@@ -206,7 +293,10 @@ public class MyDemo(Keyboard keyboard) : Scene
 }
 ```
 
-デモは自動的に検出され、サンプルランチャーメニューに表示されます。
+デモは自動的に検出され、サンプルランチャーメニューに表示されます。検出は
+`SceneRegistry.GetSceneTypes` が返す型に対して `[Demo]` を読む形で行います。
+`Assembly.GetTypes()` に戻してはいけません。トリマーがその探索を追えないため、トリム時や
+NativeAOT ではシーン型ごと削除されて一覧が空になります。
 
 ## ドキュメントに関する注意
 
@@ -227,6 +317,5 @@ public class MyDemo(Keyboard keyboard) : Scene
 - `PrometeApp.cs` - アプリケーションのエントリポイント、DIコンテナ、シーン管理
 - `Scene.cs` - ライフサイクルメソッドを持つシーン基底クラス
 - `Nodes/Node.cs` - 変形階層を持つノード基底クラス
-- `Graphics/TextureFactory.cs` - テクスチャ読み込みファサード
-- `Windowing/IWindow.cs` - ウィンドウ抽象化インターフェース
-
+- `Graphics/TextureFactoryBase.cs` - テクスチャ読み込み基底クラス (実装は `Graphics/Rendering/GL/GLTextureFactory.cs`)
+- `Backends/BackendBase.cs` - バックエンド抽象クラス (実装は `Backends/GL/OpenGLDesktopBackend.cs`, `Backends/Headless/HeadlessBackend.cs`)

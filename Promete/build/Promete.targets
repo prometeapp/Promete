@@ -1,0 +1,10 @@
+<Project>
+    <!-- Silk.NET.MoltenVK.Native は iOS / tvOS / Mac Catalyst 向けの静的ライブラリ (.a) も
+         同梱している。.NET は実行時に静的アーカイブを読み込めず、Promete はデスクトップ
+         専用なので出力から外す。osx の libMoltenVK.dylib だけ残る。 -->
+    <Target Name="PrometeRemoveMoltenVKStaticLibraries" AfterTargets="ResolveReferences">
+        <ItemGroup>
+            <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths->WithMetadataValue('Filename', 'libMoltenVK')->WithMetadataValue('Extension', '.a'))" />
+        </ItemGroup>
+    </Target>
+</Project>

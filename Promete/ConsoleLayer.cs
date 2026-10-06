@@ -2,21 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using Promete.Backends;
 using Promete.Graphics.Fonts;
 using Promete.Nodes;
-using Promete.Windowing;
 
 namespace Promete;
 
 /// <summary>
 /// 画面上に簡易な文字出力を行うレイヤーを提供する Promete プラグインです。
 /// </summary>
-public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
+public class ConsoleLayer(PrometeApp app, IGameView view) : IInitializable
 {
     private readonly List<string> _consoleBuffer = [];
-
-    private Text _text;
     private int _maxLine;
+
+    private Text? _text;
 
     /// <summary>
     /// 現在のコンソール上のカーソル位置を取得または設定します。
@@ -42,16 +42,24 @@ public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
     /// </summary>
     public Color TextColor { get; set; } = Color.White;
 
+    /// <inheritdoc/>
     public void OnStart()
     {
         _text = new Text("", Font.GetDefault(), Color.White);
         _maxLine = CalculateMaxLine();
 
-        app.SceneWillChange += Clear;
-        window.Update += () => { _text.Update(); };
-        window.Render += () => { app.RenderNode(_text); };
-        window.Resize += () => { _maxLine = CalculateMaxLine(); };
-        window.PostUpdate += UpdateConsole;
+        app.GlobalForeground.Add(_text);
+
+        app.SceneWillChange += _ => Clear();
+        app.Update += () =>
+        {
+            _text.Update();
+        };
+        app.PostUpdate += UpdateConsole;
+        view.Resize += () =>
+        {
+            _maxLine = CalculateMaxLine();
+        };
     }
 
     /// <summary>
@@ -90,9 +98,10 @@ public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
 
     private void UpdateConsole()
     {
-        var buf = _consoleBuffer.Count > _maxLine
-            ? _consoleBuffer.Skip(_consoleBuffer.Count - _maxLine)
-            : _consoleBuffer;
+        var buf =
+            _consoleBuffer.Count > _maxLine
+                ? _consoleBuffer.Skip(_consoleBuffer.Count - _maxLine)
+                : _consoleBuffer;
 
         _text.Color = TextColor;
         _text.Content = string.Join('\n', buf);
@@ -100,16 +109,7 @@ public class ConsoleLayer(PrometeApp app, IWindow window) : IInitializable
 
     private int CalculateMaxLine()
     {
-        var textToTest = "";
-        var l = 0;
-        Rect bounds;
-        do
-        {
-            textToTest += "A\n";
-            bounds = _text.Font.GetTextBounds(textToTest, _text.Options);
-            l++;
-        } while (bounds.Height < window.Height);
-
-        return l - 1;
+        var lineHeight = _text.Font.Metrics.LineHeight * _text.Options.LineSpacing;
+        return lineHeight > 0 ? (int)(view.Height / lineHeight) : 1;
     }
 }

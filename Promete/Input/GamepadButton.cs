@@ -1,4 +1,4 @@
-﻿namespace Promete.Input;
+namespace Promete.Input;
 
 public class GamepadButton
 {

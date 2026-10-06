@@ -16,33 +16,31 @@ sidebar:
 ここでは、無音を生成するシンプルな例を示します。バッファを埋められれば良いため、理論上あらゆるPCM音源を接続できます。
 
 ```csharp
+using System;
 using Promete.Audio;
 
 public class MyAudioSource : IAudioSource
 {
-    public int? Samples => null;
+    public int? Frames => null;
     public int Channels => 2;
-    public int Bits => 16;
     public int SampleRate => 44100;
 
-    public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
+    public (int FilledFrames, bool IsFinished) FillSamples(Span<float> buffer, int offsetFrames)
     {
-      // 無音を生成する
-      for (int i = 0; i < buffer.Length; i++)
-      {
-          buffer[i] = 0;
-      }
-      return (buffer.Length, false);
+        // 無音を生成する
+        buffer.Clear();
+        return (buffer.Length / Channels, false);
     }
 }
 ```
 
 ## 実装すべきメンバー
-- `Samples` - 総サンプル数（不明な場合はnull）
+- `Frames` - 総フレーム数（1フレームは全チャンネル分のサンプルをまとめた単位。不明・無限ストリームの場合はnull）
 - `Channels` - チャンネル数（1=モノラル, 2=ステレオ）
-- `Bits` - 1サンプルあたりのビット数（通常16）
 - `SampleRate` - サンプリングレート（例: 44100）
-- `FillSamples(short[] buffer, int offset)` - サンプルデータを `buffer` に書き込み、読み込んだサンプル数と再生終了フラグを返す
+- `FillSamples(Span<float> buffer, int offsetFrames)` - チャンネルインターリーブ形式のfloat PCM（範囲は-1.0～1.0）を `buffer` に書き込み、実際に書き込んだフレーム数と再生終了フラグを返す
+    - `offsetFrames` は読み出しを開始するフレーム位置です。シークに対応しないソース（無限ストリームなど）はこの値を無視して構いません
+    - `buffer` の長さは「読み込みたいフレーム数 × `Channels`」です。この長さを超えて書き込んではいけません
 
 ## サンプル：AudioPlayerでの利用
 

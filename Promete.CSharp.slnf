@@ -1,0 +1,14 @@
+{
+  "solution": {
+    "path": "Promete.sln",
+    "projects": [
+      "Promete\\Promete.csproj",
+      "Promete.Example\\Promete.Example.csproj",
+      "Promete.HeadlessTest\\Promete.HeadlessTest.csproj",
+      "Promete.ImGui\\Promete.ImGui.csproj",
+      "Promete.MeltySynth\\Promete.MeltySynth.csproj",
+      "Promete.SceneGen\\Promete.SceneGen.csproj",
+      "Promete.Test\\Promete.Test.csproj"
+    ]
+  }
+}

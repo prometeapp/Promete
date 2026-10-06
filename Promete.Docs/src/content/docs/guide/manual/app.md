@@ -25,6 +25,21 @@ var app = PrometeApp.Create()
 2. **Use&lt;T&gt;()** - プラグインを追加（必要な数だけチェーン）
 3. **BuildWith...()** - プラットフォーム固有のバックエンドでビルド
 
+### オプション
+
+```csharp
+// ウィンドウオプション付き
+var app = PrometeApp.Create()
+    .Use<Keyboard>()
+    .Use<Mouse>()
+    .Use<ConsoleLayer>(WindowOptions.Default with
+    {
+        Title = "My Game",
+        Size = (800, 600),
+        Mode = WindowMode.Resizable,
+    });
+```
+
 ## アプリケーションの実行
 
 アプリケーションをビルドした後、`Run<T>()`メソッドでシーンを指定して実行します。
@@ -32,14 +47,6 @@ var app = PrometeApp.Create()
 ```csharp
 // 基本的な実行
 return app.Run<MainScene>();
-
-// ウィンドウオプション付きで実行
-return app.Run<MainScene>(WindowOptions.Default with
-{
-    Title = "My Game",
-    Size = (800, 600),
-    Mode = WindowMode.Resizable,
-});
 ```
 
 `Run`メソッドは、アプリケーションが終了するまでブロックし、終了ステータスコード（int）を返します。
@@ -109,10 +116,10 @@ public class GameScene : Scene
 シーンをスタック形式で管理することも可能です。
 
 ```csharp
-// 現在のシーンの上にポーズメニューを表示
+// 現在のシーンを保持した状態で、別のシーンへ遷移
 App.PushScene<PauseMenuScene>();
 
-// 前のシーンに戻る
+// PauseMenuScene を破棄し、前のシーンに戻る
 App.PopScene();
 ```
 

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Graphics;
@@ -8,20 +8,16 @@ using Promete.Nodes;
 namespace Promete.Example.examples.window;
 
 [Demo("window/time_scale.demo", "時間スケールを変更する")]
-public class time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManager coroutine) : Scene
+public class Time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManager coroutine) : Scene
 {
-    private Sprite _sprite;
+    private Sprite? _sprite;
     private Texture2D _ichigo;
     private int _timeScale = 10;
 
     public override void OnStart()
     {
-        _ichigo = Window.TextureFactory.Load("assets/ichigo.png");
-        _sprite = new Sprite(_ichigo)
-            .Name("ichigo")
-            .Size(32, 32)
-            .Location(120, 120);
-
+        _ichigo = App.TextureFactory.Load("assets/ichigo.png");
+        _sprite = new Sprite(_ichigo).Name("ichigo").Size(32, 32).Location(120, 120);
 
         Root.Add(_sprite);
 
@@ -41,16 +37,17 @@ public class time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManage
         {
             _timeScale += addition;
         }
+
         // 時間スケールを変更する
-        Window.TimeScale = _timeScale / 10f;
+        Time.TimeScale = _timeScale / 10f;
 
         console.Clear();
-        console.Print($"TimeScale: {Window.TimeScale}");
-        console.Print($"Time: {Window.TotalTime}");
-        console.Print($"Time without Scale: {Window.TotalTimeWithoutScale}");
-        console.Print($"DeltaTime: {Window.DeltaTime}");
-        console.Print($"FPS: {Window.FramePerSeconds}");
-        console.Print($"UPS: {Window.UpdatePerSeconds}");
+        console.Print($"TimeScale: {Time.TimeScale}");
+        console.Print($"Time: {Time.TotalTime}");
+        console.Print($"Time without Scale: {Time.TotalTimeWithoutScale}");
+        console.Print($"DeltaTime: {Time.DeltaTime}");
+        console.Print($"FPS: {Time.FramePerSeconds}");
+        console.Print($"UPS: {Time.UpdatePerSeconds}");
         console.Print("Press [ESC] to return");
 
         if (keyboard.Escape.IsKeyDown)
@@ -82,8 +79,8 @@ public class time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManage
         var start = sprite.Location;
         while (time < duration)
         {
-            sprite.Location = start + direction * (time / duration) * 128;
-            time += Window.DeltaTime;
+            sprite.Location = start + (direction * (time / duration) * 128);
+            time += Time.DeltaTime;
             yield return null;
         }
     }

@@ -4,6 +4,10 @@
 # build
 [Oo]bj/
 [Bb]in/
+# JavaScript Project System の SDK が macOS で作るゴミ。
+# Directory.Build.props で出力先を逃がしているが、SDK の更新で再発しうるので保険。
+[Oo]bj\\[Dd]ebug/
+[Oo]bj\\[Rr]elease/
 packages/
 TestResults/
 
@@ -64,6 +68,9 @@ Thumbs.db
 **/.idea/**/*.iml
 **/.idea/**/contentModel.xml
 **/.idea/**/modules.xml
-.claude/
+.claude/settings.local.json
 
 **/.idea/**/deviceManager.xml
+
+# npm lockfile (this repo uses pnpm)
+package-lock.json

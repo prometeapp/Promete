@@ -23,5 +23,5 @@ public enum FontStyle
     /// <summary>
     /// 太字かつ斜体のフォントスタイルです。
     /// </summary>
-    BoldItalic
+    BoldItalic,
 }

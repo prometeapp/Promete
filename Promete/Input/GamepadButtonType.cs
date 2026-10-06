@@ -1,4 +1,4 @@
-﻿namespace Promete.Input;
+namespace Promete.Input;
 
 /// <summary>
 /// ゲームパッドのボタンタイプを表す列挙型
@@ -93,5 +93,5 @@ public enum GamepadButtonType
     /// <summary>
     /// 不明なボタン
     /// </summary>
-    Unknown
+    Unknown,
 }

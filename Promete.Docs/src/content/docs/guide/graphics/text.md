@@ -69,18 +69,21 @@ text.Color = Color.FromArgb(128, 255, 255, 255);
 
 ### ボーダー
 
-テキストに（縁取り）を追加できます。
+テキストに縁取り（ボーダー）を追加できます。`BorderColor` を指定すると縁取りが有効になり、`BorderThickness` で太さを変更できます。
 
 ```csharp title="ボーダーの設定"
-var outlinedText = new Text("Outlined Text")
-    .BorderColor(Color.Black)
-    .BorderThickness(2);
+var outlinedText = new Text("Outlined Text");
+outlinedText.BorderColor = Color.Black;
+outlinedText.BorderThickness = 2;
 
 // 太いボーダー
-var thickBorderText = new Text("Thick Border")
-    .Color(Color.White)
-    .BorderColor(Color.DarkBlue)
-    .BorderThickness(4);
+var thickBorderText = new Text("Thick Border");
+thickBorderText.Color = Color.White;
+thickBorderText.BorderColor = Color.DarkBlue;
+thickBorderText.BorderThickness = 4;
+
+// 縁取りを無効にする
+outlinedText.BorderColor = null;
 ```
 
 ### 配置とレイアウト
@@ -109,19 +112,31 @@ text.VerticalAlignment = VerticalAlignment.Center;
 text.VerticalAlignment = VerticalAlignment.Bottom;
 ```
 
-#### サイズとワードラップ
-```csharp title="サイズとワードラップ"
-var longText = new Text("これは非常に長いテキストで、指定された幅で自動的に折り返されます。")
-    .PreferredSize(200, 100)  // 200x100の領域に表示
-    .WordWrap(true);          // 自動折り返しを有効化
+#### サイズと折り返し
+
+`PreferredSize` でテキストを配置する領域の大きさを、`WrapMode` で折り返し方を指定します。
+
+```csharp title="サイズと折り返し"
+var longText = new Text("これは非常に長いテキストで、指定された幅で自動的に折り返されます。");
+longText.PreferredSize = (200, 100);  // 200x100の領域に表示
+longText.WrapMode = WrapMode.Mixed;   // 自動折り返しを有効化
 
 Root.Add(longText);
 ```
 
+`WrapMode` には次の値を指定できます。
+
+- `WrapMode.None`<br/>折り返しません（デフォルト）。改行文字の位置でのみ改行されます
+- `WrapMode.Character`<br/>幅を超えた位置の文字で折り返します。単語の途中でも改行されます
+- `WrapMode.Word`<br/>単語の区切りで折り返します。英語のテキストに向いています
+- `WrapMode.Mixed`<br/>日本語は任意の文字で、英語は単語の区切りで折り返します。日本語と英語が混ざったテキストに向いています
+
+`PreferredSize` を `(0, 0)` にすると、テキストが収まる大きさに自動で調整されます。
+
 #### 行間隔
 ```csharp title="行間隔の調整"
-var multilineText = new Text("Line 1\nLine 2\nLine 3")
-    .LineSpacing(1.5f);  // 1.5倍の行間隔
+var multilineText = new Text("Line 1\nLine 2\nLine 3");
+multilineText.LineSpacing = 1.5f;  // 1.5倍の行間隔
 ```
 
 ## リッチテキスト
@@ -129,8 +144,8 @@ var multilineText = new Text("Line 1\nLine 2\nLine 3")
 部分的に文字装飾が可能です。[リッチテキスト機能](/guide/text/ptml)を参照してください。
 
 ```csharp title="リッチテキストの使用"
-var richText = new Text("", Font.GetDefault(16))
-    .UseRichText(true);
+var richText = new Text("", Font.GetDefault(16));
+richText.UseRichText = true;
 
 // PTMLタグを使用
 richText.Content = """

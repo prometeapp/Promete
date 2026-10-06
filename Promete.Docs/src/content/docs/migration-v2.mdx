@@ -1,0 +1,741 @@
+---
+title: v1 → v2 移行ガイド
+description: Promete v1 から v2 への移行方法
+sidebar:
+  order: 10
+---
+
+import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+このガイドでは、Promete v1 で作られたプロジェクトを v2 に移行する手順を解説します。
+
+<Aside type="tip">
+  Claude CodeなどのAIエージェントを用いて、お使いのプロジェクトをv2へ移行する場合は、
+  必要に応じてLLM向けのドキュメントを使用できます。以下からダウンロードできます。
+
+  <a href="/assets/migration-v2-llm.md" download>migration-v2-llm.md</a>
+</Aside>
+
+## アプリケーション開発者向け手順
+
+<Steps>
+
+1. **ターゲットフレームワークを更新する**
+
+   プロジェクトファイル（`.csproj`）の `TargetFramework` を `net10.0` に変更してください。
+
+   ```xml
+   <!-- Before -->
+   <TargetFramework>net8.0</TargetFramework>
+
+   <!-- After -->
+   <TargetFramework>net10.0</TargetFramework>
+   ```
+
+   `LangVersion` を明示している場合は、`14` 以上（または削除して既定値）にしてください。手順5で使う `.Degrees` / `.Radians` は C# 14 の機能で実装されています。
+
+   変更後、`dotnet restore` を実行してパッケージを再取得してください。
+
+2. **Promete パッケージを更新する**
+
+   NuGet パッケージを v2 系の最新版に更新してください。
+
+   ```sh
+   dotnet add package Promete
+   ```
+
+   プラグインパッケージを使用している場合は合わせて更新してください（例：`Promete.ImGui`）。
+
+   v2 では依存パッケージも変わっています。次に当てはまる場合は、プロジェクト側の参照を調整してください。
+
+   - **Silk.NET を直接参照している**: Promete v2 は Silk.NET のフォークを使っており、パッケージ ID は `Promete.Silk.*` です（例：`Promete.Silk.OpenGL`）。upstream の `Silk.NET.*` と併用すると同じアセンブリ名が二重に持ち込まれるため、`PackageReference` の ID を `Promete.Silk.*` に揃えてください。アセンブリ名と名前空間は `Silk.NET.*` のままなので、`using` の変更は不要です。
+   - **`SixLabors.Fonts` や `SixLabors.ImageSharp.Drawing` を使っている**: v2 の Promete はこれらに依存しなくなったため、推移的には入ってきません。必要なら自分で `PackageReference` を追加してください（`SixLabors.ImageSharp` は引き続き Promete が参照しています）。
+
+3. **`IWindow` の参照を `View` / `Time` / `App` に置き換える**
+
+   v1 では `IWindow` がウィンドウ操作・時間管理・イベントのすべてを担っていましたが、v2 では次のように分割されました。
+
+   - 画面に関するもの: `IGameView`（シーンからは `View`）
+   - 時間に関するもの: `ITimeProvider`（シーンからは `Time`）
+   - ゲームループのイベントと終了処理: `PrometeApp`（シーンからは `App`）
+
+   シーン内の `window.*` の呼び出しを次の表を参考に書き換えてください。
+
+   | v1                                                                    | v2                                                               |
+   | --------------------------------------------------------------------- | ---------------------------------------------------------------- |
+   | `window.Size` / `Width` / `Height`                                    | `View.Size` / `Width` / `Height`                                 |
+   | `window.ActualSize` / `ActualWidth` / `ActualHeight`                  | `View.ActualSize` / `ActualWidth` / `ActualHeight`               |
+   | `window.Location` / `X` / `Y`                                         | `View.Location` / `X` / `Y`                                      |
+   | `window.Title`                                                        | `View.Title`                                                     |
+   | `window.Scale`                                                        | `View.Scale`                                                     |
+   | `window.PixelRatio`                                                   | `View.PixelRatio`                                                |
+   | `window.Mode`                                                         | `View.Mode`                                                      |
+   | `window.IsFullScreen` / `IsVisible` / `IsFocused` / `TopMost`         | `View.IsFullScreen` / `IsVisible` / `IsFocused` / `TopMost`      |
+   | `window.TakeScreenshot()` / `SaveScreenshotAsync()`                   | `View.TakeScreenshot()` / `SaveScreenshotAsync()`                |
+   | `window.FileDropped` / `Resize`（イベント）                           | `View.FileDropped` / `Resize`                                    |
+   | `window.DeltaTime` / `TotalTime` / `TotalTimeWithoutScale`            | `Time.DeltaTime` / `TotalTime` / `TotalTimeWithoutScale`         |
+   | `window.TotalFrame`                                                   | `Time.TotalFrame`                                                |
+   | `window.FramePerSeconds` / `UpdatePerSeconds`                         | `Time.FramePerSeconds` / `UpdatePerSeconds`                      |
+   | `window.TargetFps` / `TargetUps`                                      | `Time.TargetFps` / `TargetUps`                                   |
+   | `window.TimeScale`                                                    | `Time.TimeScale`                                                 |
+   | `window.Start` / `Update` / `Render` / `Destroy`（イベント）          | `App.Start` / `Update` / `Render` / `Destroy`                    |
+   | `window.PreUpdate` / `PostUpdate`（イベント）                         | `App.PreUpdate` / `PostUpdate`                                   |
+   | `window.Exit()`                                                       | `App.Exit()`                                                     |
+   | `window.IsVsyncMode`                                                  | 起動時の `WindowOptions.IsVsyncMode` のみ（実行中の変更は不可） |
+
+   コンストラクタで `IWindow` を受け取っていたシーンは、コンストラクタから削除して `View` / `Time` プロパティを直接使うように変更してください。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     public class MainScene(IWindow window) : Scene
+     {
+         public override void OnUpdate()
+         {
+             var dt = window.DeltaTime;
+             var size = window.Size;
+             window.Title = "My Game";
+         }
+     }
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     public class MainScene : Scene
+     {
+         public override void OnUpdate()
+         {
+             var dt = Time.DeltaTime;
+             var size = View.Size;
+             View.Title = "My Game";
+         }
+     }
+     ```
+     </TabItem>
+   </Tabs>
+
+   シーン以外のクラス（自作プラグインなど）では、コンストラクタで `IGameView` / `ITimeProvider` を受け取ってください。どちらも `Promete.Backends` 名前空間にあります。
+
+   ```csharp
+   using Promete.Backends;
+
+   public class MyPlugin(IGameView view, ITimeProvider time)
+   {
+       // ...
+   }
+   ```
+
+4. **`TextureFactory` の参照先を変更する**
+
+   テクスチャの読み込みで `Window.TextureFactory` を使っている箇所を `App.TextureFactory` に置き換えてください。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     var texture = Window.TextureFactory.Load("image.png");
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     var texture = App.TextureFactory.Load("image.png");
+     ```
+     </TabItem>
+   </Tabs>
+
+   またはコンストラクタ経由で `TextureFactoryBase` をインジェクションして取得することもできます。
+
+   ```csharp
+   public class MyScene(TextureFactoryBase textureFactory) : Scene
+   {
+       public override void OnStart()
+       {
+           var texture = textureFactory.Load("./path/to/texture.png");
+       }
+   }
+   ```
+
+   `TextureFactory` 型を明示して変数やフィールドに受けている場合は、型名を `TextureFactoryBase` に変更してください。
+
+5. **`Angle` 型の変更に対応する**
+
+   v2 では角度を表す `Angle` 構造体が追加され、ノードの回転角度など、角度を扱う API の型が `float` から `Angle` に変わりました。`float` / `int` との暗黙的な変換はできないので、`Angle` を受け取るプロパティ・メソッドに数値を直接渡すとコンパイルエラーになります。
+
+   拡張プロパティ `.Degrees` / `.Radians` を使って `Angle` を生成してください。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     sprite.Angle = 90f;
+     sprite.Angle += 1f;
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     sprite.Angle = 90.Degrees;           // int から度数法
+     sprite.Angle = 90.0f.Degrees;        // float から度数法
+     sprite.Angle += 1.Degrees;
+     sprite.Angle = MathF.PI.Radians;     // float からラジアン
+
+     // 静的メソッドでも生成できます
+     sprite.Angle = Angle.FromDegrees(90);
+     sprite.Angle = Angle.FromRadians(MathF.PI / 2);
+     ```
+     </TabItem>
+   </Tabs>
+
+   `float` で角度を管理しているコードは次のように書き換えてください。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     float angle = 0;
+     angle += Window.DeltaTime * 90;
+     sprite.Angle = angle;
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     float angle = 0;
+     angle += Time.DeltaTime * 90;
+     sprite.Angle = angle.Degrees;
+     ```
+     </TabItem>
+   </Tabs>
+
+   `float` として取り出す場合は `ToDegrees()` / `ToRadians()` メソッドを使います。`Angle` には大小比較の演算子（`<` `>` など）がないため、比較する場合も `float` に変換してください。
+
+   ```csharp
+   float deg = sprite.Angle.ToDegrees();
+   float rad = sprite.Angle.ToRadians();
+
+   if (sprite.Angle.ToDegrees() > 180) { /* ... */ }
+   ```
+
+   v1 で `MathHelper.ToRadian(sprite.Angle)` / `MathHelper.ToDegree(...)` を使って単位を変換していた箇所は、上記のメソッドに置き換えてください。
+
+   `Angle` を受け取る・返すようになった主な API は次のとおりです。
+
+   - `Node.Angle`、`Node.AbsoluteAngle`、Setup API の `.Angle(...)`
+   - `Vector` / `VectorInt` の `.Angle()` メソッドと、静的メソッド `Vector.Angle(from, to)` / `VectorInt.Angle(from, to)`
+   - `Vector.Rotate(...)`
+
+   v1 の `Vector.Angle()` はラジアンを返し、`Node.Angle` は度数法だったため、v1 では `MathHelper.ToDegree` で変換してから代入する必要がありました。v2 ではどちらも `Angle` なので、変換せずにそのまま代入できます。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     float angle = player.Location.Angle(mouse.Position); // ラジアン
+     sprite.Angle = MathHelper.ToDegree(angle);
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     Angle angle = player.Location.Angle(mouse.Position);
+     sprite.Angle = angle;
+     ```
+     </TabItem>
+   </Tabs>
+
+   v1 の `Vector.Rotate(float)` の引数はラジアンでした。書き換えるときは `.Degrees` ではなく `.Radians` を使ってください。
+
+   ```csharp
+   // v1: v.Rotate(MathF.PI / 2)
+   v.Rotate((MathF.PI / 2).Radians);
+   ```
+
+6. **`WindowOptions` の渡し方を変更する**
+
+   Promete v2 では、`PrometeApp.Run` メソッドに `WindowOptions` 型を渡せなくなりました（`Run(WindowOptions)` / `Run<TScene>(WindowOptions)` は削除されました）。
+   代わりに、バックエンドの初期化時に渡す必要があります。
+
+   OpenGLバックエンドでは次のように変更してください。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     var app = PrometeApp.Create()
+       .BuildWithOpenGLDesktop();
+
+     return app.Run<MainScene>(WindowOptions.Default with
+     {
+         Title = "Promete Demo",
+         Mode = WindowMode.Resizable,
+         TargetFps = 0,
+         TargetUps = 0,
+         IsVsyncMode = false,
+     });
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     var app = PrometeApp.Create()
+       .BuildWithOpenGLDesktop(WindowOptions.Default with
+     {
+       Title = "Promete Demo",
+       Mode = WindowMode.Resizable,
+       TargetFps = 0,
+       TargetUps = 0,
+       IsVsyncMode = false,
+     });
+
+     return app.Run<MainScene>();
+     ```
+     </TabItem>
+   </Tabs>
+
+7. **シーン関連の変更に対応する**
+
+   **`SceneWillChange` イベントの引数**
+
+   `PrometeApp.SceneWillChange` の型が `Action` から `Action<SceneTransitionEventArgs>` に変わりました。引数から遷移の種類（`Type`）と、遷移前後のシーン（`Previous` / `Next`）を取得できます。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     App.SceneWillChange += () => Console.WriteLine("シーンが変わります");
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     App.SceneWillChange += e => Console.WriteLine($"{e.Previous} → {e.Next}");
+     ```
+     </TabItem>
+   </Tabs>
+
+   **シーンの自動登録**
+
+   シーンの自動登録が、実行時のリフレクションからコンパイル時のソースジェネレータに変わりました。これに伴い、次のシーンは自動登録されなくなりました。
+
+   - `private` / `protected` なネスト型や `file` ローカル型のシーン（`PROMETE0001` の警告が出ます）。`internal` 以上の可視性にしてください
+   - 抽象クラス・ジェネリック型のシーン
+
+   Promete を NuGet パッケージではなく `ProjectReference` で参照している場合（サブモジュールとして取り込んでいる場合など）は、ソースジェネレータが自動では適用されず、シーンが1つも登録されません。プロジェクトファイルに次の参照を追加してください。
+
+   ```xml
+   <ItemGroup>
+     <ProjectReference Include="path/to/Promete.SceneGen/Promete.SceneGen.csproj"
+                       OutputItemType="Analyzer"
+                       ReferenceOutputAssembly="false" />
+     <CompilerVisibleProperty Include="OutputType" />
+   </ItemGroup>
+   ```
+
+   エントリアセンブリ以外にシーンを置いている場合は、`UseScenesFrom` でそのアセンブリを指定してください。
+
+   ```csharp
+   var app = PrometeApp.Create()
+       .UseScenesFrom<SomeTypeInContentAssembly>()
+       .BuildWithOpenGLDesktop();
+   ```
+
+8. **フォントとテキストの変更に対応する**
+
+   フォント機能が刷新され、テキストのレイアウトと描画を Promete 自身が行うようになりました。`Font.FromFile(path, ...)` / `Font.FromSystem(name, ...)` / `Font.GetDefault()` / `font.With(...)` と、`Text` ノードのコンストラクタ・主要なプロパティ（`Content` / `Color` / `Font` / `BorderColor` / `BorderThickness` / `LineSpacing` / `UseRichText` など）はそのまま使えます。
+
+   次の API は変更・削除されています。
+
+   | v1                                                  | v2                                                                    |
+   | --------------------------------------------------- | --------------------------------------------------------------------- |
+   | `IFont`                                             | 削除。`Font` を使用                                                   |
+   | `Font.FromFile(Stream stream, ...)`                 | `Font.FromStream(stream, ...)`                                        |
+   | `Font.FromSystem(name, CultureInfo culture, ...)`   | 削除。`Font.FromSystem(name, ...)` を使用                             |
+   | `font.GetTextBounds(text, options)`（戻り値 `Rect`）| `TextLayoutEngine.Measure(text, font, options)`（戻り値 `VectorInt`） |
+   | `font.GenerateTexture(...)`                         | 削除（代替なし）                                                      |
+   | `Text.WordWrap` / `TextRenderingOptions.WordWrap`   | `WrapMode`（`None` / `Character` / `Word` / `Mixed`）                 |
+   | `Text.RenderTexture()`                              | `Text.UpdateLayout()`                                                 |
+   | `Text.RenderedTexture`                              | 削除。サイズは `Text.Size` または `Text.Layout.Size` で取得           |
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     var font = Font.FromFile(stream, 24);
+     var bounds = font.GetTextBounds("Hello", new TextRenderingOptions());
+
+     text.WordWrap = true;
+     text.RenderTexture();
+     var size = text.RenderedTexture?.Size;
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     var font = Font.FromStream(stream, 24);
+     var size = TextLayoutEngine.Measure("Hello", font, new TextRenderingOptions());
+
+     text.WrapMode = WrapMode.Word; // 和文を含む場合は WrapMode.Mixed
+     text.UpdateLayout();
+     var textSize = text.Layout.Size;
+     ```
+     </TabItem>
+   </Tabs>
+
+   見た目に影響する挙動の変更もあります。レイアウトが重要な画面は実際に表示して確認してください。
+
+   - 禁則処理（`KinsokuMode.Standard`）が既定で有効になりました
+   - カーニングが既定で有効になり（`UseKerning = true`）、アンチエイリアスの有無に関わらず適用されます
+   - `Text.Size` は、描画された文字の外接矩形ではなく「文字の送り幅 × 行の高さ」で計算されるようになりました。`Pivot` を中央にしたテキストなどは位置が少しずれることがあります
+   - 縁取りの描画方式が変わったため、太さの見え方が変わることがあります
+   - `TextRenderingOptions.TextColor` の既定値が白になりました
+   - `Font.FromSystem` は、フォントが見つからない場合に `FontException` をスローします
+   - `Font.FromStream` は呼び出すたびに新しいフォントを読み込みます。サイズ違いのフォントが必要な場合は、読み込み直さずに `font.With(size)` を使ってください
+
+9. **オーディオの変更に対応する**
+
+   `AudioPlayer` の主な API（`Play` / `Stop` / `Pause` / `Resume` / `PlayOneShot` / `Gain` / `Pan` / `Pitch` / `Time` / イベントなど）はそのまま使えます。次の点に注意してください。
+
+   - **音源のプロパティ**: `WaveAudioSource` / `VorbisAudioSource` の `Samples` は `Frames` に変わり、`Bits` は削除されました（`WaveAudioSource.Length` も削除）。`Samples` は全チャンネル合計のサンプル数でしたが、`Frames` は1チャンネルあたりのフレーム数です。v1 の `Samples` と同じ値が必要な場合は `Frames * Channels` としてください
+   - **`AudioPlayer.BufferSize`**: 単位がフレーム数に変わり、既定値は 1024 になりました。v1 の値（全チャンネル合計のサンプル数。既定値 10000）をそのまま設定すると、ステレオでは約2倍の長さになります
+   - **`Stop(time)` によるフェードアウト**: v1 ではフェード後に `Gain` が 1 に戻されていましたが、v2 では `Gain` を書き換えません
+   - **出力とパン**: 出力はステレオ固定になり、パンはステレオ音源にも効くようになりました。パンが中央のとき左右それぞれ約 0.707 倍（約 -3dB）されるため、ステレオ音源は v1 より小さく聞こえることがあります
+
+10. **ピクセルスナップの影響を確認する**
+
+    v2 では、ノードの描画位置が既定で整数ピクセルにスナップされるようになりました。奇数サイズのノードを `Pivot(0.5f, 0.5f)` で中央に置いたときなどのにじみを防ぐためです。
+
+    サブピクセル単位の滑らかな移動・回転・ズームを行うノードでは、動きがカクつくことがあります。その場合はノードごとに無効化してください。
+
+    ```csharp
+    var sprite = new Sprite(texture).PixelSnap(false);
+    // または
+    sprite.IsPixelSnapEnabled = false;
+    ```
+
+11. **同梱プラグインの変更に対応する**
+
+    `Promete.ImGui` の `ImGuiPlugin` のコンストラクタが `(PrometeApp, IWindow)` から `(PrometeApp, InputProvider)` に変わりました。`ImGuiPlugin` を継承している場合は書き換えてください。
+
+    <Tabs>
+      <TabItem label="v1">
+      ```csharp
+      public class MyImGuiPlugin(PrometeApp app, IWindow window) : ImGuiPlugin(app, window)
+      {
+          protected override void OnConfigure(ImGuiIOPtr io) { /* ... */ }
+      }
+      ```
+      </TabItem>
+      <TabItem label="v2">
+      ```csharp
+      using Promete.Backends.SilkNetCommon;
+
+      public class MyImGuiPlugin(PrometeApp app, InputProvider provider) : ImGuiPlugin(app, provider)
+      {
+          protected override void OnConfigure(ImGuiIOPtr io) { /* ... */ }
+      }
+      ```
+      </TabItem>
+    </Tabs>
+
+    同様に、`Keyboard` / `Mouse` / `Gamepads` / `ConsoleLayer` / `CoroutineManager` のコンストラクタも `IWindow` を受け取らなくなりました。DI 経由で取得している場合は影響ありませんが、自分で `new` している場合は DI から取得するように変更してください。
+
+12. **ビルドして、残っている箇所を確認する**
+
+    ここまでの手順を終えたら一度ビルドしてください。`IWindow` を参照している箇所には `[Obsolete]` 警告が出ます。警告の一覧を見て、手順3・4で対応できていない箇所が残っていないか確認してください。
+
+    `IWindow` は後方互換のために残されていますが、次のメンバーはそのままでは動きません。
+
+    - `IWindow.Run(WindowOptions)`: `NotSupportedException` をスローします。手順6のとおり `app.Run()` を使ってください
+    - `IWindow.IsVsyncMode`: 値を設定しても反映されません
+    - `IWindow._RawInputContext`: `RawInputContext` に名前が変わっているため、コンパイルエラーになります。v2 では `InputProvider` を DI で受け取り、`CreateInput()` で取得してください
+    - `IWindow.TextureFactory`: 型が `TextureFactoryBase` に変わっています
+
+    <Aside type="tip">
+      `[Obsolete]`
+      警告が出ていても、上記以外は動作します。焦らず、警告が0になるまで順番に対応してください。
+    </Aside>
+
+</Steps>
+
+### その他の挙動の変更
+
+手順には含めていませんが、次の挙動も v1 から変わっています。該当する処理がある場合は確認してください。
+
+- `Vector.Dot` / `VectorInt.Dot` が正しい内積を返すようになりました（v1 は誤った式で計算していました）
+- `Rect.Intersect` / `RectInt.Intersect` で、幅または高さが 0 の矩形は常に重なっていないと判定されるようになりました
+- `AudioPlayer.IsPlaying` は、`Play` を呼んだ直後から（フェード中も含めて）`true` を返します
+
+---
+
+## プラグイン・カスタムノード・バックエンド開発者向け追加手順
+
+ゲームロジックのみ書いていて、カスタムノード・独自の音源やフォント・バックエンドを実装していない場合はここから先は不要です。
+
+<Steps>
+
+1. **`NodeRenderer` を `Collect()` に移行する**
+
+   v1 では各ノードタイプに対して `NodeRendererBase` を継承したレンダラーを実装し `UseRenderer<TNode, TRenderer>()` で登録していましたが、この仕組みは v2 で廃止されました。
+
+   代わりに、ノード自身が `Collect()` メソッドをオーバーライドして、描画コマンドをキューに追加する方式に変わりました。キューに積まれたコマンドは、バックエンドが登録したコマンドランナーが実行します。同じテクスチャ・同じマテリアルが連続する `DrawTextureCommand` は自動的にまとめて描画されます。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     public class MyNode : Node { /* ... */ }
+
+     public class MyNodeRenderer : NodeRendererBase
+     {
+         public override void Render(Node node) { /* ... */ }
+     }
+
+     var app = PrometeApp.Create()
+         .UseRenderer<MyNode, MyNodeRenderer>()
+         .BuildWithOpenGLDesktop();
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     using System.Drawing;
+     using Promete.Graphics.Rendering;
+     using Promete.Graphics.Rendering.Commands;
+
+     public class MyNode(Texture2D texture) : Node
+     {
+         public override void Collect(RenderCommandQueue queue, RenderContext ctx)
+         {
+             queue.Enqueue(new DrawTextureCommand
+             {
+                 Texture = texture,
+                 ModelMatrix = ModelMatrix, // 親の変形込みの変換行列
+                 TintColor = Color.White,
+                 Width = texture.Size.X,
+                 Height = texture.Size.Y,
+                 Material = Material,
+             });
+         }
+     }
+     ```
+     </TabItem>
+   </Tabs>
+
+   登録コード（`UseRenderer<,>()`）はすべて削除してください。
+
+   標準のコマンドは次のとおりです（いずれも `Promete.Graphics.Rendering.Commands` 名前空間）。
+
+   | コマンド                                                           | 用途                     |
+   | ------------------------------------------------------------------ | ------------------------ |
+   | `DrawTextureCommand`                                               | テクスチャの描画         |
+   | `DrawPrimitiveCommand`                                             | 図形の描画               |
+   | `DrawPieTextureCommand`                                            | 扇形に切り抜いた描画     |
+   | `BeginTrimCommand` / `EndTrimCommand`                              | 矩形での切り抜き         |
+   | `BeginStencilMaskCommand` / `BeginAlphaMaskCommand` / `EndMaskCommand` | マスク                |
+
+   コンテナ系のノードについては、次の点も変わっています。
+
+   - v1 の `PrometeApp.RenderNode(Node)` は削除されました。子ノードの描画には `PrometeApp.CollectNode(Node, RenderCommandQueue, RenderContext)` を使います。ただし `ContainableNode` の `Collect()` は子ノードを自動で収集するため、通常は `base.Collect(queue, ctx)` を呼べば十分です
+   - `ContainableNode` の `isTrimmable` / `sortedChildren` は `IsTrimmable` / `SortedChildren` に名前が変わりました
+   - `IsTrimmable` によるトリミングを処理するのは `Container` / `MaskedContainer` の `Collect()` です。`ContainableNode` を直接継承してトリミングする場合は、`queue.PushTrim(this, ctx)` / `queue.PopTrim()` で子ノードの収集を囲んでください
+
+2. **独自の描画コマンドを追加する（必要な場合）**
+
+   標準のコマンドで表現できない描画を行う場合は、`IRenderCommand` を実装したコマンドと、それを実行する `CommandRunner<T>` を作成し、`RenderCommandQueue` に登録します。
+
+   ```csharp
+   public sealed class MyCommand : IRenderCommand
+   {
+       public required int Value { get; init; }
+   }
+
+   public sealed class MyCommandRunner : CommandRunner<MyCommand>
+   {
+       public override void Execute(MyCommand command) { /* 描画処理 */ }
+   }
+
+   // アプリのビルド後に登録する
+   app.GetPlugin<RenderCommandQueue>().RegisterRunner(new MyCommandRunner());
+   ```
+
+   ランナーが登録されていないコマンドは、何もせずに読み飛ばされます。
+
+3. **独自の音源（`IAudioSource`）を新しい契約に合わせる**
+
+   `IAudioSource` は、16bit 整数・サンプル単位の契約から、32bit 浮動小数点・フレーム単位の契約に変わりました。
+
+   | v1                                                        | v2                                                                                       |
+   | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+   | `int? Samples`（全チャンネル合計のサンプル数）            | `int? Frames`（1チャンネルあたりのフレーム数。終わりがない場合は `null`）                |
+   | `int Bits`                                                | 削除                                                                                     |
+   | `FillSamples(short[] buffer, int offset)`                 | `FillSamples(Span<float> buffer, int offsetFrames)`                                      |
+   | 戻り値: 書き込んだ `short` の数と、終端に達したか         | 戻り値: 書き込んだフレーム数と、終端に達したか                                           |
+
+   `buffer` には -1〜1 の範囲の値を、チャンネルごとにインターリーブして書き込みます。
+
+   <Tabs>
+     <TabItem label="v1">
+     ```csharp
+     public class MySource : IAudioSource
+     {
+         public int? Samples => _pcm.Length;
+         public int Channels => 2;
+         public int Bits => 16;
+         public int SampleRate => 44100;
+
+         public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
+         {
+             // ...
+         }
+     }
+     ```
+     </TabItem>
+     <TabItem label="v2">
+     ```csharp
+     public class MySource : IAudioSource
+     {
+         private readonly float[] _pcm; // -1〜1 のインターリーブ済みデータ
+
+         public int? Frames => _pcm.Length / Channels;
+         public int Channels => 2;
+         public int SampleRate => 44100;
+
+         public (int FilledFrames, bool IsFinished) FillSamples(Span<float> buffer, int offsetFrames)
+         {
+             var total = _pcm.Length / Channels;
+             var frames = Math.Min(buffer.Length / Channels, Math.Max(0, total - offsetFrames));
+             _pcm.AsSpan(offsetFrames * Channels, frames * Channels).CopyTo(buffer);
+             return (frames, offsetFrames + frames >= total);
+         }
+     }
+     ```
+     </TabItem>
+   </Tabs>
+
+   実装時は次の点に注意してください。
+
+   - `buffer` の長さは呼び出しごとに変わります。`buffer.Length` を超えて書き込まないでください
+   - `FillSamples` はオーディオスレッドから呼ばれます。ファイル読み込みなど、ブロックする処理を行わないでください
+   - 終端でないのに要求より少ないフレーム数を返した場合、残りは無音で埋められます
+   - 3チャンネル以上の音源は、`Play` では先頭の2チャンネルだけが再生され、`PlayOneShot` では `NotSupportedException` になります
+
+4. **独自のフォント（`IFont`）を `IGlyphSource` に移行する**
+
+   `IFont` は削除されました。v2 ではレイアウトをエンジン側の `TextLayoutEngine` が行い、フォントの実装は「文字ごとのグリフを供給する」だけになりました。独自のフォントは `IGlyphSource` を実装し、`Font.FromGlyphSource` で `Font` に変換して使います。
+
+   - 実装するメンバー: `SourceId` / `GetMetrics` / `TryGetGlyph` / `Rasterize` / `GetKerning`、および `IDisposable`
+   - `SourceId` は `GlyphSourceId.Next()` で採番してください
+   - `Rasterize` が返す `GlyphBitmap` は RGBA8888 形式で、`Bearing` はベースラインを原点とした値にします
+
+   画像から作るビットマップフォントであれば、自分で実装しなくても `BitmapGlyphSource` で置き換えられます。
+
+   ```csharp
+   var source = BitmapGlyphSource.FromGrid("font.png", (8, 8), " !\"#$%&'()*+,-./0123456789");
+   var font = Font.FromGlyphSource(source, 16, FontStyle.Normal, false);
+   ```
+
+5. **`IWindow` に依存していたプラグインを書き換える**
+
+   プラグインで `IWindow` のイベントを購読していた場合は、`PrometeApp` のイベントに置き換えてください（手順3の表を参照）。v2 では `PreRender` / `PostRender` イベントも追加されています。
+
+   ```csharp
+   // v1
+   window.Update += OnUpdate;
+
+   // v2
+   app.Update += OnUpdate;
+   ```
+
+   v1 の `IWindow._RawInputContext` で Silk.NET の入力コンテキストを取得していた場合は、`InputProvider`（`Promete.Backends.SilkNetCommon` 名前空間）を DI で受け取り、`CreateInput()` を呼んでください。
+
+   ```csharp
+   public class MyInputPlugin(InputProvider inputProvider) : IInitializable
+   {
+       public void OnStart()
+       {
+           var input = inputProvider.CreateInput();
+       }
+   }
+   ```
+
+6. **バックエンドを `BackendBase` に移行する**
+
+   v1 では `IWindow` インターフェースを直接実装してバックエンドを構成していましたが、v2 では `BackendBase` 抽象クラスを継承する方式に変わりました。
+
+   各抽象メソッドを実装することで、ウィンドウ・時間管理・入力・レンダリングなどの責務を個別に提供します。
+
+   ```csharp
+   public class MyBackend : BackendBase
+   {
+       public override void OnInitialize(PrometeApp app, WindowOptions windowOptions) { /* ... */ }
+       public override ITimeProvider SetupTimeProvider() => new MyTimeProvider();
+       public override IGameView SetupGameView() => new MyGameView();
+       public override InputProvider SetupInputProvider() => new MyInputProvider();
+       public override IScreenBlitter SetupScreenBlitter() => new MyScreenBlitter();
+       public override TextureFactoryBase SetupTextureFactory() => new MyTextureFactory();
+       public override IRenderTextureProvider SetupRenderTextureProvider() => new MyRenderTextureProvider();
+       public override IShaderFactory SetupShaderFactory() => new MyShaderFactory();
+       public override void OnStart(PrometeApp app) { /* ... */ }
+       public override void OnExit(PrometeApp app) { /* ... */ }
+   }
+   ```
+
+   バックエンドの登録は `Build<T>()` で行います。
+
+   ```csharp
+   var app = PrometeApp.Create()
+       .Use<Keyboard>()
+       .Build<MyBackend>(WindowOptions.Default);
+   ```
+
+   実装にあたっては、次の点に注意してください。
+
+   - **呼び出し順**: `OnInitialize` → 各 `Setup*` の順で呼ばれ、その後に DI コンテナが構築されます。`OnInitialize` の時点で取得できるプラグインは、`Use<T>(instance)` でインスタンスとして登録されたものだけです
+   - **ゲームループ**: `OnStart` では、`app.OnStart()` を1度呼んだ後、ゲームループの中で `app.OnUpdate()` / `app.OnRender()` を呼び出してください。終了時には `app.OnDestroy()` を呼んでください
+   - **コマンドランナー**: 描画は手順1のコマンドで行われます。`RenderCommandQueue` は `Build<T>()` が自動的に登録するので、`app.GetPlugin<RenderCommandQueue>()` で取得し、標準のコマンドに対応するランナーを `RegisterRunner` で登録してください。テクスチャの描画は、連続する `DrawTextureCommand` をまとめた `DrawTextureBatchedCommand` として届きます
+   - **`TextureFactoryBase`**: v1 の `TextureFactory` から名前が変わりました。テクスチャの一部を書き換える抽象メソッド `Update(Texture2D, VectorInt, VectorInt, byte[])` が追加されたほか、`LoadFromImageSharpImage(Image)` も `protected override` で実装する必要があります。テクスチャは `new Texture2D(handle, size, onDispose)` で生成します
+   - **`IRenderTextureProvider`**: v1 の `IFrameBufferProvider` とはメンバーがまったく異なるため、作り直しになります。`Create` では `new RenderTexture(size, texture, this)` を返し、`Resize` でテクスチャを作り直した場合は `RenderTexture.Texture` を差し替えてください
+   - **`IShaderFactory`**: `Compile` でシェーダーをコンパイルし、`ShaderProgram.SetCompiledData(handle, onDispose)` で結果を設定してください。マテリアルの Uniform 値は `Material.Uniforms` で取得できます
+
+   また、以下の型が廃止・リネームされています。
+
+   | v1 の型                          | v2 の代替                                                       |
+   | -------------------------------- | --------------------------------------------------------------- |
+   | `IWindow`（バックエンドとして）  | `BackendBase`                                                   |
+   | `IFrameBufferProvider`           | `IRenderTextureProvider`（メンバーは別物）                      |
+   | `OpenGLDesktopWindow`            | `OpenGLDesktopBackend`                                          |
+   | `TextureFactory`（抽象クラス）   | `TextureFactoryBase`                                            |
+   | `OpenGLTextureFactory`           | `GLTextureFactory`                                              |
+   | `GLFrameBufferProvider`          | 内部実装になりました。`IRenderTextureProvider` を使用してください |
+   | `HeadlessAppExtesion`            | `HeadlessAppExtension`（綴りの修正）                            |
+
+</Steps>
+
+---
+
+## 名前空間の変更一覧
+
+### 移動された型
+
+| 型名                      | v1 の名前空間                      | v2 の名前空間                   |
+| ------------------------- | ---------------------------------- | ------------------------------- |
+| `CoordinateExtension`     | `Promete.Nodes.Renderer`           | `Promete.Graphics.Rendering`    |
+| `RenderingHelper`         | `Promete.Nodes.Renderer`           | `Promete.Graphics.Rendering`    |
+| `GLHelper`                | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL` |
+| `GLMaskedContainerHelper` | `Promete.Nodes.Renderer.GL.Helper` | `Promete.Graphics.Rendering.GL` |
+
+`GLMaskedContainerHelper` は、名前空間に加えてコンストラクタ（`(PrometeApp, RenderCommandQueue, IRenderTextureProvider)`）と `RenderToTexture(MaskedContainer, RenderContext)` のシグネチャも変わっています。
+
+### 名前が変わった型
+
+| v1 の型                                                   | v2 の型                                                |
+| --------------------------------------------------------- | ------------------------------------------------------ |
+| `Promete.Graphics.TextureFactory`                         | `Promete.Graphics.TextureFactoryBase`                  |
+| `Promete.Windowing.GLDesktop.OpenGLTextureFactory`        | `Promete.Windowing.GLDesktop.GLTextureFactory`         |
+| `Promete.Windowing.GLDesktop.OpenGLDesktopWindow`         | `Promete.Backends.GL.OpenGLDesktopBackend`             |
+| `Promete.Graphics.IFrameBufferProvider`                   | `Promete.Graphics.IRenderTextureProvider`（メンバーは別物） |
+| `Promete.Headless.HeadlessAppExtesion`                    | `Promete.Headless.HeadlessAppExtension`                |
+
+### 削除された型
+
+| v1 の型                                                       | 代替                                                                     |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `Promete.Graphics.Fonts.IFont`                                | `Promete.Graphics.Fonts.Font` / `IGlyphSource`                           |
+| `Promete.GLDesktop.GLFrameBufferProvider`                     | なし（内部実装）。`IRenderTextureProvider` を使用                        |
+| `Promete.Nodes.Renderer.NodeRendererBase`                     | ノード自身の `Collect()` メソッド                                        |
+| `Promete.Nodes.Renderer.GL.GLSpriteRenderer`                  | `Sprite.Collect()` + `DrawTextureCommand`                                |
+| `Promete.Nodes.Renderer.GL.GLTextRenderer`                    | `Text.Collect()` + `DrawTextureCommand`                                  |
+| `Promete.Nodes.Renderer.GL.GLShapeRenderer`                   | `Shape.Collect()` + `DrawPrimitiveCommand`                               |
+| `Promete.Nodes.Renderer.GL.GLTilemapRenderer`                 | `Tilemap.Collect()` + `DrawTextureCommand`                               |
+| `Promete.Nodes.Renderer.GL.GLNineSliceSpriteRenderer`         | `NineSliceSprite.Collect()` + `DrawTextureCommand`                       |
+| `Promete.Nodes.Renderer.GL.GLPieSpriteRenderer`               | `PieSprite.Collect()` + `DrawPieTextureCommand`                          |
+| `Promete.Nodes.Renderer.GL.GLMaskedContainerRenderer`         | `MaskedContainer.Collect()` + マスクコマンド                             |
+| `Promete.Nodes.Renderer.GL.GLContainbleNodeRenderer`          | `ContainableNode.Collect()` + `BeginTrimCommand` / `EndTrimCommand`      |
+| `Promete.Nodes.Renderer.GL.Helper.GLTextureRendererHelper`    | `DrawTextureCommand`（キューが自動的にバッチ化）                         |
+| `Promete.Nodes.Renderer.GL.Helper.GLPrimitiveRendererHelper`  | `DrawPrimitiveCommand` + `Promete.Graphics.Rendering.GL.Runners.GLDrawPrimitiveCommandRunner` |
+| `Promete.Nodes.Renderer.GL.Helper.GLPieSpriteRendererHelper`  | `DrawPieTextureCommand` + `Promete.Graphics.Rendering.GL.Runners.GLDrawPieTextureCommandRunner` |

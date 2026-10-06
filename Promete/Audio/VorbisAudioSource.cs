@@ -13,17 +13,17 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 {
     private readonly CancellationTokenSource _cts = new();
 
-    private readonly short[] _store;
+    private readonly float[] _store;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="VorbisAudioSource"/> class.
     /// 指定されたパスからVorbisオーディオソースを初期化します。
     /// </summary>
     public VorbisAudioSource(string path)
-        : this(File.OpenRead(path))
-    {
-    }
+        : this(File.OpenRead(path)) { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="VorbisAudioSource"/> class.
     /// 指定されたストリームからVorbisオーディオソースを初期化します。
     /// </summary>
     public VorbisAudioSource(Stream stream)
@@ -32,39 +32,37 @@ public class VorbisAudioSource : IAudioSource, IDisposable
 
         Channels = reader.Channels;
         SampleRate = reader.SampleRate;
-        Samples = (int)reader.TotalSamples * reader.Channels;
-        _store = new short[reader.TotalSamples * reader.Channels];
+        Frames = (int)reader.TotalSamples;
+        _store = new float[reader.TotalSamples * reader.Channels];
 
         // 別スレッドで非同期にデータを読み込む
         Task.Factory.StartNew(() =>
         {
             var temp = new float[1000];
             var loadedSize = 0;
-            unchecked
+            while (true)
             {
-                while (true)
+                if (_cts.Token.IsCancellationRequested)
+                    break;
+                var readSamples = reader.ReadSamples(temp.AsSpan());
+                if (readSamples == 0)
+                    break;
+
+                for (var i = 0; i < readSamples; i++)
                 {
-                    if (_cts.Token.IsCancellationRequested) break;
-                    // 1000サンプルずつ読み込む
-                    var readSamples = reader.ReadSamples(temp.AsSpan());
-                    if (readSamples == 0) break;
+                    if (_cts.Token.IsCancellationRequested)
+                        break;
+                    if (loadedSize >= _store.Length)
+                        goto exit;
 
-                    // 各サンプルを16bit shortに変換
-                    for (var i = 0; i < temp.Length; i++)
-                    {
-                        if (_cts.Token.IsCancellationRequested) break;
-                        if (loadedSize >= _store.Length) goto exit;
-
-                        _store[loadedSize++] = (short)(temp[i] * short.MaxValue);
-                        LoadedSize = loadedSize;
-                    }
+                    _store[loadedSize++] = temp[i];
+                    LoadedSize = loadedSize;
                 }
-
-                exit: ;
-                Samples = LoadedSize;
-                reader.Dispose();
-                IsLoadingFinished = true;
             }
+
+            exit:
+            reader.Dispose();
+            IsLoadingFinished = true;
         });
     }
 
@@ -79,19 +77,14 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     public bool IsLoadingFinished { get; private set; }
 
     /// <summary>
-    /// 合計サンプル数を取得します。
+    /// 総フレーム数を取得します。
     /// </summary>
-    public int? Samples { get; private set; }
+    public int? Frames { get; private set; }
 
     /// <summary>
     /// チャンネル数を取得します。
     /// </summary>
     public int Channels { get; init; }
-
-    /// <summary>
-    /// サンプルビット数を取得します。
-    /// </summary>
-    public int Bits => 16;
 
     /// <summary>
     /// サンプリングレートを取得します。
@@ -101,11 +94,19 @@ public class VorbisAudioSource : IAudioSource, IDisposable
     /// <summary>
     /// サンプルデータを指定されたバッファに読み込みます。
     /// </summary>
-    public (int loadedSize, bool isFinished) FillSamples(short[] buffer, int offset)
+    /// <returns></returns>
+    public (int FilledFrames, bool IsFinished) FillSamples(Span<float> buffer, int offsetFrames)
     {
-        var actualReadSize = Math.Min(buffer.Length, LoadedSize - offset);
-        Buffer.BlockCopy(_store, offset * sizeof(short), buffer, 0, actualReadSize * sizeof(short));
-        return (actualReadSize, IsLoadingFinished && actualReadSize < buffer.Length);
+        var totalFrames = _store.Length / Channels;
+        var offsetSamples = Math.Clamp(offsetFrames, 0, totalFrames) * Channels;
+        var requestedSamples = buffer.Length / Channels * Channels;
+        var actualReadSamples = Math.Max(0, Math.Min(requestedSamples, LoadedSize - offsetSamples));
+
+        _store.AsSpan(offsetSamples, actualReadSamples).CopyTo(buffer);
+
+        var filledFrames = actualReadSamples / Channels;
+        var isFinished = IsLoadingFinished && offsetFrames + filledFrames >= LoadedSize / Channels;
+        return (filledFrames, isFinished);
     }
 
     /// <summary>

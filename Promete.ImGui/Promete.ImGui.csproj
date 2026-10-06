@@ -1,23 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Silk.NET.OpenGL.Extensions.ImGui" Version="2.23.0" />
+        <PackageReference
+            Include="Promete.Silk.OpenGL.Extensions.ImGui"
+            Version="2.23.0-prmt.1.0.0"
+        />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Promete\Promete.csproj"/>
+        <ProjectReference Include="..\Promete\Promete.csproj" />
     </ItemGroup>
 
     <PropertyGroup>
         <PackageId>Promete.ImGui</PackageId>
-        <Version>1.2.0</Version>
+        <Version>2.0.0-beta.10</Version>
         <PackageTags>Game Engine;2D;gamedev;games;gaming;ui;gui;imgui</PackageTags>
         <Description>ImGui support for Promete
         </Description>
@@ -28,5 +31,4 @@
         <RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     </PropertyGroup>
-
 </Project>
