@@ -30,6 +30,11 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
     - `Font` は、グリフソースとサイズ・スタイルを束ねた不変の値オブジェクトになりました
     - ImageSharp によるテキスト描画を廃止し、FreeType でグリフを供給してグリフアトラスへ集約する方式に変更しました
     - `Text` はレイアウト結果のグリフを個別に発行します。同一アトラスページのグリフは1回の描画命令にまとめられるため、内容を毎フレーム書き換えてもテクスチャの再生成は発生しません
+- SixLabors.ImageSharp への依存を廃止し、PNG / BMP の読み込みと PNG の書き出しを Promete 自身で実装しました
+    - 画像の読み込みで対応する形式は PNG と BMP のみになりました。JPEG・GIF などを読み込んでいた場合は PNG へ変換してください
+    - PNG は全カラータイプ・ビット深度 (1〜16bit)・Adam7 インターレース・tRNS に、BMP は 1〜32bit・BITFIELDS・トップダウンに対応します。RLE 圧縮の BMP は非対応です
+    - `TextureFactoryBase.LoadFromImageSharpImage` と、ImageSharp の `Image` を受け取る `Load9Sliced` オーバーロードを削除しました。独自のテクスチャファクトリでの実装は不要になります
+    - `SixLabors.ImageSharp` は推移的にも入らなくなります。利用側で使っている場合は自分で `PackageReference` を追加してください
 - `TextureFactoryBase` に抽象メンバー `Update(Texture2D, VectorInt, VectorInt, byte[])` を追加しました
     - グリフアトラスへの部分書き込みに使用します
     - 独自のバックエンドを実装している場合は、このメンバーの実装が必要です
