@@ -1,0 +1,128 @@
+---
+title: AIエージェントスキル
+description: Claude Code などの AI エージェントに Promete の知識を与える Agent Skill の使い方
+---
+
+import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+Promete では、Claude Code・Codex・Cursor・GitHub Copilot などの AI エージェント向けに、**Agent Skill**（エージェントスキル）を提供しています。
+
+## エージェントスキルとは？
+
+エージェントスキルは、AI エージェントに特定の分野の知識や作業手順を教えるためのパッケージです。インストールしておくと、エージェントは必要になったときに自動でスキルを読み込みます。
+
+AI エージェントは、Promete のような比較的新しいライブラリについて、正確な知識を持っていないことがあります。存在しない API を使ったり、古いバージョンの書き方をしたりしがちです。スキルをインストールすると、エージェントはこのドキュメントの内容を参照しながらコードを書くので、こうした間違いが減ります。
+
+## 提供しているスキル
+
+| スキル | 内容 |
+| --- | --- |
+| `promete` | Promete の API と使い方。このドキュメントの「入門編」から「エンジンを拡張する」までのページを収録しています |
+| `promete-v2-migration` | Promete v1 で作ったプロジェクトを v2 に移行するためのスキル。詳しくは [v1 → v2 移行ガイド](/migration-v2) を参照してください |
+
+このページでは、`promete` スキルの使い方を説明します。
+
+## インストール
+
+お使いのエージェントに合わせて、インストール方法を選んでください。
+
+<Tabs>
+  <TabItem label="Claude Code">
+    <Steps>
+
+    1. Claude Code を起動し、Promete のマーケットプレイスを追加します。
+
+       ```
+       /plugin marketplace add prometeapp/Promete
+       ```
+
+    2. `promete` プラグインをインストールします。
+
+       ```
+       /plugin install promete@promete
+       ```
+
+    3. プラグインの詳細画面が表示されるので、画面の指示に従ってインストールします。
+
+    </Steps>
+  </TabItem>
+  <TabItem label="その他のエージェント">
+    Codex・Cursor・GitHub Copilot・Gemini CLI などでは、[skills](https://github.com/vercel-labs/skills) コマンドでインストールできます。Node.js が必要です。
+
+    ゲームのプロジェクトのフォルダで、次のコマンドを実行してください。
+
+    ```sh
+    npx skills add prometeapp/Promete --skill promete
+    ```
+
+    インストールするエージェントを聞かれたら、お使いのエージェントを選んでください。すべてのプロジェクトで使いたい場合は、`-g` を付けて実行します。
+
+    ```sh
+    npx skills add prometeapp/Promete --skill promete -g
+    ```
+  </TabItem>
+</Tabs>
+
+## 使い方
+
+インストール後は、特別な操作は必要ありません。Promete を使ったプロジェクトで作業を頼むと、エージェントが自動でスキルを読み込みます。
+
+たとえば、次のように依頼できます。
+
+- 「Promete で、矢印キーでキャラクターを動かすシーンを作って」
+- 「タイトル画面からゲーム画面に切り替える処理を追加して」
+- 「BGM をループ再生して、ポーズ中は一時停止したい」
+- 「このスプライトをマウスの方向に向けたい」
+
+<Aside type="tip">
+  自動で読み込まれない場合は、依頼の中で「Promete のスキルを使って」と伝えてください。Claude Code では、`/promete:promete` と入力してスキルを直接呼び出すこともできます。
+</Aside>
+
+## 更新
+
+スキルの内容は、このドキュメントの更新に合わせて新しくなります。
+
+<Tabs>
+  <TabItem label="Claude Code">
+    次のコマンドで、マーケットプレイスとスキルを最新の状態にします。
+
+    ```
+    /plugin marketplace update promete
+    ```
+
+    `/plugin` の **Marketplaces** タブで `promete` を選び、**Enable auto-update** を選ぶと、以降は自動で更新されるようになります。
+  </TabItem>
+  <TabItem label="その他のエージェント">
+    次のコマンドで、スキルを最新の状態にします。`-g` を付けてインストールした場合は、こちらにも `-g` を付けてください。
+
+    ```sh
+    npx skills update promete
+    ```
+  </TabItem>
+</Tabs>
+
+## アンインストール
+
+<Tabs>
+  <TabItem label="Claude Code">
+    ```
+    /plugin uninstall promete@promete
+    ```
+  </TabItem>
+  <TabItem label="その他のエージェント">
+    ```sh
+    npx skills remove promete
+    ```
+
+    `-g` を付けてインストールした場合は、`--global` を付けて実行してください。
+
+    ```sh
+    npx skills remove --global promete
+    ```
+  </TabItem>
+</Tabs>
+
+## 注意
+
+- スキルは Promete v2 を対象にしています。v1 のプロジェクトでは、先に `promete-v2-migration` スキルを使って v2 へ移行してください
+- エージェントが書いたコードは、必ず実際に動かして確認してください。スキルはエージェントの間違いを減らしますが、なくすものではありません

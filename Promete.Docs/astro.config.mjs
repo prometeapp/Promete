@@ -85,6 +85,19 @@ export default defineConfig({
         autogenerate: {directory: 'guide/extends'},
       },
       {
+        label: 'AIエージェントスキル',
+        link: '/ai-agent-skills',
+      },
+      {
+        label: '旧バージョンからの移行',
+        items: [
+          {
+            label: 'v1から',
+            link: '/migration-v2',
+          }
+        ]
+      },
+      {
         label: '更新履歴',
         link: '/changelog',
       },
