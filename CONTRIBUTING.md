@@ -49,7 +49,7 @@ masterブランチへのpushをトリガーとして、https://promete.app に�
 dotnet run tools/sync-docs-skill.cs
 ```
 
-同期漏れは CI で検出されます。次のコマンドで git hook を有効にしておくと、ガイドの変更をコミットするときに自動で同期されます。
+同期漏れは CI で検出されます。また、`.githooks/pre-commit` により、ガイドの変更をコミットするときに自動で同期されます。この git hook は、`Promete` プロジェクトを一度ビルドすると自動で有効になります（`core.hooksPath` を既に設定している場合は変更しません）。ビルドせずに有効にする場合は、次のコマンドを実行してください。
 
 ```bash
 git config core.hooksPath .githooks

@@ -5,4 +5,21 @@
         Project="$(MSBuildThisFileDirectory)Promete/build/Promete.targets"
         Condition="'$(MSBuildProjectName)' != 'Promete.SceneGen'"
     />
+    <!-- git は clone しただけでは hook を有効にしないため、ビルドのついでに .githooks を
+         hooksPath に設定する。git を一度だけ呼ぶよう Promete のビルド時に限り、CI では行わない。
+         既に hooksPath を設定している人の設定は上書きしない。 -->
+    <Target
+        Name="PrometeConfigureGitHooks"
+        BeforeTargets="Build"
+        Condition="'$(MSBuildProjectName)' == 'Promete' and '$(CI)' != 'true' and Exists('$(MSBuildThisFileDirectory).git')"
+    >
+        <Exec
+            Command="git config core.hooksPath || git config core.hooksPath .githooks"
+            WorkingDirectory="$(MSBuildThisFileDirectory)"
+            EchoOff="true"
+            StandardOutputImportance="low"
+            IgnoreExitCode="true"
+            ContinueOnError="true"
+        />
+    </Target>
 </Project>
