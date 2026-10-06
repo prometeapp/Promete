@@ -21,7 +21,7 @@ public sealed class Material : IEquatable<Material>
     public ShaderProgram Shader { get; }
 
     /// <summary>Uniform 値の読み取り専用ビュー（バックエンドのランナーが使用）。</summary>
-    internal IReadOnlyDictionary<string, object> Uniforms => _uniforms;
+    public IReadOnlyDictionary<string, object> Uniforms => _uniforms;
 
     public object this[string key]
     {

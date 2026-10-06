@@ -60,7 +60,7 @@ public sealed class ShaderProgram : IDisposable
     /// <summary>
     /// コンパイル済みデータを設定します。<see cref="IShaderFactory"/> の実装のみが呼び出します。
     /// </summary>
-    internal void SetCompiledData(int handle, Action<ShaderProgram> onDispose)
+    public void SetCompiledData(int handle, Action<ShaderProgram> onDispose)
     {
         Handle = handle;
         _onDispose = onDispose;

@@ -76,9 +76,9 @@ public abstract class TextureFactoryBase
     public abstract void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap);
 
     /// <summary>
-    /// [内部的に使用。] ImageSharp の Image からテクスチャを生成します。
+    /// ImageSharp の Image からテクスチャを生成します。
     /// </summary>
-    internal abstract Texture2D LoadFromImageSharpImage(Image image);
+    protected internal abstract Texture2D LoadFromImageSharpImage(Image image);
 
     /// <summary>
     /// 指定したパスから 9 スライステクスチャを読み込みます。

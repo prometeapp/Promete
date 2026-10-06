@@ -197,7 +197,11 @@ public abstract class Node
     /// </summary>
     public ContainableNode? Parent { get; internal set; }
 
-    internal Matrix4x4 ModelMatrix { get; private set; } = Matrix4x4.Identity;
+    /// <summary>
+    /// 位置・回転・スケール・ピボットを合成した変換行列を取得します。親ノードの変形も含みます。
+    /// カスタムノードの <see cref="Collect"/> で描画コマンドに渡すために使用します。
+    /// </summary>
+    public Matrix4x4 ModelMatrix { get; private set; } = Matrix4x4.Identity;
 
     /// <summary>
     /// このノードを破棄します。

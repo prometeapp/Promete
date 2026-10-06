@@ -87,6 +87,6 @@ public class FakeTextureFactory : TextureFactoryBase
         return _textures[handle][(((position.Y * size.X) + position.X) * 4) + 3];
     }
 
-    internal override Texture2D LoadFromImageSharpImage(Image image) =>
+    protected internal override Texture2D LoadFromImageSharpImage(Image image) =>
         throw new NotSupportedException();
 }

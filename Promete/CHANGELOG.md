@@ -115,6 +115,12 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
     - `GlyphRenderOptions.Size` を 0.5px 単位へ丸めます。フォントサイズを連続的に変化させても、そのすべてが別のグリフとして積まれることがなくなります
     - `GlyphAtlas.MaxPages` を追加し、ページ数が上限に達したらアトラスを作り直します
 - `ConsoleLayer` の行数計算を、二分探索的な測定からメトリクス参照へ変更しました
+- 外部のアセンブリからカスタムノードやバックエンドを実装できるよう、次の API を公開しました
+    - `Node.ModelMatrix`
+    - `Texture2D` と `RenderTexture` のコンストラクタ、`RenderTexture.Texture` の setter
+    - `ShaderProgram.SetCompiledData`、`Material.Uniforms`
+    - `DrawTextureBatchedCommand`
+    - `TextureFactoryBase.LoadFromImageSharpImage` (`protected internal`)
 
 ### Bug Fixes
 

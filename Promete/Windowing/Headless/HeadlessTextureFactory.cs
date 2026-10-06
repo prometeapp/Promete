@@ -59,7 +59,7 @@ public class HeadlessTextureFactory : TextureFactoryBase
         byte[] bitmap
     ) { }
 
-    internal override Texture2D LoadFromImageSharpImage(Image image)
+    protected internal override Texture2D LoadFromImageSharpImage(Image image)
     {
         return default;
     }

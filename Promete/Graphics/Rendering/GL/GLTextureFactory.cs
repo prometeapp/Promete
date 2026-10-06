@@ -84,7 +84,7 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         return Create(arr);
     }
 
-    internal override Texture2D LoadFromImageSharpImage(Image image)
+    protected internal override Texture2D LoadFromImageSharpImage(Image image)
     {
         using var img = image.CloneAs<Rgba32>();
 

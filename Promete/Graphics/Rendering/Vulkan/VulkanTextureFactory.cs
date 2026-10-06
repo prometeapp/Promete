@@ -95,7 +95,7 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
         );
     }
 
-    internal override Texture2D LoadFromImageSharpImage(Image image)
+    protected internal override Texture2D LoadFromImageSharpImage(Image image)
     {
         using var img = image.CloneAs<Rgba32>();
 

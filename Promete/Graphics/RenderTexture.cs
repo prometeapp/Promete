@@ -12,7 +12,14 @@ public sealed class RenderTexture : IDisposable
     private readonly IRenderTextureProvider _provider;
     private bool _disposed;
 
-    internal RenderTexture(VectorInt size, Texture2D texture, IRenderTextureProvider provider)
+    /// <summary>
+    /// <see cref="RenderTexture"/> を生成します。
+    /// 通常は <see cref="IRenderTextureProvider.Create"/> を使用してください。バックエンドの実装向けです。
+    /// </summary>
+    /// <param name="size">サイズ。</param>
+    /// <param name="texture">描画先のテクスチャ。</param>
+    /// <param name="provider">このテクスチャを管理するプロバイダ。</param>
+    public RenderTexture(VectorInt size, Texture2D texture, IRenderTextureProvider provider)
     {
         Size = size;
         Texture = texture;
@@ -21,8 +28,9 @@ public sealed class RenderTexture : IDisposable
 
     /// <summary>
     /// レンダリング結果のテクスチャを取得します。
+    /// 設定は、<see cref="IRenderTextureProvider.Resize"/> でテクスチャを作り直したバックエンドが行います。
     /// </summary>
-    public Texture2D Texture { get; internal set; }
+    public Texture2D Texture { get; set; }
 
     /// <summary>
     /// このテクスチャのサイズを取得します。

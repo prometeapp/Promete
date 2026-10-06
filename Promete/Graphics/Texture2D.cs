@@ -9,10 +9,26 @@ public readonly struct Texture2D : IDisposable
 {
     private readonly Action<Texture2D> _onDispose;
 
-    internal Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose)
+    /// <summary>
+    /// バックエンドのテクスチャハンドルから <see cref="Texture2D"/> を生成します。
+    /// 通常は <see cref="TextureFactoryBase"/> を使用してください。バックエンドの実装向けです。
+    /// </summary>
+    /// <param name="handle">バックエンドのテクスチャハンドル。</param>
+    /// <param name="size">テクスチャのサイズ。</param>
+    /// <param name="onDispose">破棄時に呼ばれる処理。</param>
+    public Texture2D(int handle, VectorInt size, Action<Texture2D> onDispose)
         : this(handle, size, onDispose, (0, 0), (1, 1)) { }
 
-    internal Texture2D(
+    /// <summary>
+    /// バックエンドのテクスチャハンドルと UV 範囲から <see cref="Texture2D"/> を生成します。
+    /// 通常は <see cref="TextureFactoryBase"/> を使用してください。バックエンドの実装向けです。
+    /// </summary>
+    /// <param name="handle">バックエンドのテクスチャハンドル。</param>
+    /// <param name="size">テクスチャのサイズ。</param>
+    /// <param name="onDispose">破棄時に呼ばれる処理。</param>
+    /// <param name="uvStart">左上の UV 座標。</param>
+    /// <param name="uvEnd">右下の UV 座標。</param>
+    public Texture2D(
         int handle,
         VectorInt size,
         Action<Texture2D> onDispose,
