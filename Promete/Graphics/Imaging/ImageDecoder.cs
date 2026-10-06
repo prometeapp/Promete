@@ -52,7 +52,6 @@ internal static class ImageDecoder
         throw new NotSupportedException("対応している画像形式は PNG と BMP のみです。");
     }
 
-
     private static RgbaImage DecodePng(byte[] data)
     {
         int width = 0,
@@ -408,5 +407,4 @@ internal static class ImageDecoder
         var max = mask >> shift;
         return (byte)(((value & mask) >> shift) * 255 / max);
     }
-
 }

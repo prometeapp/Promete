@@ -65,7 +65,7 @@ Promete では、 GitHub Actions を用いてデプロイの自動化を行っ�
 
 ```bash
 dotnet tool restore
-dotnet csharpier .
+dotnet csharpier format .
 ```
 
 ## 設計上の規則

@@ -12,12 +12,30 @@ public class ImageDecoderTests
     {
         byte[] pixels =
         [
-            255, 0, 0, 255,
-            0, 255, 0, 128,
-            0, 0, 255, 0,
-            10, 20, 30, 40,
-            50, 60, 70, 80,
-            90, 100, 110, 120,
+            255,
+            0,
+            0,
+            255,
+            0,
+            255,
+            0,
+            128,
+            0,
+            0,
+            255,
+            0,
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80,
+            90,
+            100,
+            110,
+            120,
         ];
         using var stream = new MemoryStream();
         PngEncoder.Encode(new RgbaImage(3, 2, pixels), stream);
@@ -105,8 +123,22 @@ public class ImageDecoderTests
         // 2x2。行は 4 バイト境界へパディングされる。下の行 (赤, 緑) が先に格納される
         byte[] rows =
         [
-            0, 0, 255, /* 赤 */ 0, 255, 0, /* 緑 */ 0, 0,
-            255, 0, 0, /* 青 */ 255, 255, 255, /* 白 */ 0, 0,
+            0,
+            0,
+            255, /* 赤 */
+            0,
+            255,
+            0, /* 緑 */
+            0,
+            0,
+            255,
+            0,
+            0, /* 青 */
+            255,
+            255,
+            255, /* 白 */
+            0,
+            0,
         ];
         var bmp = BuildBmp(2, 2, 24, rows);
 
@@ -134,7 +166,17 @@ public class ImageDecoderTests
     [Fact]
     public void Bmpの8ビットパレット画像を読み込める()
     {
-        byte[] palette = [0, 0, 255, 0, /* 赤 (BGR0) */ 0, 255, 0, 0 /* 緑 */];
+        byte[] palette =
+        [
+            0,
+            0,
+            255,
+            0, /* 赤 (BGR0) */
+            0,
+            255,
+            0,
+            0, /* 緑 */
+        ];
         byte[] rows = [1, 0, 0, 0];
         var bmp = BuildBmp(1, 1, 8, rows, palette, colorsUsed: 2);
 
