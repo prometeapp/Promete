@@ -203,6 +203,37 @@ public class ImageDecoderTests
         act.Should().Throw<InvalidDataException>();
     }
 
+    [Fact]
+    public void 圧縮データに対して巨大なサイズを宣言したPngは確保前に例外になる()
+    {
+        var png = BuildPng(20000, 20000, bitDepth: 8, colorType: 6, interlace: 0, [0, 1, 2]);
+
+        var act = () => ImageDecoder.Decode(png);
+
+        act.Should().Throw<InvalidDataException>().WithMessage("*圧縮データ*");
+    }
+
+    [Fact]
+    public void チャンク長がオーバーフローするPngはInvalidDataExceptionになる()
+    {
+        var png = BuildPng(1, 1, bitDepth: 8, colorType: 0, interlace: 0, [0, 0]);
+        BinaryPrimitives.WriteInt32BigEndian(png.AsSpan(8 + 4 + 4 + 13 + 4), int.MaxValue - 4);
+
+        var act = () => ImageDecoder.Decode(png);
+
+        act.Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void 高さがint最小値のBmpはInvalidDataExceptionになる()
+    {
+        var bmp = BuildBmp(1, int.MinValue, 24, new byte[4]);
+
+        var act = () => ImageDecoder.Decode(bmp);
+
+        act.Should().Throw<InvalidDataException>();
+    }
+
     private static byte[] BuildPng(
         int width,
         int height,

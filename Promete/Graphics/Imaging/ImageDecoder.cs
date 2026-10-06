@@ -14,6 +14,8 @@ internal static class ImageDecoder
 {
     private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
+    private const long MaxZlibRatio = 1100;
+
     private static readonly int[] AdamStartX = [0, 4, 0, 2, 0, 1, 0];
     private static readonly int[] AdamStartY = [0, 0, 4, 0, 2, 0, 1];
     private static readonly int[] AdamStepX = [8, 8, 4, 4, 2, 2, 1];
@@ -70,7 +72,7 @@ internal static class ImageDecoder
             var length = BinaryPrimitives.ReadInt32BigEndian(data.AsSpan(pos));
             var type = Encoding.ASCII.GetString(data, pos + 4, 4);
             var body = pos + 8;
-            if (length < 0 || body + length > data.Length)
+            if (length < 0 || length > data.Length - body)
                 throw new InvalidDataException("PNG のチャンクが壊れています。");
 
             switch (type)
@@ -196,6 +198,10 @@ internal static class ImageDecoder
         if (total > int.MaxValue)
             throw new InvalidDataException("PNG の画像サイズが大きすぎます。");
 
+        // zlib の圧縮率は最大でも約 1032 倍。宣言サイズがそれを超えるなら、確保前に壊れたデータとして弾く
+        if (total > (compressed.Length * MaxZlibRatio) + 1024)
+            throw new InvalidDataException("PNG の画像サイズが圧縮データに対して不正です。");
+
         var raw = new byte[total];
         compressed.Position = 0;
         using var zlib = new ZLibStream(compressed, CompressionMode.Decompress, true);
@@ -291,6 +297,9 @@ internal static class ImageDecoder
         {
             throw new NotSupportedException("未対応の BMP ヘッダー形式です。");
         }
+
+        if (height == int.MinValue)
+            throw new InvalidDataException("BMP の画像サイズが不正です。");
 
         var topDown = height < 0;
         height = Math.Abs(height);
@@ -405,6 +414,6 @@ internal static class ImageDecoder
 
         var shift = BitOperations.TrailingZeroCount(mask);
         var max = mask >> shift;
-        return (byte)(((value & mask) >> shift) * 255 / max);
+        return (byte)((ulong)((value & mask) >> shift) * 255 / max);
     }
 }
