@@ -1,12 +1,11 @@
 using Generated;
 using Promete.Backends;
+using Promete.Backends.GL;
 using Promete.Backends.SilkNetCommon;
-using Promete.GLDesktop;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
 using Promete.Graphics.Rendering.GL;
 using Promete.Windowing;
-using Promete.Windowing.GLDesktop;
 using Silk.NET.OpenGL;
 
 namespace Promete.Experimental.Wasm.Web;
@@ -18,16 +17,12 @@ namespace Promete.Experimental.Wasm.Web;
 /// ブラウザの描画ループは JavaScript (requestAnimationFrame) が持つので、<see cref="OnStart"/> は
 /// すぐに戻り、毎フレーム <see cref="Frame"/> が呼ばれます。
 /// </remarks>
-public sealed class WebBackend : BackendBase
+public sealed class WebBackend : GLBackendBase
 {
     private PrometeApp _app = null!;
     private GL _gl = null!;
     private WebTimeProvider _time = null!;
     private WebGameView _view = null!;
-    private GLTextureFactory _textureFactory = null!;
-    private GLRenderTextureProvider _renderTextureProvider = null!;
-    private GLShaderFactory _shaderFactory = null!;
-    private GLScreenBlitter _screenBlitter = null!;
     private double _lastFrameMs = -1;
     private bool _isExitRequested;
 
@@ -51,11 +46,9 @@ public sealed class WebBackend : BackendBase
         _gl = GL.GetApi(new WebGlInterop.NativeContext());
 
         _time = new WebTimeProvider { TargetFps = opts.TargetFps, TargetUps = opts.TargetUps };
+        InitializeGL(app);
         _view = new WebGameView(_gl, opts);
-        _textureFactory = new GLTextureFactory(app) { GL = _gl };
-        _renderTextureProvider = new GLRenderTextureProvider(app) { GL = _gl };
-        _shaderFactory = new GLShaderFactory { GL = _gl };
-        _screenBlitter = new GLScreenBlitter(_view, _renderTextureProvider);
+        InitializeGLView(_view);
 
         Current = this;
     }
@@ -78,18 +71,10 @@ public sealed class WebBackend : BackendBase
 
     public override InputProvider SetupInputProvider() => new WebInputProvider();
 
-    public override IScreenBlitter SetupScreenBlitter() => _screenBlitter;
-
-    public override TextureFactoryBase SetupTextureFactory() => _textureFactory;
-
-    public override IRenderTextureProvider SetupRenderTextureProvider() => _renderTextureProvider;
-
-    public override IShaderFactory SetupShaderFactory() => _shaderFactory;
-
     public override void OnStart(PrometeApp app)
     {
         _gl.Viewport(0, 0, (uint)_view.FramebufferSize.X, (uint)_view.FramebufferSize.Y);
-        _screenBlitter.InitializeScreenRenderTexture();
+        OnGLContextCreated(_gl);
         app.OnStart();
     }
 
@@ -111,10 +96,8 @@ public sealed class WebBackend : BackendBase
 
         WebAudioOutput.PumpAll();
 
-        _gl.ClearColor(_app.BackgroundColor);
-        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         _app.OnUpdate();
         WebInputContext.Instance.EndFrame();
-        _app.OnRender();
+        RenderFrame(_app);
     }
 }
