@@ -272,6 +272,11 @@ Promete は Silk.NET の net10.0 専用フォーク (`prometeapp/Silk.NET`) を�
 ネイティブバイナリはフォークしていないので、`Ultz.Native.GLFW` や
 `Silk.NET.OpenAL.Soft.Native` など upstream のパッケージを参照しています。
 
+**`Promete.Silk.OpenGL` のバージョンを上げたら、`Promete.Web/Generated/` を再生成すること。**
+ブラウザでは、Silk.NET が GL 関数を呼ぶ calli のシグネチャを事前に登録する必要があり、その登録コードを
+`tools/gen-calli-signatures.cs` で生成してコミットしています。忘れるとビルドは通り、Web でだけ実行時に落ちます。
+手順は `Promete.Web/Generated/README.md` を参照してください。
+
 ### バックエンドの明示登録
 
 `OpenGLDesktopBackend.OnInitialize` は `RegisterSilkBackends()` で GLFW と SDL を

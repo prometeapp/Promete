@@ -4,7 +4,7 @@
 
 Mono WASM のインタプリタは、ネイティブ関数ポインタを呼ぶスタブを、シグネチャごとにビルド時に作ります。Silk.NET の calli はこの集計の対象外なので、`Silk.NET.OpenGL` の IL からシグネチャを集め、登録専用の P/Invoke（`CalliSignatures.g.cs`）と C 関数（`calli_signatures.g.c`）を生成しています。詳しくは `../DESIGN_NOTES.md` の §4.1 を参照してください。
 
-Silk.NET フォーク側で登録を完結させる（DESIGN_PLAN の S1）までのつなぎです。
+Silk.NET フォーク側で登録を完結させる案（DESIGN_PLAN の S1）は見送ったので、この方式を続けます。
 
 ## 再生成
 
