@@ -18,17 +18,13 @@ using WindowOptions = Promete.Windowing.WindowOptions;
 
 namespace Promete.Backends.GL;
 
-public class OpenGLDesktopBackend : BackendBase
+public class OpenGLDesktopBackend : GLBackendBase
 {
     private SilkNetCommonTimeProvider _time = null!;
     private IWindow _nativeWindow = null!;
     private PrometeApp _app = null!;
     private OpenGLDesktopGameView _gameView = null!;
     private Silk.NET.OpenGL.GL _gl = null!;
-    private GLTextureFactory _textureFactory = null!;
-    private GLRenderTextureProvider _renderTextureProvider = null!;
-    private GLShaderFactory _shaderFactory = null!;
-    private GLScreenBlitter _screenBlitter = null!;
 
     /// <summary>
     /// Silk.NET のバックエンドを明示的に登録する。
@@ -81,12 +77,10 @@ public class OpenGLDesktopBackend : BackendBase
             _gl.Dispose();
         };
 
-        _textureFactory = new GLTextureFactory(_app);
+        InitializeGL(_app);
         _time = new SilkNetCommonTimeProvider(_nativeWindow);
-        _renderTextureProvider = new GLRenderTextureProvider(_app);
-        _shaderFactory = new GLShaderFactory();
-        _gameView = new OpenGLDesktopGameView(_app, _nativeWindow, _textureFactory);
-        _screenBlitter = new GLScreenBlitter(_gameView, _renderTextureProvider);
+        _gameView = new OpenGLDesktopGameView(_app, _nativeWindow, SetupTextureFactory());
+        InitializeGLView(_gameView);
     }
 
     public override ITimeProvider SetupTimeProvider() => _time;
@@ -94,14 +88,6 @@ public class OpenGLDesktopBackend : BackendBase
     public override IGameView SetupGameView() => _gameView;
 
     public override InputProvider SetupInputProvider() => new(_nativeWindow);
-
-    public override IScreenBlitter SetupScreenBlitter() => _screenBlitter;
-
-    public override TextureFactoryBase SetupTextureFactory() => _textureFactory;
-
-    public override IRenderTextureProvider SetupRenderTextureProvider() => _renderTextureProvider;
-
-    public override IShaderFactory SetupShaderFactory() => _shaderFactory;
 
     public override void OnStart(PrometeApp app)
     {
@@ -117,17 +103,11 @@ public class OpenGLDesktopBackend : BackendBase
     {
         _gl = _nativeWindow.CreateOpenGL();
         _gameView.GL = _gl;
-        _textureFactory.GL = _gl;
-        _renderTextureProvider.GL = _gl;
-        _shaderFactory.GL = _gl;
-        _screenBlitter.InitializeScreenRenderTexture();
+        OnGLContextCreated(_gl);
     }
 
     private void OnRenderFrame(double delta)
     {
-        // 画面の初期化
-        _gl.ClearColor(_app.BackgroundColor);
-        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        _app.OnRender();
+        RenderFrame(_app);
     }
 }

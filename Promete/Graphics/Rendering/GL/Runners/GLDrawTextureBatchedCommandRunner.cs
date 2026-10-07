@@ -21,7 +21,7 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view)
     // per-instance: mat4(16) + vec4 tintColor(4) + vec4 uvRect(4) = 24 floats
     private const int InstanceStride = 24;
 
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
     private bool _initialized;
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];

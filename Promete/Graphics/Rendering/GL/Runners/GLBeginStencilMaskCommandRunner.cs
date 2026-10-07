@@ -14,7 +14,7 @@ public class GLBeginStencilMaskCommandRunner(
     GLRenderState state
 ) : CommandRunner<BeginStencilMaskCommand>
 {
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
 
     public override void Execute(BeginStencilMaskCommand command)
     {

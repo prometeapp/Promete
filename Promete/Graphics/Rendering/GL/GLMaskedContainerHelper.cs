@@ -49,7 +49,7 @@ public class GLMaskedContainerHelper(
 
         if (!_initialized)
             return;
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // シェーダーとバッファを削除
         gl.DeleteProgram(_maskShader);
@@ -69,7 +69,7 @@ public class GLMaskedContainerHelper(
 
     private void Initialize()
     {
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // マスク適用用のシェーダーをコンパイル
         var vsh = gl.CreateShader(GLEnum.VertexShader);
@@ -307,7 +307,7 @@ public class GLMaskedContainerHelper(
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // モデル行列を計算
         var size = node.Size;
@@ -357,7 +357,7 @@ public class GLMaskedContainerHelper(
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // モデル行列を計算
         var size = node.Size;
