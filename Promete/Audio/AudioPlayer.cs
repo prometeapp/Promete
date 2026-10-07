@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Promete.Audio.Filters;
 using Promete.Audio.Internal;
-using Silk.NET.OpenAL;
 
 namespace Promete.Audio;
 
@@ -13,7 +12,6 @@ namespace Promete.Audio;
 /// </summary>
 public class AudioPlayer : IDisposable
 {
-    private readonly AudioDevice? _audioDevice;
     private readonly IAudioOutput _output;
     private readonly AudioRenderPipeline _pipeline = new();
     private readonly PrometeApp? _app;
@@ -31,13 +29,13 @@ public class AudioPlayer : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="AudioPlayer"/> class.
     /// この <see cref="AudioPlayer" /> の新しいインスタンスを初期化します。
-    /// 共有 <see cref="AudioDevice"/> を取得し、実デバイスへの出力を即座に開始します（常駐レンダーループ）。
+    /// 実行中のバックエンドが提供する出力 (<see cref="IAudioProvider"/>) を生成し、出力を即座に開始します（常駐レンダーループ）。
+    /// 既定のバックエンドでは、共有 <see cref="AudioDevice"/> を用いる OpenAL の出力を使います。
     /// </summary>
     public AudioPlayer()
     {
-        _app = TryGetCurrentApp();
-        _audioDevice = AudioDevice.Acquire();
-        _output = new OpenALAudioOutput(_audioDevice);
+        _app = PrometeApp.CurrentOrNull;
+        _output = GetProvider().CreateOutput();
         _ownsOutput = true;
         SubscribeFilterChanges();
         SubscribePipelineEvents();
@@ -52,8 +50,7 @@ public class AudioPlayer : IDisposable
     /// <param name="output">出力先として使用する <see cref="IAudioOutput"/>。</param>
     public AudioPlayer(IAudioOutput output)
     {
-        _app = TryGetCurrentApp();
-        _audioDevice = null;
+        _app = PrometeApp.CurrentOrNull;
         _output = output;
         _ownsOutput = false;
         SubscribeFilterChanges();
@@ -349,48 +346,8 @@ public class AudioPlayer : IDisposable
                 "PlayOneShot requires AudioSource which has determined length."
             );
 
-        var device = _audioDevice ?? AudioDevice.Acquire();
-        var al = device.Al;
-        try
-        {
-            var floatBuffer = new float[source.Frames.Value * source.Channels];
-            source.FillSamples(floatBuffer, 0);
-            var buffer = ToInt16Buffer(floatBuffer);
-            using var alSrc = new ALSource(al);
-            using var alBuf = new ALBuffer(al);
-            var bufferFormat = GetBufferFormat(source);
-
-            var effectiveGain = followsMasterGain ? gain * Gain : gain;
-
-            al.BufferData(alBuf.Handle, bufferFormat, buffer, source.SampleRate);
-            al.SourceQueueBuffers(alSrc.Handle, new uint[] { alBuf.Handle });
-            al.SetSourceProperty(alSrc.Handle, SourceFloat.Gain, effectiveGain);
-            al.SetSourceProperty(alSrc.Handle, SourceFloat.Pitch, pitch);
-            var x = pan;
-            var z = MathF.Abs(pan) < 1.0f ? -MathF.Sqrt(1.0f - (pan * pan)) : 0.0f;
-            al.SetSourceProperty(alSrc.Handle, SourceVector3.Position, x, 0, z);
-            al.SetSourceProperty(alSrc.Handle, SourceBoolean.SourceRelative, true);
-            al.SetSourceProperty(alSrc.Handle, SourceFloat.MaxDistance, 1);
-            al.SetSourceProperty(alSrc.Handle, SourceFloat.ReferenceDistance, 0.5f);
-
-            al.SourcePlay(alSrc.Handle);
-
-            int buffersProcessed;
-            do
-            {
-                al.GetSourceProperty(
-                    alSrc.Handle,
-                    GetSourceInteger.BuffersProcessed,
-                    out buffersProcessed
-                );
-                await Task.Delay(1);
-            } while (buffersProcessed < 1);
-        }
-        finally
-        {
-            if (_audioDevice is null)
-                device.Dispose();
-        }
+        var effectiveGain = followsMasterGain ? gain * Gain : gain;
+        await GetProvider().PlayOneShotAsync(source, effectiveGain, pitch, pan);
     }
 
     /// <summary>
@@ -408,46 +365,12 @@ public class AudioPlayer : IDisposable
         if (_ownsOutput)
             _output.Dispose();
 
-        _audioDevice?.Dispose();
-
         GC.SuppressFinalize(this);
     }
 
-    private static PrometeApp? TryGetCurrentApp()
+    private IAudioProvider GetProvider()
     {
-        try
-        {
-            return PrometeApp.Current;
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
-    }
-
-    private static BufferFormat GetBufferFormat(IAudioSource source)
-    {
-        return source.Channels switch
-        {
-            1 => BufferFormat.Mono16,
-            2 => BufferFormat.Stereo16,
-            _ => throw new NotSupportedException("Unsupported format."),
-        };
-    }
-
-    /// <summary>
-    /// float PCM (-1.0～1.0) を16bit整数PCMの新しい配列へクランプ付きで変換します。
-    /// </summary>
-    private static short[] ToInt16Buffer(ReadOnlySpan<float> source)
-    {
-        var result = new short[source.Length];
-        for (var i = 0; i < source.Length; i++)
-        {
-            var clamped = Math.Clamp(source[i], -1f, 1f);
-            result[i] = (short)(clamped * short.MaxValue);
-        }
-
-        return result;
+        return _app?.AudioProvider ?? OpenALAudioProvider.Shared;
     }
 
     private void SubscribeFilterChanges()

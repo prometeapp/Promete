@@ -1,3 +1,4 @@
+using Promete.Audio;
 using Promete.Backends.SilkNetCommon;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -70,6 +71,13 @@ public abstract class BackendBase
     /// </summary>
     /// <returns>既定では、FreeType とシステムフォントを用いる実装を返します。</returns>
     public virtual IFontProvider SetupFontProvider() => FreeTypeFontProvider.Shared;
+
+    /// <summary>
+    /// <see cref="AudioPlayer"/> が音声の出力に用いる <see cref="IAudioProvider"/> をエンジンに提供します。
+    /// ゲームを初期化する際に1度だけ呼び出されます。
+    /// </summary>
+    /// <returns>既定では、OpenAL を用いる実装を返します。</returns>
+    public virtual IAudioProvider SetupAudioProvider() => OpenALAudioProvider.Shared;
 
     /// <summary>
     /// ゲームを起動するよう要求された場合の処理を定義します。

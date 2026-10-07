@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Promete.Audio;
 using Promete.Backends;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -177,6 +178,11 @@ public sealed class PrometeApp : IDisposable
     /// バックエンドが提供する <see cref="IFontProvider"/> を取得します。
     /// </summary>
     internal IFontProvider FontProvider { get; private set; } = null!;
+
+    /// <summary>
+    /// バックエンドが提供する <see cref="IAudioProvider"/> を取得します。
+    /// </summary>
+    internal IAudioProvider AudioProvider { get; private set; } = null!;
 
     /// <summary>
     /// Promete アプリケーションを作成します。
@@ -607,6 +613,7 @@ public sealed class PrometeApp : IDisposable
         var renderTextureProvider = backend.SetupRenderTextureProvider();
         _screenBlitter = backend.SetupScreenBlitter();
         FontProvider = backend.SetupFontProvider();
+        AudioProvider = backend.SetupAudioProvider();
 
         _services.AddSingleton(Time);
         _services.AddSingleton(View);
@@ -617,6 +624,7 @@ public sealed class PrometeApp : IDisposable
         _services.AddSingleton(renderTextureProvider);
         _services.AddSingleton(_screenBlitter);
         _services.AddSingleton(FontProvider);
+        _services.AddSingleton(AudioProvider);
         _provider = _services.BuildServiceProvider();
         Current = this;
     }
