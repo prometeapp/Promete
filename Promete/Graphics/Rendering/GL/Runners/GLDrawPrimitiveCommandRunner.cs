@@ -14,7 +14,7 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// </summary>
 public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPrimitiveCommand>
 {
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
     private uint _ebo;
     private bool _initialized;
     private uint _shader;

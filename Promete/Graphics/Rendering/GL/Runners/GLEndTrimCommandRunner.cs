@@ -10,7 +10,7 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// </summary>
 public class GLEndTrimCommandRunner(IGameView view) : CommandRunner<EndTrimCommand>
 {
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
 
     public override void Execute(EndTrimCommand command)
     {

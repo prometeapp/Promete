@@ -14,7 +14,7 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// </summary>
 public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawPieTextureCommand>
 {
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
 
     private bool _initialized;
     private uint _shader;
