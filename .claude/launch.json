@@ -13,6 +13,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "5291", "--directory", "Promete.Web.Example/bin/publish/wwwroot"],
       "port": 5291
+    },
+    {
+      "name": "web-dev",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Promete.Web.Example"],
+      "port": 5292
     }
   ]
 }
