@@ -6,13 +6,17 @@ const log = document.getElementById('log');
 window.frameErrors = [];
 
 await startPromete({
-    onProgress: (loaded, total) => { log.textContent = `loading assets... ${loaded}/${total}`; },
+    onProgress: ({ phase, loaded, total }) => {
+        log.textContent = `${phase}... ${loaded}/${total}`;
+        console.debug(`[progress] ${phase} ${loaded}/${total}`);
+    },
+    onReady: () => {
+        log.textContent = 'ok';
+        window.started = true;
+    },
     onError: error => {
         window.frameErrors.push(error);
         log.textContent = error;
         console.error(error);
     },
 });
-
-log.textContent = 'ok';
-window.started = true;

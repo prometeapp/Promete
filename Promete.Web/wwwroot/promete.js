@@ -8,23 +8,39 @@ const maxRepeatedErrors = 30;
 
 let frame = null;
 let onError = null;
+let onReady = null;
+
+/**
+ * 起動の進み具合。phase は次の順に進む。
+ * - 'runtime': .NET のランタイムとアセンブリの取得。loaded / total はファイルの個数。
+ * - 'assets': PrometeAsset で宣言したアセットの取得。loaded / total はファイルの個数。
+ * - 'starting': C# の Main と、最初のシーンの OnStart の実行。loaded / total は 0。
+ * @typedef {{ phase: 'runtime' | 'assets' | 'starting', loaded: number, total: number }} PrometeProgress
+ */
 
 /**
  * Promete のアプリを起動する。
  * @param {object} [options]
- * @param {(loaded: number, total: number) => void} [options.onProgress] アセットの読み込みの進捗。
+ * @param {(progress: PrometeProgress) => void} [options.onProgress] 起動の進み具合。
+ * @param {() => void} [options.onReady] 最初のフレームを描画し終えたとき。読み込み表示を消すのに使う。
  * @param {(error: string) => void} [options.onError] 起動時、またはフレームで起きた例外。
  */
 export async function startPromete(options = {}) {
     onError = options.onError ?? (error => console.error(error));
+    onReady = options.onReady ?? null;
+    const onProgress = options.onProgress;
     try {
-        const { dotnet } = await import(new URL('_framework/dotnet.js', document.baseURI).href);
-        const runtime = await dotnet.create();
-        await preloadAssets(runtime.Module.FS, options.onProgress);
+        const { default: createDotnetRuntime } = await import(new URL('_framework/dotnet.js', document.baseURI).href);
+        onProgress?.({ phase: 'runtime', loaded: 0, total: 0 });
+        const runtime = await createDotnetRuntime({
+            onDownloadResourceProgress: (loaded, total) => onProgress?.({ phase: 'runtime', loaded, total }),
+        });
+        await preloadAssets(runtime.Module.FS, onProgress);
 
         const exports = await runtime.getAssemblyExports('Promete.Web.dll');
         frame = exports.Promete.Web.PrometeWeb.Frame;
 
+        onProgress?.({ phase: 'starting', loaded: 0, total: 0 });
         // run() は Main が戻るとランタイムを終了するので、常駐するゲームでは runMain() を使う
         await runtime.runMain();
     } catch (e) {
@@ -49,6 +65,11 @@ export function startLoop() {
         } else {
             lastError = null;
             repeated = 0;
+            if (onReady) {
+                const ready = onReady;
+                onReady = null;
+                ready();
+            }
         }
         requestAnimationFrame(loop);
     };
@@ -78,7 +99,7 @@ async function preloadAssets(fs, onProgress) {
 
     const assets = await response.json();
     let loaded = 0;
-    onProgress?.(0, assets.length);
+    onProgress?.({ phase: 'assets', loaded: 0, total: assets.length });
     await Promise.all(assets.map(async asset => {
         const res = await fetch(new URL(asset.url, document.baseURI));
         if (!res.ok) throw new Error(`アセットを取得できませんでした: ${asset.url} (${res.status})`);
@@ -88,6 +109,6 @@ async function preloadAssets(fs, onProgress) {
         fs.writeFile(asset.path, new Uint8Array(buffer));
         if (asset.kind === 'font') document.fonts.add(await new FontFace(asset.path, buffer).load());
 
-        onProgress?.(++loaded, assets.length);
+        onProgress?.({ phase: 'assets', loaded: ++loaded, total: assets.length });
     }));
 }

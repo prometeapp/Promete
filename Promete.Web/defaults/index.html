@@ -8,13 +8,28 @@
     <style>
         html, body { margin: 0; height: 100%; background: #000; }
         body { display: flex; align-items: center; justify-content: center; }
-        #promete-status { position: fixed; left: 8px; bottom: 8px; margin: 0; color: #ccc; font: 12px monospace; white-space: pre-wrap; }
+        #promete-loading {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+            color: #ccc; font: 12px sans-serif;
+            transition: opacity 0.3s;
+        }
+        #promete-loading.done { opacity: 0; pointer-events: none; }
+        #promete-progress { width: min(320px, 60vw); height: 4px; background: #333; border-radius: 2px; overflow: hidden; }
+        #promete-progress-bar { width: 0; height: 100%; background: #ccc; transition: width 0.2s; }
+        #promete-loading.failed #promete-progress-bar { background: #e55; }
+        #promete-error { position: fixed; left: 8px; right: 8px; bottom: 8px; margin: 0; max-height: 40vh; overflow: auto; color: #e88; font: 12px monospace; white-space: pre-wrap; }
+        #promete-error:empty { display: none; }
     </style>
     <script type="module" src="./main.js"></script>
 </head>
 <body>
     <!-- サイズはゲームの設定 (WindowOptions) から実行時に決まる -->
     <canvas id="canvas"></canvas>
-    <pre id="promete-status">読み込み中...</pre>
+    <div id="promete-loading">
+        <div id="promete-progress"><div id="promete-progress-bar"></div></div>
+        <div id="promete-label">読み込み中...</div>
+    </div>
+    <pre id="promete-error"></pre>
 </body>
 </html>
