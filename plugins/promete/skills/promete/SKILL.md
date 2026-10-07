@@ -131,6 +131,7 @@ Root.Add(sprite);
 - [コルーチン](references/other/coroutine.md): PrometeのCoroutine/CoroutineManagerによる非同期処理・主なAPI・サンプル・注意点を解説します。
 - [便利な拡張メソッド](references/other/extensions.md): PrometeのRandomExtension/StringExtensionによる便利な拡張メソッド・主なAPI・サンプル・注意点を解説します。
 - [Vulkanバックエンド](references/other/vulkan.md): Prometeの実験的なVulkanバックエンドを使ってアプリケーションを起動する方法と注意点を解説します。
+- [Webブラウザ対応](references/other/web.md): Prometeの実験的なWebバックエンド（Promete.Web）を使って、ゲームをブラウザで動かす方法と注意点を解説します。
 
 ### プラグイン
 
