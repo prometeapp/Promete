@@ -164,7 +164,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
         var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             vsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.vert")
         );
@@ -172,7 +173,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
 
         // フラグメントシェーダーをリソースから読み込んでコンパイルする
         var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             fsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.frag")
         );

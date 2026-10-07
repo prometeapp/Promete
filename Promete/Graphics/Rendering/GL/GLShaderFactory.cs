@@ -27,12 +27,12 @@ internal class GLShaderFactory : IShaderFactory
             );
 
         var vsh = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vsh, vSrc);
+        GLHelper.ShaderSource(GL, vsh, vSrc);
         GL.CompileShader(vsh);
         CheckShaderCompile(GL, vsh, "vertex");
 
         var fsh = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fsh, fSrc);
+        GLHelper.ShaderSource(GL, fsh, fSrc);
         GL.CompileShader(fsh);
         CheckShaderCompile(GL, fsh, "fragment");
 
