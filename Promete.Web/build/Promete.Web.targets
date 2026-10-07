@@ -13,6 +13,38 @@
     </ItemGroup>
 
     <!--
+        P/Invoke の表を作るときに、ブラウザでは使わないアセンブリを走査の対象から外す。
+        Promete はデスクトップ向けに Silk.NET.SDL を参照している。トリミングしないビルド (Debug など) では、
+        SDL の P/Invoke のコールバック (GameControllerButtonBind を返すもの) を ManagedToNativeGenerator が扱えずに失敗する。
+        アセンブリ自体は配布物に残るが、ブラウザでは呼ばれないので読み込まれない。
+    -->
+    <ItemGroup>
+        <PrometeWebPInvokeScanExclude Include="Silk.NET.SDL" />
+    </ItemGroup>
+
+    <Target Name="_PrometeExcludeFromPInvokeScan" BeforeTargets="_GenerateManagedToNative">
+        <ItemGroup>
+            <_PrometeExcludeByName
+                Include="@(PrometeWebPInvokeScanExclude)"
+                AsmName="%(Identity)"
+            />
+            <_PrometeScannedAssembly Include="@(_WasmAssembliesInternal)" AsmName="%(Filename)" />
+            <_PrometeScannedAssembly Remove="@(_PrometeExcludeByName)" MatchOnMetadata="AsmName" />
+            <_PrometeExcludedAssembly
+                Include="@(_WasmAssembliesInternal)"
+                Exclude="@(_PrometeScannedAssembly)"
+            />
+            <_WasmAssembliesInternal Remove="@(_PrometeExcludedAssembly)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_PrometeRestorePInvokeScan" AfterTargets="_GenerateManagedToNative">
+        <ItemGroup>
+            <_WasmAssembliesInternal Include="@(_PrometeExcludedAssembly)" />
+        </ItemGroup>
+    </Target>
+
+    <!--
         アセットのプリロード。
         <PrometeAsset Include="assets/**" /> で宣言したファイルを、起動前にすべて取得して仮想ファイルシステムに置く。
         仮想ファイルシステム上のパスは TargetPath (省略時はプロジェクトからの相対パス) で、
