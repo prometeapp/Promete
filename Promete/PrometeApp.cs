@@ -576,15 +576,24 @@ public sealed class PrometeApp : IDisposable
         // DefaultScene を明示的に登録
         _services.AddTransient<DefaultScene>();
 
-        var entryAsm =
-            Assembly.GetEntryAssembly()
-            ?? throw new InvalidOperationException("There is no entry assembly.");
+        // エントリアセンブリに加え、UseScenesFrom で指定されたアセンブリも探索する。
+        // ブラウザ (WebAssembly) などエントリアセンブリを取得できない環境では、UseScenesFrom だけを使う。
+        var assemblies = new List<Assembly>();
+        if (Assembly.GetEntryAssembly() is { } entryAsm)
+        {
+            assemblies.Add(entryAsm);
+        }
 
-        // エントリアセンブリに加え、UseScenesFrom で指定されたアセンブリも探索する
-        var assemblies = new List<Assembly> { entryAsm };
-        foreach (var asm in additionalAssemblies.Where(asm => asm != entryAsm))
+        foreach (var asm in additionalAssemblies.Where(asm => !assemblies.Contains(asm)))
         {
             assemblies.Add(asm);
+        }
+
+        if (assemblies.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "There is no entry assembly. Specify the assembly containing scenes with UseScenesFrom."
+            );
         }
 
         foreach (var asm in assemblies)
