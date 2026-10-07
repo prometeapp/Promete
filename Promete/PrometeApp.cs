@@ -27,6 +27,8 @@ public sealed class PrometeApp : IDisposable
 
     private readonly Thread _mainThread;
     private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
+    private static PrometeApp? _current;
+
     private readonly List<Type> _pluginTypes;
     private readonly Stack<Scene> _sceneStack = new();
 
@@ -112,8 +114,8 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public static PrometeApp Current
     {
-        get => field ?? throw new InvalidOperationException("Promete is not initialized.");
-        private set;
+        get => _current ?? throw new InvalidOperationException("Promete is not initialized.");
+        private set => _current = value;
     }
 
     /// <summary>
@@ -165,6 +167,16 @@ public sealed class PrometeApp : IDisposable
     /// 各マテリアルのシェーダーは <c>uScreenTexture</c>（sampler2D, slot 0）で前パスの結果を参照できます。
     /// </summary>
     public List<Material> PostProcessMaterials { get; } = [];
+
+    /// <summary>
+    /// 実行中の <see cref="PrometeApp" /> を取得します。初期化されていない場合は <see langword="null"/> を返します。
+    /// </summary>
+    internal static PrometeApp? CurrentOrNull => _current;
+
+    /// <summary>
+    /// バックエンドが提供する <see cref="IFontProvider"/> を取得します。
+    /// </summary>
+    internal IFontProvider FontProvider { get; private set; } = null!;
 
     /// <summary>
     /// Promete アプリケーションを作成します。
@@ -594,6 +606,7 @@ public sealed class PrometeApp : IDisposable
         var inputContext = backend.SetupInputProvider();
         var renderTextureProvider = backend.SetupRenderTextureProvider();
         _screenBlitter = backend.SetupScreenBlitter();
+        FontProvider = backend.SetupFontProvider();
 
         _services.AddSingleton(Time);
         _services.AddSingleton(View);
@@ -603,6 +616,7 @@ public sealed class PrometeApp : IDisposable
         _services.AddSingleton(inputContext);
         _services.AddSingleton(renderTextureProvider);
         _services.AddSingleton(_screenBlitter);
+        _services.AddSingleton(FontProvider);
         _provider = _services.BuildServiceProvider();
         Current = this;
     }

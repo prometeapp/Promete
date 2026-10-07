@@ -1,5 +1,7 @@
 using Promete.Backends.SilkNetCommon;
 using Promete.Graphics;
+using Promete.Graphics.Fonts;
+using Promete.Graphics.Fonts.FreeType;
 using Promete.Windowing;
 
 namespace Promete.Backends;
@@ -61,6 +63,13 @@ public abstract class BackendBase
     /// </summary>
     /// <returns></returns>
     public abstract IShaderFactory SetupShaderFactory();
+
+    /// <summary>
+    /// <see cref="Font"/> の生成に用いる <see cref="IFontProvider"/> をエンジンに提供します。
+    /// ゲームを初期化する際に1度だけ呼び出されます。
+    /// </summary>
+    /// <returns>既定では、FreeType とシステムフォントを用いる実装を返します。</returns>
+    public virtual IFontProvider SetupFontProvider() => FreeTypeFontProvider.Shared;
 
     /// <summary>
     /// ゲームを起動するよう要求された場合の処理を定義します。
