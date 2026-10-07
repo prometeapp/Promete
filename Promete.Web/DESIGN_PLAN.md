@@ -3,7 +3,7 @@
 `DESIGN_NOTES.md`（PoC の検証結果）を受けて、実装に進むための計画をまとめる。
 
 - 前提: PoC で必要だったコアの変更は、すべて正式な形でコアに入った。PoC（`Promete.Experimental.Wasm`）は削除し、ライブラリ `Promete.Web` と、サンプル `Promete.Web.Example` に置き換えた。サンプルを動かすときは `dotnet publish Promete.Web.Example -c Release`（トリミングが必須。§3.11）。
-- 進捗: C7・C8 はコアに入った（#112）。C2・C6、C1（`GLBackendBase`、`IGLGameView`、`BuildWithGLBackend`）も入った。PoC の `WebBackend` は `GLBackendBase` を使う形に書き換え、`InternalsVisibleTo` なしでビルドできる。C3（`IFontProvider` / `BackendBase.SetupFontProvider`）と C4（`IAudioProvider` / `BackendBase.SetupAudioProvider`）も入り、PoC は `CanvasFontProvider` と `WebAudioProvider` を使う。Example の audio のデモ 4 本は、例外なしで起動するようになった（ただし `ogg vorbis.demo` は、`VorbisAudioSource` の読み込みでメインスレッドが約 6 秒止まる。DESIGN_NOTES §3.4。別タスク）。
+- 進捗: C7・C8 はコアに入った（#112）。C2・C6、C1（`GLBackendBase`、`IGLGameView`、`BuildWithGLBackend`）も入った。PoC の `WebBackend` は `GLBackendBase` を使う形に書き換え、`InternalsVisibleTo` なしでビルドできる。C3（`IFontProvider` / `BackendBase.SetupFontProvider`）と C4（`IAudioProvider` / `BackendBase.SetupAudioProvider`）、C5（`IGameView.IsSupported`）も入り、PoC は `CanvasFontProvider` と `WebAudioProvider` を使う。Example の audio のデモ 4 本は、例外なしで起動するようになった（ただし `ogg vorbis.demo` は、`VorbisAudioSource` の読み込みでメインスレッドが約 6 秒止まる。DESIGN_NOTES §3.4。別タスク）。
 - 本書の範囲: (1) コアの変更タスク、(2) Silk.NET フォークの変更タスク、(3) Promete.Web の設計、(4) JS と HTML の構成。
 - 確認できていないことは「未確認」「要スパイク」と明記する。
 
@@ -66,12 +66,13 @@
 - 破壊性: なし。デスクトップの既定の挙動は変えない。ワンショットの遅延 / 音質の扱いは、Web 側の実装次第で別途確認が必要。
 - 規模: M。
 
-**C5. IGameView の capability**（種別: 追加）
-- 内容: ビューが対応する機能（位置、フルスクリーン、スクリーンショット、ファイルドロップ、アンチエイリアス無効化など）を問い合わせられるようにする。方針は「未対応の API は無視される。検知はできる」。
-- 方法: `IGameView` に DIM で `Capabilities` を足す（既定は「すべて対応」）。アプリ全体の機能問い合わせ（フォントの機能、オーディオの機能も含む）が必要なら、`PrometeApp.Capabilities` のような集約点も検討する。
+**C5. IGameView の capability**（種別: 追加。**実装済み**）
+- 内容: ビューが対応する機能（位置、フルスクリーン、スクリーンショット、ファイルドロップなど）を問い合わせられるようにする。方針は「未対応の API は無視される。検知はできる」。
+- 方法（決定）: `IGameView` に DIM で `bool IsSupported(GameViewFeature feature) => true` を足す。`GameViewFeature` はフラグではない列挙型（`Location`、`TopMost`、`FullScreen`、`WindowMode`、`Title`、`Visibility`、`Focus`、`Screenshot`、`FileDrop`）。フラグにしなかったのは、数の上限が無く、将来の条件付きの判定にも広げやすいため。
+- 申告: デスクトップ（GL / Vulkan）は既定のまま（すべて対応）。Headless はすべて非対応。Web は `Title` だけ対応。
+- 未対応の機能のプロパティは、設定しても例外にせず、値を保持するだけ。戻り値を持つ操作（`TakeScreenshot` / `SaveScreenshotAsync`）は、Web では `NotSupportedException` のまま（「無視」できないため）。
+- 範囲: `IGameView` だけ。フォント（アンチエイリアスの無効化、カーニング）とオーディオの capability は、必要になってから（`IFontProvider` はアプリから公開されていないので、取り出し口の設計が別に要る）。
 - 破壊性: なし（DIM）。
-- 論点: 粒度（フラグ列挙か、機能名の文字列か）。
-- 規模: S〜M。
 
 **C6. ループ / ライフサイクルの契約の明文化**（種別: 追加。ドキュメントと小さな API）
 - 方針（合意済み）: `OnStart` がすぐ戻るバックエンドを許す。**毎フレームの `OnUpdate` より前に、必ず `OnStart` が完了していること**を契約にする。

@@ -13,6 +13,8 @@ namespace Promete.Web;
 /// <remarks>
 /// <see cref="Size"/>、<see cref="Scale"/>、<see cref="Title"/> は、canvas とドキュメントに反映します。
 /// canvas の描画バッファは <c>Size * Scale</c> で、拡大はピクセルを保ったまま行います。
+/// それ以外の機能 (<see cref="GameViewFeature"/>) には対応せず、設定しても値を保持するだけです。
+/// スクリーンショットは <see cref="NotSupportedException"/> をスローします。
 /// </remarks>
 internal sealed class WebGameView : IGLGameView
 {
@@ -125,6 +127,8 @@ internal sealed class WebGameView : IGLGameView
 
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default) =>
         throw new NotSupportedException();
+
+    public bool IsSupported(GameViewFeature feature) => feature is GameViewFeature.Title;
 
     private void ApplyCanvasSize()
     {
