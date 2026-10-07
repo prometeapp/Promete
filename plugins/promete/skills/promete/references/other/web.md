@@ -250,10 +250,139 @@ await startPromete({
 });
 ```
 
-## ブラウザで動いているかを調べる
+## デスクトップ版とコードを共有する
+
+デスクトップ版とWeb版の両方でゲームを公開する場合は、シーンやアセットを共有のプロジェクト（クラスライブラリ）にまとめ、起動部分だけをそれぞれのプロジェクトに分けるのがおすすめです。
+
+```
+MyGame/            共有のプロジェクト（シーン、ノード、アセット）
+MyGame.Desktop/    デスクトップ版の起動部分
+MyGame.Web/        Web版の起動部分
+```
+
+### 共有のプロジェクト
+
+通常のクラスライブラリとして作り、`Promete` パッケージを参照します。
+バージョンは、Web版で使う `Promete.Web` とそろえてください。
+
+```xml title="MyGame/MyGame.csproj"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Promete" Version="2.1.0-preview.1" />
+  </ItemGroup>
+</Project>
+```
+
+シーンは、これまでどおりこのプロジェクトに書きます。
+
+### デスクトップ版
+
+共有のプロジェクトを参照し、アセットを出力先にコピーします。
+
+```xml title="MyGame.Desktop/MyGame.Desktop.csproj"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../MyGame/MyGame.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../MyGame/assets/**" LinkBase="assets" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
+```
+
+シーンが起動するプロジェクトとは別のプロジェクトにあるので、`UseScenesFrom` で、シーンのあるプロジェクトを指定します。
+
+また、`dotnet run` はプロジェクトのフォルダーを基準にファイルを探すので、コピーしたアセットが見つかりません。
+起動時に、基準のフォルダーを実行ファイルの場所に変えておきます。
+
+```csharp title="MyGame.Desktop/Program.cs"
+using MyGame.Scenes;
+using Promete;
+using Promete.GLDesktop;
+using Promete.Input;
+
+// アセットを実行ファイルの場所から読めるようにする
+Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+
+var app = PrometeApp.Create()
+    .Use<Keyboard>()
+    .UseScenesFrom<MainScene>()
+    .BuildWithOpenGLDesktop();
+
+return app.Run<MainScene>();
+```
+
+### Web版
+
+共有のプロジェクトを参照し、アセットを `<PrometeAsset>` で指定します。
+`TargetPath` を指定して、デスクトップ版と同じ `assets/...` というパスで読めるようにします。
+
+```xml title="MyGame.Web/MyGame.Web.csproj"
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Promete.Web" Version="2.1.0-preview.1" />
+    <ProjectReference Include="../MyGame/MyGame.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PrometeAsset Include="../MyGame/assets/**">
+      <TargetPath>assets/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </PrometeAsset>
+  </ItemGroup>
+</Project>
+```
+
+```csharp title="MyGame.Web/Program.cs"
+using MyGame.Scenes;
+using Promete;
+using Promete.Input;
+using Promete.Web;
+
+public static class Program
+{
+    public static async Task Main()
+    {
+        await PrometeWeb.InitializeAsync();
+
+        var app = PrometeApp.Create()
+            .Use<Keyboard>()
+            .UseScenesFrom<MainScene>()
+            .BuildWithWeb();
+
+        app.Run<MainScene>();
+    }
+}
+```
+
+プラグインの登録（`Use<Keyboard>()` など）は、両方の起動部分で同じにしておきます。
+シーンが必要とするプラグインが片方で登録されていないと、そのシーンを開いたときにエラーになります。
+
+### ブラウザで動いているかを調べる
 
 ブラウザで動いているかどうかは、`OperatingSystem.IsBrowser()` で調べられます。
-デスクトップ版とWeb版でシーンのコードを共有していて、一部の処理だけを切り替えたい場合に使えます。
+共有のプロジェクトで、一部の処理だけを切り替えたい場合に使えます。
 
 ```csharp
 if (!OperatingSystem.IsBrowser())
