@@ -1,12 +1,11 @@
 using System.Drawing;
 using Promete;
 using Promete.Audio;
-using Promete.Experimental.Wasm.Web;
 using Promete.Graphics.Fonts;
 using Promete.Input;
 using Promete.Nodes;
 
-namespace Promete.Experimental.Wasm;
+namespace Promete.Web.Example;
 
 /// <summary>
 /// オーディオの検証用シーン。WAV (SE) と Ogg Vorbis (BGM) を、Web Audio 経由で再生する。
@@ -27,7 +26,7 @@ public class AudioScene(Keyboard keyboard) : Scene
     {
         App.BackgroundColor = Color.FromArgb(24, 28, 48);
 
-        var font = Font.FromGlyphSource(new CanvasGlyphSource("Misaki"), 16);
+        var font = Font.FromFile("assets/MisakiGothic.ttf", 16);
         _status = new Text("audio", font, Color.White).Location(10, 10);
         Root.Add(_status);
 
@@ -51,8 +50,7 @@ public class AudioScene(Keyboard keyboard) : Scene
         if (keyboard.Number3.IsKeyDown)
             _ = TryAsync("PlayOneShotAsync(wav)", () => _player.PlayOneShotAsync(_wav!).AsTask());
 
-        Report =
-            $"state={WebAudioOutput.GetState()} t={WebAudioOutput.GetCurrentTime():0.00} rms={WebAudioOutput.GetRms():0.0000} playing={_player.IsPlaying} last={_result}";
+        Report = $"playing={_player.IsPlaying} time={_player.Time} last={_result}";
         _status.Content = Report;
     }
 

@@ -1,11 +1,10 @@
 using System.Drawing;
 using Promete;
-using Promete.Experimental.Wasm.Web;
 using Promete.Graphics.Fonts;
 using Promete.Input;
 using Promete.Nodes;
 
-namespace Promete.Experimental.Wasm;
+namespace Promete.Web.Example;
 
 /// <summary>
 /// 入力の検証用シーン。キーボード (押下中のキー、矢印キーで移動) とマウス (座標、ボタン、ホイール) を表示する。
@@ -21,11 +20,14 @@ public class InputScene(Keyboard keyboard, Mouse mouse) : Scene
     private float _wheelY;
     private string _lastEvent = "(なし)";
 
+    /// <summary>Space キーの押下 (<c>IsKeyDown</c>) を検出した回数。同じフレーム内の押下と解放の取りこぼしを確かめるため。</summary>
+    public static int SpaceDownCount { get; private set; }
+
     public override void OnStart()
     {
         App.BackgroundColor = Color.FromArgb(24, 28, 48);
 
-        var font = Font.FromGlyphSource(new CanvasGlyphSource("Misaki"), 16);
+        var font = Font.FromFile("assets/MisakiGothic.ttf", 16);
         _keys = new Text("keys:", font, Color.White).Location(10, 10);
         _mouseInfo = new Text("mouse:", font, Color.Lime).Location(10, 40);
         _events = new Text("event:", font, Color.Gold).Location(10, 70);
@@ -52,6 +54,8 @@ public class InputScene(Keyboard keyboard, Mouse mouse) : Scene
         if (keyboard.Down)
             _playerPosition += (0, speed);
         _player.Location = _playerPosition;
+        if (keyboard.Space.IsKeyDown)
+            SpaceDownCount++;
 
         _wheelY += mouse.Scroll.Y;
         _cursor.Location = (mouse.Position.X, mouse.Position.Y);
@@ -59,6 +63,6 @@ public class InputScene(Keyboard keyboard, Mouse mouse) : Scene
         _keys.Content = "keys: " + string.Join(' ', keyboard.AllPressedKeys);
         _mouseInfo.Content =
             $"mouse: {mouse.Position} L={(bool)mouse[MouseButtonType.Left]} R={(bool)mouse[MouseButtonType.Right]} wheelY={_wheelY}";
-        _events.Content = "event: " + _lastEvent;
+        _events.Content = $"event: {_lastEvent} space={SpaceDownCount}";
     }
 }

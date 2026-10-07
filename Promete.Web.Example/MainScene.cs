@@ -2,7 +2,7 @@ using System.Drawing;
 using Promete;
 using Promete.Nodes;
 
-namespace Promete.Experimental.Wasm;
+namespace Promete.Web.Example;
 
 /// <summary>
 /// ブラウザ上の描画確認用シーン。図形 (DrawPrimitive) とスプライト (DrawTextureBatched) を動かす。

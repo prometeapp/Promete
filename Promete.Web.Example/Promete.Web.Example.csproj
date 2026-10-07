@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+    <!-- PR2 でパッケージの buildTransitive から読み込まれるようになるまで、手で読み込む -->
+    <Import Project="..\Promete.Web\build\Promete.Web.props" />
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <LangVersion>14</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- Promete 全体の AOT は未検証なので、インタプリタで動かす -->
+        <RunAOTCompilation>false</RunAOTCompilation>
+        <!-- Promete.Example は自己完結型ではない実行可能プロジェクト。ライブラリとして参照するので検証を無効にする (NETSDK1150) -->
+        <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Promete.Web\Promete.Web.csproj" />
+        <ProjectReference Include="..\Promete.Example\Promete.Example.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PrometeAsset Include="..\Promete.Example\assets\*.png;..\Promete.Example\assets\*.ttf;..\Promete.Example\assets\*.wav;..\Promete.Example\assets\*.ogg">
+            <TargetPath>assets/%(Filename)%(Extension)</TargetPath>
+        </PrometeAsset>
+    </ItemGroup>
+
+    <Import Project="..\Promete.Web\build\Promete.Web.targets" />
+</Project>

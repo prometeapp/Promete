@@ -4,7 +4,7 @@ using Promete;
 using Promete.Graphics;
 using Promete.Nodes;
 
-namespace Promete.Experimental.Wasm;
+namespace Promete.Web.Example;
 
 /// <summary>
 /// 描画系ノードを 1 画面に並べた検証用シーン。ノードの生成時に起きた例外は <see cref="Failures"/> に記録する。

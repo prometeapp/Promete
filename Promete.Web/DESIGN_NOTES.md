@@ -1,5 +1,7 @@
 # Promete Web バックエンド 設計メモ（PoC の検証結果）
 
+> この文書は PoC（`Promete.Experimental.Wasm`。現在は削除済み）の検証の記録で、PoC のパスや構成は当時のもの。PoC の機能は `Promete.Web` と `Promete.Web.Example` に移した。
+
 `Promete.Experimental.Wasm` での検証結果をもとに、Promete を .NET WebAssembly（ブラウザ）で動かすために、コアへ入れるべき要件と、設計上の論点をまとめる。
 
 - 対象: Promete 2.0.0 / .NET 10（Mono の browser-wasm ランタイム）

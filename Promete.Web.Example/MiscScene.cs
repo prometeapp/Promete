@@ -5,7 +5,7 @@ using Promete.Coroutines;
 using Promete.Graphics.Fonts;
 using Promete.Nodes;
 
-namespace Promete.Experimental.Wasm;
+namespace Promete.Web.Example;
 
 /// <summary>
 /// その他の検証用シーン。既定フォント、コルーチン、HttpClient による画像取得、メインスレッド判定、View の操作を調べる。

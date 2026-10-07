@@ -2,9 +2,9 @@
 
 `DESIGN_NOTES.md`（PoC の検証結果）を受けて、実装に進むための計画をまとめる。
 
-- 前提: PoC で必要だったコアの変更は、すべて正式な形でコアに入った。`Promete.Experimental.Wasm` は、コアをそのまま参照してビルドできる（`core-changes.patch` は削除した）。動かすときは `dotnet publish -c Release`（トリミングが必須。§3.11）。
+- 前提: PoC で必要だったコアの変更は、すべて正式な形でコアに入った。PoC（`Promete.Experimental.Wasm`）は削除し、ライブラリ `Promete.Web` と、サンプル `Promete.Web.Example` に置き換えた。サンプルを動かすときは `dotnet publish Promete.Web.Example -c Release`（トリミングが必須。§3.11）。
 - 進捗: C7・C8 はコアに入った（#112）。C2・C6、C1（`GLBackendBase`、`IGLGameView`、`BuildWithGLBackend`）も入った。PoC の `WebBackend` は `GLBackendBase` を使う形に書き換え、`InternalsVisibleTo` なしでビルドできる。C3（`IFontProvider` / `BackendBase.SetupFontProvider`）と C4（`IAudioProvider` / `BackendBase.SetupAudioProvider`）も入り、PoC は `CanvasFontProvider` と `WebAudioProvider` を使う。Example の audio のデモ 4 本は、例外なしで起動するようになった（ただし `ogg vorbis.demo` は、`VorbisAudioSource` の読み込みでメインスレッドが約 6 秒止まる。DESIGN_NOTES §3.4。別タスク）。
-- 本書の範囲: (1) コアの変更タスク、(2) Silk.NET フォークの変更タスク、(3) Promete.Wasm の設計、(4) JS と HTML の構成。
+- 本書の範囲: (1) コアの変更タスク、(2) Silk.NET フォークの変更タスク、(3) Promete.Web の設計、(4) JS と HTML の構成。
 - 確認できていないことは「未確認」「要スパイク」と明記する。
 
 ## 0. 決定事項と、残っている判断
@@ -16,7 +16,7 @@
 3. **開発体験の要件**: MSBuild（`dotnet run` / `dotnet publish`）で動かせてデバッグでき、デプロイで html / js / アセンブリ群が生成されること。**スパイクで、実現できることを確認した**（§3.11）。利用者の `csproj` は `PackageReference` だけで済み、html / js を 1 行も書かずに済む構成まで確認している。
 
 4. **Silk.NET に Web 用のウィンドウ / 入力プラットフォームを足さない**（§2.3）。
-5. **パッケージは `Promete.Web` の単一パッケージ。** 既存のバックエンドがプラットフォーム名（`GLDesktop` / `Headless`）で、API も `BuildWithWeb` / `WebBackend` なので、それに揃える。Blazor 向け（`Promete.Web.Blazor`）は、需要が出てから足す（機能モジュールを `main.js` から分けているので、後から足せる。§4.1）。本書の `Promete.Wasm` という表記は、`Promete.Web` と読み替える。
+5. **パッケージは `Promete.Web` の単一パッケージ。** 既存のバックエンドがプラットフォーム名（`GLDesktop` / `Headless`）で、API も `BuildWithWeb` / `WebBackend` なので、それに揃える。Blazor 向け（`Promete.Web.Blazor`）は、需要が出てから足す（機能モジュールを `main.js` から分けているので、後から足せる。§4.1）。
 6. **カスタマイズは 3 段階すべてを正式にサポートする**（§3.11）。そのために、パッケージの JS モジュールが起動の定型を `startPromete(options)` という 1 つの関数として export する。既定の `main.js` はそれを呼ぶだけにし、利用者が自前の `main.js` を書く場合も同じ関数を呼ぶ。互換性を保つ契約は、この関数の引数と、`index.html` 側の約束（canvas の ID など）だけになる。
 
 ---
@@ -93,7 +93,7 @@
 - 規模: M。
 
 **C10. 可視性とパッケージ参照**（種別: 追加。または保留）
-- 別パッケージ（`Promete.Wasm`）から使う型を、`InternalsVisibleTo` ではなく公開 API として整える（C1 に含まれる）。当面は Vulkan と同様に `InternalsVisibleTo` を使ってもよい。
+- 別パッケージ（`Promete.Web`）から使う型を、`InternalsVisibleTo` ではなく公開 API として整える（C1 に含まれる）。当面は Vulkan と同様に `InternalsVisibleTo` を使ってもよい。
 - `Promete.csproj` はデスクトップ向けのネイティブ参照（OpenAL / MoltenVK / Shaderc）を持つ。browser-wasm では公開されない。配布サイズは実測済みで（§3.11。brotli で約 2.7MB）、これらのネイティブは成果物に入っていない（トリミングで、使われない Windowing / Vulkan 等のマネージドのコードも落ちる）。Web 向けに分けたい場合の依存の整理は、堅牢性のためで、サイズのためではない。
 - 規模: S（計測のみ）。
 
@@ -157,16 +157,16 @@
   - 理由 1: `IWindowPlatform` + `IView` + `IViewProperties` + `IWindow` + `IWindowProperties` で、約 75 のメンバーを実装することになり、デスクトップ前提の項目（モニター、位置、枠、フルスクリーン…）が大半を占める。
   - 理由 2: Promete 自身が `IWindow` から離れ、`BackendBase` に移行した（v2）。Silk のウィンドウ抽象を Web に延命する方向は、Promete の設計と逆向き。
   - 理由 3: フォークの方針（上流のサブシステムを足さない）にも反する。
-  - 代わりに、Web の窓口は Promete 側（`Promete.Wasm`）で持つ。
-- Emscripten の GL コンテキスト生成と `GetProcAddress`（`gl_shim.c` に相当）は、当面 `Promete.Wasm` に置く。他の Silk 利用者が使う見込みが出たら、別パッケージとして Silk 側に切り出す。
+  - 代わりに、Web の窓口は Promete 側（`Promete.Web`）で持つ。
+- Emscripten の GL コンテキスト生成と `GetProcAddress`（`gl_shim.c` に相当）は、当面 `Promete.Web` に置く。他の Silk 利用者が使う見込みが出たら、別パッケージとして Silk 側に切り出す。
 
 ---
 
-## 3. Promete.Wasm の設計
+## 3. Promete.Web の設計
 
 ### 3.1 パッケージの構成
 
-`Promete.Wasm`（パッケージ名は要決定。`Promete.Web` の案もある）。含めるもの:
+`Promete.Web`。含めるもの:
 
 - C#: `WebBackend`、`WebGameView`、`WebTimeProvider`、`WebInputProvider`、`WebAudioOutput`、グリフソース、アセットローダー、JS interop 宣言。
 - JS: §4 の ES モジュール群（静的 Web アセットとして配布）。
@@ -187,7 +187,7 @@
     <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Promete.Wasm" Version="2.*" />
+    <PackageReference Include="Promete.Web" Version="2.*" />
     <PrometeAsset Include="assets/**" />   <!-- プリロードするアセットの宣言 -->
   </ItemGroup>
 </Project>
@@ -244,7 +244,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 
 ### 3.7 ビルドと配布
 
-- 利用者の `csproj`: `Microsoft.NET.Sdk.WebAssembly`、`RuntimeIdentifier=browser-wasm`、`Promete.Wasm` への参照。それ以外は、`buildTransitive` の props / targets で設定する。
+- 利用者の `csproj`: `Microsoft.NET.Sdk.WebAssembly`、`RuntimeIdentifier=browser-wasm`、`Promete.Web` への参照。それ以外は、`buildTransitive` の props / targets で設定する。
 - `buildTransitive` が行うこと: `WasmBuildNative=true`、`EmccExtraLDFlags`（WebGL2 / GLES3 / `GetProcAddress`）、`gl_shim.c` の `NativeFileReference`、`calli` シグネチャのスタブ（S1 が完了するまでは、PoC のツールを呼ぶ）、アセットのマニフェスト生成（§4.4）、`ValidateExecutableReferencesMatchSelfContained` の設定が必要な場合の対処。
 - **`wasm-tools` ワークロードが必須**（ネイティブのシムを Emscripten でリンクするため）。`dotnet workload install wasm-tools` を、ドキュメントとテンプレートに明記する。ネイティブを一切使わない構成（GL を JS 経由で呼ぶ）は、Silk を使えなくなるので採らない。
 - AOT: 現状はインタプリタ。Silk.NET.OpenGL 単体の AOT は動作確認済みだが、Promete 全体の AOT は未検証。性能が必要なら、AOT を実測して判断する（`sample5`: 約 20fps が基準値）。トリミングは、既定で有効、かつ必須（§3.11）。
@@ -279,6 +279,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 
 **未確認**
 
+0. **（判明・要対応）Promete を含むアプリは、`dotnet run`（Debug ビルド）で動かない。** Debug ビルドはトリミングをしないので、Silk.NET.SDL の P/Invoke（`GameControllerButtonBind` を返すコールバック）を WASM のツールが収集しようとして、ビルドが失敗する（§3.11 のトリミングの項と同じ原因）。スパイクの `dotnet run` は Promete を含まない構成だったので、これが見えていなかった。開発体験の要件に直結するので、S2（SDL などの P/Invoke を収集対象から外す手段）を優先度高で扱う。現状、`Promete.Web.Example` は Release の publish でのみ動く。
 1. IDE（Visual Studio / VS Code / Rider）からのデバッグとステップ実行。導線（`/_framework/debug`）は確認したが、実際のステップ実行は未検証。
 2. `dotnet watch` によるホットリロード（SDK には `_WasmEnableHotReload` の仕組みがある）。
 3. Promete 全体の AOT の可否、サイズ、起動時間、性能。
@@ -327,7 +328,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 - カスタマイズの段階（案）:
   1. **設定だけ**: `WebOptions` や MSBuild のプロパティで、タイトル、canvas の ID、フィットの方式などを変える（html は既定のまま）。
   2. **html を差し替える**: 利用者が `wwwroot/index.html` を置く。`<canvas>` の ID と、`main.js` の読み込みさえ合わせれば、周囲のページは自由。
-  3. **起動も差し替える**: 利用者が `wwwroot/main.js` を置く（起動の定型を自分で書く）。パッケージの機能モジュール（`_content/Promete.Wasm/...`）は、そのまま import して使える。
+  3. **起動も差し替える**: 利用者が `wwwroot/main.js` を置く（起動の定型を自分で書く）。パッケージの機能モジュール（`_content/Promete.Web/...`）は、そのまま import して使える。
 - 注意: 差し替えると、既定のテンプレートへの追従（Promete 側の更新で、起動の定型が変わった場合）は、利用者の責任になる。差し替えが必要になる要因を、設定（段階 1）で減らすのが望ましい。
 
 **トリミング（検証済み）**
@@ -372,7 +373,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 
 利用者は、これらを書かない（`csproj` と C# だけ。§3.2）。利用者が独自の `index.html` / `main.js` を置いた場合は、そちらが優先される（§3.11）。
 
-**分け方の理由:** 機能モジュールを `main.js`（起動）から切り離しておけば、Blazor WebAssembly に組み込む場合（Blazor は独自の起動スクリプトを持つ）でも、同じモジュールを使える。`Promete.Wasm.Blazor` を後から足せる。
+**分け方の理由:** 機能モジュールを `main.js`（起動）から切り離しておけば、Blazor WebAssembly に組み込む場合（Blazor は独自の起動スクリプトを持つ）でも、同じモジュールを使える。`Promete.Web.Blazor` を後から足せる。
 
 ### 4.2 起動の流れ（C# 主導）
 
@@ -423,5 +424,5 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 1. §0 の残りの判断（Silk に Web 用のプラットフォームを足さない、パッケージの構成、独自の `index.html` の扱い）。
 2. §3.10 の未確認事項のうち、開発体験に直結するもの（IDE デバッグ、`dotnet watch`）を、スパイクで確認する。独自の `index.html` の優先順位は確認済み（§3.11）。トリミングは有効が前提（S2 の CI 固定）。
 3. 着手順（§1.4）に沿って、コアの小さな修正（C7、C8、C2、C6）から。
-4. S1（Silk 側の `calli` 登録）の設計と、`Promete.Wasm` の骨組み（C1 の共通層が前提）。骨組みは、スパイクで動いた構成（パッケージが `index.html` / `main.js` / props / targets / シムを配る）を雛形にできる。
-5. PoC のプロジェクト（`Promete.Experimental.Wasm`）の扱い: パッチを当てて動作確認用に残すか、`Promete.Wasm` の実装に置き換えて削除するか。
+4. S1（Silk 側の `calli` 登録）の設計。それまでは、`tools/gen-calli-signatures.cs` で生成したファイルを `Promete.Web/Generated/` にコミットしてつなぐ。
+5. （済）`Promete.Web` の骨組み（PR1: ライブラリと、リポジトリ内のサンプル）。PoC は削除した。次は PR2（NuGet のパッケージ化: `buildTransitive`、既定の `index.html` / `main.js` と利用者による差し替え、ローカルのフィードでの検証）。

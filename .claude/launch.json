@@ -9,10 +9,10 @@
       "autoPort": true
     },
     {
-      "name": "wasm-poc",
+      "name": "web-example",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5290", "--directory", "Promete.Experimental.Wasm/bin/publish/wwwroot"],
-      "port": 5290
+      "runtimeArgs": ["-m", "http.server", "5291", "--directory", "Promete.Web.Example/bin/publish/wwwroot"],
+      "port": 5291
     }
   ]
 }

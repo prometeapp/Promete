@@ -16,6 +16,8 @@
     <Project Path="Promete.SceneGen/Promete.SceneGen.csproj" />
     <Project Path="Promete.Test/Promete.Test.csproj" />
     <Project Path="Promete.Vulkan.Validation/Promete.Vulkan.Validation.csproj" />
+    <Project Path="Promete.Web.Example/Promete.Web.Example.csproj" />
+    <Project Path="Promete.Web/Promete.Web.csproj" />
     <Project Path="Promete/Promete.csproj" />
     <Properties Name="MonoDevelopProperties">
         <Property Name="version" Value="0.7.0" />
