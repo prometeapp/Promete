@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.JavaScript;
 using Promete.Audio;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web.Audio;
 
 /// <summary>
 /// Web Audio へ出力する <see cref="IAudioOutput"/> です。
@@ -12,9 +12,9 @@ namespace Promete.Experimental.Wasm.Web;
 /// 代わりに毎フレーム <see cref="PumpAll"/> を呼び、JavaScript 側のキューが一定量を下回ったら
 /// 1 バッファ分を生成して追加します。
 /// </remarks>
-public sealed partial class WebAudioOutput : IAudioOutput
+internal sealed partial class WebAudioOutput : IAudioOutput
 {
-    private const string Module = "webAudio";
+    private const string Module = PrometeWeb.AudioModule;
     private const double TargetQueueSeconds = 0.2;
     private const int MaxBuffersPerPump = 8;
 
@@ -29,11 +29,6 @@ public sealed partial class WebAudioOutput : IAudioOutput
     public float Pitch { get; set; } = 1f;
 
     public long PendingFrames => (long)(QueuedSeconds() * _sampleRate);
-
-    /// <summary>Web Audio 用の JavaScript モジュールを読み込みます。使用前に 1 回呼びます。</summary>
-    /// <param name="moduleUrl">webAudio.js の絶対 URL。</param>
-    /// <returns>読み込みの完了を表すタスク。</returns>
-    public static Task ImportModule(string moduleUrl) => JSHost.ImportAsync(Module, moduleUrl);
 
     /// <summary>登録済みの出力に、必要なら 1 フレーム分のレンダリングを行わせます。</summary>
     public static void PumpAll() => Current?.Pump();

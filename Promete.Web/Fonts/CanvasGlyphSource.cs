@@ -1,23 +1,18 @@
 using System.Runtime.InteropServices.JavaScript;
 using Promete.Graphics.Fonts;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web.Fonts;
 
 /// <summary>
 /// ブラウザの Canvas2D でグリフをラスタライズする <see cref="IGlyphSource"/> です。
-/// FreeType のネイティブを使わずに <c>Text</c> を動かすための PoC です。
+/// FreeType のネイティブはブラウザでリンクできないため、代わりに使います。
 /// </summary>
 /// <param name="family">CSS のフォントファミリー名 (FontFace などで登録済みのもの)。</param>
-public sealed partial class CanvasGlyphSource(string family) : IGlyphSource
+internal sealed partial class CanvasGlyphSource(string family) : IGlyphSource
 {
-    private const string Module = "canvasGlyph";
+    private const string Module = PrometeWeb.GlyphModule;
 
     public int SourceId { get; } = GlyphSourceId.Next();
-
-    /// <summary>グリフ描画用の JavaScript モジュールを読み込みます。使用前に 1 回呼びます。</summary>
-    /// <param name="moduleUrl">canvasGlyph.js の絶対 URL。</param>
-    /// <returns>読み込みの完了を表すタスク。</returns>
-    public static Task ImportModule(string moduleUrl) => JSHost.ImportAsync(Module, moduleUrl);
 
     public FontMetrics GetMetrics(in GlyphRenderOptions options)
     {

@@ -1,24 +1,25 @@
-using Generated;
 using Promete.Audio;
 using Promete.Backends;
 using Promete.Backends.GL;
 using Promete.Backends.SilkNetCommon;
-using Promete.Graphics;
 using Promete.Graphics.Fonts;
-using Promete.Graphics.Rendering.GL;
+using Promete.Web.Audio;
+using Promete.Web.Fonts;
+using Promete.Web.Generated;
+using Promete.Web.Input;
 using Promete.Windowing;
 using Silk.NET.OpenGL;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web;
 
 /// <summary>
 /// ブラウザ (WebGL2) 上で Promete を動かすバックエンドです。
 /// </summary>
 /// <remarks>
-/// ブラウザの描画ループは JavaScript (requestAnimationFrame) が持つので、<see cref="OnStart"/> は
-/// すぐに戻り、毎フレーム <see cref="Frame"/> が呼ばれます。
+/// 描画ループは JavaScript (<c>requestAnimationFrame</c>) が持ちます。<see cref="OnStart"/> はループを開始してすぐに戻り、
+/// 以降は毎フレーム <see cref="Frame"/> が呼ばれます。
 /// </remarks>
-public sealed class WebBackend : GLBackendBase
+internal sealed class WebBackend : GLBackendBase
 {
     private PrometeApp _app = null!;
     private GL _gl = null!;
@@ -27,8 +28,10 @@ public sealed class WebBackend : GLBackendBase
     private double _lastFrameMs = -1;
     private bool _isExitRequested;
 
-    /// <summary>描画先の canvas を指す CSS セレクタを取得または設定します。</summary>
-    public static string CanvasSelector { get; set; } = "#canvas";
+    /// <summary>
+    /// <see cref="WebAppExtension.BuildWithWeb"/> から渡された、次に初期化するバックエンドの設定です。
+    /// </summary>
+    internal static WebOptions PendingOptions { get; set; } = WebOptions.Default;
 
     internal static WebBackend? Current { get; private set; }
 
@@ -36,12 +39,14 @@ public sealed class WebBackend : GLBackendBase
     {
         _app = app;
 
-        var context = WebGlInterop.CreateContext(CanvasSelector);
+        var selector = PendingOptions.CanvasSelector;
+        var context = WebGlInterop.CreateContext(selector);
         if (context <= 0)
             throw new InvalidOperationException(
-                $"WebGL2 コンテキストを作成できませんでした: {context}"
+                $"canvas \"{selector}\" に WebGL2 のコンテキストを作成できませんでした: {context}"
             );
 
+        InputInterop.Attach(selector);
         CalliSignatures.Register();
         _gl = GL.GetApi(new WebGlInterop.NativeContext());
 
@@ -68,6 +73,7 @@ public sealed class WebBackend : GLBackendBase
         _gl.Viewport(0, 0, (uint)_view.FramebufferSize.X, (uint)_view.FramebufferSize.Y);
         OnGLContextCreated(_gl);
         app.OnStart();
+        PrometeWeb.StartLoop();
     }
 
     public override void OnExit(PrometeApp app)
@@ -75,21 +81,29 @@ public sealed class WebBackend : GLBackendBase
         _isExitRequested = true;
     }
 
-    /// <summary>requestAnimationFrame から毎フレーム呼ばれ、更新と描画を 1 回ずつ行います。</summary>
+    /// <summary>
+    /// 1 フレーム分の、入力の取り込み、更新、描画を行います。
+    /// </summary>
     /// <param name="timeMs">ブラウザが渡すタイムスタンプ (ミリ秒)。</param>
-    internal void Frame(double timeMs)
+    /// <returns>ゲームを続ける場合は <see langword="true"/>。</returns>
+    internal bool Frame(double timeMs)
     {
         if (_isExitRequested)
-            return;
+        {
+            _app.OnDestroy();
+            Current = null;
+            return false;
+        }
 
         var delta = _lastFrameMs < 0 ? 0 : (timeMs - _lastFrameMs) / 1000.0;
         _lastFrameMs = timeMs;
         _time.Tick(delta);
 
         WebAudioOutput.PumpAll();
+        WebInputContext.Instance.Apply(InputInterop.Drain());
 
         _app.OnUpdate();
-        WebInputContext.Instance.EndFrame();
         RenderFrame(_app);
+        return true;
     }
 }

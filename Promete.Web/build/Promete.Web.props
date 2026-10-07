@@ -1,0 +1,10 @@
+<Project>
+    <!-- Promete.Web を使うアプリのビルド設定。PR2 でパッケージの buildTransitive に移す。 -->
+    <PropertyGroup>
+        <!-- WebGL2 のコンテキスト生成と、calli のシグネチャ登録のため、ネイティブのシムをリンクする -->
+        <WasmBuildNative>true</WasmBuildNative>
+        <EmccExtraLDFlags>$(EmccExtraLDFlags) -lGL -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES3=1 -sGL_ENABLE_GET_PROC_ADDRESS=1 -sALLOW_TABLE_GROWTH=1</EmccExtraLDFlags>
+        <!-- JSImport / JSExport のソース生成に必要 -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+</Project>

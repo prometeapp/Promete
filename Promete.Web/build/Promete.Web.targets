@@ -1,0 +1,100 @@
+<Project>
+    <!-- Promete.Web を使うアプリのビルド設定。PR2 でパッケージの buildTransitive に移す。 -->
+
+    <PropertyGroup>
+        <_PrometeWebRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_PrometeWebRoot>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- WebGL2 のコンテキスト生成と GL 関数の解決 -->
+        <NativeFileReference Include="$(_PrometeWebRoot)/native/promete_web.c" />
+        <!-- Silk.NET の calli のシグネチャを、Mono WASM の interp-to-native 表に載せる -->
+        <NativeFileReference Include="$(_PrometeWebRoot)/Generated/calli_signatures.g.c" />
+    </ItemGroup>
+
+    <!--
+        アセットのプリロード。
+        <PrometeAsset Include="assets/**" /> で宣言したファイルを、起動前にすべて取得して仮想ファイルシステムに置く。
+        仮想ファイルシステム上のパスは TargetPath (省略時はプロジェクトからの相対パス) で、
+        Load("assets/x.png") のような同期 API からそのまま読める。
+    -->
+    <ItemGroup>
+        <PrometeAsset Update="@(PrometeAsset)">
+            <TargetPath Condition="'%(TargetPath)' == ''"
+                >%(RelativeDir)%(Filename)%(Extension)</TargetPath
+            >
+        </PrometeAsset>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <!-- SDK はこのプロパティに追記するので、先に足しておいても残る -->
+        <ResolveStaticWebAssetsInputsDependsOn>$(ResolveStaticWebAssetsInputsDependsOn);_PrometeDefineAssets</ResolveStaticWebAssetsInputsDependsOn>
+    </PropertyGroup>
+
+    <!--
+        アセットと、取得するアセットの一覧 (promete-assets.json) を、静的 Web アセットとして登録する。
+        プロジェクトの外にあるファイルは Content からは拾われないので、DefineStaticWebAssets で直接登録する。
+    -->
+    <Target Name="_PrometeDefineAssets">
+        <!-- このファイルは SDK の targets より先に読み込まれるので、中間ディレクトリはターゲットの中で決める -->
+        <PropertyGroup>
+            <_PrometeAssetDir>$(ProjectDir)$(IntermediateOutputPath)promete\</_PrometeAssetDir>
+            <_PrometeAssetManifest>$(_PrometeAssetDir)promete-assets.json</_PrometeAssetManifest>
+        </PropertyGroup>
+        <ItemGroup>
+            <_PrometeAssetEntry Include="@(PrometeAsset)">
+                <Url>$([System.String]::Copy('%(TargetPath)').Replace('\', '/'))</Url>
+                <Kind>other</Kind>
+                <Kind
+                    Condition="'%(Extension)' == '.ttf' or '%(Extension)' == '.otf' or '%(Extension)' == '.woff' or '%(Extension)' == '.woff2'"
+                    >font</Kind
+                >
+            </_PrometeAssetEntry>
+            <_PrometeAssetJson Include="@(_PrometeAssetEntry->'{&quot;path&quot;:&quot;/%(Url)&quot;,&quot;url&quot;:&quot;%(Url)&quot;,&quot;kind&quot;:&quot;%(Kind)&quot;}')" />
+        </ItemGroup>
+
+        <WriteLinesToFile
+            File="$(_PrometeAssetManifest)"
+            Lines="[;@(_PrometeAssetJson, ',');]"
+            Overwrite="true"
+            WriteOnlyWhenDifferent="true"
+        />
+
+        <ItemGroup>
+            <FileWrites Include="$(_PrometeAssetManifest)" />
+            <_PrometeAssetCandidate Include="@(_PrometeAssetEntry->'%(FullPath)')">
+                <RelativePath>%(Url)</RelativePath>
+                <ContentRoot>%(RootDir)%(Directory)</ContentRoot>
+            </_PrometeAssetCandidate>
+            <_PrometeAssetCandidate Include="$(_PrometeAssetManifest)">
+                <RelativePath>promete-assets.json</RelativePath>
+                <ContentRoot>$(_PrometeAssetDir)</ContentRoot>
+            </_PrometeAssetCandidate>
+        </ItemGroup>
+
+        <DefineStaticWebAssets
+            CandidateAssets="@(_PrometeAssetCandidate)"
+            SourceId="$(PackageId)"
+            SourceType="Computed"
+            BasePath="$(StaticWebAssetBasePath)"
+            AssetKind="All"
+            AssetMode="All"
+            AssetRole="Primary"
+        >
+            <Output TaskParameter="Assets" ItemName="_PrometeStaticWebAsset" />
+        </DefineStaticWebAssets>
+
+        <DefineStaticWebAssetEndpoints
+            CandidateAssets="@(_PrometeStaticWebAsset)"
+            ExistingEndpoints="@(StaticWebAssetEndpoint)"
+            ContentTypeMappings="@(StaticWebAssetContentTypeMapping)"
+        >
+            <Output TaskParameter="Endpoints" ItemName="_PrometeStaticWebAssetEndpoint" />
+        </DefineStaticWebAssetEndpoints>
+
+        <ItemGroup>
+            <StaticWebAsset Include="@(_PrometeStaticWebAsset)" />
+            <StaticWebAssetEndpoint Include="@(_PrometeStaticWebAssetEndpoint)" />
+        </ItemGroup>
+    </Target>
+</Project>

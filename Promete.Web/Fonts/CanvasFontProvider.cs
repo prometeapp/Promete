@@ -1,6 +1,6 @@
 using Promete.Graphics.Fonts;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web.Fonts;
 
 /// <summary>
 /// Canvas2D でグリフを描画する <see cref="IFontProvider"/> です。
@@ -9,7 +9,7 @@ namespace Promete.Experimental.Wasm.Web;
 /// ファイルから作るフォントは、事前に JavaScript が FontFace として登録した、絶対パスをファミリー名とするフォントを使います。
 /// システムフォントは、ファミリー名を CSS の font-family としてそのまま使います。
 /// </remarks>
-public sealed class CanvasFontProvider : IFontProvider
+internal sealed class CanvasFontProvider : IFontProvider
 {
     private const string DefaultFamily = "sans-serif";
 

@@ -3,7 +3,7 @@
 extern void *emscripten_GetProcAddress(const char *name);
 
 // canvas セレクタ (例: "#canvas") に WebGL2 コンテキストを作って current にする。失敗時は 0 以下
-int poc_create_context(const char *selector)
+int promete_web_create_context(const char *selector)
 {
     EmscriptenWebGLContextAttributes attrs;
     emscripten_webgl_init_context_attributes(&attrs);
@@ -21,7 +21,7 @@ int poc_create_context(const char *selector)
 }
 
 // Silk.NET の INativeContext.GetProcAddress から呼ぶ
-void *poc_get_proc(const char *name)
+void *promete_web_get_proc(const char *name)
 {
     return emscripten_GetProcAddress(name);
 }

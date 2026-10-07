@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- JSImport / JSExport のソース生成に必要 -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Promete\Promete.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- 利用者のアプリでリンクするネイティブのソースと、ビルドの設定。パッケージでは buildTransitive で配る -->
+        <None Include="native/**" />
+        <None Include="Generated/*.c" />
+        <None Include="build/**" />
+    </ItemGroup>
+</Project>

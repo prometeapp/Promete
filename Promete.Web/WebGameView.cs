@@ -5,12 +5,12 @@ using Promete.Graphics;
 using Promete.Windowing;
 using Silk.NET.OpenGL;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web;
 
 /// <summary>
 /// ブラウザの canvas を画面とする <see cref="IGLGameView"/> です。
 /// </summary>
-public sealed class WebGameView(GL gl, WindowOptions options) : IGLGameView
+internal sealed class WebGameView(GL gl, WindowOptions options) : IGLGameView
 {
     public event Action<FileDroppedEventArgs>? FileDropped;
 

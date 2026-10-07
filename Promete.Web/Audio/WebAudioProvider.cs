@@ -1,11 +1,11 @@
 using Promete.Audio;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web.Audio;
 
 /// <summary>
 /// Web Audio へ出力する <see cref="IAudioProvider"/> です。
 /// </summary>
-public sealed class WebAudioProvider : IAudioProvider
+internal sealed class WebAudioProvider : IAudioProvider
 {
     public IAudioOutput CreateOutput() => new WebAudioOutput();
 

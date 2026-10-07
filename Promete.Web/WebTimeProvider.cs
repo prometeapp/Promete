@@ -1,11 +1,11 @@
 using Promete.Backends;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web;
 
 /// <summary>
 /// ブラウザの requestAnimationFrame を基準にした <see cref="ITimeProvider"/> です。
 /// </summary>
-public sealed class WebTimeProvider : ITimeProvider
+internal sealed class WebTimeProvider : ITimeProvider
 {
     private const float CountingInterval = 1f;
 

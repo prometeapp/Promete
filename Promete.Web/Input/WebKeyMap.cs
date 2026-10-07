@@ -1,11 +1,11 @@
 using Silk.NET.Input;
 
-namespace Promete.Experimental.Wasm.Web;
+namespace Promete.Web.Input;
 
 /// <summary>
 /// DOM の <c>KeyboardEvent.code</c> と <c>MouseEvent.button</c> を、Silk.NET の値に変換します。
 /// </summary>
-public static class WebKeyMap
+internal static class WebKeyMap
 {
     private static readonly Dictionary<string, Key> Special = new()
     {
