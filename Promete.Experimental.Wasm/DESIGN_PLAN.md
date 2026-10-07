@@ -3,7 +3,7 @@
 `DESIGN_NOTES.md`（PoC の検証結果）を受けて、実装に進むための計画をまとめる。
 
 - 前提: PoC でコアに入れた変更は**巻き戻した**（差分は `core-changes.patch` に保存。`git apply` で再現できる）。そのため `Promete.Experimental.Wasm` は、パッチを当てないとビルドできない。動かすときは、リポジトリのルートで `git apply Promete.Experimental.Wasm/core-changes.patch` を当てて `dotnet publish -c Release`（トリミングが必須。§3.11）し、確認後に `git apply -R` で戻す。
-- 進捗: C7・C8 はコアに入った（#112）。`core-changes.patch` からは C7 の部分を外してある。
+- 進捗: C7・C8 はコアに入った（#112）。C2・C6 も実装した。`core-changes.patch` は、コアに入った分を除いて作り直してある（残りは C1 の `IGLGameView`、C3 のフォントのフック、`InternalsVisibleTo`）。
 - 本書の範囲: (1) コアの変更タスク、(2) Silk.NET フォークの変更タスク、(3) Promete.Wasm の設計、(4) JS と HTML の構成。
 - 確認できていないことは「未確認」「要スパイク」と明記する。
 
