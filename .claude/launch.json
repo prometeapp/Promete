@@ -7,6 +7,12 @@
       "runtimeArgs": ["--dir", "Promete.Docs", "dev"],
       "port": 4322,
       "autoPort": true
+    },
+    {
+      "name": "wasm-poc",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5290", "--directory", "Promete.Experimental.Wasm/bin/publish/wwwroot"],
+      "port": 5290
     }
   ]
 }
