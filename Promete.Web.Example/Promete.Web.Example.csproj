@@ -9,8 +9,6 @@
         <LangVersion>14</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <!-- Promete 全体の AOT は未検証なので、インタプリタで動かす -->
-        <RunAOTCompilation>false</RunAOTCompilation>
         <!-- Promete.Example は自己完結型ではない実行可能プロジェクト。ライブラリとして参照するので検証を無効にする (NETSDK1150) -->
         <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
     </PropertyGroup>
