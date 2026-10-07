@@ -83,6 +83,8 @@ Promete.Example/            - [Demo]属性を使用したデモプロジェク�
 Promete.ImGui/              - ImGui統合プラグイン
 Promete.MeltySynth/         - MIDI/SoundFontプラグイン
 Promete.Test/               - xUnitテストスイート
+Promete.Web/                - ブラウザ (.NET WebAssembly + WebGL2) 向けバックエンド。設計メモ (DESIGN_NOTES.md / DESIGN_PLAN.md) もここにある
+Promete.Web.Example/        - Promete.Web のサンプル。`dotnet publish -c Release` で動かす (トリミングが必須)
 Promete.HeadlessTest/       - ヘッドレスバックエンド用テストプロジェクト
 Promete.Docs/               - ドキュメントサイト (Astro/Starlight)
 ```
