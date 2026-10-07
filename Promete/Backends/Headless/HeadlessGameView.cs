@@ -53,4 +53,9 @@ public class HeadlessGameView : IGameView
 
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default) =>
         Task.CompletedTask;
+
+    /// <summary>
+    /// 画面を持たないので、どの機能にも対応していないと答えます。
+    /// </summary>
+    public bool IsSupported(GameViewFeature feature) => false;
 }

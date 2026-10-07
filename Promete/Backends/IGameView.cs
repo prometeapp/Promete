@@ -113,6 +113,7 @@ public interface IGameView
     /// スクリーンショットを撮り、それをテクスチャとして生成します。
     /// </summary>
     /// <returns>スクリーンショットのテクスチャ</returns>
+    /// <exception cref="NotSupportedException">実行環境がスクリーンショットに対応していない場合 (<see cref="GameViewFeature.Screenshot"/>)。</exception>
     public Texture2D TakeScreenshot();
 
     /// <summary>
@@ -121,5 +122,18 @@ public interface IGameView
     /// <param name="path">パス</param>
     /// <param name="ct">このタスクのキャンセレーショントークン</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    /// <exception cref="NotSupportedException">実行環境がスクリーンショットに対応していない場合 (<see cref="GameViewFeature.Screenshot"/>)。</exception>
     public Task SaveScreenshotAsync(string path, CancellationToken ct = default);
+
+    /// <summary>
+    /// 指定した機能に、このゲーム画面が対応しているかどうかを取得します。
+    /// </summary>
+    /// <remarks>
+    /// 実行環境によっては、一部の機能に対応していません (例: ブラウザではウィンドウの位置を変更できない)。
+    /// 対応していない機能のプロパティを設定しても、例外は発生せず、画面には反映されません。
+    /// 既定の実装は、すべての機能に対応していると答えます。
+    /// </remarks>
+    /// <param name="feature">問い合わせる機能。</param>
+    /// <returns>対応していれば <see langword="true"/>。</returns>
+    public bool IsSupported(GameViewFeature feature) => true;
 }
