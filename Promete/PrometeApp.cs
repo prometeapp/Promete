@@ -332,7 +332,17 @@ public sealed class PrometeApp : IDisposable
     {
         var previous = _currentScene;
         _currentScene?.OnDestroy();
-        _currentScene = GetScene(typeScene);
+        try
+        {
+            _currentScene = GetScene(typeScene);
+        }
+        catch
+        {
+            // 破棄済みのシーンを現在のシーンとして残すと、次の遷移で二重に破棄してしまう
+            _currentScene = null;
+            throw;
+        }
+
         SceneWillChange?.Invoke(
             new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
         );
@@ -363,7 +373,22 @@ public sealed class PrometeApp : IDisposable
             _currentScene.OnPause();
         }
 
-        _currentScene = GetScene(typeScene);
+        try
+        {
+            _currentScene = GetScene(typeScene);
+        }
+        catch
+        {
+            // プッシュ前の状態に戻す。戻さないと、現在のシーンがスタックにも残ったままになる
+            if (previous != null)
+            {
+                _sceneStack.Pop();
+                previous.OnResume();
+            }
+
+            throw;
+        }
+
         SceneWillChange?.Invoke(
             new SceneTransitionEventArgs(SceneTransitionType.Push, previous, _currentScene)
         );
