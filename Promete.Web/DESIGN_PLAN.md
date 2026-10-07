@@ -279,7 +279,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 
 **未確認**
 
-0. **（判明・要対応）Promete を含むアプリは、`dotnet run`（Debug ビルド）で動かない。** Debug ビルドはトリミングをしないので、Silk.NET.SDL の P/Invoke（`GameControllerButtonBind` を返すコールバック）を WASM のツールが収集しようとして、ビルドが失敗する（§3.11 のトリミングの項と同じ原因）。スパイクの `dotnet run` は Promete を含まない構成だったので、これが見えていなかった。開発体験の要件に直結するので、S2（SDL などの P/Invoke を収集対象から外す手段）を優先度高で扱う。現状、`Promete.Web.Example` は Release の publish でのみ動く。
+0. （解決済み）Promete を含むアプリが `dotnet run`（Debug ビルド）で動かなかった。Debug ビルドはトリミングをしないので、Silk.NET.SDL の P/Invoke（`GameControllerButtonBind` を返すコールバック）を `ManagedToNativeGenerator` が扱えずにビルドが失敗していた。`Promete.Web` の targets で、P/Invoke の表を作るときだけ Silk.NET.SDL を走査の対象から外して解決した（`PrometeWebPInvokeScanExclude`。アセンブリ自体は配布物に残るが、ブラウザでは読み込まれない）。`dotnet run` での起動と描画、アセットの配信まで確認済み。
 1. IDE（Visual Studio / VS Code / Rider）からのデバッグとステップ実行。導線（`/_framework/debug`）は確認したが、実際のステップ実行は未検証。
 2. `dotnet watch` によるホットリロード（SDK には `_WasmEnableHotReload` の仕組みがある）。
 3. Promete 全体の AOT の可否、サイズ、起動時間、性能。
