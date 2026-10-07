@@ -247,7 +247,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 - 利用者の `csproj`: `Microsoft.NET.Sdk.WebAssembly`、`RuntimeIdentifier=browser-wasm`、`Promete.Web` への参照。それ以外は、`buildTransitive` の props / targets で設定する。
 - `buildTransitive` が行うこと: `WasmBuildNative=true`、`EmccExtraLDFlags`（WebGL2 / GLES3 / `GetProcAddress`）、`gl_shim.c` の `NativeFileReference`、`calli` シグネチャのスタブ（S1 が完了するまでは、PoC のツールを呼ぶ）、アセットのマニフェスト生成（§4.4）、`ValidateExecutableReferencesMatchSelfContained` の設定が必要な場合の対処。
 - **`wasm-tools` ワークロードが必須**（ネイティブのシムを Emscripten でリンクするため）。`dotnet workload install wasm-tools` を、ドキュメントとテンプレートに明記する。ネイティブを一切使わない構成（GL を JS 経由で呼ぶ）は、Silk を使えなくなるので採らない。
-- AOT: 現状はインタプリタ。Silk.NET.OpenGL 単体の AOT は動作確認済みだが、Promete 全体の AOT は未検証。性能が必要なら、AOT を実測して判断する（`sample5`: 約 20fps が基準値）。トリミングは、既定で有効、かつ必須（§3.11）。
+- AOT: **Release の publish の既定を AOT にした**（`Promete.Web` の props。利用者が `RunAOTCompilation` を指定すれば、そちらが優先）。Debug（`dotnet run`）はインタプリタのまま。実測は DESIGN_NOTES §3.7（20000 スプライトで、インタプリタ 5.6fps に対して AOT は 60fps 以上。publish は約 3.7 倍遅く、転送サイズは約 1.6MB 増える）。トリミングは、既定で有効、かつ必須（§3.11）。
 - 配布サイズ: **実測済み**（トリミング有り、インタプリタ、Release publish）。brotli で約 2.7MB、gzip で約 3.5MB、展開後で約 9.3MB（§3.11）。内訳の最大は、ランタイム（`dotnet.native.wasm`）の 3.0MB と、`System.Private.CoreLib` の 1.6MB。**この 2 つは .NET の WASM ランタイムの固定費で、Promete 側では減らせない**ので、サイズの目標には含めない（Promete + Silk.NET + サードパーティの合計は約 0.6MB で、`.wasm` 全体の約 1 割）。AOT 時のサイズと、起動時間は未計測。
 - 依存の整理: Web 向けに不要なもの（Windowing、Vulkan、OpenAL、Shaderc のネイティブ）が、成果物に入らないことを確認する（S2、C10）。
 
@@ -288,7 +288,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
      - 既知の問題: F5 のたびに「タスク 'web-example: run' は終了せず、'problemMatcher' が定義されていません」というダイアログが出る（「このままデバッグ」で続行できる）。問題マッチャーの書き方を変えても解消しなかった。原因は未調査で、保留。
    - Visual Studio / Rider: 未確認。
 2. **`dotnet watch` によるホットリロード: 確認済み（2026-10-07）。** 毎フレーム実行されるメソッド（`OnUpdate`）の変更が、約 1.3 秒で、ページの再読み込みもゲームの状態のリセットもなく反映された。一度しか呼ばれないメソッド（`OnStart` など）の変更は、シーンを開き直すまで反映されない（C# のホットリロードの通常の挙動）。デバッガーとの併用は未確認。
-3. Promete 全体の AOT の可否、サイズ、起動時間、性能。
+3. （確認済み）Promete 全体の AOT の可否、サイズ、性能（DESIGN_NOTES §3.7）。起動時間は未計測。
 4. Canvas2D グリフ描画の性能。
 5. IME（非表示 `textarea`）の実装可能性。
 6. AudioWorklet で、.NET から PCM を渡す方法。

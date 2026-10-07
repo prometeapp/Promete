@@ -12,7 +12,7 @@ using Promete.Windowing;
 /// Promete.Web のサンプル。Promete.Example のデモと、Web 向けの検証用シーンを動かす。
 /// </summary>
 /// <remarks>
-/// クエリ: <c>?scene=example|feature|text|input|audio|misc</c> (既定は example)、
+/// クエリ: <c>?scene=example|feature|text|input|audio|misc|bench</c> (既定は example)、
 /// <c>&amp;demo=&lt;パス&gt;</c> (例: <c>graphics/font.demo</c>)、<c>&amp;f=&lt;機能名&gt;</c> (feature シーン用)。
 /// </remarks>
 public static partial class Program
@@ -60,6 +60,9 @@ public static partial class Program
                 break;
             case "misc":
                 app.Run<MiscScene>();
+                break;
+            case "bench":
+                app.Run<BenchScene>();
                 break;
             default:
                 app.Run<Promete.Example.MainScene>();

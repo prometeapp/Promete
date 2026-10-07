@@ -103,7 +103,14 @@ dotnet publish -c Release -o bin/publish   # Promete.Experimental.Wasm ディレ
 
 - 軽いシーンでは約 60fps。
 - Example の `sample5`（10000 スプライト）は約 20fps（インタプリタ実行）。GL 側の負荷ではなく、ノードの更新と描画命令の収集という CPU 側が支配的と推測している（未プロファイル）。
-- Promete 全体の AOT は未検証。Silk.NET.OpenGL 単体の AOT では、描画が動くことを確認した。
+- Promete 全体の AOT を実測した（2026-10-07。`Promete.Web.Example` の `?scene=bench`: スプライト 20000 個を毎フレーム移動・回転し、ウォームアップ 30 フレームの後に 10 秒間の fps を取る）。
+  - インタプリタ: fps min 5.1 / max 5.8 / avg 5.6。publish 50 秒。転送サイズ（brotli）2.6MB、展開後 8.9MB。
+  - AOT: fps min 38.6 / max 99.0 / avg 60.0（リフレッシュレートの上限に張り付いており、実際の余力はそれ以上）。publish 186 秒。転送サイズ 4.2MB、展開後 17.9MB（`dotnet.native.wasm` が 3.0MB → 12.4MB）。
+  - AOT でも、描画、フォント、オーディオのデモは例外なく動いた（calli のシグネチャ登録も機能する）。`VorbisAudioSource` の読み込みでのメインスレッドの停止は、6.1 秒から 1.7 秒に縮んだ（停止自体は残る）。
+  - 判断: `Promete.Web` の props で、Release の publish の既定を AOT にした（利用者が `RunAOTCompilation` を指定すれば、そちらが優先）。Debug（`dotnet run`）はインタプリタのまま。
+  - 増分ビルド: 機能する。1 行の変更では、40 個中 38 個のアセンブリの AOT がスキップされた。ただし、所要時間は 174 秒（クリーンで 183 秒）と、ほとんど縮まない。`aot-instances.dll`（ジェネリックのインスタンス化）がどれか 1 つの変更で作り直され（約 55 秒）、リンクと `wasm-opt`、トリミングが毎回全体に走るため。AOT の publish は、増分でも 3 分前後かかる前提になる。
+  - Debug（インタプリタ）のビルドの後に、クリーンせずに Release（AOT）で publish しても、正しく動いた（中間ディレクトリが `obj/Debug` と `obj/Release` で分かれるため）。PoC で起きた食い違いは、同じ構成のままインタプリタと AOT を切り替えたときのもの。
+  - publish の出力先は、前の版のファイル（ハッシュ違いの `.wasm` など）を消さない。`index.html` が参照するのは新しいほうだけなので動作には影響しないが、出力先をそのままデプロイすると不要なファイルも上がる。
 
 ### 3.8 Promete.Example の巡回結果
 
@@ -120,7 +127,7 @@ dotnet publish -c Release -o bin/publish   # Promete.Experimental.Wasm ディレ
 ### 3.9 未検証
 
 - ゲームパッド、`Promete.ImGui`（ネイティブ依存）、`Promete.MeltySynth`、`ConsoleLayer` 以外のプラグイン。
-- Promete 全体の AOT、配布サイズ（publish 先が増分で溜まり、正確に測れていない）、読み込み時間。
+- 読み込み時間。（Promete 全体の AOT と配布サイズは §3.7 で実測済み）
 - モバイル、タッチ、複数ブラウザ。WebGPU。
 
 ## 4. 技術的な発見
@@ -216,7 +223,7 @@ dotnet publish -c Release -o bin/publish   # Promete.Experimental.Wasm ディレ
 ### 5.8 ビルドと配布
 
 - シグネチャ登録の生成（§4.1）の置き場所。
-- AOT: Silk.NET.OpenGL 単体では動く。Promete 全体（Vulkan、Windowing、ImGui を含む）は重く未検証。性能面で必要かを、実測して判断する。
+- AOT: Promete 全体で動き、インタプリタの 10 倍以上速い（§3.7）。Release の既定を AOT にした。
 - 依存の整理: Web 向けには、Windowing、Vulkan、OpenAL、Shaderc のネイティブ参照が不要。`Promete.csproj` の参照を分けるか、条件付きにするかの検討。
 - ホスティング: JS 資産（`canvasGlyph.js`、`webAudio.js`、入力の配線）、アセット、`dotnet.js` の配置の形。
 
