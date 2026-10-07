@@ -27,6 +27,9 @@
             RunAOTCompilation を指定すれば、そちらが優先される (この props はプロジェクト本体より先に評価される)。
             Debug (dotnet run) はデバッガーを使えるインタプリタのまま。
         -->
-        <RunAOTCompilation Condition="'$(RunAOTCompilation)' == '' and '$(Configuration)' == 'Release'">true</RunAOTCompilation>
+        <RunAOTCompilation
+            Condition="'$(RunAOTCompilation)' == '' and '$(Configuration)' == 'Release'"
+            >true</RunAOTCompilation
+        >
     </PropertyGroup>
 </Project>
