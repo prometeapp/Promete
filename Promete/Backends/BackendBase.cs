@@ -65,6 +65,15 @@ public abstract class BackendBase
     /// <summary>
     /// ゲームを起動するよう要求された場合の処理を定義します。
     /// </summary>
+    /// <remarks>
+    /// 実装は、<see cref="PrometeApp.OnStart"/> を 1 度だけ呼び出し、それが完了してから
+    /// <see cref="PrometeApp.OnUpdate"/> と <see cref="PrometeApp.OnRender"/> をフレームごとに呼び出す必要があります。
+    /// <para>
+    /// このメソッドは、ゲームループが終わるまでブロックしても、ゲームループを外部
+    /// (ブラウザの <c>requestAnimationFrame</c> など) に委ねてすぐに戻ってもかまいません。
+    /// すぐに戻る場合、<see cref="PrometeApp.Run()"/> はゲームの実行中に制御を返します。
+    /// </para>
+    /// </remarks>
     public abstract void OnStart(PrometeApp app);
 
     /// <summary>

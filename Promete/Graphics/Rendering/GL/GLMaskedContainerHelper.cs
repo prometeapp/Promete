@@ -73,7 +73,8 @@ public class GLMaskedContainerHelper(
 
         // マスク適用用のシェーダーをコンパイル
         var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             vsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.vert")
         );
@@ -87,7 +88,8 @@ public class GLMaskedContainerHelper(
         }
 
         var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             fsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.frag")
         );
@@ -119,7 +121,8 @@ public class GLMaskedContainerHelper(
 
         // ステンシル書き込み用のシェーダーをコンパイル
         var svsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             svsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture.vert")
         );
@@ -132,7 +135,8 @@ public class GLMaskedContainerHelper(
         }
 
         var sfsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             sfsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.stencil_mask.frag")
         );

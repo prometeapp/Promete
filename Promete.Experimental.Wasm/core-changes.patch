@@ -139,71 +139,8 @@ index 2bb43e6..80d84bc 100644
          SourceCache[key] = source;
          return source;
      }
-diff --git a/Promete/Graphics/Rendering/GL/GLHelper.cs b/Promete/Graphics/Rendering/GL/GLHelper.cs
-index f2cbb47..4e50fdd 100644
---- a/Promete/Graphics/Rendering/GL/GLHelper.cs
-+++ b/Promete/Graphics/Rendering/GL/GLHelper.cs
-@@ -1,14 +1,58 @@
- using System;
-+using System.Runtime.CompilerServices;
- using Silk.NET.OpenGL;
- 
- namespace Promete.Graphics.Rendering.GL;
- 
- public static class GLHelper
- {
-+    private const string Glsl330Header = "#version 330 core";
-+    private const string GlslEs300Header =
-+        "#version 300 es\nprecision highp float;\nprecision highp int;\nprecision highp sampler2D;";
-+
-+    private static readonly ConditionalWeakTable<Silk.NET.OpenGL.GL, StrongBox<bool>> EsCache = [];
-+
-     public static VectorInt GetViewport(Silk.NET.OpenGL.GL gl)
-     {
-         Span<int> viewport = stackalloc int[4];
-         gl.GetInteger(GetPName.Viewport, viewport);
-         return new VectorInt(viewport[2], viewport[3]);
-     }
-+
-+    /// <summary>
-+    /// 指定した GL が OpenGL ES (WebGL を含む) のコンテキストかどうかを返します。
-+    /// </summary>
-+    /// <param name="gl">調べる GL。</param>
-+    /// <returns>OpenGL ES の場合は <see langword="true" />。</returns>
-+    public static bool IsOpenGlEs(Silk.NET.OpenGL.GL gl)
-+    {
-+        return EsCache
-+            .GetValue(
-+                gl,
-+                g => new StrongBox<bool>(
-+                    g.GetStringS(StringName.Version)
-+                        ?.StartsWith("OpenGL ES", StringComparison.Ordinal) == true
-+                )
-+            )
-+            .Value;
-+    }
-+
-+    /// <summary>
-+    /// シェーダーのソースを設定します。OpenGL ES では GLSL 330 core のソースを GLSL ES 3.00 に書き換えます。
-+    /// </summary>
-+    /// <param name="gl">GL。</param>
-+    /// <param name="shader">シェーダーのハンドル。</param>
-+    /// <param name="source">GLSL 330 core 形式のソース。</param>
-+    public static void ShaderSource(Silk.NET.OpenGL.GL gl, uint shader, string source)
-+    {
-+        gl.ShaderSource(shader, IsOpenGlEs(gl) ? ToGlslEs(source) : source);
-+    }
-+
-+    private static string ToGlslEs(string source)
-+    {
-+        var trimmed = source.TrimStart();
-+        return trimmed.StartsWith(Glsl330Header, StringComparison.Ordinal)
-+            ? GlslEs300Header + trimmed[Glsl330Header.Length..]
-+            : source;
-+    }
- }
 diff --git a/Promete/Graphics/Rendering/GL/GLMaskedContainerHelper.cs b/Promete/Graphics/Rendering/GL/GLMaskedContainerHelper.cs
-index 6a231e7..2f1f8fe 100644
+index 07990b2..2f1f8fe 100644
 --- a/Promete/Graphics/Rendering/GL/GLMaskedContainerHelper.cs
 +++ b/Promete/Graphics/Rendering/GL/GLMaskedContainerHelper.cs
 @@ -49,7 +49,7 @@ public class GLMaskedContainerHelper(
@@ -215,7 +152,7 @@ index 6a231e7..2f1f8fe 100644
  
          // シェーダーとバッファを削除
          gl.DeleteProgram(_maskShader);
-@@ -69,11 +69,12 @@ public class GLMaskedContainerHelper(
+@@ -69,7 +69,7 @@ public class GLMaskedContainerHelper(
  
      private void Initialize()
      {
@@ -224,43 +161,7 @@ index 6a231e7..2f1f8fe 100644
  
          // マスク適用用のシェーダーをコンパイル
          var vsh = gl.CreateShader(GLEnum.VertexShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             vsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.vert")
-         );
-@@ -87,7 +88,8 @@ public class GLMaskedContainerHelper(
-         }
- 
-         var fsh = gl.CreateShader(GLEnum.FragmentShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             fsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.frag")
-         );
-@@ -119,7 +121,8 @@ public class GLMaskedContainerHelper(
- 
-         // ステンシル書き込み用のシェーダーをコンパイル
-         var svsh = gl.CreateShader(GLEnum.VertexShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             svsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture.vert")
-         );
-@@ -132,7 +135,8 @@ public class GLMaskedContainerHelper(
-         }
- 
-         var sfsh = gl.CreateShader(GLEnum.FragmentShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             sfsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.stencil_mask.frag")
-         );
-@@ -303,7 +307,7 @@ public class GLMaskedContainerHelper(
+@@ -307,7 +307,7 @@ public class GLMaskedContainerHelper(
      {
          PrometeApp.Current.ThrowIfNotMainThread();
          EnsureInitialized();
@@ -269,7 +170,7 @@ index 6a231e7..2f1f8fe 100644
  
          // モデル行列を計算
          var size = node.Size;
-@@ -353,7 +357,7 @@ public class GLMaskedContainerHelper(
+@@ -357,7 +357,7 @@ public class GLMaskedContainerHelper(
      {
          PrometeApp.Current.ThrowIfNotMainThread();
          EnsureInitialized();
@@ -278,25 +179,6 @@ index 6a231e7..2f1f8fe 100644
  
          // モデル行列を計算
          var size = node.Size;
-diff --git a/Promete/Graphics/Rendering/GL/GLShaderFactory.cs b/Promete/Graphics/Rendering/GL/GLShaderFactory.cs
-index 18ba9bd..947b44a 100644
---- a/Promete/Graphics/Rendering/GL/GLShaderFactory.cs
-+++ b/Promete/Graphics/Rendering/GL/GLShaderFactory.cs
-@@ -27,12 +27,12 @@ internal class GLShaderFactory : IShaderFactory
-             );
- 
-         var vsh = GL.CreateShader(ShaderType.VertexShader);
--        GL.ShaderSource(vsh, vSrc);
-+        GLHelper.ShaderSource(GL, vsh, vSrc);
-         GL.CompileShader(vsh);
-         CheckShaderCompile(GL, vsh, "vertex");
- 
-         var fsh = GL.CreateShader(ShaderType.FragmentShader);
--        GL.ShaderSource(fsh, fSrc);
-+        GLHelper.ShaderSource(GL, fsh, fSrc);
-         GL.CompileShader(fsh);
-         CheckShaderCompile(GL, fsh, "fragment");
- 
 diff --git a/Promete/Graphics/Rendering/GL/Runners/GLBeginStencilMaskCommandRunner.cs b/Promete/Graphics/Rendering/GL/Runners/GLBeginStencilMaskCommandRunner.cs
 index 7d1953f..87b9860 100644
 --- a/Promete/Graphics/Rendering/GL/Runners/GLBeginStencilMaskCommandRunner.cs
@@ -324,7 +206,7 @@ index 2c69feb..a2fdeea 100644
      public override void Execute(BeginTrimCommand command)
      {
 diff --git a/Promete/Graphics/Rendering/GL/Runners/GLDrawPieTextureCommandRunner.cs b/Promete/Graphics/Rendering/GL/Runners/GLDrawPieTextureCommandRunner.cs
-index 9c2c5e7..e7f85b2 100644
+index 685136f..e7f85b2 100644
 --- a/Promete/Graphics/Rendering/GL/Runners/GLDrawPieTextureCommandRunner.cs
 +++ b/Promete/Graphics/Rendering/GL/Runners/GLDrawPieTextureCommandRunner.cs
 @@ -14,7 +14,7 @@ namespace Promete.Graphics.Rendering.GL.Runners;
@@ -336,28 +218,8 @@ index 9c2c5e7..e7f85b2 100644
  
      private bool _initialized;
      private uint _shader;
-@@ -164,7 +164,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
- 
-         // 頂点シェーダーをリソースから読み込んでコンパイルする
-         var vsh = gl.CreateShader(GLEnum.VertexShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             vsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.vert")
-         );
-@@ -172,7 +173,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
- 
-         // フラグメントシェーダーをリソースから読み込んでコンパイルする
-         var fsh = gl.CreateShader(GLEnum.FragmentShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             fsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.pie.frag")
-         );
 diff --git a/Promete/Graphics/Rendering/GL/Runners/GLDrawPrimitiveCommandRunner.cs b/Promete/Graphics/Rendering/GL/Runners/GLDrawPrimitiveCommandRunner.cs
-index 04b276a..b824ef7 100644
+index b355721..b824ef7 100644
 --- a/Promete/Graphics/Rendering/GL/Runners/GLDrawPrimitiveCommandRunner.cs
 +++ b/Promete/Graphics/Rendering/GL/Runners/GLDrawPrimitiveCommandRunner.cs
 @@ -14,7 +14,7 @@ namespace Promete.Graphics.Rendering.GL.Runners;
@@ -369,28 +231,8 @@ index 04b276a..b824ef7 100644
      private uint _ebo;
      private bool _initialized;
      private uint _shader;
-@@ -220,7 +220,8 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
- 
-         // 頂点シェーダーをリソースから読み込んでコンパイルする
-         var vsh = gl.CreateShader(GLEnum.VertexShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             vsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.vert")
-         );
-@@ -228,7 +229,8 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
- 
-         // フラグメントシェーダーをリソースから読み込んでコンパイルする
-         var fsh = gl.CreateShader(GLEnum.FragmentShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             fsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.frag")
-         );
 diff --git a/Promete/Graphics/Rendering/GL/Runners/GLDrawTextureBatchedCommandRunner.cs b/Promete/Graphics/Rendering/GL/Runners/GLDrawTextureBatchedCommandRunner.cs
-index e6636eb..d141462 100644
+index 3cfb289..d141462 100644
 --- a/Promete/Graphics/Rendering/GL/Runners/GLDrawTextureBatchedCommandRunner.cs
 +++ b/Promete/Graphics/Rendering/GL/Runners/GLDrawTextureBatchedCommandRunner.cs
 @@ -21,7 +21,7 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view)
@@ -402,25 +244,6 @@ index e6636eb..d141462 100644
      private bool _initialized;
  
      private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
-@@ -188,14 +188,16 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view)
- 
-         // シェーダーをコンパイル・リンク
-         var vsh = gl.CreateShader(ShaderType.VertexShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             vsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.vert")
-         );
-         gl.CompileShader(vsh);
- 
-         var fsh = gl.CreateShader(ShaderType.FragmentShader);
--        gl.ShaderSource(
-+        GLHelper.ShaderSource(
-+            gl,
-             fsh,
-             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.frag")
-         );
 diff --git a/Promete/Graphics/Rendering/GL/Runners/GLEndMaskCommandRunner.cs b/Promete/Graphics/Rendering/GL/Runners/GLEndMaskCommandRunner.cs
 index 18a7a3f..c43846b 100644
 --- a/Promete/Graphics/Rendering/GL/Runners/GLEndMaskCommandRunner.cs
