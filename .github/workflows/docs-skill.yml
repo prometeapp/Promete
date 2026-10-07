@@ -2,14 +2,13 @@ name: Docs Skill Sync
 
 on:
   push:
-    branches: ["main", "master", "develop", "v2"]
+    branches: ["main", "master", "develop", "v2", "feature/**"]
     paths:
       - "Promete.Docs/src/content/docs/guide/**"
       - "plugins/promete/**"
       - "tools/sync-docs-skill.cs"
       - ".github/workflows/docs-skill.yml"
   pull_request:
-    branches: ["main", "master", "develop", "v2"]
     paths:
       - "Promete.Docs/src/content/docs/guide/**"
       - "plugins/promete/**"

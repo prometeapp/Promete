@@ -5,9 +5,8 @@ name: Test
 
 on:
   push:
-    branches: [ "main", "master", "develop", "v2" ]
+    branches: [ "main", "master", "develop", "v2", "feature/**" ]
   pull_request:
-    branches: [ "main", "master", "develop", "v2" ]
 
 jobs:
   test:
