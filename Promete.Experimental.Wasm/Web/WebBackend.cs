@@ -1,4 +1,5 @@
 using Generated;
+using Promete.Audio;
 using Promete.Backends;
 using Promete.Backends.GL;
 using Promete.Backends.SilkNetCommon;
@@ -42,7 +43,6 @@ public sealed class WebBackend : GLBackendBase
             );
 
         CalliSignatures.Register();
-        ConfigureFonts();
         _gl = GL.GetApi(new WebGlInterop.NativeContext());
 
         _time = new WebTimeProvider { TargetFps = opts.TargetFps, TargetUps = opts.TargetUps };
@@ -53,23 +53,15 @@ public sealed class WebBackend : GLBackendBase
         Current = this;
     }
 
-    /// <summary>
-    /// FreeType を使えないブラウザでも <see cref="Font"/> が動くよう、グリフの供給元を Canvas2D に差し替えます。
-    /// ファイルから作るフォントは、事前に JavaScript が FontFace として登録したパス名のフォントを使います。
-    /// </summary>
-    private static void ConfigureFonts()
-    {
-        var defaultSource = new CanvasGlyphSource("sans-serif");
-        Font.FileSourceFactory = (path, _) => new CanvasGlyphSource(path);
-        Font.DefaultFontFactory = (size, style, isAntialiased) =>
-            Font.FromGlyphSource(defaultSource, size, style, isAntialiased);
-    }
-
     public override ITimeProvider SetupTimeProvider() => _time;
 
     public override IGameView SetupGameView() => _view;
 
     public override InputProvider SetupInputProvider() => new WebInputProvider();
+
+    public override IFontProvider SetupFontProvider() => new CanvasFontProvider();
+
+    public override IAudioProvider SetupAudioProvider() => new WebAudioProvider();
 
     public override void OnStart(PrometeApp app)
     {

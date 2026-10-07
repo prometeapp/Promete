@@ -18,11 +18,6 @@ namespace Promete.Graphics.Fonts;
 /// </remarks>
 public sealed class Font : IEquatable<Font>
 {
-    private static readonly Dictionary<(string Path, int FaceIndex), IGlyphSource> SourceCache =
-        new();
-
-    private static readonly Lazy<SystemFontInfo> LazyDefaultFont = new(ResolveDefaultFont);
-
     private Font(IGlyphSource source, float size, FontStyle style, bool isAntialiased)
     {
         Source = source;
@@ -79,7 +74,7 @@ public sealed class Font : IEquatable<Font>
         int faceIndex = 0
     )
     {
-        return new Font(GetOrLoadSource(path, faceIndex), size, style, isAntialiased);
+        return GetProvider().FromFile(path, size, style, isAntialiased, faceIndex);
     }
 
     /// <summary>
@@ -97,10 +92,7 @@ public sealed class Font : IEquatable<Font>
         bool isAntialiased = true
     )
     {
-        if (!SystemFonts.TryGet(familyName, style, out var info))
-            throw new FontException($"フォント \"{familyName}\" が見つかりませんでした。");
-
-        return FromSystemFontInfo(info, size, style, isAntialiased);
+        return GetProvider().FromSystem(familyName, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -113,7 +105,7 @@ public sealed class Font : IEquatable<Font>
         bool isAntialiased = true
     )
     {
-        return new Font(FreeTypeGlyphSource.FromStream(stream), size, style, isAntialiased);
+        return GetProvider().FromStream(stream, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -138,7 +130,7 @@ public sealed class Font : IEquatable<Font>
         bool isAntialiased = true
     )
     {
-        return FromSystemFontInfo(LazyDefaultFont.Value, size, style, isAntialiased);
+        return GetProvider().GetDefault(size, style, isAntialiased);
     }
 
     /// <summary>
@@ -242,70 +234,11 @@ public sealed class Font : IEquatable<Font>
     }
 
     /// <summary>
-    /// 実行環境における既定のフォントを解決します。
+    /// 実行中のバックエンドが提供する <see cref="IFontProvider"/> を取得します。
+    /// <see cref="PrometeApp"/> が無い場合は、FreeType を用いる既定の実装を返します。
     /// </summary>
-    private static SystemFontInfo ResolveDefaultFont()
+    private static IFontProvider GetProvider()
     {
-        if (SystemFonts.TryGetFirst(EnumerateDefaultFamilies(), FontStyle.Normal, out var info))
-            return info;
-
-        // 候補がいずれも見つからない環境では、最初に見つかったフォントで代用する
-        return SystemFonts.Fonts.Count > 0
-            ? SystemFonts.Fonts[0]
-            : throw new FontException("利用できるフォントが見つかりませんでした。");
-    }
-
-    private static IEnumerable<string> EnumerateDefaultFamilies()
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return ["BIZ UDGothic", "Yu Gothic", "Meiryo", "MS Gothic", "Segoe UI", "Arial"];
-        }
-
-        if (OperatingSystem.IsMacOS() || OperatingSystem.IsMacCatalyst())
-        {
-            return ["BIZ UDGothic", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Helvetica"];
-        }
-
-        return
-        [
-            "Noto Sans CJK JP",
-            "Noto Sans JP",
-            "IPAGothic",
-            "Droid Sans Fallback",
-            "DejaVu Sans",
-            "Liberation Sans",
-        ];
-    }
-
-    private static Font FromSystemFontInfo(
-        SystemFontInfo info,
-        float size,
-        FontStyle style,
-        bool isAntialiased
-    )
-    {
-        // 要求されたスタイルの字形が存在する場合、重ねて合成する必要はない
-        var resolvedStyle = info.Style == style ? FontStyle.Normal : style;
-        return new Font(
-            GetOrLoadSource(info.Path, info.FaceIndex),
-            size,
-            resolvedStyle,
-            isAntialiased
-        );
-    }
-
-    /// <summary>
-    /// グリフソースを取得します。同一のファイルとフェイスに対しては同じインスタンスを返します。
-    /// </summary>
-    private static IGlyphSource GetOrLoadSource(string path, int faceIndex)
-    {
-        var key = (Path.GetFullPath(path), faceIndex);
-        if (SourceCache.TryGetValue(key, out var source))
-            return source;
-
-        source = FreeTypeGlyphSource.FromFile(key.Item1, faceIndex);
-        SourceCache[key] = source;
-        return source;
+        return PrometeApp.CurrentOrNull?.FontProvider ?? FreeTypeFontProvider.Shared;
     }
 }

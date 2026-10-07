@@ -78,6 +78,10 @@ dotnet publish -c Release -o bin/publish   # Promete.Experimental.Wasm ディレ
 - 動かなかったもの: `AudioPlayer()`（既定のコンストラクターが OpenAL）、`PlayOneShot` / `PlayOneShotAsync`（出力を差し込んでいても OpenAL を直接使う）。いずれも `PlatformNotSupportedException`。
 - 注意: ブラウザの自動再生ポリシーにより、ユーザー操作があるまで `AudioContext` は `suspended` のまま。PoC では最初の入力で `resume()` している。
 - 注意: .NET は単一スレッドなので、フレームが重いとアンダーランする。AudioWorklet 化は未検証。
+- **`VorbisAudioSource` の読み込みが、メインスレッドを約 6 秒止める**（2026-10-07 に計測）。コンストラクターが `Task.Factory.StartNew` で全体のデコードを始めるが、ブラウザの .NET は単一スレッドなので、この処理はメインスレッドで実行される。ループが途中で制御を返さないため、デコードが終わるまで描画と入力が止まる。
+  - 計測: Long Tasks API で、Example の `audio/ogg vorbis.demo`（約 870 万サンプル）の起動直後に 6,071ms のタスクがあった。Vorbis を使わない `audio/wav sfx.demo` では、最大 76ms だった。いずれもインタプリタ実行。
+  - 読み込み自体は完了する（固まるだけで、壊れてはいない）。
+  - 対処の案（別タスク）: (1) 読み込みのループで、一定サンプルごとに `await Task.Yield()` で制御を返す。デスクトップでは別スレッドのままなので、影響は小さい。(2) `FillSamples` で必要な分だけデコードする（ストリーミング）。変更は大きい。AOT でデコード自体を速くする余地もある。
 
 ### 3.5 アセットと IO
 
@@ -188,6 +192,7 @@ dotnet publish -c Release -o bin/publish   # Promete.Experimental.Wasm ディレ
   - `PlayOneShot` が OpenAL を直接使う。`IAudioOutput` の抽象に含める必要がある。
   - 自動再生ポリシーへの対応（ユーザー操作まで `suspended`）。
   - 単一スレッドでの pull 型のため、レイテンシとアンダーランの設計。AudioWorklet 化は今後の課題。
+  - 「別スレッドで重い処理をする」前提のコード（`VorbisAudioSource` の読み込みなど）が、Web ではメインスレッドを塞ぐ（§3.4）。
 
 ### 5.6 入力
 

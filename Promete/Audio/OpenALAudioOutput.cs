@@ -20,6 +20,7 @@ public sealed class OpenALAudioOutput : IAudioOutput
     private const int MinBufferCount = 2;
 
     private readonly AudioDevice _device;
+    private readonly bool _ownsDevice;
     private readonly AL _al;
     private readonly object _threadGate = new();
     private readonly AutoResetEvent _wakeEvent = new(false);
@@ -33,6 +34,7 @@ public sealed class OpenALAudioOutput : IAudioOutput
     private int _channels;
     private int _bufferSizeInFrames;
     private int _bufferCount = 3;
+    private bool _isDisposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenALAudioOutput"/> class.
@@ -40,8 +42,17 @@ public sealed class OpenALAudioOutput : IAudioOutput
     /// </summary>
     /// <param name="device">出力先の ALC デバイス・コンテキストを保持する <see cref="AudioDevice"/>。</param>
     public OpenALAudioOutput(AudioDevice device)
+        : this(device, ownsDevice: false) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OpenALAudioOutput"/> class.
+    /// </summary>
+    /// <param name="device">出力先の ALC デバイス・コンテキストを保持する <see cref="AudioDevice"/>。</param>
+    /// <param name="ownsDevice"><see langword="true"/> の場合、<see cref="Dispose"/> で <paramref name="device"/> も解放します。</param>
+    internal OpenALAudioOutput(AudioDevice device, bool ownsDevice)
     {
         _device = device;
+        _ownsDevice = ownsDevice;
         _al = device.Al;
     }
 
@@ -133,8 +144,16 @@ public sealed class OpenALAudioOutput : IAudioOutput
     /// </summary>
     public void Dispose()
     {
+        if (_isDisposed)
+            return;
+        _isDisposed = true;
+
         Stop();
         _wakeEvent.Dispose();
+
+        // 出力のリソースを破棄した後でデバイスを解放する
+        if (_ownsDevice)
+            _device.Dispose();
     }
 
     private static ALBuffer FindBuffer(ALBuffer[] buffers, uint handle)
