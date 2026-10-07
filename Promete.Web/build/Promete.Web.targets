@@ -1,5 +1,5 @@
 <Project>
-    <!-- Promete.Web を使うアプリのビルド設定。PR2 でパッケージの buildTransitive に移す。 -->
+    <!-- Promete.Web を使うアプリのビルド設定。パッケージでは buildTransitive に入る。リポジトリ内のアプリは、このファイルを手で Import する。 -->
 
     <PropertyGroup>
         <_PrometeWebRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..'))</_PrometeWebRoot>
@@ -64,7 +64,7 @@
     </PropertyGroup>
 
     <!--
-        アセットと、取得するアセットの一覧 (promete-assets.json) を、静的 Web アセットとして登録する。
+        アセットと、取得するアセットの一覧 (promete-assets.json)、既定の index.html / main.js を、静的 Web アセットとして登録する。
         プロジェクトの外にあるファイルは Content からは拾われないので、DefineStaticWebAssets で直接登録する。
     -->
     <Target Name="_PrometeDefineAssets">
@@ -101,6 +101,25 @@
             <_PrometeAssetCandidate Include="$(_PrometeAssetManifest)">
                 <RelativePath>promete-assets.json</RelativePath>
                 <ContentRoot>$(_PrometeAssetDir)</ContentRoot>
+            </_PrometeAssetCandidate>
+
+            <!--
+                既定の index.html / main.js。プロジェクトが同じ名前のファイルを wwwroot に持たないときだけ配る。
+                ファイルごとに判定するので、片方だけ差し替えることもできる。
+            -->
+            <_PrometeAssetCandidate
+                Include="$(_PrometeWebRoot)/defaults/index.html"
+                Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/index.html')"
+            >
+                <RelativePath>index.html</RelativePath>
+                <ContentRoot>$(_PrometeWebRoot)/defaults/</ContentRoot>
+            </_PrometeAssetCandidate>
+            <_PrometeAssetCandidate
+                Include="$(_PrometeWebRoot)/defaults/main.js"
+                Condition="!Exists('$(MSBuildProjectDirectory)/wwwroot/main.js')"
+            >
+                <RelativePath>main.js</RelativePath>
+                <ContentRoot>$(_PrometeWebRoot)/defaults/</ContentRoot>
             </_PrometeAssetCandidate>
         </ItemGroup>
 

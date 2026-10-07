@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Promete.Web が配る既定のページ。プロジェクトに wwwroot/index.html を置くと、そちらが使われる -->
+    <title>Promete</title>
+    <style>
+        html, body { margin: 0; height: 100%; background: #000; }
+        body { display: flex; align-items: center; justify-content: center; }
+        #promete-status { position: fixed; left: 8px; bottom: 8px; margin: 0; color: #ccc; font: 12px monospace; white-space: pre-wrap; }
+    </style>
+    <script type="module" src="./main.js"></script>
+</head>
+<body>
+    <!-- サイズはゲームの設定 (WindowOptions) から実行時に決まる -->
+    <canvas id="canvas"></canvas>
+    <pre id="promete-status">読み込み中...</pre>
+</body>
+</html>

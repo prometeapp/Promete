@@ -17,7 +17,7 @@
 
 4. **Silk.NET に Web 用のウィンドウ / 入力プラットフォームを足さない**（§2.3）。
 5. **パッケージは `Promete.Web` の単一パッケージ。** 既存のバックエンドがプラットフォーム名（`GLDesktop` / `Headless`）で、API も `BuildWithWeb` / `WebBackend` なので、それに揃える。Blazor 向け（`Promete.Web.Blazor`）は、需要が出てから足す（機能モジュールを `main.js` から分けているので、後から足せる。§4.1）。
-6. **カスタマイズは 3 段階すべてを正式にサポートする**（§3.11）。そのために、パッケージの JS モジュールが起動の定型を `startPromete(options)` という 1 つの関数として export する。既定の `main.js` はそれを呼ぶだけにし、利用者が自前の `main.js` を書く場合も同じ関数を呼ぶ。互換性を保つ契約は、この関数の引数と、`index.html` 側の約束（canvas の ID など）だけになる。
+6. **カスタマイズは 3 段階すべてを正式にサポートする**（§3.11）。そのために、パッケージの JS モジュールが起動の定型を `startPromete(options)` という 1 つの関数として export する。既定の `main.js` はそれを呼ぶだけにし、利用者が自前の `main.js` を書く場合も同じ関数を呼ぶ。互換性を保つ契約は、この関数の引数と、`index.html` 側の約束（canvas の ID など）だけになる。段階 1（設定だけ）の設定項目は、まだ作らない（2026-10-07 判断。既定の html は固定。タイトルと canvas のサイズは、C# の `WindowOptions` / `View` から実行時に反映する）。
 
 ---
 
@@ -325,6 +325,8 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 
 **落とし穴**
 - パッケージが自前の `build/<パッケージ ID>.props` を持つと、静的 Web アセットを登録する自動生成の props が上書きされ、JS が 404 になる。自前の props から、`Microsoft.AspNetCore.StaticWebAssets.props`（と `...EndpointsProps`）を明示的に `Import` する必要がある。
+  - `Promete.Web` での対処（PR2）: 静的 Web アセットの SDK は、`build/`・`buildMultiTargeting/`・`buildTransitive/` に `<PackageId>.props` を自動生成し、自前の `buildTransitive/Promete.Web.props` とぶつかる（NU5118 で自前のほうが落ちる）。`StaticWebAssetsDisableProject{Build,BuildMultiTargeting,BuildTransitive}PropsFileGeneration` で自動生成を止め、自前の props から `../build/Microsoft.AspNetCore.StaticWebAssets*.props` を読み込む。
+- `ProjectReference` から作られるパッケージの依存は、既定で `exclude="Build,Analyzers"` になる。そのままだと、`Promete.Web` だけを参照した利用者にコアの SceneGen（アナライザー）と `buildTransitive` が届かない。`PrivateAssets="none"` で除外をなくす。
 - `[JSExport]` / `[JSImport]` を使うコードには `AllowUnsafeBlocks` が必要。パッケージの props で設定できる（上の表）。
 
 **HTML のカスタマイズ（検証済み）**
@@ -431,4 +433,4 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 2. §3.10 の未確認事項のうち、開発体験に直結するもの（IDE デバッグ、`dotnet watch`）を、スパイクで確認する。独自の `index.html` の優先順位は確認済み（§3.11）。トリミングは有効が前提（S2 の CI 固定）。
 3. 着手順（§1.4）に沿って、コアの小さな修正（C7、C8、C2、C6）から。
 4. S1（Silk 側の `calli` 登録）の設計。それまでは、`tools/gen-calli-signatures.cs` で生成したファイルを `Promete.Web/Generated/` にコミットしてつなぐ。
-5. （済）`Promete.Web` の骨組み（PR1: ライブラリと、リポジトリ内のサンプル）。PoC は削除した。次は PR2（NuGet のパッケージ化: `buildTransitive`、既定の `index.html` / `main.js` と利用者による差し替え、ローカルのフィードでの検証）。
+5. （済）`Promete.Web` の骨組み（PR1: ライブラリと、リポジトリ内のサンプル）。PoC は削除した。（済）PR2（NuGet のパッケージ化）。ローカルのフィードで、利用者の csproj が `PackageReference` と `<PrometeAsset>` だけで動くこと、既定の `index.html` / `main.js`、片方ずつの差し替え、`dotnet run` と Release の publish を確認した。バージョンは `2.1.0-preview.1`（コアの 2.1.0 にそろえる）。公開の CI は、リリースのときに作る。
