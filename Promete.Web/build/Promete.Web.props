@@ -1,5 +1,20 @@
 <Project>
-    <!-- Promete.Web を使うアプリのビルド設定。PR2 でパッケージの buildTransitive に移す。 -->
+    <!-- Promete.Web を使うアプリのビルド設定。パッケージでは buildTransitive に入る。リポジトリ内のアプリは、このファイルを手で Import する。 -->
+
+    <!--
+        パッケージの JS (_content/Promete.Web/) を静的 Web アセットとして登録する props。SDK が build/ に生成する。
+        SDK が自動生成する <PackageId>.props の代わりに、ここから読み込む (Promete.Web.csproj を参照)。
+        リポジトリ内では ProjectReference が同じ役割を果たすので、ファイルは無い。
+    -->
+    <Import
+        Project="$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+        Condition="Exists('$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssetEndpoints.props')"
+    />
+    <Import
+        Project="$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssets.props"
+        Condition="Exists('$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssets.props')"
+    />
+
     <PropertyGroup>
         <!-- WebGL2 のコンテキスト生成と、calli のシグネチャ登録のため、ネイティブのシムをリンクする -->
         <WasmBuildNative>true</WasmBuildNative>

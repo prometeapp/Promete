@@ -55,6 +55,21 @@ export function startLoop() {
     requestAnimationFrame(loop);
 }
 
+/** canvas の描画バッファと表示サイズを設定する。拡大はピクセルを保ったまま行う。 */
+export function setCanvasSize(selector, width, height) {
+    const canvas = document.querySelector(selector);
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    canvas.style.imageRendering = 'pixelated';
+}
+
+/** ドキュメントのタイトルを設定する。 */
+export function setTitle(title) {
+    document.title = title;
+}
+
 // マニフェストに載ったアセットを並列に取得し、同期 API (Load(path)) から読めるよう仮想 FS に置く。
 // フォントは FontFace にも登録する。ファミリー名は仮想 FS 上の絶対パス。
 async function preloadAssets(fs, onProgress) {
