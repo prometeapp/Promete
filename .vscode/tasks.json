@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            // Promete.Web.Example を WasmAppHost で起動する。"App url:" が出たら準備完了とみなす
+            "label": "web-example: run",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["run", "--project", "${workspaceFolder}/Promete.Web.Example"],
+            "isBackground": true,
+            // ビルドエラーは $msCompile で拾い、起動の完了は background のパターンで知る
+            "problemMatcher": {
+                "base": "$msCompile",
+                "background": {
+                    "activeBegins": true,
+                    "beginsPattern": "WasmAppHost",
+                    "endsPattern": "App url:"
+                }
+            }
+        },
+        {
+            // デバッグの終了時に、上のタスクを止める。残ったままだと、次の F5 で再ビルドされない
+            "label": "web-example: stop",
+            "type": "shell",
+            "command": "echo ${input:terminateWebExample}",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "terminateWebExample",
+            "type": "command",
+            "command": "workbench.action.tasks.terminate",
+            "args": "web-example: run"
+        }
+    ]
+}

@@ -280,8 +280,14 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 **未確認**
 
 0. （解決済み）Promete を含むアプリが `dotnet run`（Debug ビルド）で動かなかった。Debug ビルドはトリミングをしないので、Silk.NET.SDL の P/Invoke（`GameControllerButtonBind` を返すコールバック）を `ManagedToNativeGenerator` が扱えずにビルドが失敗していた。`Promete.Web` の targets で、P/Invoke の表を作るときだけ Silk.NET.SDL を走査の対象から外して解決した（`PrometeWebPInvokeScanExclude`。アセンブリ自体は配布物に残るが、ブラウザでは読み込まれない）。`dotnet run` での起動と描画、アセットの配信まで確認済み。
-1. IDE（Visual Studio / VS Code / Rider）からのデバッグとステップ実行。導線（`/_framework/debug`）は確認したが、実際のステップ実行は未検証。
-2. `dotnet watch` によるホットリロード（SDK には `_WasmEnableHotReload` の仕組みがある）。
+1. IDE からのデバッグとステップ実行。
+   - **VS Code: 確認済み（2026-10-07）。** サンプルのコードと、Promete のコアのコードの両方で、ブレークポイント、ステップ実行、変数の表示ができた。構成はリポジトリの `.vscode/launch.json` と `.vscode/tasks.json`（F5 でタスクが `dotnet run` を起動し、`App url:` を待ってから Chrome を接続する。デバッグの終了でタスクも止める）。
+     - C# Dev Kit の `blazorwasm` は使えない。Blazor 向けで、このアプリでは「Failed to start WASM managed debug session」で失敗する。
+     - 代わりに js-debug の `"type": "chrome"` に `inspectUri` を指定する。ただし `inspectUri` は、ブラウザとの接続がポートのときだけ使われる（js-debug の実装で確認）。そのため `"port": 9222` が必須。指定しないと、デバッグプロキシがブラウザに接続できない（`DevToolsProxy.Run: ... Unable to connect to the remote server`）。
+     - サンプルの `Properties/launchSettings.json` に `inspectUri` を書き、ポートを 5292 に固定した。
+     - 既知の問題: F5 のたびに「タスク 'web-example: run' は終了せず、'problemMatcher' が定義されていません」というダイアログが出る（「このままデバッグ」で続行できる）。問題マッチャーの書き方を変えても解消しなかった。原因は未調査で、保留。
+   - Visual Studio / Rider: 未確認。
+2. **`dotnet watch` によるホットリロード: 確認済み（2026-10-07）。** 毎フレーム実行されるメソッド（`OnUpdate`）の変更が、約 1.3 秒で、ページの再読み込みもゲームの状態のリセットもなく反映された。一度しか呼ばれないメソッド（`OnStart` など）の変更は、シーンを開き直すまで反映されない（C# のホットリロードの通常の挙動）。デバッガーとの併用は未確認。
 3. Promete 全体の AOT の可否、サイズ、起動時間、性能。
 4. Canvas2D グリフ描画の性能。
 5. IME（非表示 `textarea`）の実装可能性。
@@ -415,7 +421,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 - 事前圧縮（brotli / gzip）の配信設定（サイズが大きいため）。
 - セキュアコンテキスト（HTTPS または `localhost`）: Async Clipboard、AudioWorklet などで必要。
 - COOP / COEP: マルチスレッド（`SharedArrayBuffer`）を使う場合のみ必要。当面は単一スレッドで、不要。
-- 開発時: `dotnet run`（`WasmAppHost`）が、静的ファイルの配信とデバッグ用の URL を提供する（§3.11。JS の編集は再ビルド不要）。`dotnet watch` のホットリロードと、IDE でのステップ実行は未確認（§3.10）。
+- 開発時: `dotnet run`（`WasmAppHost`）が、静的ファイルの配信とデバッグ用の URL を提供する（§3.11。JS の編集は再ビルド不要）。`dotnet watch` のホットリロードと、VS Code でのステップ実行は確認済み（§3.10）。
 
 ---
 
