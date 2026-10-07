@@ -52,7 +52,7 @@ internal sealed class WebBackend : GLBackendBase
 
         _time = new WebTimeProvider { TargetFps = opts.TargetFps, TargetUps = opts.TargetUps };
         InitializeGL(app);
-        _view = new WebGameView(_gl, opts);
+        _view = new WebGameView(_gl, opts, selector);
         InitializeGLView(_view);
 
         Current = this;
