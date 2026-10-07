@@ -201,7 +201,7 @@ AOTを無効にしたい場合は、プロジェクトファイルに次のよ�
 
 ## ページをカスタマイズする
 
-Promete.Web は、既定のHTML（`index.html`）とJavaScript（`main.js`）を用意しています。
+Promete.Web は、既定のHTML（`index.html`）とJavaScript（`main.js`）を用意しています。既定のページは、読み込み中に、画面の中央にプログレスバーを表示します。
 プロジェクトの `wwwroot` フォルダーに同じ名前のファイルを置くと、そちらが使われます。片方だけを置くこともできます。
 
 ### HTML
@@ -234,15 +234,18 @@ var app = PrometeApp.Create()
 ### JavaScript
 
 自分の `main.js` を使う場合は、`startPromete()` を呼んでゲームを起動します。
-読み込みの進み具合や、エラーを受け取ることができます。
+読み込みの進み具合や、ゲームの開始、エラーを受け取ることができます。自分で読み込み画面を作る場合に使います。
 
 ```js title="wwwroot/main.js"
 import { startPromete } from './_content/Promete.Web/promete.js';
 
 await startPromete({
-    onProgress: (loaded, total) => {
-        // アセットの読み込みの進み具合
-        console.log(`読み込み中... ${loaded}/${total}`);
+    onProgress: ({ phase, loaded, total }) => {
+        // 起動の進み具合
+        console.log(`${phase}: ${loaded}/${total}`);
+    },
+    onReady: () => {
+        // 最初のフレームを描画し終えた。読み込み画面を消す
     },
     onError: error => {
         // 起動時、または実行中に起きたエラー
@@ -250,6 +253,12 @@ await startPromete({
     },
 });
 ```
+
+`onProgress` の `phase` は、次の順に進みます。
+
+- `'runtime'`: .NET のランタイムとアセンブリの読み込み。`loaded` / `total` はファイルの数です
+- `'assets'`: `<PrometeAsset>` で指定したアセットの読み込み。`loaded` / `total` はファイルの数です
+- `'starting'`: `Main` と、最初のシーンの `OnStart` の実行。`loaded` / `total` は 0 です
 
 ## デスクトップ版とコードを共有する
 
