@@ -3,7 +3,7 @@
 `DESIGN_NOTES.md`（PoC の検証結果）を受けて、実装に進むための計画をまとめる。
 
 - 前提: PoC で必要だったコアの変更は、すべて正式な形でコアに入った。PoC（`Promete.Experimental.Wasm`）は削除し、ライブラリ `Promete.Web` と、サンプル `Promete.Web.Example` に置き換えた。サンプルを動かすときは `dotnet publish Promete.Web.Example -c Release`（トリミングが必須。§3.11）。
-- 進捗: C7・C8 はコアに入った（#112）。C2・C6、C1（`GLBackendBase`、`IGLGameView`、`BuildWithGLBackend`）も入った。PoC の `WebBackend` は `GLBackendBase` を使う形に書き換え、`InternalsVisibleTo` なしでビルドできる。C3（`IFontProvider` / `BackendBase.SetupFontProvider`）と C4（`IAudioProvider` / `BackendBase.SetupAudioProvider`）も入り、PoC は `CanvasFontProvider` と `WebAudioProvider` を使う。Example の audio のデモ 4 本は、例外なしで起動するようになった（ただし `ogg vorbis.demo` は、`VorbisAudioSource` の読み込みでメインスレッドが約 6 秒止まる。DESIGN_NOTES §3.4。別タスク）。
+- 進捗: C7・C8 はコアに入った（#112）。C2・C6、C1（`GLBackendBase`、`IGLGameView`、`BuildWithGLBackend`）も入った。PoC の `WebBackend` は `GLBackendBase` を使う形に書き換え、`InternalsVisibleTo` なしでビルドできる。C3（`IFontProvider` / `BackendBase.SetupFontProvider`）と C4（`IAudioProvider` / `BackendBase.SetupAudioProvider`）も入り（C5 は見送り。v3 の提案 #123）、PoC は `CanvasFontProvider` と `WebAudioProvider` を使う。Example の audio のデモ 4 本は、例外なしで起動するようになった（ただし `ogg vorbis.demo` は、`VorbisAudioSource` の読み込みでメインスレッドが約 6 秒止まる。DESIGN_NOTES §3.4。別タスク）。
 - 本書の範囲: (1) コアの変更タスク、(2) Silk.NET フォークの変更タスク、(3) Promete.Web の設計、(4) JS と HTML の構成。
 - 確認できていないことは「未確認」「要スパイク」と明記する。
 
@@ -66,12 +66,11 @@
 - 破壊性: なし。デスクトップの既定の挙動は変えない。ワンショットの遅延 / 音質の扱いは、Web 側の実装次第で別途確認が必要。
 - 規模: M。
 
-**C5. IGameView の capability**（種別: 追加）
-- 内容: ビューが対応する機能（位置、フルスクリーン、スクリーンショット、ファイルドロップ、アンチエイリアス無効化など）を問い合わせられるようにする。方針は「未対応の API は無視される。検知はできる」。
-- 方法: `IGameView` に DIM で `Capabilities` を足す（既定は「すべて対応」）。アプリ全体の機能問い合わせ（フォントの機能、オーディオの機能も含む）が必要なら、`PrometeApp.Capabilities` のような集約点も検討する。
-- 破壊性: なし（DIM）。
-- 論点: 粒度（フラグ列挙か、機能名の文字列か）。
-- 規模: S〜M。
+**C5. IGameView の capability**（種別: 追加。**見送り**）
+- 内容: ビューが対応する機能（位置、フルスクリーン、スクリーンショット、ファイルドロップなど）を問い合わせられるようにする。
+- 経緯: `IGameView.IsSupported(GameViewFeature)`（DIM、既定は true）を実装したが（#122）、取り下げた。実装が自己申告する方式は、実装と申告のずれをコンパイラで防げないため。
+- 2.x の方針: 「未対応の API は無視される」は維持し、制約はドキュメント（Web 版のガイド）に書く。ブラウザかどうかの判定は `OperatingSystem.IsBrowser()` を案内する。
+- v3: `IGameView` を機能ごとのインターフェースに分け、型で判定する案を #123 で提案した。
 
 **C6. ループ / ライフサイクルの契約の明文化**（種別: 追加。ドキュメントと小さな API）
 - 方針（合意済み）: `OnStart` がすぐ戻るバックエンドを許す。**毎フレームの `OnUpdate` より前に、必ず `OnStart` が完了していること**を契約にする。
@@ -257,7 +256,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 - Web 版の**非同期ロード API**を別途用意する（例: `PrometeWebAssets.LoadTextureAsync(url)`）。内部では `fetch` → バイト列 → デコード。`HttpClient` のストリームを直接 `Load(Stream)` に渡すと失敗するため（同期読み不可）、バッファリングしてから渡す。
 - プリロードの宣言: `<PrometeAsset Include="assets/**" />` のような MSBuild の項目から、マニフェスト（パス、URL、サイズ、ハッシュ、種類）を生成する（§4.4）。
 - 種類ごとの後処理: フォント（`.ttf`）は、ブラウザの `FontFace` への登録（非同期）をプリロード時に済ませる。
-- フォント: `IGlyphSource` を Canvas2D で実装（PoC で動作済み）。`Font.FromFile` はパスに対応するファミリー名に結びつけ、`GetDefault` は `sans-serif`。制約は、アンチエイリアスの無効化とカーニングが効かないこと（capability で通知）。
+- フォント: `IGlyphSource` を Canvas2D で実装（PoC で動作済み）。`Font.FromFile` はパスに対応するファミリー名に結びつけ、`GetDefault` は `sans-serif`。制約は、アンチエイリアスの無効化とカーニングが効かないこと（ドキュメントに明記）。
 - 性能: グリフごとに `getImageData` を呼ぶ。`GlyphAtlas` がキャッシュするので、文字種の少ないゲームでは問題になりにくいが、**要計測**（`OffscreenCanvas` の検討）。
 - 発展: 画像のデコードをブラウザ（`createImageBitmap`）に任せる最適化。ただし、乗算済みアルファの扱いなど、結果が変わる点に注意。
 
@@ -266,7 +265,7 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 - スモークテスト: `ListDemos` / `OpenDemo` のような JS から呼べる窓口を用意し、ヘッドレスブラウザ（Playwright など）で Example の全デモを 1 本ずつ開いて、フレーム例外を記録する（PoC で実証した方法）。CI に載せるかは要決定。
 - 見た目の検証: スクリーンショット比較は、環境差（フォント、GPU）が大きい。範囲を絞る（図形、スプライトなど）。
 - エラー処理: フレームで起きた例外は、コンソールに出し、オプションでオーバーレイにも出す。回復できない例外が続く場合は、ループを止める。
-- ドキュメント: `Promete.Docs` に Web 版のガイド（セットアップ、制約、capability の一覧）を追加する。
+- ドキュメント: `Promete.Docs` に Web 版のガイド（`guide/other/web.md`。セットアップ、アセット、公開と AOT、ページのカスタマイズ、制約の一覧）を追加した。実験的な機能であることを明記している（Vulkan バックエンドと同じ扱い）。
 
 ### 3.10 スパイクの結果と、残っている確認事項
 
