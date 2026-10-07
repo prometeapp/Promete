@@ -194,6 +194,11 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <returns>終了ステータスコード。</returns>
+    /// <remarks>
+    /// 多くのバックエンドでは、ゲームが終了するまで制御を返しません。
+    /// ただし、ゲームループを外部に委ねるバックエンド (ブラウザなど) では、ゲームの実行中にすぐ制御を返します。
+    /// その場合の戻り値は、<see cref="Exit"/> に渡したステータスコードではありません。
+    /// </remarks>
     public int Run<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
     >()
@@ -468,6 +473,10 @@ public sealed class PrometeApp : IDisposable
         throw new InvalidOperationException("This method must be called from the main thread.");
     }
 
+    /// <summary>
+    /// ゲームを開始します。バックエンドから、<see cref="OnUpdate"/> と <see cref="OnRender"/> より前に 1 度だけ呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnStart()
     {
         // プラグインのインスタンスを取得し、インターフェース実装によって分類
@@ -495,6 +504,10 @@ public sealed class PrometeApp : IDisposable
         Start?.Invoke();
     }
 
+    /// <summary>
+    /// フレームを更新します。バックエンドから、<see cref="OnStart"/> が完了したあとにフレームごとに呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnUpdate()
     {
         PreUpdate?.Invoke();
@@ -516,6 +529,10 @@ public sealed class PrometeApp : IDisposable
         PostUpdate?.Invoke();
     }
 
+    /// <summary>
+    /// フレームをレンダリングします。バックエンドから、<see cref="OnStart"/> が完了したあとにフレームごとに呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnRender()
     {
         if (_renderCommandQueue == null)
@@ -552,6 +569,10 @@ public sealed class PrometeApp : IDisposable
         PostRender?.Invoke();
     }
 
+    /// <summary>
+    /// ゲームを終了し、シーンとリソースを破棄します。バックエンドから、ゲームの終了時に呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnDestroy()
     {
         _currentScene?.OnDestroy();
