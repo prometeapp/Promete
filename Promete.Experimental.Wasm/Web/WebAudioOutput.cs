@@ -50,6 +50,35 @@ public sealed partial class WebAudioOutput : IAudioOutput
     /// <returns>RMS 値。</returns>
     public static double GetRms() => Rms();
 
+    /// <summary>interleaved の float PCM を 1 回だけ再生します。</summary>
+    /// <param name="samples">interleaved の float PCM。</param>
+    /// <param name="channels">チャンネル数。</param>
+    /// <param name="sampleRate">サンプリング周波数。</param>
+    /// <param name="gain">音量。</param>
+    /// <param name="pitch">ピッチ。</param>
+    /// <param name="pan">パン (-1〜1)。</param>
+    /// <returns>再生が終わると完了するタスク。</returns>
+    public static Task PlayOneShot(
+        float[] samples,
+        int channels,
+        int sampleRate,
+        float gain,
+        float pitch,
+        float pan
+    )
+    {
+        var id = PlayOneShotNative(
+            MemoryMarshal.AsBytes(samples.AsSpan()),
+            samples.Length / channels,
+            channels,
+            sampleRate,
+            gain,
+            pitch,
+            pan
+        );
+        return OneShotEnded(id);
+    }
+
     public void Start(
         AudioRenderCallback render,
         int channels,
@@ -101,6 +130,20 @@ public sealed partial class WebAudioOutput : IAudioOutput
         [JSMarshalAs<JSType.MemoryView>] Span<byte> bytes,
         int frames,
         double pitch
+    );
+
+    [JSImport("oneShotEnded", Module)]
+    private static partial Task OneShotEnded(int id);
+
+    [JSImport("playOneShot", Module)]
+    private static partial int PlayOneShotNative(
+        [JSMarshalAs<JSType.MemoryView>] Span<byte> bytes,
+        int frames,
+        int channels,
+        int sampleRate,
+        double gain,
+        double pitch,
+        double pan
     );
 
     [JSImport("queuedSeconds", Module)]

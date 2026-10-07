@@ -2,8 +2,8 @@
 
 `DESIGN_NOTES.md`（PoC の検証結果）を受けて、実装に進むための計画をまとめる。
 
-- 前提: PoC でコアに入れた変更は**巻き戻した**（差分は `core-changes.patch` に保存。`git apply` で再現できる）。そのため `Promete.Experimental.Wasm` は、パッチを当てないとビルドできない。動かすときは、リポジトリのルートで `git apply Promete.Experimental.Wasm/core-changes.patch` を当てて `dotnet publish -c Release`（トリミングが必須。§3.11）し、確認後に `git apply -R` で戻す。
-- 進捗: C7・C8 はコアに入った（#112）。C2・C6、C1（`GLBackendBase`、`IGLGameView`、`BuildWithGLBackend`）も入った。PoC の `WebBackend` は `GLBackendBase` を使う形に書き換え、`InternalsVisibleTo` なしでビルドできる。`core-changes.patch` に残っているのは、C3 のフォントのフックだけ。
+- 前提: PoC で必要だったコアの変更は、すべて正式な形でコアに入った。`Promete.Experimental.Wasm` は、コアをそのまま参照してビルドできる（`core-changes.patch` は削除した）。動かすときは `dotnet publish -c Release`（トリミングが必須。§3.11）。
+- 進捗: C7・C8 はコアに入った（#112）。C2・C6、C1（`GLBackendBase`、`IGLGameView`、`BuildWithGLBackend`）も入った。PoC の `WebBackend` は `GLBackendBase` を使う形に書き換え、`InternalsVisibleTo` なしでビルドできる。C3（`IFontProvider` / `BackendBase.SetupFontProvider`）と C4（`IAudioProvider` / `BackendBase.SetupAudioProvider`）も入り、PoC は `CanvasFontProvider` と `WebAudioProvider` を使う。Example の audio のデモ 4 本は、例外なしで起動するようになった（`ogg vorbis.demo` は読み込みが進まない。原因は未調査）。
 - 本書の範囲: (1) コアの変更タスク、(2) Silk.NET フォークの変更タスク、(3) Promete.Wasm の設計、(4) JS と HTML の構成。
 - 確認できていないことは「未確認」「要スパイク」と明記する。
 

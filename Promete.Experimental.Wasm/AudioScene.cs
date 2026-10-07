@@ -10,7 +10,7 @@ namespace Promete.Experimental.Wasm;
 
 /// <summary>
 /// オーディオの検証用シーン。WAV (SE) と Ogg Vorbis (BGM) を、Web Audio 経由で再生する。
-/// 1: BGM 再生/停止、2: WAV を Play、3: WAV を PlayOneShot (OpenAL 直叩きのため失敗する想定)。
+/// 1: BGM 再生/停止、2: WAV を Play、3: WAV を PlayOneShot。
 /// </summary>
 public class AudioScene(Keyboard keyboard) : Scene
 {
@@ -31,7 +31,7 @@ public class AudioScene(Keyboard keyboard) : Scene
         _status = new Text("audio", font, Color.White).Location(10, 10);
         Root.Add(_status);
 
-        _player = new AudioPlayer(new WebAudioOutput());
+        _player = new AudioPlayer();
         _bgm = new VorbisAudioSource("/assets/GB-Action-C02-2.ogg");
         _wav = new WaveAudioSource("/assets/lineclear.wav");
     }

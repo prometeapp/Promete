@@ -8,10 +8,10 @@ let rate = 44100;
 let nextTime = 0;
 let sources = [];
 
-export function start(sampleRate, channelCount) {
-    rate = sampleRate;
-    channels = channelCount;
-    ctx = new AudioContext({ sampleRate });
+// AudioContext を必要になった時点で作る。ストリーム出力とワンショット再生で共有する
+function ensureContext(sampleRate) {
+    if (ctx) return;
+    ctx = sampleRate ? new AudioContext({ sampleRate }) : new AudioContext();
     analyser = ctx.createAnalyser();
     analyser.fftSize = 2048;
     output = ctx.createGain();
@@ -20,9 +20,51 @@ export function start(sampleRate, channelCount) {
     nextTime = 0;
 
     // ブラウザの自動再生ポリシー: ユーザー操作があるまで AudioContext は suspended のまま
-    const resume = () => { if (ctx.state !== 'running') ctx.resume(); };
+    const resume = () => { if (ctx && ctx.state !== 'running') ctx.resume(); };
     for (const type of ['pointerdown', 'keydown', 'mousedown', 'touchstart'])
         window.addEventListener(type, resume);
+}
+
+export function start(sampleRate, channelCount) {
+    rate = sampleRate;
+    channels = channelCount;
+    ensureContext(sampleRate);
+}
+
+// 再生中のワンショットの終了を待つ Promise。id で引く
+const oneShots = new Map();
+let nextOneShotId = 1;
+
+// interleaved float32 PCM を 1 回だけ再生し、id を返す。終了は oneShotEnded(id) で待つ
+// (MemoryView は Promise を返す関数に渡せないため、開始と待機を分けている)
+export function playOneShot(bytes, frames, channelCount, sampleRate, gain, pitch, pan) {
+    ensureContext(0);
+    const copy = bytes.slice();
+    const samples = new Float32Array(copy.buffer, copy.byteOffset, copy.byteLength / 4);
+    const buffer = ctx.createBuffer(channelCount, frames, sampleRate);
+    for (let c = 0; c < channelCount; c++) {
+        const data = buffer.getChannelData(c);
+        for (let i = 0; i < frames; i++) data[i] = samples[i * channelCount + c];
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = pitch;
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = gain;
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = pan;
+    source.connect(gainNode).connect(panner).connect(output);
+    const id = nextOneShotId++;
+    oneShots.set(id, new Promise(resolve => { source.onended = () => resolve(); }));
+    source.start();
+    return id;
+}
+
+export function oneShotEnded(id) {
+    const promise = oneShots.get(id) ?? Promise.resolve();
+    oneShots.delete(id);
+    return promise;
 }
 
 // bytes: float32 の interleaved PCM を、メモリビュー (MemoryView) で受け取る
