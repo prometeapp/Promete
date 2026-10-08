@@ -273,7 +273,7 @@ MyGame.Web/        Web版の起動部分
 ### 共有のプロジェクト
 
 通常のクラスライブラリとして作り、`Promete` パッケージを参照します。
-バージョンは、Web版で使う `Promete.Web` とそろえてください。
+バージョンは、`Promete.Web` が必要とする `Promete` のバージョン以上にしてください。
 
 ```xml title="MyGame/MyGame.csproj"
 <Project Sdk="Microsoft.NET.Sdk">
