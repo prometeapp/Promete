@@ -235,7 +235,6 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
     private static ReferencedResult CollectFromReferences(Compilation compilation)
     {
         var accessible = ImmutableArray.CreateBuilder<SceneInfo>();
-        var inaccessible = ImmutableArray.CreateBuilder<string>();
         var scanned = 0;
         var pruned = 0;
 
@@ -253,25 +252,16 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
                 if (!IsRegistrableScene(type))
                     continue;
 
-                // 他アセンブリの internal 型は、そのライブラリ自身の生成コードが登録する。
+                // 他アセンブリの internal 型は、そのライブラリ自身の生成コードが登録する
+                // (ライブラリ側のビルドで可視性の問題は報告される) ため、ここでは無視する。
                 if (!IsExternallyVisible(type))
-                {
-                    inaccessible.Add(
-                        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                    );
                     continue;
-                }
 
                 accessible.Add(Describe(type, true));
             }
         }
 
-        return new ReferencedResult(
-            accessible.ToImmutable(),
-            inaccessible.ToImmutable(),
-            scanned,
-            pruned
-        );
+        return new ReferencedResult(accessible.ToImmutable(), scanned, pruned);
     }
 
     private static bool ReferencesCore(IAssemblySymbol asm)
@@ -326,9 +316,6 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
     {
         // 実行可能プロジェクトでのみ参照アセンブリ分を集約する。ライブラリは自分の分だけ。
         var isExecutable = outputType is "Exe" or "WinExe";
-
-        foreach (var name in referenced.Inaccessible)
-            spc.ReportDiagnostic(Diagnostic.Create(_unreachableScene, Location.None, name));
 
         var registrable = new List<SceneInfo>();
         foreach (
@@ -421,7 +408,6 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
 
     private readonly record struct ReferencedResult(
         ImmutableArray<SceneInfo> Accessible,
-        ImmutableArray<string> Inaccessible,
         int Scanned,
         int Pruned
     );
