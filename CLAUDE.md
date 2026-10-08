@@ -83,6 +83,8 @@ Promete.Example/            - [Demo]属性を使用したデモプロジェク�
 Promete.ImGui/              - ImGui統合プラグイン
 Promete.MeltySynth/         - MIDI/SoundFontプラグイン
 Promete.Test/               - xUnitテストスイート
+Promete.Web/                - ブラウザ (.NET WebAssembly + WebGL2) 向けバックエンド。設計メモ (DESIGN_NOTES.md / DESIGN_PLAN.md) もここにある
+Promete.Web.Example/        - Promete.Web のサンプル。`dotnet run --project Promete.Web.Example` で動かす (slnx には入れていない)
 Promete.HeadlessTest/       - ヘッドレスバックエンド用テストプロジェクト
 Promete.Docs/               - ドキュメントサイト (Astro/Starlight)
 ```
@@ -269,6 +271,11 @@ Promete は Silk.NET の net10.0 専用フォーク (`prometeapp/Silk.NET`) を�
 
 ネイティブバイナリはフォークしていないので、`Ultz.Native.GLFW` や
 `Silk.NET.OpenAL.Soft.Native` など upstream のパッケージを参照しています。
+
+**`Promete.Silk.OpenGL` のバージョンを上げたら、`Promete.Web/Generated/` を再生成すること。**
+ブラウザでは、Silk.NET が GL 関数を呼ぶ calli のシグネチャを事前に登録する必要があり、その登録コードを
+`tools/gen-calli-signatures.cs` で生成してコミットしています。忘れるとビルドは通り、Web でだけ実行時に落ちます。
+手順は `Promete.Web/Generated/README.md` を参照してください。
 
 ### バックエンドの明示登録
 

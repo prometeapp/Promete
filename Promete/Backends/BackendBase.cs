@@ -1,5 +1,8 @@
+using Promete.Audio;
 using Promete.Backends.SilkNetCommon;
 using Promete.Graphics;
+using Promete.Graphics.Fonts;
+using Promete.Graphics.Fonts.FreeType;
 using Promete.Windowing;
 
 namespace Promete.Backends;
@@ -63,8 +66,31 @@ public abstract class BackendBase
     public abstract IShaderFactory SetupShaderFactory();
 
     /// <summary>
+    /// <see cref="Font"/> の生成に用いる <see cref="IFontProvider"/> をエンジンに提供します。
+    /// ゲームを初期化する際に1度だけ呼び出されます。
+    /// </summary>
+    /// <returns>既定では、FreeType とシステムフォントを用いる実装を返します。</returns>
+    public virtual IFontProvider SetupFontProvider() => FreeTypeFontProvider.Shared;
+
+    /// <summary>
+    /// <see cref="AudioPlayer"/> が音声の出力に用いる <see cref="IAudioProvider"/> をエンジンに提供します。
+    /// ゲームを初期化する際に1度だけ呼び出されます。
+    /// </summary>
+    /// <returns>既定では、OpenAL を用いる実装を返します。</returns>
+    public virtual IAudioProvider SetupAudioProvider() => OpenALAudioProvider.Shared;
+
+    /// <summary>
     /// ゲームを起動するよう要求された場合の処理を定義します。
     /// </summary>
+    /// <remarks>
+    /// 実装は、<see cref="PrometeApp.OnStart"/> を 1 度だけ呼び出し、それが完了してから
+    /// <see cref="PrometeApp.OnUpdate"/> と <see cref="PrometeApp.OnRender"/> をフレームごとに呼び出す必要があります。
+    /// <para>
+    /// このメソッドは、ゲームループが終わるまでブロックしても、ゲームループを外部
+    /// (ブラウザの <c>requestAnimationFrame</c> など) に委ねてすぐに戻ってもかまいません。
+    /// すぐに戻る場合、<see cref="PrometeApp.Run()"/> はゲームの実行中に制御を返します。
+    /// </para>
+    /// </remarks>
     public abstract void OnStart(PrometeApp app);
 
     /// <summary>

@@ -8,7 +8,8 @@
       "Promete.ImGui\\Promete.ImGui.csproj",
       "Promete.MeltySynth\\Promete.MeltySynth.csproj",
       "Promete.SceneGen\\Promete.SceneGen.csproj",
-      "Promete.Test\\Promete.Test.csproj"
+      "Promete.Test\\Promete.Test.csproj",
+      "Promete.Web\\Promete.Web.csproj"
     ]
   }
 }

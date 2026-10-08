@@ -11,7 +11,7 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 public class GLEndMaskCommandRunner(IGameView view, GLRenderState state)
     : CommandRunner<EndMaskCommand>
 {
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
 
     public override void Execute(EndMaskCommand command)
     {

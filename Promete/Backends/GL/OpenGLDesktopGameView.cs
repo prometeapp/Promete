@@ -13,7 +13,7 @@ using IWindow = Silk.NET.Windowing.IWindow;
 
 namespace Promete.Backends.GL;
 
-public class OpenGLDesktopGameView : IGameView
+public class OpenGLDesktopGameView : IGLGameView
 {
     private byte[] _screenshotBuffer = [];
     private readonly PrometeApp _app;
@@ -36,6 +36,9 @@ public class OpenGLDesktopGameView : IGameView
     public Silk.NET.OpenGL.GL GL { get; set; } = null!;
 
     public IWindow NativeWindow { get; }
+
+    public VectorInt FramebufferSize =>
+        new(NativeWindow.FramebufferSize.X, NativeWindow.FramebufferSize.Y);
 
     public VectorInt Location
     {

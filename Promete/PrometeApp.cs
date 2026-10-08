@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Promete.Audio;
 using Promete.Backends;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -27,6 +28,8 @@ public sealed class PrometeApp : IDisposable
 
     private readonly Thread _mainThread;
     private readonly ConcurrentQueue<Action> _nextFrameQueue = new();
+    private static PrometeApp? _current;
+
     private readonly List<Type> _pluginTypes;
     private readonly Stack<Scene> _sceneStack = new();
 
@@ -112,8 +115,8 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public static PrometeApp Current
     {
-        get => field ?? throw new InvalidOperationException("Promete is not initialized.");
-        private set;
+        get => _current ?? throw new InvalidOperationException("Promete is not initialized.");
+        private set => _current = value;
     }
 
     /// <summary>
@@ -167,6 +170,21 @@ public sealed class PrometeApp : IDisposable
     public List<Material> PostProcessMaterials { get; } = [];
 
     /// <summary>
+    /// 実行中の <see cref="PrometeApp" /> を取得します。初期化されていない場合は <see langword="null"/> を返します。
+    /// </summary>
+    internal static PrometeApp? CurrentOrNull => _current;
+
+    /// <summary>
+    /// バックエンドが提供する <see cref="IFontProvider"/> を取得します。
+    /// </summary>
+    internal IFontProvider FontProvider { get; private set; } = null!;
+
+    /// <summary>
+    /// バックエンドが提供する <see cref="IAudioProvider"/> を取得します。
+    /// </summary>
+    internal IAudioProvider AudioProvider { get; private set; } = null!;
+
+    /// <summary>
     /// Promete アプリケーションを作成します。
     /// </summary>
     /// <returns></returns>
@@ -194,6 +212,11 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     /// <typeparam name="TScene">実行時に呼び出されるシーン。</typeparam>
     /// <returns>終了ステータスコード。</returns>
+    /// <remarks>
+    /// 多くのバックエンドでは、ゲームが終了するまで制御を返しません。
+    /// ただし、ゲームループを外部に委ねるバックエンド (ブラウザなど) では、ゲームの実行中にすぐ制御を返します。
+    /// その場合の戻り値は、<see cref="Exit"/> に渡したステータスコードではありません。
+    /// </remarks>
     public int Run<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TScene
     >()
@@ -332,7 +355,17 @@ public sealed class PrometeApp : IDisposable
     {
         var previous = _currentScene;
         _currentScene?.OnDestroy();
-        _currentScene = GetScene(typeScene);
+        try
+        {
+            _currentScene = GetScene(typeScene);
+        }
+        catch
+        {
+            // 破棄済みのシーンを現在のシーンとして残すと、次の遷移で二重に破棄してしまう
+            _currentScene = null;
+            throw;
+        }
+
         SceneWillChange?.Invoke(
             new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
         );
@@ -363,7 +396,22 @@ public sealed class PrometeApp : IDisposable
             _currentScene.OnPause();
         }
 
-        _currentScene = GetScene(typeScene);
+        try
+        {
+            _currentScene = GetScene(typeScene);
+        }
+        catch
+        {
+            // プッシュ前の状態に戻す。戻さないと、現在のシーンがスタックにも残ったままになる
+            if (previous != null)
+            {
+                _sceneStack.Pop();
+                previous.OnResume();
+            }
+
+            throw;
+        }
+
         SceneWillChange?.Invoke(
             new SceneTransitionEventArgs(SceneTransitionType.Push, previous, _currentScene)
         );
@@ -443,6 +491,10 @@ public sealed class PrometeApp : IDisposable
         throw new InvalidOperationException("This method must be called from the main thread.");
     }
 
+    /// <summary>
+    /// ゲームを開始します。バックエンドから、<see cref="OnUpdate"/> と <see cref="OnRender"/> より前に 1 度だけ呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnStart()
     {
         // プラグインのインスタンスを取得し、インターフェース実装によって分類
@@ -470,6 +522,10 @@ public sealed class PrometeApp : IDisposable
         Start?.Invoke();
     }
 
+    /// <summary>
+    /// フレームを更新します。バックエンドから、<see cref="OnStart"/> が完了したあとにフレームごとに呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnUpdate()
     {
         PreUpdate?.Invoke();
@@ -491,6 +547,10 @@ public sealed class PrometeApp : IDisposable
         PostUpdate?.Invoke();
     }
 
+    /// <summary>
+    /// フレームをレンダリングします。バックエンドから、<see cref="OnStart"/> が完了したあとにフレームごとに呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnRender()
     {
         if (_renderCommandQueue == null)
@@ -527,6 +587,10 @@ public sealed class PrometeApp : IDisposable
         PostRender?.Invoke();
     }
 
+    /// <summary>
+    /// ゲームを終了し、シーンとリソースを破棄します。バックエンドから、ゲームの終了時に呼び出されます。
+    /// </summary>
+    /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnDestroy()
     {
         _currentScene?.OnDestroy();
@@ -548,6 +612,8 @@ public sealed class PrometeApp : IDisposable
         var inputContext = backend.SetupInputProvider();
         var renderTextureProvider = backend.SetupRenderTextureProvider();
         _screenBlitter = backend.SetupScreenBlitter();
+        FontProvider = backend.SetupFontProvider();
+        AudioProvider = backend.SetupAudioProvider();
 
         _services.AddSingleton(Time);
         _services.AddSingleton(View);
@@ -557,6 +623,8 @@ public sealed class PrometeApp : IDisposable
         _services.AddSingleton(inputContext);
         _services.AddSingleton(renderTextureProvider);
         _services.AddSingleton(_screenBlitter);
+        _services.AddSingleton(FontProvider);
+        _services.AddSingleton(AudioProvider);
         _provider = _services.BuildServiceProvider();
         Current = this;
     }
@@ -576,15 +644,24 @@ public sealed class PrometeApp : IDisposable
         // DefaultScene を明示的に登録
         _services.AddTransient<DefaultScene>();
 
-        var entryAsm =
-            Assembly.GetEntryAssembly()
-            ?? throw new InvalidOperationException("There is no entry assembly.");
+        // エントリアセンブリに加え、UseScenesFrom で指定されたアセンブリも探索する。
+        // ブラウザ (WebAssembly) などエントリアセンブリを取得できない環境では、UseScenesFrom だけを使う。
+        var assemblies = new List<Assembly>();
+        if (Assembly.GetEntryAssembly() is { } entryAsm)
+        {
+            assemblies.Add(entryAsm);
+        }
 
-        // エントリアセンブリに加え、UseScenesFrom で指定されたアセンブリも探索する
-        var assemblies = new List<Assembly> { entryAsm };
-        foreach (var asm in additionalAssemblies.Where(asm => asm != entryAsm))
+        foreach (var asm in additionalAssemblies.Where(asm => !assemblies.Contains(asm)))
         {
             assemblies.Add(asm);
+        }
+
+        if (assemblies.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "There is no entry assembly. Specify the assembly containing scenes with UseScenesFrom."
+            );
         }
 
         foreach (var asm in assemblies)

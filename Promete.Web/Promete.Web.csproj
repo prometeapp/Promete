@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- JSImport / JSExport のソース生成に必要 -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!--
+            静的 Web アセットの SDK は、パッケージに <PackageId>.props を自動生成する。それが自前の
+            buildTransitive/Promete.Web.props とぶつかるので、生成を止め、自前の props から読み込む。
+        -->
+        <StaticWebAssetsDisableProjectBuildPropsFileGeneration>true</StaticWebAssetsDisableProjectBuildPropsFileGeneration>
+        <StaticWebAssetsDisableProjectBuildMultiTargetingPropsFileGeneration>true</StaticWebAssetsDisableProjectBuildMultiTargetingPropsFileGeneration>
+        <StaticWebAssetsDisableProjectBuildTransitivePropsFileGeneration>true</StaticWebAssetsDisableProjectBuildTransitivePropsFileGeneration>
+        <!-- 上のとおり build/ に <PackageId>.props を置かないことは意図どおり -->
+        <NoWarn>$(NoWarn);NU5129</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!--
+            利用者が Promete.Web だけを参照しても、コアの SceneGen (アナライザー) と buildTransitive が
+            届くよう、パッケージの依存から資産を除外しない (既定では Build と Analyzers が除外される)。
+        -->
+        <ProjectReference Include="..\Promete\Promete.csproj" PrivateAssets="none" />
+    </ItemGroup>
+
+    <!--
+        利用者のアプリのビルドで使うファイル。リポジトリでの配置 (build/ と native/ などが同じ階層) を、
+        パッケージでもそのまま保つ。build/ の targets は、1 つ上の階層から native/ などを参照する。
+    -->
+    <ItemGroup>
+        <None
+            Include="build/Promete.Web.props;build/Promete.Web.targets"
+            Pack="true"
+            PackagePath="buildTransitive"
+        />
+        <None Include="native/promete_web.c" Pack="true" PackagePath="native" />
+        <None Include="Generated/calli_signatures.g.c" Pack="true" PackagePath="Generated" />
+        <None Include="defaults/index.html;defaults/main.js" Pack="true" PackagePath="defaults" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <PackageId>Promete.Web</PackageId>
+        <Version>2.1.0-preview.1</Version>
+        <PackageTags>Game Engine;2D;gamedev;games;gaming;WebAssembly;wasm;WebGL;browser</PackageTags>
+        <Description>Browser (.NET WebAssembly + WebGL2) backend for Promete</Description>
+        <Authors>Ebise Lutica</Authors>
+        <Copyright>(C)2024-2026 Promete Developers</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/prometeapp/Promete</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    </PropertyGroup>
+</Project>

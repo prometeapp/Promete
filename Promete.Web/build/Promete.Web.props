@@ -1,0 +1,35 @@
+<Project>
+    <!-- Promete.Web を使うアプリのビルド設定。パッケージでは buildTransitive に入る。リポジトリ内のアプリは、このファイルを手で Import する。 -->
+
+    <!--
+        パッケージの JS (_content/Promete.Web/) を静的 Web アセットとして登録する props。SDK が build/ に生成する。
+        SDK が自動生成する <PackageId>.props の代わりに、ここから読み込む (Promete.Web.csproj を参照)。
+        リポジトリ内では ProjectReference が同じ役割を果たすので、ファイルは無い。
+    -->
+    <Import
+        Project="$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+        Condition="Exists('$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssetEndpoints.props')"
+    />
+    <Import
+        Project="$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssets.props"
+        Condition="Exists('$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssets.props')"
+    />
+
+    <PropertyGroup>
+        <!-- WebGL2 のコンテキスト生成と、calli のシグネチャ登録のため、ネイティブのシムをリンクする -->
+        <WasmBuildNative>true</WasmBuildNative>
+        <EmccExtraLDFlags>$(EmccExtraLDFlags) -lGL -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES3=1 -sGL_ENABLE_GET_PROC_ADDRESS=1 -sALLOW_TABLE_GROWTH=1</EmccExtraLDFlags>
+        <!-- JSImport / JSExport のソース生成に必要 -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!--
+            Release では AOT を既定にする。インタプリタより 10 倍以上速い (20000 スプライトで 5.6fps → 60fps 以上)。
+            代わりに publish が約 3.7 倍遅く、転送サイズが約 1.6MB 増える。利用者が csproj で
+            RunAOTCompilation を指定すれば、そちらが優先される (この props はプロジェクト本体より先に評価される)。
+            Debug (dotnet run) はデバッガーを使えるインタプリタのまま。
+        -->
+        <RunAOTCompilation
+            Condition="'$(RunAOTCompilation)' == '' and '$(Configuration)' == 'Release'"
+            >true</RunAOTCompilation
+        >
+    </PropertyGroup>
+</Project>

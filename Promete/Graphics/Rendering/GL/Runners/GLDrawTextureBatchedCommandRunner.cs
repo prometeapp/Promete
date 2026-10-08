@@ -21,7 +21,7 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view)
     // per-instance: mat4(16) + vec4 tintColor(4) + vec4 uvRect(4) = 24 floats
     private const int InstanceStride = 24;
 
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
     private bool _initialized;
 
     private float[] _instanceData = new float[InitialInstanceCapacity * InstanceStride];
@@ -188,14 +188,16 @@ internal class GLDrawTextureBatchedCommandRunner(IGameView view)
 
         // シェーダーをコンパイル・リンク
         var vsh = gl.CreateShader(ShaderType.VertexShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             vsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.vert")
         );
         gl.CompileShader(vsh);
 
         var fsh = gl.CreateShader(ShaderType.FragmentShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             fsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture_instanced.frag")
         );

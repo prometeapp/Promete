@@ -14,7 +14,7 @@ namespace Promete.GLDesktop;
 /// </summary>
 internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
 {
-    private readonly OpenGLDesktopGameView _view;
+    private readonly IGLGameView _view;
     private readonly IRenderTextureProvider _provider;
 
     private Material _defaultMaterial = null!;
@@ -34,7 +34,7 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
 
     public GLScreenBlitter(IGameView view, IRenderTextureProvider provider)
     {
-        _view = (OpenGLDesktopGameView)view;
+        _view = (IGLGameView)view;
         _provider = provider;
         _view.Resize += OnViewResize;
     }
@@ -79,7 +79,7 @@ internal sealed class GLScreenBlitter : IScreenBlitter, IDisposable
 
         // バッファへの描画結果をスクリーンへ描画（物理ピクセル全体を覆う）
         gl.BindFramebuffer(GLEnum.Framebuffer, 0);
-        var fb = _view.NativeWindow.FramebufferSize;
+        var fb = _view.FramebufferSize;
         gl.Viewport(0, 0, (uint)fb.X, (uint)fb.Y);
         BlitQuad(gl, src, material: _defaultMaterial);
 

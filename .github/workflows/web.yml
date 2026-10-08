@@ -1,0 +1,50 @@
+# Promete.Web のサンプルをビルドし、ブラウザ向けの成果物が作れることを確かめる。
+# Web だけで壊れるもの (targets、トリミング、ネイティブのリンク) は、他の CI では検出できない。
+# 実行時の確認 (ヘッドレスブラウザ) はしない。
+
+name: Web Build
+
+on:
+  push:
+    branches: [ "main", "master", "develop", "v2", "feature/**" ]
+    paths-ignore: [ "Promete.Docs/**", "plugins/**", "**.md" ]
+  pull_request:
+    paths-ignore: [ "Promete.Docs/**", "plugins/**", "**.md" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    # ネイティブのシムを Emscripten でリンクするために必要
+    - name: Install wasm-tools workload
+      run: dotnet workload install wasm-tools
+
+    # dotnet run の経路。トリミングしないので、P/Invoke の表の生成 (PrometeWebPInvokeScanExclude) を確かめる
+    - name: Build (Debug)
+      run: dotnet build Promete.Web.Example/Promete.Web.Example.csproj --configuration Debug
+
+    # 公開の経路。AOT は数分かかるので、ここではインタプリタで確かめる
+    - name: Publish (Release)
+      run: >
+        dotnet publish Promete.Web.Example/Promete.Web.Example.csproj
+        --configuration Release
+        -p:RunAOTCompilation=false
+        --output out
+
+    - name: Check output
+      run: |
+        for f in index.html main.js promete-assets.json _content/Promete.Web/promete.js; do
+          test -f "out/wwwroot/$f" || { echo "::error::out/wwwroot/$f が無い"; exit 1; }
+        done
+        ls out/wwwroot/_framework/dotnet.native.*.wasm

@@ -14,7 +14,7 @@ namespace Promete.Graphics.Rendering.GL.Runners;
 /// </summary>
 public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPrimitiveCommand>
 {
-    private readonly OpenGLDesktopGameView _view = (OpenGLDesktopGameView)view;
+    private readonly IGLGameView _view = (IGLGameView)view;
     private uint _ebo;
     private bool _initialized;
     private uint _shader;
@@ -220,7 +220,8 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
 
         // 頂点シェーダーをリソースから読み込んでコンパイルする
         var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             vsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.vert")
         );
@@ -228,7 +229,8 @@ public class GLDrawPrimitiveCommandRunner(IGameView view) : CommandRunner<DrawPr
 
         // フラグメントシェーダーをリソースから読み込んでコンパイルする
         var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             fsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.primitive.frag")
         );

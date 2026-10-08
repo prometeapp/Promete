@@ -49,7 +49,7 @@ public class GLMaskedContainerHelper(
 
         if (!_initialized)
             return;
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // シェーダーとバッファを削除
         gl.DeleteProgram(_maskShader);
@@ -69,11 +69,12 @@ public class GLMaskedContainerHelper(
 
     private void Initialize()
     {
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // マスク適用用のシェーダーをコンパイル
         var vsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             vsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.vert")
         );
@@ -87,7 +88,8 @@ public class GLMaskedContainerHelper(
         }
 
         var fsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             fsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.masked.frag")
         );
@@ -119,7 +121,8 @@ public class GLMaskedContainerHelper(
 
         // ステンシル書き込み用のシェーダーをコンパイル
         var svsh = gl.CreateShader(GLEnum.VertexShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             svsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.texture.vert")
         );
@@ -132,7 +135,8 @@ public class GLMaskedContainerHelper(
         }
 
         var sfsh = gl.CreateShader(GLEnum.FragmentShader);
-        gl.ShaderSource(
+        GLHelper.ShaderSource(
+            gl,
             sfsh,
             EmbeddedResource.GetResourceAsString("Promete.Resources.shaders.stencil_mask.frag")
         );
@@ -303,7 +307,7 @@ public class GLMaskedContainerHelper(
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // モデル行列を計算
         var size = node.Size;
@@ -353,7 +357,7 @@ public class GLMaskedContainerHelper(
     {
         PrometeApp.Current.ThrowIfNotMainThread();
         EnsureInitialized();
-        var gl = ((OpenGLDesktopGameView)app.View).GL;
+        var gl = ((IGLGameView)app.View).GL;
 
         // モデル行列を計算
         var size = node.Size;

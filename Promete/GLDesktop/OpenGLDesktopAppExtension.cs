@@ -1,7 +1,4 @@
 using Promete.Backends.GL;
-using Promete.Graphics.Rendering;
-using Promete.Graphics.Rendering.GL;
-using Promete.Graphics.Rendering.GL.Runners;
 using Promete.Windowing;
 
 namespace Promete.GLDesktop;
@@ -21,33 +18,6 @@ public static class OpenGLDesktopAppExtension
         WindowOptions? opts = null
     )
     {
-        var app = builder
-            .Use<GLMaskedContainerHelper>()
-            .Use<GLRenderState>()
-            // GL CommandRunner 群
-            .Use<GLDrawTextureBatchedCommandRunner>()
-            .Use<GLDrawPrimitiveCommandRunner>()
-            .Use<GLBeginTrimCommandRunner>()
-            .Use<GLEndTrimCommandRunner>()
-            .Use<GLBeginStencilMaskCommandRunner>()
-            .Use<GLBeginAlphaMaskCommandRunner>()
-            .Use<GLEndMaskCommandRunner>()
-            .Use<GLDrawPieTextureCommandRunner>()
-            .Build<OpenGLDesktopBackend>(opts);
-
-        // ビルド後にランナーをキューへ一括紐付け
-        app.GetPlugin<RenderCommandQueue>()
-            .RegisterRunnerRange(
-                app.GetPlugin<GLDrawTextureBatchedCommandRunner>(),
-                app.GetPlugin<GLDrawPrimitiveCommandRunner>(),
-                app.GetPlugin<GLBeginTrimCommandRunner>(),
-                app.GetPlugin<GLEndTrimCommandRunner>(),
-                app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
-                app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
-                app.GetPlugin<GLEndMaskCommandRunner>(),
-                app.GetPlugin<GLDrawPieTextureCommandRunner>()
-            );
-
-        return app;
+        return builder.BuildWithGLBackend<OpenGLDesktopBackend>(opts);
     }
 }

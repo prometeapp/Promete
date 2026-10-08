@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Promete.Web.Example を起動し、Chrome から C# をデバッグする。
+            // C# Dev Kit の blazorwasm は Blazor 向けで、このアプリでは起動に失敗するため、js-debug を使う。
+            // inspectUri は、ブラウザとの接続がポート (port) のときだけ使われるので、port を指定する。
+            "name": "Promete.Web.Example (Chrome)",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5292/",
+            "port": 9222,
+            "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
+            "preLaunchTask": "web-example: run",
+            "postDebugTask": "web-example: stop"
+        }
+    ]
+}
