@@ -135,7 +135,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         Click?.Invoke(
             new MouseButtonEventArgs(
                 id,
-                (VectorInt)Vector.From(pos / (app.View.Scale * app.View.PixelRatio))
+                (VectorInt)Vector.From(pos / app.View.Scale)
             )
         );
     }
@@ -150,7 +150,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         ButtonDown?.Invoke(
             new MouseButtonEventArgs(
                 id,
-                VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))
+                VectorInt.From(mouse.Position / app.View.Scale)
             )
         );
     }
@@ -165,14 +165,14 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         ButtonUp?.Invoke(
             new MouseButtonEventArgs(
                 id,
-                VectorInt.From(mouse.Position / (app.View.Scale * app.View.PixelRatio))
+                VectorInt.From(mouse.Position / app.View.Scale)
             )
         );
     }
 
     private void OnMouseMove(IMouse mouse, Vector2 pos)
     {
-        pos /= app.View.Scale * app.View.PixelRatio;
+        pos /= app.View.Scale;
         Move?.Invoke(new MouseEventArgs((VectorInt)Vector.From(pos)));
 
         // マウスが画面に出入りしたときのイベント発火条件をチェックする
