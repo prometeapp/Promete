@@ -309,11 +309,20 @@ NativeAOT ではシーン型ごと削除されて一覧が空になります。
 
 - ドキュメントは**初学者向け**に、段階的な説明で記述されています
 - メインドキュメントは `Promete.Docs/` にあります (Astro/Starlightフレームワーク)
-- 目次構造は `Promete.Docs/toc.md` で定義されています
 - 利用者向けの Agent Skill を `plugins/` に置き、`.claude-plugin/marketplace.json` で配布している
   - `promete`: ガイドのコピーを references に持つ。**ガイドを編集したら `dotnet run tools/sync-docs-skill.cs` で同期すること** (CI の Docs Skill Sync で検出される)。`references/` と `SKILL.md` の索引部分は生成物なので直接編集しない
   - `promete-v2-migration`: 移行ガイド (`migration-v2.mdx`) を元にした手書きのスキル。移行ガイドを直したら、こちらも合わせて直す
 - `.claude/skills/` は開発用のスキル。`metadata.internal: true` を付けて配布対象から外す
+
+### 機能追加・仕様変更時のドキュメント更新
+
+公開 API や挙動を変えたら、**コード変更と同じ作業の中で** `Promete.Docs/` に反映すること。後回しにしない。
+
+- 該当ガイドを更新する。新規ページが必要なら追加する
+- マイナー・パッチリリースで追加・変更された仕様には、バージョン表記を付ける
+  - 見出しは `` ## 非同期読み込み `v2.2~` ``、本文やコードコメントでは `(v2.2~)` の形式
+  - メジャーバージョン (x.0.0) での追加・変更は表記不要
+- ガイドを編集したら Agent Skill の同期も忘れないこと (上記参照)
 
 ## 言語とコミュニケーション
 
