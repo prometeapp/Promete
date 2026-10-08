@@ -42,7 +42,7 @@
 
     <PropertyGroup>
         <PackageId>Promete.Web</PackageId>
-        <Version>2.1.0-preview.1</Version>
+        <Version>2.1.0</Version>
         <PackageTags>Game Engine;2D;gamedev;games;gaming;WebAssembly;wasm;WebGL;browser</PackageTags>
         <Description>Browser (.NET WebAssembly + WebGL2) backend for Promete</Description>
         <Authors>Ebise Lutica</Authors>
