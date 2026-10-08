@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Promete.Audio;
@@ -253,6 +254,46 @@ public sealed class PrometeApp : IDisposable
     public void NextFrame(Action action)
     {
         _nextFrameQueue.Enqueue(action);
+    }
+
+    /// <summary>
+    /// 指定した処理をメインスレッドで実行し、その結果を非同期に返します。
+    /// 呼び出し元がメインスレッドの場合は、その場で実行します。
+    /// </summary>
+    /// <remarks>
+    /// それ以外のスレッドからの場合は、次のフレームの開始時に実行されます。
+    /// メインループが動作していない間は、完了しません。
+    /// </remarks>
+    /// <param name="func">メインスレッドで実行する処理。</param>
+    internal Task<T> InvokeOnMainThreadAsync<T>(Func<T> func)
+    {
+        if (IsMainThread())
+        {
+            try
+            {
+                return Task.FromResult(func());
+            }
+            catch (Exception e)
+            {
+                return Task.FromException<T>(e);
+            }
+        }
+
+        var completion = new TaskCompletionSource<T>(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
+        NextFrame(() =>
+        {
+            try
+            {
+                completion.SetResult(func());
+            }
+            catch (Exception e)
+            {
+                completion.SetException(e);
+            }
+        });
+        return completion.Task;
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Promete.Graphics.Rendering.Vulkan;
 
@@ -16,6 +17,17 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
             (uint)request.Size.X,
             (uint)request.Size.Y,
             request.Options
+        );
+    }
+
+    protected override Task<int> UploadTextureAsync(
+        byte[] rgba,
+        VectorInt size,
+        TextureOptions options
+    )
+    {
+        return app.InvokeOnMainThreadAsync(
+            () => UploadTexture(new TextureUploadRequest(rgba, size, options))
         );
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Promete.Graphics;
 using Silk.NET.OpenGL;
 
@@ -46,6 +47,17 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
             );
             return (int)texture;
         }
+    }
+
+    protected override Task<int> UploadTextureAsync(
+        byte[] rgba,
+        VectorInt size,
+        TextureOptions options
+    )
+    {
+        return app.InvokeOnMainThreadAsync(
+            () => UploadTexture(new TextureUploadRequest(rgba, size, options))
+        );
     }
 
     protected override unsafe void UpdateTexture(

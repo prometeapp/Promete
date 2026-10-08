@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Promete.Graphics.Imaging;
 using Color = System.Drawing.Color;
 using Rectangle = System.Drawing.Rectangle;
@@ -338,6 +340,142 @@ public abstract class TextureFactoryBase
     }
 
     /// <summary>
+    /// 指定したパスからテクスチャを非同期に読み込みます。
+    /// </summary>
+    /// <remarks>
+    /// 画像のデコードはスレッドプールで行い、GPU への転送は <see cref="UploadTextureAsync"/> を介して行います。
+    /// 転送を開始した後のキャンセルは無視され、テクスチャが返されます。
+    /// </remarks>
+    /// <param name="path">画像ファイルのパス。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture2D> LoadAsync(
+        string path,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var image = await Task.Run(() => ImageDecoder.Decode(path), cancellationToken);
+        return await LoadFromImageAsync(image, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを非同期に読み込みます。
+    /// </summary>
+    /// <remarks>
+    /// <inheritdoc cref="LoadAsync(string, TextureOptions, CancellationToken)"/>
+    /// 完了するまで、<paramref name="stream"/> を破棄しないでください。
+    /// </remarks>
+    /// <param name="stream">画像データのストリーム。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture2D> LoadAsync(
+        Stream stream,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var image = await Task.Run(() => ImageDecoder.Decode(stream), cancellationToken);
+        return await LoadFromImageAsync(image, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// 指定したパスからテクスチャを非同期に読み込み、切り抜きます。
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, int, int, VectorInt)"/></remarks>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture2D[]> LoadSpriteSheetAsync(
+        string path,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var image = await Task.Run(() => ImageDecoder.Decode(path), cancellationToken);
+        return await LoadSpriteSheetAsync(
+            image,
+            horizontalCount,
+            verticalCount,
+            size,
+            options,
+            cancellationToken
+        );
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを非同期に読み込み、切り抜きます。
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, int, int, VectorInt)"/></remarks>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture2D[]> LoadSpriteSheetAsync(
+        Stream stream,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var image = await Task.Run(() => ImageDecoder.Decode(stream), cancellationToken);
+        return await LoadSpriteSheetAsync(
+            image,
+            horizontalCount,
+            verticalCount,
+            size,
+            options,
+            cancellationToken
+        );
+    }
+
+    /// <summary>
+    /// 指定したパスから 9 スライステクスチャを非同期に読み込みます。
+    /// </summary>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture9Sliced> Load9SlicedAsync(
+        string path,
+        int left,
+        int top,
+        int right,
+        int bottom,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var image = await Task.Run(() => ImageDecoder.Decode(path), cancellationToken);
+        return await Load9SlicedAsync(image, left, top, right, bottom, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// 指定したストリームから 9 スライステクスチャを非同期に読み込みます。
+    /// </summary>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture9Sliced> Load9SlicedAsync(
+        Stream stream,
+        int left,
+        int top,
+        int right,
+        int bottom,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var image = await Task.Run(() => ImageDecoder.Decode(stream), cancellationToken);
+        return await Load9SlicedAsync(image, left, top, right, bottom, options, cancellationToken);
+    }
+
+    /// <summary>
     /// デコード済みの画像からテクスチャを生成します。
     /// </summary>
     internal Texture2D LoadFromImage(RgbaImage image, TextureOptions options = default)
@@ -382,6 +520,28 @@ public abstract class TextureFactoryBase
     /// <param name="handle">破棄するテクスチャハンドル。</param>
     protected abstract void DestroyTexture(int handle);
 
+    /// <summary>
+    /// ビットマップを GPU へ非同期に転送し、新しいテクスチャのハンドルを返します。
+    /// </summary>
+    /// <remarks>
+    /// 非同期のテクスチャ生成メソッドから、スレッドプール上で呼ばれます。
+    /// 既定の実装は、呼び出されたスレッドで <see cref="UploadTexture"/> を同期的に実行します。
+    /// <see cref="UploadTexture"/> を特定のスレッドで実行する必要があるバックエンドは、
+    /// このメソッドをオーバーライドして、そのスレッドへ処理を委譲してください。
+    /// </remarks>
+    /// <param name="rgba">RGBA8888 形式のビットマップデータ。転送が完了するまで変更されません。</param>
+    /// <param name="size">テクスチャのサイズ。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns>バックエンドのテクスチャハンドル。</returns>
+    protected virtual Task<int> UploadTextureAsync(
+        byte[] rgba,
+        VectorInt size,
+        TextureOptions options
+    )
+    {
+        return Task.FromResult(UploadTexture(new TextureUploadRequest(rgba, size, options)));
+    }
+
     private Texture2D[] LoadSpriteSheet(
         RgbaImage bmp,
         int horizontalCount,
@@ -390,30 +550,71 @@ public abstract class TextureFactoryBase
         TextureOptions options
     )
     {
+        if (!ValidateSpriteSheet(bmp, horizontalCount, verticalCount, size))
+            return [];
+
+        var handle = UploadTexture(
+            new TextureUploadRequest(bmp.Pixels, (bmp.Width, bmp.Height), options)
+        );
+        return CreateSpriteSheetCells(handle, bmp, horizontalCount, verticalCount, size);
+    }
+
+    private async Task<Texture2D[]> LoadSpriteSheetAsync(
+        RgbaImage bmp,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size,
+        TextureOptions options,
+        CancellationToken cancellationToken
+    )
+    {
+        if (!ValidateSpriteSheet(bmp, horizontalCount, verticalCount, size))
+            return [];
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var handle = await UploadTextureAsync(bmp.Pixels, (bmp.Width, bmp.Height), options);
+        return CreateSpriteSheetCells(handle, bmp, horizontalCount, verticalCount, size);
+    }
+
+    /// <summary>
+    /// スプライトシートの分割数が画像に収まるかを検証します。
+    /// </summary>
+    /// <returns>セルが 1 つ以上あれば <see langword="true"/>。</returns>
+    private static bool ValidateSpriteSheet(
+        RgbaImage bmp,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
+    {
         if (horizontalCount * size.X > bmp.Width)
             throw new ArgumentException(null, nameof(horizontalCount));
         if (verticalCount * size.Y > bmp.Height)
             throw new ArgumentException(null, nameof(verticalCount));
 
-        var count = verticalCount * horizontalCount;
-        if (count <= 0)
-            return [];
+        return horizontalCount * verticalCount > 0;
+    }
 
+    private Texture2D[] CreateSpriteSheetCells(
+        int handle,
+        RgbaImage bmp,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
+    {
         var width = (float)bmp.Width;
         var height = (float)bmp.Height;
-        var handle = UploadTexture(
-            new TextureUploadRequest(bmp.Pixels, (bmp.Width, bmp.Height), options)
-        );
 
         // 全セルが 1 枚のテクスチャを共有するので、最後の 1 つが破棄された時点で解放する
-        var remaining = count;
+        var remaining = verticalCount * horizontalCount;
         void Release(Texture2D _)
         {
             if (--remaining == 0)
                 DestroyTexture(handle);
         }
 
-        var textures = new Texture2D[count];
+        var textures = new Texture2D[remaining];
         for (var y = 0; y < verticalCount; y++)
         {
             for (var x = 0; x < horizontalCount; x++)
@@ -446,8 +647,48 @@ public abstract class TextureFactoryBase
         TextureOptions options
     )
     {
-        var size = (img.Width, img.Height);
+        var pieces = Slice9(img, left, top, right, bottom);
+        var textures = pieces.Select(piece => LoadFromImage(piece, options)).ToArray();
+        return new Texture9Sliced(textures, (img.Width, img.Height));
+    }
 
+    private async Task<Texture9Sliced> Load9SlicedAsync(
+        RgbaImage img,
+        int left,
+        int top,
+        int right,
+        int bottom,
+        TextureOptions options,
+        CancellationToken cancellationToken
+    )
+    {
+        var pieces = Slice9(img, left, top, right, bottom);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // 9 枚の転送は同時に依頼する。メインスレッドへの委譲でも、1 フレームで完了させるため
+        var textures = await Task.WhenAll(
+            pieces.Select(piece => LoadFromImageAsync(piece, options, cancellationToken))
+        );
+        return new Texture9Sliced(textures, (img.Width, img.Height));
+    }
+
+    private async Task<Texture2D> LoadFromImageAsync(
+        RgbaImage image,
+        TextureOptions options,
+        CancellationToken cancellationToken
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var size = new VectorInt(image.Width, image.Height);
+        var handle = await UploadTextureAsync(image.Pixels, size, options);
+        return new Texture2D(handle, size, _destroy);
+    }
+
+    /// <summary>
+    /// 画像を 9 つの領域に切り分けます。
+    /// </summary>
+    private static RgbaImage[] Slice9(RgbaImage img, int left, int top, int right, int bottom)
+    {
         if (left > img.Width)
             throw new ArgumentException(null, nameof(left));
         if (top > img.Height)
@@ -470,12 +711,6 @@ public abstract class TextureFactoryBase
             new(img.Width - right, img.Height - bottom, right, bottom),
         };
 
-        var texture = atlas
-            .Select(rect =>
-                LoadFromImage(img.Crop(rect.X, rect.Y, rect.Width, rect.Height), options)
-            )
-            .ToArray();
-
-        return new Texture9Sliced(texture, size);
+        return atlas.Select(rect => img.Crop(rect.X, rect.Y, rect.Width, rect.Height)).ToArray();
     }
 }

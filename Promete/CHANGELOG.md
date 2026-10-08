@@ -22,6 +22,11 @@ Promete v2.2では、`TextureFactoryBase` の設計を見直し、バックエ�
     - `Silk.NET.OpenGL.TextureWrapMode` との衝突を避けるため、後者は `TextureAddressMode` と命名しています
 - `Texture2D.IsSubTexture` を追加しました。`LoadSpriteSheet` で切り抜かれたテクスチャなど、テクスチャの一部の領域のみを指している場合に `true` になります
     - サブテクスチャを `TextureFactoryBase.Update` に渡すと、`InvalidOperationException` が発生します
+- テクスチャを非同期に読み込む `LoadAsync` / `LoadSpriteSheetAsync` / `Load9SlicedAsync` を追加しました
+    - 画像のデコードはスレッドプールで行い、GPU への転送は GL・Vulkan バックエンドではメインスレッドで行います。ゲームのメインループを止めずに、読み込みを進められます
+    - メインスレッドでの転送は、次のフレームの開始時に実行されます。メインループが動作していない間は完了しません
+    - `CancellationToken` で、転送の開始前までキャンセルできます。転送を開始した後のキャンセルは無視され、テクスチャが返されます
+    - バックエンド向けに、`protected virtual Task<int> UploadTextureAsync(byte[], VectorInt, TextureOptions)` を追加しました。既定の実装は `UploadTexture` を呼び出されたスレッドで同期的に実行するため、実装は必須ではありません。`UploadTexture` を特定のスレッドで実行する必要があるバックエンドは、オーバーライドしてそのスレッドへ委譲してください
 
 ### Enhancements
 
