@@ -64,6 +64,12 @@ public readonly struct Texture2D : IDisposable
     public Vector UvEnd { get; }
 
     /// <summary>
+    /// このテクスチャが、バックエンドのテクスチャの一部の領域のみを指しているかどうかを取得します。
+    /// <see cref="TextureFactoryBase.LoadSpriteSheet(string, int, int, VectorInt)"/> の各要素が該当します。
+    /// </summary>
+    public bool IsSubTexture => UvStart != new Vector(0, 0) || UvEnd != new Vector(1, 1);
+
+    /// <summary>
     /// この <see cref="Texture2D" /> を破棄します。
     /// </summary>
     public void Dispose()

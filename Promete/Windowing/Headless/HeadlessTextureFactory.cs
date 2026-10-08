@@ -1,60 +1,23 @@
-using System.IO;
+using System;
 using Promete.Graphics;
-using Color = System.Drawing.Color;
 
 namespace Promete.Windowing.Headless;
 
 public class HeadlessTextureFactory : TextureFactoryBase
 {
-    public override Texture2D Load(string path)
+    private int _nextHandle = 1;
+
+    protected override int UploadTexture(in TextureUploadRequest request)
     {
-        return default;
+        return _nextHandle++;
     }
 
-    public override Texture2D Load(Stream stream)
-    {
-        return default;
-    }
-
-    public override Texture2D[] LoadSpriteSheet(
-        string path,
-        int horizontalCount,
-        int verticalCount,
-        VectorInt size
-    )
-    {
-        return new Texture2D[horizontalCount * verticalCount];
-    }
-
-    public override Texture2D[] LoadSpriteSheet(
-        Stream stream,
-        int horizontalCount,
-        int verticalCount,
-        VectorInt size
-    )
-    {
-        return new Texture2D[horizontalCount * verticalCount];
-    }
-
-    public override Texture2D Create(byte[] bitmap, VectorInt size)
-    {
-        return default;
-    }
-
-    public override Texture2D Create(byte[,,] bitmap)
-    {
-        return default;
-    }
-
-    public override Texture2D CreateSolid(Color color, VectorInt size)
-    {
-        return default;
-    }
-
-    public override void Update(
-        Texture2D texture,
+    protected override void UpdateTexture(
+        int handle,
         VectorInt offset,
         VectorInt size,
-        byte[] bitmap
+        ReadOnlySpan<byte> rgba
     ) { }
+
+    protected override void DestroyTexture(int handle) { }
 }

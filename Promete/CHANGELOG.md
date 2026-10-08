@@ -1,3 +1,43 @@
+## 2.2.0
+
+Promete v2.2では、`TextureFactoryBase` の設計を見直し、バックエンドが実装すべき範囲を最小限にしました。
+
+ゲームを作る側のAPIに破壊的変更はありません。独自のバックエンドを実装している場合のみ、対応が必要です。
+
+### Breaking Changes (バックエンド開発者向け)
+
+- `TextureFactoryBase` の抽象メンバーを、次の 3 つに置き換えました
+    - `protected abstract int UploadTexture(in TextureUploadRequest request)`: ビットマップ (RGBA8888)、サイズ、サンプリング設定を受け取り、GPU に転送してハンドルを返します
+    - `protected abstract void UpdateTexture(int handle, VectorInt offset, VectorInt size, ReadOnlySpan<byte> rgba)`: GPU 上のテクスチャの一部を書き換えます
+    - `protected abstract void DestroyTexture(int handle)`: GPU 上のテクスチャを破棄します
+- `Load` / `LoadSpriteSheet` / `Create` / `CreateSolid` / `Update` は virtual になり、基底クラスが共通の実装を提供します
+    - これらを `override` していた場合も、そのまま動作します。不要であれば削除できます
+    - `Update` の引数検証 (範囲外・サイズ不足) は基底クラスで行われます
+
+### Features
+
+- テクスチャの生成時に、補間方法とアドレスモードを指定できるようになりました
+    - `TextureOptions` に、`TextureFilterMode` (`Nearest` / `Linear`) と `TextureAddressMode` (`Clamp` / `Repeat` / `Mirror`) を指定します。既定値は従来どおり `Nearest` と `Clamp` です
+    - `Load`、`LoadSpriteSheet`、`Load9Sliced`、`Create`、`CreateSolid` に、`TextureOptions` を受け取るオーバーロードを追加しました。既存のオーバーロードの挙動は変わりません
+    - `Silk.NET.OpenGL.TextureWrapMode` との衝突を避けるため、後者は `TextureAddressMode` と命名しています
+- `Texture2D.IsSubTexture` を追加しました。`LoadSpriteSheet` で切り抜かれたテクスチャなど、テクスチャの一部の領域のみを指している場合に `true` になります
+    - サブテクスチャを `TextureFactoryBase.Update` に渡すと、`InvalidOperationException` が発生します
+- テクスチャを非同期に読み込む `LoadAsync` / `LoadSpriteSheetAsync` / `Load9SlicedAsync` を追加しました
+    - 画像のデコードはスレッドプールで行い、GPU への転送は GL・Vulkan バックエンドではメインスレッドで行います。ゲームのメインループを止めずに、読み込みを進められます
+    - メインスレッドでの転送は、次のフレームの開始時に実行されます。メインループが動作していない間は完了しません
+    - `CancellationToken` で、転送の開始前までキャンセルできます。転送を開始した後のキャンセルは無視され、テクスチャが返されます
+    - バックエンド向けに、`protected virtual Task<int> UploadTextureAsync(byte[], VectorInt, TextureOptions)` を追加しました。既定の実装は `UploadTexture` を呼び出されたスレッドで同期的に実行するため、実装は必須ではありません。`UploadTexture` を特定のスレッドで実行する必要があるバックエンドは、オーバーライドしてそのスレッドへ委譲してください
+
+### Enhancements
+
+- `HeadlessBackend` のテクスチャファクトリが、画像を実際にデコードするようになりました。存在しないファイルや不正な画像を `Load` すると、他のバックエンドと同様に例外が発生します
+- `Create` に、サイズに対して不足したビットマップを渡した場合に `ArgumentException` を投げる検証を追加しました
+
+### Bug Fixes
+
+- `LoadSpriteSheet` で返されたテクスチャを `Dispose` すると、全セルが共有する 1 枚のテクスチャを何度も破棄していた不具合を修正しました。いずれかのセルを破棄した時点で一度だけ解放され、以降の `Dispose` は何もしません
+- `LoadSpriteSheet` で指定した分割数が画像からはみ出す場合に、例外の前にテクスチャが GPU に残ってしまう不具合を修正しました
+
 ## 2.1.0
 
 Promete v2.1では、ゲームをWebブラウザ上で動かせる `Promete.Web` パッケージを追加しました（実験的）。
