@@ -432,4 +432,4 @@ return app.Run<MainScene>();          // すぐ戻り、以降は requestAnimati
 2. §3.10 の未確認事項のうち、開発体験に直結するもの（IDE デバッグ、`dotnet watch`）を、スパイクで確認する。独自の `index.html` の優先順位は確認済み（§3.11）。トリミングは有効が前提（S2 の CI 固定）。
 3. 着手順（§1.4）に沿って、コアの小さな修正（C7、C8、C2、C6）から。
 4. S1（Silk 側の `calli` 登録）の設計。それまでは、`tools/gen-calli-signatures.cs` で生成したファイルを `Promete.Web/Generated/` にコミットしてつなぐ。
-5. （済）`Promete.Web` の骨組み（PR1: ライブラリと、リポジトリ内のサンプル）。PoC は削除した。（済）PR2（NuGet のパッケージ化）。ローカルのフィードで、利用者の csproj が `PackageReference` と `<PrometeAsset>` だけで動くこと、既定の `index.html` / `main.js`、片方ずつの差し替え、`dotnet run` と Release の publish を確認した。バージョンは `2.1.0-preview.1`（コアの 2.1.0 にそろえる）。公開の CI は、リリースのときに作る。
+5. （済）`Promete.Web` の骨組み（PR1: ライブラリと、リポジトリ内のサンプル）。PoC は削除した。（済）PR2（NuGet のパッケージ化）。ローカルのフィードで、利用者の csproj が `PackageReference` と `<PrometeAsset>` だけで動くこと、既定の `index.html` / `main.js`、片方ずつの差し替え、`dotnet run` と Release の publish を確認した。バージョンは `2.1.0-preview.1`（コアとバージョンをそろえる規約は無い）。公開の CI は `web-*` タグで動く（`upload-to-nuget-promete-web.yml`）。パックする前に、コアの `Version` を、Promete.Web が使う API を含むバージョンに上げておく必要がある（2.0.0 のままだと、依存先が `Promete 2.0.0` になる）。
