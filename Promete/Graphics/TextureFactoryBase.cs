@@ -181,7 +181,10 @@ public abstract class TextureFactoryBase
         if (size.X < 0 || size.Y < 0)
             throw new ArgumentOutOfRangeException(nameof(size));
         if (bitmap.Length < size.X * size.Y * 4)
-            throw new ArgumentException("ビットマップのデータがサイズに対して不足しています。", nameof(bitmap));
+            throw new ArgumentException(
+                "ビットマップのデータがサイズに対して不足しています。",
+                nameof(bitmap)
+            );
 
         var handle = UploadTexture(new TextureUploadRequest(bitmap, size, options));
         return new Texture2D(handle, size, _destroy);
@@ -264,7 +267,9 @@ public abstract class TextureFactoryBase
     {
         ArgumentNullException.ThrowIfNull(bitmap);
         if (texture.IsSubTexture)
-            throw new InvalidOperationException("テクスチャの一部の領域を指すテクスチャは、書き換えできません。");
+            throw new InvalidOperationException(
+                "テクスチャの一部の領域を指すテクスチャは、書き換えできません。"
+            );
         if (size.X <= 0 || size.Y <= 0)
             return;
 
@@ -276,7 +281,10 @@ public abstract class TextureFactoryBase
         )
             throw new ArgumentOutOfRangeException(nameof(offset));
         if (bitmap.Length < size.X * size.Y * 4)
-            throw new ArgumentException("ビットマップのデータがサイズに対して不足しています。", nameof(bitmap));
+            throw new ArgumentException(
+                "ビットマップのデータがサイズに対して不足しています。",
+                nameof(bitmap)
+            );
 
         UpdateTexture(texture.Handle, offset, size, bitmap);
     }

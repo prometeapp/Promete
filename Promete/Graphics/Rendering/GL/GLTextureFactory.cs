@@ -55,8 +55,8 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
         TextureOptions options
     )
     {
-        return app.InvokeOnMainThreadAsync(
-            () => UploadTexture(new TextureUploadRequest(rgba, size, options))
+        return app.InvokeOnMainThreadAsync(() =>
+            UploadTexture(new TextureUploadRequest(rgba, size, options))
         );
     }
 

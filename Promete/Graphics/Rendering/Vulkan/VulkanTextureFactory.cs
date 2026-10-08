@@ -26,8 +26,8 @@ internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager
         TextureOptions options
     )
     {
-        return app.InvokeOnMainThreadAsync(
-            () => UploadTexture(new TextureUploadRequest(rgba, size, options))
+        return app.InvokeOnMainThreadAsync(() =>
+            UploadTexture(new TextureUploadRequest(rgba, size, options))
         );
     }
 

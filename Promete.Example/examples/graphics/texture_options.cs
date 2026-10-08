@@ -136,10 +136,7 @@ public class Texture_options(ConsoleLayer console, Keyboard keyboard, CoroutineM
             Enumerable
                 .Range(0, AsyncLoadCount)
                 .Select(_ =>
-                    factory.LoadAsync(
-                        AsyncLoadPath,
-                        new TextureOptions(TextureFilterMode.Linear)
-                    )
+                    factory.LoadAsync(AsyncLoadPath, new TextureOptions(TextureFilterMode.Linear))
                 )
         );
         var sheetTask = factory.LoadSpriteSheetAsync("assets/icons.png", 3, 1, (32, 32));
@@ -153,8 +150,10 @@ public class Texture_options(ConsoleLayer console, Keyboard keyboard, CoroutineM
 
         for (var i = 0; i < _asyncTextures.Count; i++)
         {
-            var sprite = new Sprite(_asyncTextures[i])
-                .Location(400 + ((i % 8) * 20), 64 + ((i / 8) * 20));
+            var sprite = new Sprite(_asyncTextures[i]).Location(
+                400 + ((i % 8) * 20),
+                64 + ((i / 8) * 20)
+            );
             _asyncNodes.Add(sprite);
             Root.Add(sprite);
         }

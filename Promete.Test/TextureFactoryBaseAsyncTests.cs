@@ -123,7 +123,9 @@ public class TextureFactoryBaseAsyncTests
         task.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
 
         factory.UploadThreadIds.Should().HaveCount(9);
-        factory.UploadThreadIds.Should().OnlyContain(id => id == Environment.CurrentManagedThreadId);
+        factory
+            .UploadThreadIds.Should()
+            .OnlyContain(id => id == Environment.CurrentManagedThreadId);
     }
 
     private static MemoryStream CreatePng(int width, int height)
@@ -161,8 +163,8 @@ public class TextureFactoryBaseAsyncTests
             TextureOptions options
         )
         {
-            var task = app.InvokeOnMainThreadAsync(
-                () => UploadTexture(new TextureUploadRequest(rgba, size, options))
+            var task = app.InvokeOnMainThreadAsync(() =>
+                UploadTexture(new TextureUploadRequest(rgba, size, options))
             );
             Interlocked.Increment(ref _pending);
             return task;
