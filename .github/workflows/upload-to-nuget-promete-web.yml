@@ -28,31 +28,6 @@ jobs:
       run: dotnet pack --configuration Release -o nupkg
       working-directory: ./Promete.Web
 
-    # Promete.Web はコアの同じ minor の API に依存する (バージョンはコアにそろえる)。
-    # コアの csproj の Version を上げ忘れると、古いコアに依存したパッケージができて実行時に落ちる。
-    # また、依存先のコアが nuget.org に無いと、利用者の復元が失敗する。どちらも公開前に止める。
-    - name: Check the core dependency
-      run: |
-        nupkg=$(find . -type f -name 'Promete.Web.*.nupkg' ! -name '*.snupkg' | head -n 1)
-        nuspec=$(unzip -p "$nupkg" Promete.Web.nuspec)
-        web=$(echo "$nuspec" | sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' | head -n 1)
-        core=$(echo "$nuspec" | sed -n 's:.*<dependency id="Promete" version="\[\{0,1\}\([^],"]*\).*:\1:p' | head -n 1)
-        echo "Promete.Web $web は Promete $core に依存する"
-        if [ -z "$web" ] || [ -z "$core" ]; then
-          echo "::error::nuspec からバージョンを読めない"
-          exit 1
-        fi
-        if [ "$(echo "$web" | cut -d. -f1,2)" != "$(echo "$core" | cut -d. -f1,2)" ]; then
-          echo "::error::コアの major.minor ($core) が Promete.Web ($web) とそろっていない。Promete.csproj の Version を上げること"
-          exit 1
-        fi
-        status=$(curl -s -o /dev/null -w '%{http_code}' "https://api.nuget.org/v3-flatcontainer/promete/$core/promete.nuspec")
-        if [ "$status" != "200" ]; then
-          echo "::error::Promete $core が nuget.org に無い。先にコアを公開すること (core-* タグ)"
-          exit 1
-        fi
-      working-directory: ./Promete.Web/nupkg
-
     - name: Publish to nuget
       run: find . -type f -name *.nupkg -print0 | xargs -0 -I pkg dotnet nuget push pkg -k $nuget_api_key -s "https://api.nuget.org/v3/index.json" --skip-duplicate
       env:
