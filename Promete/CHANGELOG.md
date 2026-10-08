@@ -1,3 +1,41 @@
+## 2.1.0
+
+Promete v2.1では、ゲームをWebブラウザ上で動かせる `Promete.Web` パッケージを追加しました（実験的）。
+
+コアには、ブラウザ対応のための拡張点を追加しています。破壊的変更はありません。
+
+### Features
+
+- `Promete.Web` パッケージを追加しました (実験的)
+    - .NET の WebAssembly と WebGL2 を用いて、ゲームをWebブラウザ上で動かせます
+    - `BuildWithOpenGLDesktop()` の代わりに `BuildWithWeb()` で使用します
+    - `<PrometeAsset>` で指定したアセットを起動前に読み込むため、デスクトップ版と同じコードでアセットを読み込めます
+    - 既定のHTML・JavaScriptを同梱しており、プロジェクトに置いたファイルで差し替えることもできます
+    - Releaseビルドでは、AOTコンパイルが既定で有効になります
+    - 対応していない機能や制約は、ドキュメントの「Webブラウザ対応」を参照してください
+- フォントの生成方法を、バックエンドが差し替えられるようになりました
+    - `IFontProvider` を実装し、`BackendBase.SetupFontProvider()` をオーバーライドして提供します
+    - 既定はこれまでどおり FreeType を用います
+- 音声の出力先を、バックエンドが差し替えられるようになりました
+    - `IAudioProvider` を実装し、`BackendBase.SetupAudioProvider()` をオーバーライドして提供します
+    - `AudioPlayer` と `PlayOneShot` は、バックエンドが提供する出力を用います。既定はこれまでどおり OpenAL を用います
+- OpenGLバックエンドをリファクタリングしました
+    - 複数のOpenGL系バックエンドが存在するため、共通となるベースクラス `GLBackendBase` を追加しました
+    - テクスチャ・RenderTexture・シェーダー・画面転送などのGLの部品の組み立てを共通化します
+    - `IGLGameView` を実装したゲーム画面と組み合わせ、`BuildWithGLBackend<TBackend>()` でアプリケーションを構築できます
+    - `OpenGLDesktopBackend` も `GLBackendBase` を用いるようになりました。挙動は変わりません
+
+### Enhancements
+
+- OpenGL ES (WebGL2) のコンテキストでは、シェーダー (GLSL 3.30) を GLSL ES 3.00 へ自動的に変換するようにしました
+- エントリアセンブリを取得できない環境でも、`UseScenesFrom` で指定したアセンブリからシーンを登録できるようにしました
+- `PrometeApp.Run` や `OnStart`、`OnUpdate` などのライフサイクルの契約を、XMLドキュメントに明記しました
+
+### Bug Fixes
+
+- シーンのコンストラクタで例外が発生すると、以降のシーン遷移がすべて失敗する不具合を修正しました
+    - `LoadScene` では現在のシーンを破棄済みとして扱い、`PushScene` では元のシーンを再開してから例外を再スローします
+
 ## 2.0.0
 
 Promete v2では、より高速な描画を実現する新たなレンダリングシステムと、フレームバッファやシェーダーに対する高度なサポートを追加しました。
@@ -109,9 +147,6 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
         - `AutoRender = false` にすると毎フレームの自動レンダリングを抑止し、任意のタイミングで `Render()` を呼び出せます
         - `AutoClear = false` にすると前フレームの内容を保持したままレンダリングできます
 - スクリーン全体をFBOでオフスクリーンレンダリングするよう変更しました
-- グリフアトラスの肥大化を抑えるようにしました
-    - `GlyphRenderOptions.Size` を 0.5px 単位へ丸めます。フォントサイズを連続的に変化させても、そのすべてが別のグリフとして積まれることがなくなります
-    - `GlyphAtlas.MaxPages` を追加し、ページ数が上限に達したらアトラスを作り直します
 - `ConsoleLayer` の行数計算を、二分探索的な測定からメトリクス参照へ変更しました
 - 外部のアセンブリからカスタムノードやバックエンドを実装できるよう、次の API を公開しました
     - `Node.ModelMatrix`
@@ -119,7 +154,6 @@ Promete v2では、より高速な描画を実現する新たなレンダリン�
     - `ShaderProgram.SetCompiledData`、`Material.Uniforms`
     - `DrawTextureBatchedCommand`
     - `TextureFactoryBase.LoadFromImageSharpImage` (`protected internal`)
-- `Build<T>()` が `RenderCommandQueue` を自動的に登録するようにしました
 
 ### Bug Fixes
 
