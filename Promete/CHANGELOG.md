@@ -1,41 +1,57 @@
 ## 2.2.0
 
-Promete v2.2では、`TextureFactoryBase` の設計を見直し、バックエンドが実装すべき範囲を最小限にしました。
+テクスチャの補間方法・アドレスモードを指定できるようになり、テクスチャの非同期読み込みにも対応しました。
 
-ゲームを作る側のAPIに破壊的変更はありません。独自のバックエンドを実装している場合のみ、対応が必要です。
+あわせて `TextureFactoryBase` の設計を見直し、独自のバックエンドを実装する際の負担を大きく減らしました。
 
-### Breaking Changes (バックエンド開発者向け)
-
-- `TextureFactoryBase` の抽象メンバーを、次の 3 つに置き換えました
-    - `protected abstract int UploadTexture(in TextureUploadRequest request)`: ビットマップ (RGBA8888)、サイズ、サンプリング設定を受け取り、GPU に転送してハンドルを返します
-    - `protected abstract void UpdateTexture(int handle, VectorInt offset, VectorInt size, ReadOnlySpan<byte> rgba)`: GPU 上のテクスチャの一部を書き換えます
-    - `protected abstract void DestroyTexture(int handle)`: GPU 上のテクスチャを破棄します
-- `Load` / `LoadSpriteSheet` / `Create` / `CreateSolid` / `Update` は virtual になり、基底クラスが共通の実装を提供します
-    - これらを `override` していた場合も、そのまま動作します。不要であれば削除できます
-    - `Update` の引数検証 (範囲外・サイズ不足) は基底クラスで行われます
+ゲームを作る側のAPIに、破壊的変更はありません。ただし、ヘッドレスバックエンドでの `Load` の挙動が変わります (Enhancements を参照)。独自のバックエンドを実装している場合は、対応が必要です (Breaking Changes を参照)。
 
 ### Features
 
 - テクスチャの生成時に、補間方法とアドレスモードを指定できるようになりました
-    - `TextureOptions` に、`TextureFilterMode` (`Nearest` / `Linear`) と `TextureAddressMode` (`Clamp` / `Repeat` / `Mirror`) を指定します。既定値は従来どおり `Nearest` と `Clamp` です
+    - `TextureOptions` に、補間方法 `TextureFilterMode` (`Nearest` / `Linear`) と、アドレスモード `TextureAddressMode` (`Clamp` / `Repeat` / `Mirror`) を指定します。既定値は従来どおり `Nearest` と `Clamp` です
     - `Load`、`LoadSpriteSheet`、`Load9Sliced`、`Create`、`CreateSolid` に、`TextureOptions` を受け取るオーバーロードを追加しました。既存のオーバーロードの挙動は変わりません
-    - `Silk.NET.OpenGL.TextureWrapMode` との衝突を避けるため、後者は `TextureAddressMode` と命名しています
+    - `Linear` を `LoadSpriteSheet` で読み込んだテクスチャに用いると、隣り合うセルのピクセルが滲んで見えることがあります。ピクセルパーフェクトな描画が必要なスプライトシートには、既定の `Nearest` を用いてください
+    - `Silk.NET.OpenGL` の `TextureWrapMode` との衝突を避けるため、アドレスモードの型名は `TextureAddressMode` としています
+- テクスチャを非同期に読み込む `LoadAsync` / `LoadSpriteSheetAsync` / `Load9SlicedAsync` を追加しました
+    - 画像のデコードはスレッドプールで行い、GPU への転送は OpenGL・Vulkan バックエンドではメインスレッドで行います。ゲームのメインループを止めずに、読み込みを進められます
+    - メインスレッドでの転送は、次のフレームの開始時に実行されます。メインループが動作していない間は完了しません
+    - `await` の後の処理は、メインスレッドとは限りません。シーンやノードを操作する場合は、コルーチンの `WaitForTask` や `App.NextFrame` を用いてください
+    - `CancellationToken` で、転送の開始前までキャンセルできます。転送を開始した後のキャンセルは無視され、テクスチャが返されます
 - `Texture2D.IsSubTexture` を追加しました。`LoadSpriteSheet` で切り抜かれたテクスチャなど、テクスチャの一部の領域のみを指している場合に `true` になります
     - サブテクスチャを `TextureFactoryBase.Update` に渡すと、`InvalidOperationException` が発生します
-- テクスチャを非同期に読み込む `LoadAsync` / `LoadSpriteSheetAsync` / `Load9SlicedAsync` を追加しました
-    - 画像のデコードはスレッドプールで行い、GPU への転送は GL・Vulkan バックエンドではメインスレッドで行います。ゲームのメインループを止めずに、読み込みを進められます
-    - メインスレッドでの転送は、次のフレームの開始時に実行されます。メインループが動作していない間は完了しません
-    - `CancellationToken` で、転送の開始前までキャンセルできます。転送を開始した後のキャンセルは無視され、テクスチャが返されます
-    - バックエンド向けに、`protected virtual Task<int> UploadTextureAsync(byte[], VectorInt, TextureOptions)` を追加しました。既定の実装は `UploadTexture` を呼び出されたスレッドで同期的に実行するため、実装は必須ではありません。`UploadTexture` を特定のスレッドで実行する必要があるバックエンドは、オーバーライドしてそのスレッドへ委譲してください
+
+### Breaking Changes (バックエンド開発者向け)
+
+`TextureFactoryBase` を継承した独自のテクスチャファクトリを実装している場合のみ、対応が必要です。
+
+- `TextureFactoryBase` の abstract メンバーを、次の 3 つに置き換えました
+    - `protected abstract int UploadTexture(in TextureUploadRequest request)`: ビットマップ (RGBA8888)、サイズ、サンプリング設定を受け取り、GPU に転送してハンドルを返します
+    - `protected abstract void UpdateTexture(int handle, VectorInt offset, VectorInt size, ReadOnlySpan<byte> rgba)`: GPU 上のテクスチャの一部を書き換えます
+    - `protected abstract void DestroyTexture(int handle)`: GPU 上のテクスチャを破棄します
+- `Load` / `LoadSpriteSheet` / `Load9Sliced` / `Create` / `CreateSolid` / `Update` は、abstract から virtual になり、基底クラスが共通の実装を提供します
+    - 画像のデコード、スプライトシートの切り抜き、9スライスの分割、`Texture2D` の生成は、基底クラスが行います。バックエンドで実装する必要はありません
+    - これらを `override` していた場合は、削除することをお勧めします。残した場合もコンパイルは通りますが、`TextureOptions` を受け取るオーバーロード経由では呼ばれません (`Update` を除く)。独自の実装が必要な場合は、`TextureOptions` を受け取る側をオーバーライドしてください
+- 移行の手順
+    1. 旧 `Load` / `Create` / `CreateSolid` / `LoadSpriteSheet` / `Update` の `override` を削除する
+    2. `Create` の中身 (GPU への転送) を `UploadTexture` に、`Update` の中身を `UpdateTexture` に、`Texture2D` の `onDispose` で行っていた破棄を `DestroyTexture` に移す
+    3. `Texture2D` を `new` する処理は不要になる (基底クラスが行う)
 
 ### Enhancements
 
-- `HeadlessBackend` のテクスチャファクトリが、画像を実際にデコードするようになりました。存在しないファイルや不正な画像を `Load` すると、他のバックエンドと同様に例外が発生します
-- `Create` に、サイズに対して不足したビットマップを渡した場合に `ArgumentException` を投げる検証を追加しました
+- ヘッドレスバックエンドのテクスチャファクトリが、画像を実際にデコードするようになりました
+    - **挙動が変わります**: 存在しないファイルや不正な画像を `Load` すると、他のバックエンドと同様に例外が発生します。ヘッドレスのテストで、実在しないパスを `Load` していた場合は、実在するファイルに差し替えてください
+- テクスチャの生成・更新時の引数検証を、基底クラスで行うようにしました
+    - `Create` に、サイズに対して不足したビットマップを渡すと、`ArgumentException` が発生します
+    - `Update` に、テクスチャの範囲外の領域や、サイズに対して不足したビットマップを渡すと、`ArgumentOutOfRangeException` / `ArgumentException` が発生します
+- バックエンド向けに、`protected virtual Task<int> UploadTextureAsync(byte[], VectorInt, TextureOptions)` を追加しました
+    - 既定の実装は、`UploadTexture` を呼び出されたスレッドで同期的に実行するため、実装は必須ではありません
+    - `UploadTexture` を特定のスレッドで実行する必要があるバックエンドは、オーバーライドして、そのスレッドへ処理を委譲してください
 
 ### Bug Fixes
 
-- `LoadSpriteSheet` で返されたテクスチャを `Dispose` すると、全セルが共有する 1 枚のテクスチャを何度も破棄していた不具合を修正しました。いずれかのセルを破棄した時点で一度だけ解放され、以降の `Dispose` は何もしません
+- `LoadSpriteSheet` で返されたテクスチャを、セルごとに `Dispose` すると、全セルが共有する 1 枚のテクスチャを何度も破棄していた不具合を修正しました
+    - いずれかのセルを `Dispose` した時点で一度だけ解放され、以降の `Dispose` は何もしません。「1 つでも `Dispose` すると全セルが使えなくなる」という従来の仕様は変わりません
 - `LoadSpriteSheet` で指定した分割数が画像からはみ出す場合に、例外の前にテクスチャが GPU に残ってしまう不具合を修正しました
 
 ## 2.1.0
