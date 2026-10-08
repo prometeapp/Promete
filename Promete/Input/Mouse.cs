@@ -132,12 +132,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
         if (id < 0 || _buttons.Length <= id)
             return;
 
-        Click?.Invoke(
-            new MouseButtonEventArgs(
-                id,
-                (VectorInt)Vector.From(pos / app.View.Scale)
-            )
-        );
+        Click?.Invoke(new MouseButtonEventArgs(id, (VectorInt)Vector.From(pos / app.View.Scale)));
     }
 
     private void OnMouseDown(IMouse mouse, SilkMouseButton btn)
@@ -148,10 +143,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
 
         _buttons[id].IsButtonDown = true;
         ButtonDown?.Invoke(
-            new MouseButtonEventArgs(
-                id,
-                VectorInt.From(mouse.Position / app.View.Scale)
-            )
+            new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / app.View.Scale))
         );
     }
 
@@ -163,10 +155,7 @@ public sealed class Mouse(PrometeApp app, InputProvider inputProvider) : IInitia
 
         _buttons[id].IsButtonUp = true;
         ButtonUp?.Invoke(
-            new MouseButtonEventArgs(
-                id,
-                VectorInt.From(mouse.Position / app.View.Scale)
-            )
+            new MouseButtonEventArgs(id, VectorInt.From(mouse.Position / app.View.Scale))
         );
     }
 
