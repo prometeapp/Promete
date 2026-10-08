@@ -76,8 +76,8 @@ public abstract class TextureFactoryBase
     /// </summary>
     /// <remarks>
     /// 返されるテクスチャは、すべて 1 枚のテクスチャを共有します。
-    /// 共有されたテクスチャは、返された全要素を <see cref="Texture2D.Dispose"/> した時点で破棄されます。
-    /// 同じ要素を複数回 <see cref="Texture2D.Dispose"/> しないでください。
+    /// いずれかの要素を <see cref="Texture2D.Dispose"/> した時点で共有されたテクスチャが破棄され、全要素が使えなくなります。
+    /// 2 つ目以降の要素を <see cref="Texture2D.Dispose"/> しても、何も起こりません。
     /// </remarks>
     /// <returns></returns>
     public virtual Texture2D[] LoadSpriteSheet(
@@ -606,15 +606,17 @@ public abstract class TextureFactoryBase
         var width = (float)bmp.Width;
         var height = (float)bmp.Height;
 
-        // 全セルが 1 枚のテクスチャを共有するので、最後の 1 つが破棄された時点で解放する
-        var remaining = verticalCount * horizontalCount;
+        // 全セルが 1 枚のテクスチャを共有するので、最初の 1 つが破棄された時点で解放し、以降は何もしない
+        var released = false;
         void Release(Texture2D _)
         {
-            if (--remaining == 0)
-                DestroyTexture(handle);
+            if (released)
+                return;
+            released = true;
+            DestroyTexture(handle);
         }
 
-        var textures = new Texture2D[remaining];
+        var textures = new Texture2D[verticalCount * horizontalCount];
         for (var y = 0; y < verticalCount; y++)
         {
             for (var x = 0; x < horizontalCount; x++)

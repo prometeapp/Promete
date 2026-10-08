@@ -114,18 +114,28 @@ public class TextureFactoryBaseTests
     }
 
     [Fact]
-    public void スプライトシートは全セルを破棄した時点で一度だけ解放される()
+    public void スプライトシートはいずれか1つを破棄すると解放される()
     {
         var factory = new FakeTextureFactory();
         using var stream = CreatePng(4, 4);
         var cells = factory.LoadSpriteSheet(stream, 2, 2, (2, 2));
 
-        cells[0].Dispose();
-        cells[1].Dispose();
         cells[2].Dispose();
-        factory.DisposedHandles.Should().BeEmpty();
 
-        cells[3].Dispose();
+        factory.DisposedHandles.Should().Equal(cells[0].Handle);
+    }
+
+    [Fact]
+    public void スプライトシートの全セルを破棄しても解放は一度だけ行われる()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+        var cells = factory.LoadSpriteSheet(stream, 2, 2, (2, 2));
+
+        foreach (var cell in cells)
+            cell.Dispose();
+        cells[0].Dispose();
+
         factory.DisposedHandles.Should().Equal(cells[0].Handle);
     }
 
