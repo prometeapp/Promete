@@ -1,3 +1,29 @@
+## 2.2.0
+
+Promete v2.2では、`TextureFactoryBase` の設計を見直し、バックエンドが実装すべき範囲を最小限にしました。
+
+ゲームを作る側のAPIに破壊的変更はありません。独自のバックエンドを実装している場合のみ、対応が必要です。
+
+### Breaking Changes (バックエンド開発者向け)
+
+- `TextureFactoryBase` の抽象メンバーを、次の 3 つに置き換えました
+    - `protected abstract int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size)`: RGBA8888 のビットマップを GPU に転送し、ハンドルを返します
+    - `protected abstract void UpdateTexture(int handle, VectorInt offset, VectorInt size, ReadOnlySpan<byte> rgba)`: GPU 上のテクスチャの一部を書き換えます
+    - `protected abstract void DestroyTexture(int handle)`: GPU 上のテクスチャを破棄します
+- `Load` / `LoadSpriteSheet` / `Create` / `CreateSolid` / `Update` は virtual になり、基底クラスが共通の実装を提供します
+    - これらを `override` していた場合も、そのまま動作します。不要であれば削除できます
+    - `Update` の引数検証 (範囲外・サイズ不足) は基底クラスで行われます
+
+### Enhancements
+
+- `HeadlessBackend` のテクスチャファクトリが、画像を実際にデコードするようになりました。存在しないファイルや不正な画像を `Load` すると、他のバックエンドと同様に例外が発生します
+- `Create` に、サイズに対して不足したビットマップを渡した場合に `ArgumentException` を投げる検証を追加しました
+
+### Bug Fixes
+
+- `LoadSpriteSheet` で返されたテクスチャを `Dispose` すると、全セルが共有する 1 枚のテクスチャを何度も破棄していた不具合を修正しました。全セルを破棄した時点で、一度だけ解放されます
+- `LoadSpriteSheet` で指定した分割数が画像からはみ出す場合に、例外の前にテクスチャが GPU に残ってしまう不具合を修正しました
+
 ## 2.1.0
 
 Promete v2.1では、ゲームをWebブラウザ上で動かせる `Promete.Web` パッケージを追加しました（実験的）。

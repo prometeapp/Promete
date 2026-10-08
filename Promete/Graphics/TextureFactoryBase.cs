@@ -10,59 +10,130 @@ namespace Promete.Graphics;
 /// <summary>
 /// テクスチャを生成するファクトリです。
 /// </summary>
+/// <remarks>
+/// バックエンドは <see cref="UploadTexture"/>、<see cref="UpdateTexture"/>、<see cref="DestroyTexture"/> の 3 つを実装します。
+/// 画像の読み込みや切り抜きなどの処理は、この基底クラスが提供します。
+/// 必要に応じて、各 virtual メソッドをオーバーライドして最適化することもできます。
+/// </remarks>
 public abstract class TextureFactoryBase
 {
+    private readonly Action<Texture2D> _destroy;
+
+    /// <summary>
+    /// <see cref="TextureFactoryBase"/> の新しいインスタンスを初期化します。
+    /// </summary>
+    protected TextureFactoryBase()
+    {
+        _destroy = texture => DestroyTexture(texture.Handle);
+    }
+
     /// <summary>
     /// 指定したパスからテクスチャを読み込みます。
     /// </summary>
     /// <returns></returns>
-    public abstract Texture2D Load(string path);
+    public virtual Texture2D Load(string path)
+    {
+        return LoadFromImage(ImageDecoder.Decode(path));
+    }
 
     /// <summary>
     /// 指定したストリームからテクスチャを読み込みます。
     /// </summary>
     /// <returns></returns>
-    public abstract Texture2D Load(Stream stream);
+    public virtual Texture2D Load(Stream stream)
+    {
+        return LoadFromImage(ImageDecoder.Decode(stream));
+    }
 
     /// <summary>
     /// 指定したパスからテクスチャを読み込み、切り抜きます。
     /// </summary>
+    /// <remarks>
+    /// 返されるテクスチャは、すべて 1 枚のテクスチャを共有します。
+    /// 共有されたテクスチャは、返された全要素を <see cref="Texture2D.Dispose"/> した時点で破棄されます。
+    /// 同じ要素を複数回 <see cref="Texture2D.Dispose"/> しないでください。
+    /// </remarks>
     /// <returns></returns>
-    public abstract Texture2D[] LoadSpriteSheet(
+    public virtual Texture2D[] LoadSpriteSheet(
         string path,
         int horizontalCount,
         int verticalCount,
         VectorInt size
-    );
+    )
+    {
+        return LoadSpriteSheet(ImageDecoder.Decode(path), horizontalCount, verticalCount, size);
+    }
 
     /// <summary>
     /// 指定したストリームからテクスチャを読み込み、切り抜きます。
     /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, int, int, VectorInt)"/></remarks>
     /// <returns></returns>
-    public abstract Texture2D[] LoadSpriteSheet(
+    public virtual Texture2D[] LoadSpriteSheet(
         Stream stream,
         int horizontalCount,
         int verticalCount,
         VectorInt size
-    );
+    )
+    {
+        return LoadSpriteSheet(ImageDecoder.Decode(stream), horizontalCount, verticalCount, size);
+    }
 
     /// <summary>
     /// ビットマップのデータからテクスチャを生成します。
     /// </summary>
+    /// <param name="bitmap">RGBA8888 形式のビットマップデータ。</param>
+    /// <param name="size">テクスチャのサイズ。</param>
     /// <returns></returns>
-    public abstract Texture2D Create(byte[] bitmap, VectorInt size);
+    public virtual Texture2D Create(byte[] bitmap, VectorInt size)
+    {
+        ArgumentNullException.ThrowIfNull(bitmap);
+        if (size.X < 0 || size.Y < 0)
+            throw new ArgumentOutOfRangeException(nameof(size));
+        if (bitmap.Length < size.X * size.Y * 4)
+            throw new ArgumentException("ビットマップのデータがサイズに対して不足しています。", nameof(bitmap));
+
+        return new Texture2D(UploadTexture(bitmap, size), size, _destroy);
+    }
 
     /// <summary>
     /// ビットマップのデータからテクスチャを生成します。
     /// </summary>
+    /// <param name="bitmap">[x, y, チャンネル(RGBA)] の順で並んだビットマップデータ。</param>
     /// <returns></returns>
-    public abstract Texture2D Create(byte[,,] bitmap);
+    public virtual Texture2D Create(byte[,,] bitmap)
+    {
+        var width = bitmap.GetLength(0);
+        var height = bitmap.GetLength(1);
+        var arr = new byte[width * height * 4];
+        for (int y = 0, i = 0; y < height; y++)
+        for (var x = 0; x < width; x++)
+        for (var j = 0; j < 4; j++)
+            arr[i++] = bitmap[x, y, j];
+
+        return Create(arr, (width, height));
+    }
 
     /// <summary>
     /// 指定した色の単色テクスチャを生成します。
     /// </summary>
     /// <returns></returns>
-    public abstract Texture2D CreateSolid(Color color, VectorInt size);
+    public virtual Texture2D CreateSolid(Color color, VectorInt size)
+    {
+        if (size.X < 0 || size.Y < 0)
+            throw new ArgumentOutOfRangeException(nameof(size));
+
+        var arr = new byte[size.X * size.Y * 4];
+        for (var i = 0; i < arr.Length; i += 4)
+        {
+            arr[i + 0] = color.R;
+            arr[i + 1] = color.G;
+            arr[i + 2] = color.B;
+            arr[i + 3] = color.A;
+        }
+
+        return Create(arr, size);
+    }
 
     /// <summary>
     /// 既存のテクスチャの一部の領域を、指定したビットマップで書き換えます。
@@ -72,14 +143,23 @@ public abstract class TextureFactoryBase
     /// <param name="offset">書き換える領域の左上位置。</param>
     /// <param name="size">書き換える領域のサイズ。</param>
     /// <param name="bitmap">RGBA8888 形式のビットマップデータ。</param>
-    public abstract void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap);
-
-    /// <summary>
-    /// デコード済みの画像からテクスチャを生成します。
-    /// </summary>
-    internal Texture2D LoadFromImage(RgbaImage image)
+    public virtual void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap)
     {
-        return Create(image.Pixels, (image.Width, image.Height));
+        ArgumentNullException.ThrowIfNull(bitmap);
+        if (size.X <= 0 || size.Y <= 0)
+            return;
+
+        if (
+            offset.X < 0
+            || offset.Y < 0
+            || offset.X + size.X > texture.Size.X
+            || offset.Y + size.Y > texture.Size.Y
+        )
+            throw new ArgumentOutOfRangeException(nameof(offset));
+        if (bitmap.Length < size.X * size.Y * 4)
+            throw new ArgumentException("ビットマップのデータがサイズに対して不足しています。", nameof(bitmap));
+
+        UpdateTexture(texture.Handle, offset, size, bitmap);
     }
 
     /// <summary>
@@ -104,6 +184,104 @@ public abstract class TextureFactoryBase
     )
     {
         return Load9Sliced(ImageDecoder.Decode(stream), left, top, right, bottom);
+    }
+
+    /// <summary>
+    /// デコード済みの画像からテクスチャを生成します。
+    /// </summary>
+    internal Texture2D LoadFromImage(RgbaImage image)
+    {
+        return Create(image.Pixels, (image.Width, image.Height));
+    }
+
+    /// <summary>
+    /// RGBA8888 形式のビットマップを GPU へ転送し、新しいテクスチャのハンドルを返します。
+    /// </summary>
+    /// <remarks>
+    /// ピクセルは左上から右下へ、行優先で並んでいます。
+    /// 引数の検証は呼び出し側で済んでいます。
+    /// </remarks>
+    /// <param name="rgba">RGBA8888 形式のビットマップデータ。</param>
+    /// <param name="size">テクスチャのサイズ。</param>
+    /// <returns>バックエンドのテクスチャハンドル。</returns>
+    protected abstract int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size);
+
+    /// <summary>
+    /// GPU 上のテクスチャの一部の領域を書き換えます。
+    /// </summary>
+    /// <remarks>
+    /// 領域がテクスチャの範囲内にあること、<paramref name="rgba"/> が十分な長さであることは、呼び出し側で検証済みです。
+    /// </remarks>
+    /// <param name="handle">書き換え対象のテクスチャハンドル。</param>
+    /// <param name="offset">書き換える領域の左上位置。</param>
+    /// <param name="size">書き換える領域のサイズ。</param>
+    /// <param name="rgba">RGBA8888 形式のビットマップデータ。</param>
+    protected abstract void UpdateTexture(
+        int handle,
+        VectorInt offset,
+        VectorInt size,
+        ReadOnlySpan<byte> rgba
+    );
+
+    /// <summary>
+    /// GPU 上のテクスチャを破棄します。
+    /// </summary>
+    /// <remarks>
+    /// 同じハンドルに対して複数回呼ばれることはありません。
+    /// </remarks>
+    /// <param name="handle">破棄するテクスチャハンドル。</param>
+    protected abstract void DestroyTexture(int handle);
+
+    private Texture2D[] LoadSpriteSheet(
+        RgbaImage bmp,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size
+    )
+    {
+        if (horizontalCount * size.X > bmp.Width)
+            throw new ArgumentException(null, nameof(horizontalCount));
+        if (verticalCount * size.Y > bmp.Height)
+            throw new ArgumentException(null, nameof(verticalCount));
+
+        var count = verticalCount * horizontalCount;
+        if (count <= 0)
+            return [];
+
+        var width = (float)bmp.Width;
+        var height = (float)bmp.Height;
+        var handle = UploadTexture(bmp.Pixels, (bmp.Width, bmp.Height));
+
+        // 全セルが 1 枚のテクスチャを共有するので、最後の 1 つが破棄された時点で解放する
+        var remaining = count;
+        void Release(Texture2D _)
+        {
+            if (--remaining == 0)
+                DestroyTexture(handle);
+        }
+
+        var textures = new Texture2D[count];
+        for (var y = 0; y < verticalCount; y++)
+        {
+            for (var x = 0; x < horizontalCount; x++)
+            {
+                var px = x * size.X;
+                var py = y * size.Y;
+
+                var uvStart = new Vector(px / width, py / height);
+                var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
+
+                textures[(y * horizontalCount) + x] = new Texture2D(
+                    handle,
+                    size,
+                    Release,
+                    uvStart,
+                    uvEnd
+                );
+            }
+        }
+
+        return textures;
     }
 
     private Texture9Sliced Load9Sliced(RgbaImage img, int left, int top, int right, int bottom)

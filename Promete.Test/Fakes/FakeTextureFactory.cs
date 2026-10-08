@@ -1,6 +1,4 @@
-using System.Drawing;
 using Promete.Graphics;
-using Color = System.Drawing.Color;
 
 namespace Promete.Test.Fakes;
 
@@ -23,56 +21,6 @@ public class FakeTextureFactory : TextureFactoryBase
     /// </summary>
     public int CreatedCount => _nextHandle - 1;
 
-    public override Texture2D Load(string path) => throw new NotSupportedException();
-
-    public override Texture2D Load(Stream stream) => throw new NotSupportedException();
-
-    public override Texture2D[] LoadSpriteSheet(
-        string path,
-        int horizontalCount,
-        int verticalCount,
-        VectorInt size
-    ) => throw new NotSupportedException();
-
-    public override Texture2D[] LoadSpriteSheet(
-        Stream stream,
-        int horizontalCount,
-        int verticalCount,
-        VectorInt size
-    ) => throw new NotSupportedException();
-
-    public override Texture2D Create(byte[] bitmap, VectorInt size)
-    {
-        var handle = _nextHandle++;
-        var buffer = new byte[size.X * size.Y * 4];
-        Array.Copy(bitmap, buffer, Math.Min(bitmap.Length, buffer.Length));
-        _textures[handle] = buffer;
-        _sizes[handle] = size;
-        return new Texture2D(handle, size, t => DisposedHandles.Add(t.Handle));
-    }
-
-    public override Texture2D Create(byte[,,] bitmap) => throw new NotSupportedException();
-
-    public override Texture2D CreateSolid(Color color, VectorInt size) =>
-        throw new NotSupportedException();
-
-    public override void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap)
-    {
-        var destination = _textures[texture.Handle];
-        var stride = texture.Size.X * 4;
-
-        for (var y = 0; y < size.Y; y++)
-        {
-            Array.Copy(
-                bitmap,
-                y * size.X * 4,
-                destination,
-                ((offset.Y + y) * stride) + (offset.X * 4),
-                size.X * 4
-            );
-        }
-    }
-
     /// <summary>
     /// 指定したテクスチャのサイズを取得します。
     /// </summary>
@@ -84,5 +32,37 @@ public class FakeTextureFactory : TextureFactoryBase
     public byte GetAlphaAt(int handle, VectorInt size, VectorInt position)
     {
         return _textures[handle][(((position.Y * size.X) + position.X) * 4) + 3];
+    }
+
+    protected override int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size)
+    {
+        var handle = _nextHandle++;
+        var buffer = new byte[size.X * size.Y * 4];
+        rgba[..Math.Min(rgba.Length, buffer.Length)].CopyTo(buffer);
+        _textures[handle] = buffer;
+        _sizes[handle] = size;
+        return handle;
+    }
+
+    protected override void UpdateTexture(
+        int handle,
+        VectorInt offset,
+        VectorInt size,
+        ReadOnlySpan<byte> rgba
+    )
+    {
+        var destination = _textures[handle];
+        var stride = _sizes[handle].X * 4;
+
+        for (var y = 0; y < size.Y; y++)
+        {
+            rgba.Slice(y * size.X * 4, size.X * 4)
+                .CopyTo(destination.AsSpan(((offset.Y + y) * stride) + (offset.X * 4)));
+        }
+    }
+
+    protected override void DestroyTexture(int handle)
+    {
+        DisposedHandles.Add(handle);
     }
 }
