@@ -35,6 +35,9 @@ Promete v2.1では、ゲームをWebブラウザ上で動かせる `Promete.Web`
 
 - シーンのコンストラクタで例外が発生すると、以降のシーン遷移がすべて失敗する不具合を修正しました
     - `LoadScene` では現在のシーンを破棄済みとして扱い、`PushScene` では元のシーンを再開してから例外を再スローします
+- `CompatibleWindow.RawInputContext` が常に `null` を返す不具合を修正しました
+- `Mouse` の `Click` / `ButtonDown` / `ButtonUp` / `Move` イベントの座標が、`PixelRatio` が 1 でない環境で `Mouse.Position` とずれる不具合を修正しました
+- 参照先ライブラリの `internal` なシーンに対して、実際には登録されているのに `PROMETE0001` の警告が出てしまう不具合を修正しました
 
 ## 2.0.0
 
