@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Promete.Backends.SilkNetCommon;
 using Promete.Graphics;
 using Silk.NET.Input;
 
@@ -169,8 +170,9 @@ public class CompatibleWindow(PrometeApp app) : IWindow
         set => app.View.Mode = value;
     }
 
+    // IInputContext は DI に登録されていないため、InputProvider 経由で取得する
     public IInputContext? RawInputContext =>
-        app.TryGetPlugin<IInputContext>(out var ctx) ? ctx : null;
+        app.TryGetPlugin<InputProvider>(out var provider) ? provider.CreateInput() : null;
 
     public TextureFactoryBase TextureFactory => app.TextureFactory;
 
