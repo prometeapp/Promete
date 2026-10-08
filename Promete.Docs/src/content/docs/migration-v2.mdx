@@ -718,7 +718,8 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    - **呼び出し順**: `OnInitialize` → 各 `Setup*` の順で呼ばれ、その後に DI コンテナが構築されます。`OnInitialize` の時点で取得できるプラグインは、`Use<T>(instance)` でインスタンスとして登録されたものだけです
    - **ゲームループ**: `OnStart` では、`app.OnStart()` を1度呼んだ後、ゲームループの中で `app.OnUpdate()` / `app.OnRender()` を呼び出してください。終了時には `app.OnDestroy()` を呼んでください
    - **コマンドランナー**: 描画は手順1のコマンドで行われます。`RenderCommandQueue` は `Build<T>()` が自動的に登録するので、`app.GetPlugin<RenderCommandQueue>()` で取得し、標準のコマンドに対応するランナーを `RegisterRunner` で登録してください。テクスチャの描画は、連続する `DrawTextureCommand` をまとめた `DrawTextureBatchedCommand` として届きます
-   - **`TextureFactoryBase`**: v1 の `TextureFactory` から名前が変わりました。テクスチャの一部を書き換える抽象メソッド `Update(Texture2D, VectorInt, VectorInt, byte[])` が追加されました。v1 にあった `LoadFromImageSharpImage(Image)` は廃止されたため、実装は不要です。テクスチャは `new Texture2D(handle, size, onDispose)` で生成します
+   - **`TextureFactoryBase`**: v1 の `TextureFactory` から名前が変わりました。画像の読み込みやスプライトシートの切り抜きなどは基底クラスが行うので、バックエンドで実装するのは、ビットマップを GPU に転送する `UploadTexture`、テクスチャの一部を書き換える `UpdateTexture`、テクスチャを破棄する `DestroyTexture` の3つです。`Texture2D` は基底クラスが生成するため、`new Texture2D(...)` は不要です。v1 にあった `LoadFromImageSharpImage(Image)` は廃止されたため、実装は不要です
+     - この3つの構成は v2.2 以降のものです。v2.0・v2.1 では、`Load` / `LoadSpriteSheet` / `Create` / `CreateSolid` などを個別に実装し、テクスチャの一部を書き換える抽象メソッド `Update(Texture2D, VectorInt, VectorInt, byte[])` を追加で実装します。テクスチャは `new Texture2D(handle, size, onDispose)` で生成します
    - **`IRenderTextureProvider`**: v1 の `IFrameBufferProvider` とはメンバーがまったく異なるため、作り直しになります。`Create` では `new RenderTexture(size, texture, this)` を返し、`Resize` でテクスチャを作り直した場合は `RenderTexture.Texture` を差し替えてください
    - **`IShaderFactory`**: `Compile` でシェーダーをコンパイルし、`ShaderProgram.SetCompiledData(handle, onDispose)` で結果を設定してください。マテリアルの Uniform 値は `Material.Uniforms` で取得できます
 

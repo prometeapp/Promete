@@ -118,6 +118,12 @@ public class SpriteSheetExample : Scene
 }
 ```
 
+:::note
+スプライトシートから得られたテクスチャは、すべて1枚の画像を共有しています。そのため、いずれか1つを `Dispose` した時点で画像が解放され、他のテクスチャも使えなくなります。
+
+v2.2以降では、すでに解放された後の `Dispose` は何も行わないので、上のように全要素に対して `Dispose` を呼んでも問題ありません。それ以前のバージョンでは未定義動作となるので注意してください。
+:::
+
 ## プログラムによるテクスチャ生成
 ファイルを用いずに、動的にテクスチャを生成する方法もあります。
 
@@ -149,7 +155,7 @@ public class SolidTextureExample : Scene
 
 ### ビットマップデータからの生成
 
-byte型の3次元配列（縦、横、RGBA）から直接テクスチャを生成することも可能です。
+byte型の3次元配列（横、縦、RGBA）から直接テクスチャを生成することも可能です。配列は `[x, y, チャンネル]` の順でアクセスします。
 
 ```csharp title="BitmapTextureExample.cs"
 using System.Drawing;
@@ -214,6 +220,117 @@ public class NineSliceExample : Scene
 }
 ```
 
+## テクスチャの設定 `v2.2~`
+
+テクスチャの生成時に `TextureOptions` を渡すと、描画時のサンプリング方法を指定できます。`Load`、`LoadSpriteSheet`、`Load9Sliced`、`Create`、`CreateSolid` が受け取ります。
+
+指定しない場合は、ピクセルパーフェクトな描画に適した既定値（`Nearest` と `Clamp`）が使われます。
+
+### 補間方法
+
+`TextureFilterMode` で、拡大・縮小したときのピクセルの補間方法を指定します。
+
+- `Nearest`（既定）: 最も近いピクセルの色をそのまま使います。拡大しても境界がくっきりするので、ドット絵に向いています
+- `Linear`: 周囲のピクセルを混ぜ合わせます。境界が滑らかになるので、高解像度のイラストなどに向いています
+
+```csharp title="FilterModeExample.cs"
+// ドット絵を、くっきりと拡大して表示する（既定）
+var pixelArt = App.TextureFactory.Load("assets/icon.png");
+
+// 高解像度のイラストを、滑らかに表示する
+var illustration = App.TextureFactory.Load(
+    "assets/illustration.png",
+    new TextureOptions(TextureFilterMode.Linear)
+);
+```
+
+:::caution
+`Linear` をスプライトシートや `Tilemap` で使うテクスチャに指定すると、隣り合うセルのピクセルが混ざって、境界が滲んで見えることがあります。ピクセルパーフェクトな描画が必要な場合は、既定の `Nearest` を使ってください。
+:::
+
+### アドレスモード
+
+`TextureAddressMode` で、UV 座標が 0〜1 の範囲を超えたときのサンプリング方法を指定します。
+
+- `Clamp`（既定）: 範囲外では、端のピクセルを引き伸ばします
+- `Repeat`: 範囲外では、テクスチャを繰り返します
+- `Mirror`: 範囲外では、テクスチャを反転しながら繰り返します
+
+通常の `Sprite` では UV 座標が範囲内に収まるため、違いは現れません。UV 座標を範囲外へ広げるカスタムノードや、シェーダーでタイル状に敷き詰めるときなどに使います。
+
+```csharp title="AddressModeExample.cs"
+var tile = App.TextureFactory.Load(
+    "assets/tile.png",
+    new TextureOptions(Address: TextureAddressMode.Repeat)
+);
+```
+
+## 非同期読み込み `v2.2~`
+
+大きな画像を `Load` で読み込むと、デコードが終わるまでゲームが止まってしまいます。`LoadAsync`、`LoadSpriteSheetAsync`、`Load9SlicedAsync` を使うと、ゲームを止めずに読み込めます。
+
+画像のデコードはバックグラウンドで行われ、GPU への転送は次のフレームの開始時に、メインスレッドで行われます。
+
+### コルーチンで待つ
+
+シーンの中では、コルーチンの `WaitForTask` で待つ方法が簡単です。完了後の処理はメインスレッドで実行されるので、そのままノードを操作できます。コルーチンについては [コルーチン](/guide/other/coroutine/) を参照してください。
+
+```csharp title="AsyncLoadExample.cs"
+using System.Collections;
+using Promete;
+using Promete.Coroutines;
+using Promete.Graphics;
+using Promete.Nodes;
+
+public class AsyncLoadExample(CoroutineManager coroutines) : Scene
+{
+    private Texture2D _texture;
+
+    public override void OnStart()
+    {
+        coroutines.Start(LoadTexture());
+    }
+
+    private IEnumerator LoadTexture()
+    {
+        var task = App.TextureFactory.LoadAsync("assets/background.png");
+        yield return new WaitForTask(task);
+
+        _texture = task.Result;
+        Root.Add(new Sprite(_texture));
+    }
+
+    public override void OnDestroy()
+    {
+        _texture.Dispose();
+    }
+}
+```
+
+### async / await で待つ
+
+`async` メソッドで `await` することもできます。ただし、`await` の後のコードは、メインスレッドで実行されるとは限りません。
+
+:::caution
+`await` の後に、ノードの追加などシーンの操作を行う場合は、`App.NextFrame` を使ってメインスレッドで実行してください。
+:::
+
+```csharp title="AwaitLoadExample.cs"
+private async Task LoadBackgroundAsync()
+{
+    var texture = await App.TextureFactory.LoadAsync("assets/background.png");
+
+    // await の後はメインスレッドとは限らないので、NextFrame で戻す
+    App.NextFrame(() => Root.Add(new Sprite(texture)));
+}
+```
+
+### キャンセルと注意点
+
+- `CancellationToken` を渡すと、GPU への転送が始まる前までキャンセルできます。転送が始まった後にキャンセルしても無視され、テクスチャが返されます
+- 完了にはメインスレッドの処理が必要なので、ゲームのメインループが動作している間に使ってください
+- 返されたテクスチャの `Dispose` は、同期版と同じく、メインスレッドで行ってください
+
 ## テクスチャのプロパティ
 
 `Texture2D`構造体は以下のプロパティを持ちます：
@@ -223,9 +340,18 @@ public class NineSliceExample : Scene
 VectorInt size = texture.Size;
 Console.WriteLine($"サイズ: {size.X} x {size.Y}");
 
+// 画像のどの範囲を使うか（UV座標。左上と右下）
+Vector uvStart = texture.UvStart;
+Vector uvEnd = texture.UvEnd;
+
+// (v2.2~) スプライトシートの要素など、画像の一部の範囲のみを指しているか
+bool isSubTexture = texture.IsSubTexture;
+
 // 描画バックエンドが使用する画像のハンドル（通常は直接使用しない）
 int handle = texture.Handle;
 ```
+
+`IsSubTexture` が `true` のテクスチャは、画像の一部を指しているだけなので、`TextureFactoryBase.Update` で内容を書き換えることはできません。
 
 ## リソース管理のベストプラクティス
 
