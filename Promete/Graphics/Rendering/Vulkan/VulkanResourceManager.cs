@@ -15,10 +15,10 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
 
     private readonly VulkanContext _ctx;
     private readonly Dictionary<int, VulkanTextureEntry> _textures = [];
+    private readonly Dictionary<TextureOptions, Sampler> _samplers = [];
 
     private DescriptorPool _descriptorPool;
     private DescriptorSetLayout _textureSetLayout;
-    private Sampler _nearestSampler;
     private int _nextId = 1;
     private bool _initialized;
     private bool _disposed;
@@ -41,7 +41,12 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
     /// <summary>
     /// RGBA8 のピクセルデータからテクスチャを作成し、ID を返します。
     /// </summary>
-    public int CreateTexture(ReadOnlySpan<byte> rgba, uint width, uint height)
+    public int CreateTexture(
+        ReadOnlySpan<byte> rgba,
+        uint width,
+        uint height,
+        TextureOptions options = default
+    )
     {
         EnsureInitialized();
 
@@ -55,7 +60,7 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
         UploadPixels(image, rgba, width, height);
 
         var view = _ctx.CreateImageView2D(image, VulkanContext.OffscreenFormat);
-        return Register(image, memory, view, ownsImage: true);
+        return Register(image, memory, view, ownsImage: true, options);
     }
 
     /// <summary>
@@ -86,11 +91,18 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
     /// <summary>
     /// 既存のイメージ (RenderTexture 等) をテーブルに登録し、ID を返します。
     /// </summary>
-    public int Register(Image image, DeviceMemory memory, ImageView view, bool ownsImage)
+    public int Register(
+        Image image,
+        DeviceMemory memory,
+        ImageView view,
+        bool ownsImage,
+        TextureOptions options = default
+    )
     {
         EnsureInitialized();
 
-        var descriptorSet = AllocateTextureDescriptorSet(view);
+        var sampler = GetSampler(options);
+        var descriptorSet = AllocateTextureDescriptorSet(view, sampler);
         var id = _nextId++;
         _textures[id] = new VulkanTextureEntry
         {
@@ -98,6 +110,7 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
             Memory = memory,
             View = view,
             DescriptorSet = descriptorSet,
+            Sampler = sampler,
             OwnsImage = ownsImage,
         };
         return id;
@@ -113,7 +126,7 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
         entry.Image = image;
         entry.Memory = memory;
         entry.View = view;
-        UpdateTextureDescriptorSet(entry.DescriptorSet, view);
+        UpdateTextureDescriptorSet(entry.DescriptorSet, view, entry.Sampler);
     }
 
     /// <summary>
@@ -176,7 +189,10 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
 
         if (_initialized)
         {
-            vk.DestroySampler(device, _nearestSampler, null);
+            foreach (var sampler in _samplers.Values)
+                vk.DestroySampler(device, sampler, null);
+
+            _samplers.Clear();
             vk.DestroyDescriptorPool(device, _descriptorPool, null);
             vk.DestroyDescriptorSetLayout(device, _textureSetLayout, null);
         }
@@ -226,23 +242,40 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
             PBindings = &binding,
         };
         vk.CreateDescriptorSetLayout(device, in layoutInfo, null, out _textureSetLayout);
+    }
 
-        // Nearest サンプラー (ピクセルパーフェクト描画用、ClampToEdge)
+    /// <summary>
+    /// 指定した設定に対応するサンプラーを取得します。未作成であれば作成します。
+    /// </summary>
+    private Sampler GetSampler(TextureOptions options)
+    {
+        if (_samplers.TryGetValue(options, out var cached))
+            return cached;
+
+        var filter = options.Filter == TextureFilterMode.Linear ? Filter.Linear : Filter.Nearest;
+        var address = options.Address switch
+        {
+            TextureAddressMode.Repeat => SamplerAddressMode.Repeat,
+            TextureAddressMode.Mirror => SamplerAddressMode.MirroredRepeat,
+            _ => SamplerAddressMode.ClampToEdge,
+        };
         var samplerInfo = new SamplerCreateInfo
         {
             SType = StructureType.SamplerCreateInfo,
-            MagFilter = Filter.Nearest,
-            MinFilter = Filter.Nearest,
+            MagFilter = filter,
+            MinFilter = filter,
             MipmapMode = SamplerMipmapMode.Nearest,
-            AddressModeU = SamplerAddressMode.ClampToEdge,
-            AddressModeV = SamplerAddressMode.ClampToEdge,
-            AddressModeW = SamplerAddressMode.ClampToEdge,
+            AddressModeU = address,
+            AddressModeV = address,
+            AddressModeW = address,
             MaxLod = 0,
         };
-        vk.CreateSampler(device, in samplerInfo, null, out _nearestSampler);
+        _ctx.Vk.CreateSampler(_ctx.Device, in samplerInfo, null, out var sampler);
+        _samplers[options] = sampler;
+        return sampler;
     }
 
-    private DescriptorSet AllocateTextureDescriptorSet(ImageView view)
+    private DescriptorSet AllocateTextureDescriptorSet(ImageView view, Sampler sampler)
     {
         var layout = _textureSetLayout;
         var allocInfo = new DescriptorSetAllocateInfo
@@ -258,15 +291,15 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
                 $"ディスクリプタセットの確保に失敗しました: {result}"
             );
 
-        UpdateTextureDescriptorSet(set, view);
+        UpdateTextureDescriptorSet(set, view, sampler);
         return set;
     }
 
-    private void UpdateTextureDescriptorSet(DescriptorSet set, ImageView view)
+    private void UpdateTextureDescriptorSet(DescriptorSet set, ImageView view, Sampler sampler)
     {
         var imageInfo = new DescriptorImageInfo
         {
-            Sampler = _nearestSampler,
+            Sampler = sampler,
             ImageView = view,
             ImageLayout = ImageLayout.General,
         };
@@ -381,6 +414,8 @@ internal sealed unsafe class VulkanResourceManager : IDisposable
         public required ImageView View { get; set; }
 
         public required DescriptorSet DescriptorSet { get; init; }
+
+        public required Sampler Sampler { get; init; }
 
         public required bool OwnsImage { get; init; }
     }

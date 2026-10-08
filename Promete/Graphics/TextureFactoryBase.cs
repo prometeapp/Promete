@@ -14,6 +14,8 @@ namespace Promete.Graphics;
 /// バックエンドは <see cref="UploadTexture"/>、<see cref="UpdateTexture"/>、<see cref="DestroyTexture"/> の 3 つを実装します。
 /// 画像の読み込みや切り抜きなどの処理は、この基底クラスが提供します。
 /// 必要に応じて、各 virtual メソッドをオーバーライドして最適化することもできます。
+/// その場合、引数の検証などの基底クラスの処理は、オーバーライドした側の責任になります。
+/// <see cref="TextureOptions"/> を受け取るオーバーロードが実処理を担い、受け取らないオーバーロードは既定の設定でそちらを呼びます。
 /// </remarks>
 public abstract class TextureFactoryBase
 {
@@ -33,7 +35,18 @@ public abstract class TextureFactoryBase
     /// <returns></returns>
     public virtual Texture2D Load(string path)
     {
-        return LoadFromImage(ImageDecoder.Decode(path));
+        return Load(path, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// 指定したパスからテクスチャを読み込みます。
+    /// </summary>
+    /// <param name="path">画像ファイルのパス。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture2D Load(string path, TextureOptions options)
+    {
+        return LoadFromImage(ImageDecoder.Decode(path), options);
     }
 
     /// <summary>
@@ -42,7 +55,18 @@ public abstract class TextureFactoryBase
     /// <returns></returns>
     public virtual Texture2D Load(Stream stream)
     {
-        return LoadFromImage(ImageDecoder.Decode(stream));
+        return Load(stream, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを読み込みます。
+    /// </summary>
+    /// <param name="stream">画像データのストリーム。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture2D Load(Stream stream, TextureOptions options)
+    {
+        return LoadFromImage(ImageDecoder.Decode(stream), options);
     }
 
     /// <summary>
@@ -61,7 +85,30 @@ public abstract class TextureFactoryBase
         VectorInt size
     )
     {
-        return LoadSpriteSheet(ImageDecoder.Decode(path), horizontalCount, verticalCount, size);
+        return LoadSpriteSheet(path, horizontalCount, verticalCount, size, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// 指定したパスからテクスチャを読み込み、切り抜きます。
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, int, int, VectorInt)"/></remarks>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture2D[] LoadSpriteSheet(
+        string path,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size,
+        TextureOptions options
+    )
+    {
+        return LoadSpriteSheet(
+            ImageDecoder.Decode(path),
+            horizontalCount,
+            verticalCount,
+            size,
+            options
+        );
     }
 
     /// <summary>
@@ -76,7 +123,36 @@ public abstract class TextureFactoryBase
         VectorInt size
     )
     {
-        return LoadSpriteSheet(ImageDecoder.Decode(stream), horizontalCount, verticalCount, size);
+        return LoadSpriteSheet(
+            stream,
+            horizontalCount,
+            verticalCount,
+            size,
+            TextureOptions.Default
+        );
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを読み込み、切り抜きます。
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, int, int, VectorInt)"/></remarks>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture2D[] LoadSpriteSheet(
+        Stream stream,
+        int horizontalCount,
+        int verticalCount,
+        VectorInt size,
+        TextureOptions options
+    )
+    {
+        return LoadSpriteSheet(
+            ImageDecoder.Decode(stream),
+            horizontalCount,
+            verticalCount,
+            size,
+            options
+        );
     }
 
     /// <summary>
@@ -87,13 +163,26 @@ public abstract class TextureFactoryBase
     /// <returns></returns>
     public virtual Texture2D Create(byte[] bitmap, VectorInt size)
     {
+        return Create(bitmap, size, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// ビットマップのデータからテクスチャを生成します。
+    /// </summary>
+    /// <param name="bitmap">RGBA8888 形式のビットマップデータ。</param>
+    /// <param name="size">テクスチャのサイズ。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture2D Create(byte[] bitmap, VectorInt size, TextureOptions options)
+    {
         ArgumentNullException.ThrowIfNull(bitmap);
         if (size.X < 0 || size.Y < 0)
             throw new ArgumentOutOfRangeException(nameof(size));
         if (bitmap.Length < size.X * size.Y * 4)
             throw new ArgumentException("ビットマップのデータがサイズに対して不足しています。", nameof(bitmap));
 
-        return new Texture2D(UploadTexture(bitmap, size), size, _destroy);
+        var handle = UploadTexture(new TextureUploadRequest(bitmap, size, options));
+        return new Texture2D(handle, size, _destroy);
     }
 
     /// <summary>
@@ -103,6 +192,17 @@ public abstract class TextureFactoryBase
     /// <returns></returns>
     public virtual Texture2D Create(byte[,,] bitmap)
     {
+        return Create(bitmap, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// ビットマップのデータからテクスチャを生成します。
+    /// </summary>
+    /// <param name="bitmap">[x, y, チャンネル(RGBA)] の順で並んだビットマップデータ。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture2D Create(byte[,,] bitmap, TextureOptions options)
+    {
         var width = bitmap.GetLength(0);
         var height = bitmap.GetLength(1);
         var arr = new byte[width * height * 4];
@@ -111,7 +211,7 @@ public abstract class TextureFactoryBase
         for (var j = 0; j < 4; j++)
             arr[i++] = bitmap[x, y, j];
 
-        return Create(arr, (width, height));
+        return Create(arr, (width, height), options);
     }
 
     /// <summary>
@@ -119,6 +219,18 @@ public abstract class TextureFactoryBase
     /// </summary>
     /// <returns></returns>
     public virtual Texture2D CreateSolid(Color color, VectorInt size)
+    {
+        return CreateSolid(color, size, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// 指定した色の単色テクスチャを生成します。
+    /// </summary>
+    /// <param name="color">塗りつぶす色。</param>
+    /// <param name="size">テクスチャのサイズ。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture2D CreateSolid(Color color, VectorInt size, TextureOptions options)
     {
         if (size.X < 0 || size.Y < 0)
             throw new ArgumentOutOfRangeException(nameof(size));
@@ -132,7 +244,7 @@ public abstract class TextureFactoryBase
             arr[i + 3] = color.A;
         }
 
-        return Create(arr, size);
+        return Create(arr, size, options);
     }
 
     /// <summary>
@@ -143,9 +255,14 @@ public abstract class TextureFactoryBase
     /// <param name="offset">書き換える領域の左上位置。</param>
     /// <param name="size">書き換える領域のサイズ。</param>
     /// <param name="bitmap">RGBA8888 形式のビットマップデータ。</param>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="texture"/> が <see cref="Texture2D.IsSubTexture"/> である場合。
+    /// </exception>
     public virtual void Update(Texture2D texture, VectorInt offset, VectorInt size, byte[] bitmap)
     {
         ArgumentNullException.ThrowIfNull(bitmap);
+        if (texture.IsSubTexture)
+            throw new InvalidOperationException("テクスチャの一部の領域を指すテクスチャは、書き換えできません。");
         if (size.X <= 0 || size.Y <= 0)
             return;
 
@@ -168,7 +285,24 @@ public abstract class TextureFactoryBase
     /// <returns></returns>
     public virtual Texture9Sliced Load9Sliced(string path, int left, int top, int right, int bottom)
     {
-        return Load9Sliced(ImageDecoder.Decode(path), left, top, right, bottom);
+        return Load9Sliced(path, left, top, right, bottom, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// 指定したパスから 9 スライステクスチャを読み込みます。
+    /// </summary>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture9Sliced Load9Sliced(
+        string path,
+        int left,
+        int top,
+        int right,
+        int bottom,
+        TextureOptions options
+    )
+    {
+        return Load9Sliced(ImageDecoder.Decode(path), left, top, right, bottom, options);
     }
 
     /// <summary>
@@ -183,28 +317,44 @@ public abstract class TextureFactoryBase
         int bottom
     )
     {
-        return Load9Sliced(ImageDecoder.Decode(stream), left, top, right, bottom);
+        return Load9Sliced(stream, left, top, right, bottom, TextureOptions.Default);
+    }
+
+    /// <summary>
+    /// 指定したストリームから 9 スライステクスチャを読み込みます。
+    /// </summary>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <returns></returns>
+    public virtual Texture9Sliced Load9Sliced(
+        Stream stream,
+        int left,
+        int top,
+        int right,
+        int bottom,
+        TextureOptions options
+    )
+    {
+        return Load9Sliced(ImageDecoder.Decode(stream), left, top, right, bottom, options);
     }
 
     /// <summary>
     /// デコード済みの画像からテクスチャを生成します。
     /// </summary>
-    internal Texture2D LoadFromImage(RgbaImage image)
+    internal Texture2D LoadFromImage(RgbaImage image, TextureOptions options = default)
     {
-        return Create(image.Pixels, (image.Width, image.Height));
+        return Create(image.Pixels, (image.Width, image.Height), options);
     }
 
     /// <summary>
-    /// RGBA8888 形式のビットマップを GPU へ転送し、新しいテクスチャのハンドルを返します。
+    /// ビットマップを GPU へ転送し、新しいテクスチャのハンドルを返します。
     /// </summary>
     /// <remarks>
-    /// ピクセルは左上から右下へ、行優先で並んでいます。
     /// 引数の検証は呼び出し側で済んでいます。
+    /// 呼び出されるスレッドは規定しません。スレッドに制約のあるバックエンドは、実装側で保証してください。
     /// </remarks>
-    /// <param name="rgba">RGBA8888 形式のビットマップデータ。</param>
-    /// <param name="size">テクスチャのサイズ。</param>
+    /// <param name="request">転送要求。</param>
     /// <returns>バックエンドのテクスチャハンドル。</returns>
-    protected abstract int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size);
+    protected abstract int UploadTexture(in TextureUploadRequest request);
 
     /// <summary>
     /// GPU 上のテクスチャの一部の領域を書き換えます。
@@ -236,7 +386,8 @@ public abstract class TextureFactoryBase
         RgbaImage bmp,
         int horizontalCount,
         int verticalCount,
-        VectorInt size
+        VectorInt size,
+        TextureOptions options
     )
     {
         if (horizontalCount * size.X > bmp.Width)
@@ -250,7 +401,9 @@ public abstract class TextureFactoryBase
 
         var width = (float)bmp.Width;
         var height = (float)bmp.Height;
-        var handle = UploadTexture(bmp.Pixels, (bmp.Width, bmp.Height));
+        var handle = UploadTexture(
+            new TextureUploadRequest(bmp.Pixels, (bmp.Width, bmp.Height), options)
+        );
 
         // 全セルが 1 枚のテクスチャを共有するので、最後の 1 つが破棄された時点で解放する
         var remaining = count;
@@ -284,7 +437,14 @@ public abstract class TextureFactoryBase
         return textures;
     }
 
-    private Texture9Sliced Load9Sliced(RgbaImage img, int left, int top, int right, int bottom)
+    private Texture9Sliced Load9Sliced(
+        RgbaImage img,
+        int left,
+        int top,
+        int right,
+        int bottom,
+        TextureOptions options
+    )
     {
         var size = (img.Width, img.Height);
 
@@ -311,7 +471,9 @@ public abstract class TextureFactoryBase
         };
 
         var texture = atlas
-            .Select(rect => LoadFromImage(img.Crop(rect.X, rect.Y, rect.Width, rect.Height)))
+            .Select(rect =>
+                LoadFromImage(img.Crop(rect.X, rect.Y, rect.Width, rect.Height), options)
+            )
             .ToArray();
 
         return new Texture9Sliced(texture, size);

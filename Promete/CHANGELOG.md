@@ -7,12 +7,21 @@ Promete v2.2では、`TextureFactoryBase` の設計を見直し、バックエ�
 ### Breaking Changes (バックエンド開発者向け)
 
 - `TextureFactoryBase` の抽象メンバーを、次の 3 つに置き換えました
-    - `protected abstract int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size)`: RGBA8888 のビットマップを GPU に転送し、ハンドルを返します
+    - `protected abstract int UploadTexture(in TextureUploadRequest request)`: ビットマップ (RGBA8888)、サイズ、サンプリング設定を受け取り、GPU に転送してハンドルを返します
     - `protected abstract void UpdateTexture(int handle, VectorInt offset, VectorInt size, ReadOnlySpan<byte> rgba)`: GPU 上のテクスチャの一部を書き換えます
     - `protected abstract void DestroyTexture(int handle)`: GPU 上のテクスチャを破棄します
 - `Load` / `LoadSpriteSheet` / `Create` / `CreateSolid` / `Update` は virtual になり、基底クラスが共通の実装を提供します
     - これらを `override` していた場合も、そのまま動作します。不要であれば削除できます
     - `Update` の引数検証 (範囲外・サイズ不足) は基底クラスで行われます
+
+### Features
+
+- テクスチャの生成時に、補間方法とアドレスモードを指定できるようになりました
+    - `TextureOptions` に、`TextureFilterMode` (`Nearest` / `Linear`) と `TextureAddressMode` (`Clamp` / `Repeat` / `Mirror`) を指定します。既定値は従来どおり `Nearest` と `Clamp` です
+    - `Load`、`LoadSpriteSheet`、`Load9Sliced`、`Create`、`CreateSolid` に、`TextureOptions` を受け取るオーバーロードを追加しました。既存のオーバーロードの挙動は変わりません
+    - `Silk.NET.OpenGL.TextureWrapMode` との衝突を避けるため、後者は `TextureAddressMode` と命名しています
+- `Texture2D.IsSubTexture` を追加しました。`LoadSpriteSheet` で切り抜かれたテクスチャなど、テクスチャの一部の領域のみを指している場合に `true` になります
+    - サブテクスチャを `TextureFactoryBase.Update` に渡すと、`InvalidOperationException` が発生します
 
 ### Enhancements
 

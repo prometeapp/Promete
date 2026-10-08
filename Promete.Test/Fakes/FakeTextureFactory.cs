@@ -9,6 +9,7 @@ public class FakeTextureFactory : TextureFactoryBase
 {
     private readonly Dictionary<int, byte[]> _textures = new();
     private readonly Dictionary<int, VectorInt> _sizes = new();
+    private readonly Dictionary<int, TextureOptions> _options = new();
     private int _nextHandle = 1;
 
     /// <summary>
@@ -27,6 +28,11 @@ public class FakeTextureFactory : TextureFactoryBase
     public VectorInt GetSize(int handle) => _sizes[handle];
 
     /// <summary>
+    /// 指定したテクスチャの生成時に渡されたサンプリング設定を取得します。
+    /// </summary>
+    public TextureOptions GetOptions(int handle) => _options[handle];
+
+    /// <summary>
     /// 指定したテクスチャの指定位置におけるアルファ値を取得します。
     /// </summary>
     public byte GetAlphaAt(int handle, VectorInt size, VectorInt position)
@@ -34,13 +40,16 @@ public class FakeTextureFactory : TextureFactoryBase
         return _textures[handle][(((position.Y * size.X) + position.X) * 4) + 3];
     }
 
-    protected override int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size)
+    protected override int UploadTexture(in TextureUploadRequest request)
     {
         var handle = _nextHandle++;
+        var size = request.Size;
+        var rgba = request.Rgba;
         var buffer = new byte[size.X * size.Y * 4];
         rgba[..Math.Min(rgba.Length, buffer.Length)].CopyTo(buffer);
         _textures[handle] = buffer;
         _sizes[handle] = size;
+        _options[handle] = request.Options;
         return handle;
     }
 

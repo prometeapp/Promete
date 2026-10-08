@@ -1,5 +1,6 @@
 using System.Drawing;
 using FluentAssertions;
+using Promete.Graphics;
 using Promete.Graphics.Imaging;
 using Promete.Test.Fakes;
 
@@ -138,6 +139,75 @@ public class TextureFactoryBaseTests
 
         act.Should().Throw<ArgumentException>();
         factory.CreatedCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void オプションを省略すると既定の設定で生成される()
+    {
+        var factory = new FakeTextureFactory();
+
+        var texture = factory.CreateSolid(Color.Red, (2, 2));
+
+        factory.GetOptions(texture.Handle).Should().Be(TextureOptions.Default);
+        TextureOptions.Default.Filter.Should().Be(TextureFilterMode.Nearest);
+        TextureOptions.Default.Address.Should().Be(TextureAddressMode.Clamp);
+    }
+
+    [Fact]
+    public void 指定したオプションがバックエンドに渡される()
+    {
+        var factory = new FakeTextureFactory();
+        var options = new TextureOptions(TextureFilterMode.Linear, TextureAddressMode.Repeat);
+
+        var solid = factory.CreateSolid(Color.Red, (2, 2), options);
+        using var stream = CreatePng(2, 2);
+        var loaded = factory.Load(stream, options);
+
+        factory.GetOptions(solid.Handle).Should().Be(options);
+        factory.GetOptions(loaded.Handle).Should().Be(options);
+    }
+
+    [Fact]
+    public void スプライトシートと9スライスにもオプションが渡される()
+    {
+        var factory = new FakeTextureFactory();
+        var options = new TextureOptions(TextureFilterMode.Linear, TextureAddressMode.Mirror);
+        using var sheet = CreatePng(4, 4);
+        using var nine = CreatePng(6, 6);
+
+        var cells = factory.LoadSpriteSheet(sheet, 2, 2, (2, 2), options);
+        var sliced = factory.Load9Sliced(nine, 2, 2, 2, 2, options);
+
+        factory.GetOptions(cells[0].Handle).Should().Be(options);
+        factory.CreatedCount.Should().Be(1 + 9);
+        for (var handle = 2; handle <= factory.CreatedCount; handle++)
+            factory.GetOptions(handle).Should().Be(options);
+        sliced.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void スプライトシートのセルはサブテクスチャとして判定される()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+
+        var cells = factory.LoadSpriteSheet(stream, 2, 2, (2, 2));
+        var whole = factory.CreateSolid(Color.Red, (2, 2));
+
+        cells.Should().OnlyContain(c => c.IsSubTexture);
+        whole.IsSubTexture.Should().BeFalse();
+    }
+
+    [Fact]
+    public void サブテクスチャへのUpdateは例外になる()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+        var cells = factory.LoadSpriteSheet(stream, 2, 2, (2, 2));
+
+        var act = () => factory.Update(cells[1], (0, 0), (1, 1), new byte[4]);
+
+        act.Should().Throw<InvalidOperationException>();
     }
 
     private static MemoryStream CreatePng(int width, int height)

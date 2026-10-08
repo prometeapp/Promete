@@ -8,10 +8,15 @@ namespace Promete.Graphics.Rendering.Vulkan;
 internal sealed class VulkanTextureFactory(PrometeApp app, VulkanResourceManager resources)
     : TextureFactoryBase
 {
-    protected override int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size)
+    protected override int UploadTexture(in TextureUploadRequest request)
     {
         app.ThrowIfNotMainThread();
-        return resources.CreateTexture(rgba, (uint)size.X, (uint)size.Y);
+        return resources.CreateTexture(
+            request.Rgba,
+            (uint)request.Size.X,
+            (uint)request.Size.Y,
+            request.Options
+        );
     }
 
     protected override void UpdateTexture(

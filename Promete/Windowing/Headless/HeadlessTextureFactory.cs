@@ -7,7 +7,7 @@ public class HeadlessTextureFactory : TextureFactoryBase
 {
     private int _nextHandle = 1;
 
-    protected override int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size)
+    protected override int UploadTexture(in TextureUploadRequest request)
     {
         return _nextHandle++;
     }

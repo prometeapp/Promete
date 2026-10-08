@@ -8,41 +8,37 @@ public class GLTextureFactory(PrometeApp app) : TextureFactoryBase
 {
     public GL? GL { get; set; }
 
-    protected override unsafe int UploadTexture(ReadOnlySpan<byte> rgba, VectorInt size)
+    protected override unsafe int UploadTexture(in TextureUploadRequest request)
     {
         app.ThrowIfNotMainThread();
-        fixed (byte* b = rgba)
+        var filter = request.Options.Filter switch
+        {
+            TextureFilterMode.Linear => GLEnum.Linear,
+            _ => GLEnum.Nearest,
+        };
+        var wrap = request.Options.Address switch
+        {
+            TextureAddressMode.Repeat => GLEnum.Repeat,
+            TextureAddressMode.Mirror => GLEnum.MirroredRepeat,
+            _ => GLEnum.ClampToEdge,
+        };
+
+        fixed (byte* b = request.Rgba)
         {
             var texture = GL.GenTexture();
             GL.ActiveTexture(GLEnum.Texture0);
             GL.BindTexture(GLEnum.Texture2D, texture);
 
-            GL.TexParameter(
-                GLEnum.Texture2D,
-                TextureParameterName.TextureMinFilter,
-                (int)TextureMinFilter.Nearest
-            );
-            GL.TexParameter(
-                GLEnum.Texture2D,
-                TextureParameterName.TextureMagFilter,
-                (int)TextureMagFilter.Nearest
-            );
-            GL.TexParameter(
-                GLEnum.Texture2D,
-                TextureParameterName.TextureWrapS,
-                (int)GLEnum.ClampToEdge
-            );
-            GL.TexParameter(
-                GLEnum.Texture2D,
-                TextureParameterName.TextureWrapT,
-                (int)GLEnum.ClampToEdge
-            );
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMinFilter, (int)filter);
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureMagFilter, (int)filter);
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureWrapS, (int)wrap);
+            GL.TexParameter(GLEnum.Texture2D, TextureParameterName.TextureWrapT, (int)wrap);
             GL.TexImage2D(
                 GLEnum.Texture2D,
                 0,
                 (int)GLEnum.Rgba,
-                (uint)size.X,
-                (uint)size.Y,
+                (uint)request.Size.X,
+                (uint)request.Size.Y,
                 0,
                 GLEnum.Rgba,
                 GLEnum.UnsignedByte,
