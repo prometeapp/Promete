@@ -106,42 +106,18 @@ public class Tilemap(
         for (var y = ty; y < ty + maxTilesY; y++)
         for (var x = tx; x < tx + maxTilesX; x++)
         {
-            var offset = (x, y) * TileSize;
             var tile = this[x, y];
             if (tile == null)
                 continue;
 
-            queue.Enqueue(
-                new DrawTextureCommand
-                {
-                    Texture = tile.GetTexture(this, (x, y)),
-                    ModelMatrix = ModelMatrix,
-                    TintColor = GetTileColorAt(x, y).GetValueOrDefault(Color.White),
-                    Width = TileSize.X,
-                    Height = TileSize.Y,
-                    Pivot = offset,
-                }
-            );
+            tile.Collect(queue, this, (x, y), GetTileColorAt(x, y).GetValueOrDefault(Color.White));
         }
     }
 
     private void FullCollect(RenderCommandQueue queue)
     {
         foreach (var (tileLocation, (tile, color)) in Tiles)
-        {
-            var offset = tileLocation * TileSize;
-            queue.Enqueue(
-                new DrawTextureCommand
-                {
-                    Texture = tile.GetTexture(this, tileLocation),
-                    ModelMatrix = ModelMatrix,
-                    TintColor = color.GetValueOrDefault(Color.White),
-                    Width = TileSize.X,
-                    Height = TileSize.Y,
-                    Pivot = offset,
-                }
-            );
-        }
+            tile.Collect(queue, this, tileLocation, color.GetValueOrDefault(Color.White));
     }
 
     protected override void OnDestroy()
