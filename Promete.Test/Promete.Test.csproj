@@ -21,6 +21,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="FluentAssertions" Version="8.9.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
         <PackageReference Include="xunit" Version="2.9.3" />
@@ -36,6 +37,14 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Promete\Promete.csproj" />
+    </ItemGroup>
+
+    <!-- アナライザーのテスト用に SceneGen をライブラリとして参照する。プロジェクト参照は
+         Directory.Build.props がアナライザーとして追加済みで、ビルド順もそれで保証される。 -->
+    <ItemGroup>
+        <Reference Include="Promete.SceneGen">
+            <HintPath>../Promete.SceneGen/bin/$(Configuration)/netstandard2.0/Promete.SceneGen.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>
