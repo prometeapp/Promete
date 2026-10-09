@@ -1,8 +1,36 @@
 #!/bin/sh
-# ドキュメントのガイドに変更がコミットされるとき、Agent Skill「promete」の references を同期してコミットに含める。
+# 次の処理をコミット前に行う。
+# 1. ドキュメントのガイドに変更がコミットされるとき、Agent Skill「promete」の references を同期してコミットに含める。
+# 2. ステージされた C# ファイルを CSharpier で整形してコミットに含める。整形できない場合はコミットを中止する。
 # 有効にするには、リポジトリで一度だけ `git config core.hooksPath .githooks` を実行する。
 
 if git diff --cached --name-only | grep -qE '^(Promete\.Docs/src/content/docs/guide/|plugins/promete/|tools/sync-docs-skill\.cs)'; then
     dotnet run tools/sync-docs-skill.cs || exit 1
     git add plugins/promete/skills/promete
+fi
+
+cs_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.cs$')
+if [ -n "$cs_files" ]; then
+    dotnet tool restore >/dev/null 2>&1 || {
+        echo "pre-commit: dotnet tool restore に失敗しました。" >&2
+        exit 1
+    }
+
+    # 部分ステージ (git add -p) のファイルは、整形して add し直すと未ステージの変更まで
+    # コミットに混ざる。そのため整形せず、検査だけ行う。
+    echo "$cs_files" | while IFS= read -r file; do
+        if git diff --quiet -- "$file"; then
+            dotnet csharpier format "$file" >/dev/null || exit 1
+            git add -- "$file"
+        else
+            dotnet csharpier check "$file" >/dev/null || {
+                echo "pre-commit: $file は一部だけステージされており、整形も必要です。" >&2
+                echo "  'dotnet csharpier format $file' で整形し、あらためてステージしてください。" >&2
+                exit 1
+            }
+        fi
+    done || {
+        echo "pre-commit: CSharpier での整形に失敗しました。上のエラーを修正してください。" >&2
+        exit 1
+    }
 fi

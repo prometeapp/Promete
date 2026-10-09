@@ -43,6 +43,21 @@ dotnet test Promete.Test/Promete.Test.csproj
 
 注意: テストは xUnit と FluentAssertions を使用しています。テストスイートは現在開発中です。
 
+### コードの整形 (CSharpier)
+
+CI の `lint` が `dotnet csharpier check .` で検査しており、整形漏れがあるとテストが通っていても失敗します。
+
+`.githooks/pre-commit` が、ステージされた `.cs` ファイルをコミット時に自動で整形して取り込みます。
+整形できない (構文エラーなど) 場合はコミットが中止されます。
+フックは `Promete` プロジェクトを一度ビルドすると有効になります。
+
+フックが効かない環境では、コミット前に手動で整形してください。
+
+```bash
+dotnet tool restore
+dotnet csharpier format .
+```
+
 ### NativeAOT で publish する
 
 `PublishAot` は**コマンドラインではなく csproj に書いてください**。

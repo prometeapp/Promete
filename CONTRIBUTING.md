@@ -55,6 +55,8 @@ dotnet run tools/sync-docs-skill.cs
 git config core.hooksPath .githooks
 ```
 
+同じフックは、ステージされた C# ファイルを CSharpier で整形してコミットに含めます。整形できない場合はコミットが中止されます。
+
 ### ブログ
 
 ブログ記事は `Promete.Docs/src/content/blog/` に Markdown（`.md`）または MDX（`.mdx`）で置きます。このフォルダからの相対パスが URL になります（例: `2026/agent-skills.md` → `/blog/2026/agent-skills/`）。
