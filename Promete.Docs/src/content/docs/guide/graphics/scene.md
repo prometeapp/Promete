@@ -155,23 +155,33 @@ App.PushScene<SettingsScene>();
 App.PopScene();
 ```
 
-### 読み込めないシーンの警告 `v2.3~`
+## 別のプロジェクトにあるシーンを使う
+
+Prometeは、起動するプロジェクトにあるシーンを自動で登録します。ゲームを複数のプロジェクトに分けて、起動するプロジェクトとは別のプロジェクト (ライブラリ) にシーンを置いた場合は、そのままでは登録されません。
+
+`UseScenesFrom` で、シーンのあるプロジェクトを指定してください。型引数には、そのプロジェクトにある型を1つ渡します。指定したプロジェクトのシーンは、すべて登録されます。
+
+```csharp title="Program.cs"
+var app = PrometeApp.Create()
+    // ContentLib プロジェクトのシーンを登録する
+    .UseScenesFrom<ContentLib.TitleScene>()
+    .BuildWithOpenGLDesktop();
+
+app.Run<ContentLib.TitleScene>();
+```
+
+`UseScenesFrom(typeof(TitleScene).Assembly)` のように、アセンブリを直接渡すこともできます。
+
+シーンのあるプロジェクトが複数ある場合は、`UseScenesFrom` をプロジェクトの数だけ呼びます。
+
+## 読み込めないシーンの警告 `v2.3~`
 
 読み込もうとしたシーンが登録されていないと、実行時にエラーになります。よくある原因はビルド時に警告として表示されるので、見かけたら次のように直してください。
 
-- **`PROMETE0005`**: 読み込もうとしたシーンが自動登録されない形になっています。メッセージに理由が書かれています。
+- **`PROMETE0005`**: 読み込もうとしたシーンが、自動登録されない形になっています。メッセージに理由が書かれています。
   - `[IgnoredScene]` が付いている、抽象クラスである、公開コンストラクタが無い、`private` なネスト型である、などが該当します。
-- **`PROMETE0003`**: 別のプロジェクト (ライブラリ) にあるシーンを読み込もうとしていますが、そのプロジェクトが `UseScenesFrom` で指定されていません。
-  - 起動するプロジェクト以外にあるシーンは、`UseScenesFrom` で指定しないと登録されません。
-
-```csharp
-var app = PrometeApp.Create()
-    // ContentLib プロジェクトにある TitleScene を使えるようにする
-    .UseScenesFrom<ContentLib.TitleScene>()
-    .BuildWithOpenGLDesktop();
-```
-
-また、参照しているライブラリにシーンがあるのに `UseScenesFrom` で指定していない場合は、`PROMETE0004` が情報メッセージとして表示されます。そのライブラリのシーンを使わないなら、無視してかまいません。
+- **`PROMETE0003`**: 別のプロジェクトにあるシーンを読み込もうとしていますが、そのプロジェクトが `UseScenesFrom` で指定されていません。[別のプロジェクトにあるシーンを使う](#別のプロジェクトにあるシーンを使う)を参考に、`UseScenesFrom` を追加してください。
+- **`PROMETE0004`**: 参照しているプロジェクトにシーンがありますが、`UseScenesFrom` で指定されていません。これは警告ではなく情報メッセージです。そのプロジェクトのシーンを使わないなら、無視してかまいません。
 
 ## App・View・Timeへのアクセス
 
