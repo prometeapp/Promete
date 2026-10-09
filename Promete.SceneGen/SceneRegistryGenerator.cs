@@ -15,10 +15,7 @@ namespace Promete.SceneGen;
 [Generator(LanguageNames.CSharp)]
 public sealed class SceneRegistryGenerator : IIncrementalGenerator
 {
-    private const string SceneBaseName = "Promete.Scene";
-    private const string CoreAssemblyName = "Promete";
     private const string GeneratedNamespace = "Promete.Generated";
-    private const string IgnoredAttributeName = "Promete.IgnoredSceneAttribute";
 
     private static readonly DiagnosticDescriptor _unreachableScene = new(
         "PROMETE0001",
@@ -48,8 +45,8 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
                 static (ctx, _) =>
                     ctx.SemanticModel.GetDeclaredSymbol((ClassDeclarationSyntax)ctx.Node)
                         is INamedTypeSymbol type
-                    && IsRegistrableScene(type)
-                        ? Describe(type, IsAccessibleWithinAssembly(type))
+                    && SceneSymbols.IsRegistrableScene(type)
+                        ? Describe(type, SceneSymbols.IsAccessibleWithinAssembly(type))
                         : (SceneInfo?)null
             )
             .Where(static x => x is not null)
@@ -77,79 +74,6 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
                 Emit(spc, own, referenced, output);
             }
         );
-    }
-
-    /// <summary>
-    /// 登録対象のシーンかどうかを判定する。
-    /// </summary>
-    private static bool IsRegistrableScene(INamedTypeSymbol type)
-    {
-        if (
-            type.IsAbstract
-            || type.IsStatic
-            || type.IsGenericType
-            || type.TypeKind != TypeKind.Class
-        )
-        {
-            return false;
-        }
-
-        var isScene = false;
-        for (var b = type.BaseType; b is not null; b = b.BaseType)
-        {
-            if (b.ToDisplayString() == SceneBaseName)
-            {
-                isScene = true;
-                break;
-            }
-        }
-
-        if (!isScene)
-            return false;
-
-        foreach (var attr in type.GetAttributes())
-        {
-            if (attr.AttributeClass?.ToDisplayString() == IgnoredAttributeName)
-                return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// 生成コードから参照できる可視性かどうか。private / protected なネスト型と、
-    /// 宣言ファイルの外から参照できない file ローカル型は参照できない。
-    /// </summary>
-    private static bool IsAccessibleWithinAssembly(INamedTypeSymbol type)
-    {
-        for (ISymbol? s = type; s is not null and not INamespaceSymbol; s = s.ContainingSymbol)
-        {
-            if (s is INamedTypeSymbol { IsFileLocal: true })
-                return false;
-
-            switch (s.DeclaredAccessibility)
-            {
-                case Accessibility.Public:
-                case Accessibility.Internal:
-                case Accessibility.ProtectedOrInternal:
-                    continue;
-                default:
-                    return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static bool IsExternallyVisible(INamedTypeSymbol type)
-    {
-        for (ISymbol? s = type; s is not null and not INamespaceSymbol; s = s.ContainingSymbol)
-        {
-            if (s.DeclaredAccessibility != Accessibility.Public)
-                return false;
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -240,21 +164,21 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
 
         foreach (var asm in compilation.SourceModule.ReferencedAssemblySymbols)
         {
-            if (!ReferencesCore(asm))
+            if (!SceneSymbols.ReferencesCore(asm))
             {
                 pruned++;
                 continue;
             }
 
             scanned++;
-            foreach (var type in EnumerateTypes(asm.GlobalNamespace))
+            foreach (var type in SceneSymbols.EnumerateTypes(asm.GlobalNamespace))
             {
-                if (!IsRegistrableScene(type))
+                if (!SceneSymbols.IsRegistrableScene(type))
                     continue;
 
                 // 他アセンブリの internal 型は、そのライブラリ自身の生成コードが登録する
                 // (ライブラリ側のビルドで可視性の問題は報告される) ため、ここでは無視する。
-                if (!IsExternallyVisible(type))
+                if (!SceneSymbols.IsExternallyVisible(type))
                     continue;
 
                 accessible.Add(Describe(type, true));
@@ -262,49 +186,6 @@ public sealed class SceneRegistryGenerator : IIncrementalGenerator
         }
 
         return new ReferencedResult(accessible.ToImmutable(), scanned, pruned);
-    }
-
-    private static bool ReferencesCore(IAssemblySymbol asm)
-    {
-        if (asm.Name == CoreAssemblyName)
-            return true;
-
-        foreach (var module in asm.Modules)
-        {
-            foreach (var id in module.ReferencedAssemblies)
-            {
-                if (id.Name == CoreAssemblyName)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static IEnumerable<INamedTypeSymbol> EnumerateTypes(INamespaceSymbol ns)
-    {
-        foreach (var type in ns.GetTypeMembers())
-        {
-            yield return type;
-            foreach (var nested in EnumerateNested(type))
-                yield return nested;
-        }
-
-        foreach (var child in ns.GetNamespaceMembers())
-        {
-            foreach (var type in EnumerateTypes(child))
-                yield return type;
-        }
-    }
-
-    private static IEnumerable<INamedTypeSymbol> EnumerateNested(INamedTypeSymbol type)
-    {
-        foreach (var nested in type.GetTypeMembers())
-        {
-            yield return nested;
-            foreach (var deeper in EnumerateNested(nested))
-                yield return deeper;
-        }
     }
 
     private static void Emit(
