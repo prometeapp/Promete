@@ -257,6 +257,18 @@ App.NextFrame(() => {
 
 ノードは (直接的または間接的に) 自身の子として追加できません。システムは循環階層を防ぐため `ArgumentException` をスローします。
 
+### ノードとロジックの分離
+
+ノードは「画面に映るもの」(変形階層と描画コマンドの発行) だけを扱います。
+ゲームロジックや、Tween・当たり判定のようにノードを外から動かす・調べる機能は、ノードの外に置いてください。
+
+- `CoroutineManager` と同じ形にする: DI プラグインとして `Use<T>()` で登録し、`app.Update` を自分で購読して駆動する
+- 操作用のハンドルを返し、`SceneWillChange` で不要なものを片付ける
+- `Node` に機能ごとのプロパティを増やしたり、`Node.Update` に他ノードや世界を触る処理を入れたりしない
+- `Sprite` などのリーフノードは子を持てない (`Add` は `ContainableNode` の `protected`)。子ノードに機能を持たせる設計は避ける
+
+詳細は `Promete.Docs/src/content/docs/guide/concepts/node-and-logic.md` を参照してください。
+
 ## バックエンドシステム
 
 Promete は `Backends/BackendBase` 抽象クラスの実装を通じて複数のバックエンドをサポートしています (旧 `IWindow` は非推奨・後方互換のため残置のみ):
