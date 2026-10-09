@@ -147,4 +147,8 @@ Root.Add(sprite);
 - [カスタムグリフソース](references/extends/font.md): Prometeで独自のグリフソース（IGlyphSource実装）を作成し、Fontとして利用する方法を解説します。
 - [カスタムバックエンド](references/extends/backend.md): Prometeで独自のバックエンドを作成し、アプリケーションで利用する方法を解説します。
 
+### concepts
+
+- [ノードとロジックの分離](references/concepts/node-and-logic.md): Promete が「ノードは画面に映るものだけを扱い、ゲームのロジックは外に置く」という考え方を採っている理由と、実際のコードでの書き分け方を解説します。
+
 <!-- END GENERATED INDEX -->

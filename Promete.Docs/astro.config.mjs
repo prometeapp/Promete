@@ -85,6 +85,10 @@ export default defineConfig({
         autogenerate: {directory: 'guide/extends'},
       },
       {
+        label: '設計思想',
+        autogenerate: {directory: 'guide/concepts'},
+      },
+      {
         label: 'AIエージェントスキル',
         link: '/ai-agent-skills',
       },
