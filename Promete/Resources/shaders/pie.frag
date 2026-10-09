@@ -5,6 +5,8 @@ uniform sampler2D uTexture0;
 uniform vec4 uTintColor;
 uniform float uStartAngle;  // ラジアン
 uniform float uEndAngle;    // ラジアン
+uniform vec2 uUvStart;      // テクスチャ内のUV開始位置 (スプライトシート対応)
+uniform vec2 uUvEnd;        // テクスチャ内のUV終了位置
 
 out vec4 FragColor;
 
@@ -46,5 +48,6 @@ void main()
     }
 
     // テクスチャサンプリング
-    FragColor = texture(uTexture0, fUv) * uTintColor;
+    // fUv (0~1) はクリッピング判定専用。サンプリングはテクスチャのUV範囲へ写像する
+    FragColor = texture(uTexture0, mix(uUvStart, uUvEnd, fUv)) * uTintColor;
 }

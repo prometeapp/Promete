@@ -9,6 +9,8 @@ layout(push_constant) uniform PushConstants
     mat4 uMvp;
     vec4 uTintColor;
     vec2 uAngles; // x = 開始角, y = 終了角 (ラジアン)
+    vec2 uUvStart; // テクスチャ内のUV開始位置 (スプライトシート対応)
+    vec2 uUvEnd;   // テクスチャ内のUV終了位置
 };
 
 void main()

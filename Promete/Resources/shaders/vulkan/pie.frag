@@ -6,6 +6,8 @@ layout(push_constant) uniform PushConstants
     mat4 uMvp;
     vec4 uTintColor;
     vec2 uAngles; // x = 開始角, y = 終了角 (ラジアン)
+    vec2 uUvStart; // テクスチャ内のUV開始位置 (スプライトシート対応)
+    vec2 uUvEnd;   // テクスチャ内のUV終了位置
 };
 
 layout(set = 0, binding = 0) uniform sampler2D uTexture0;
@@ -39,5 +41,6 @@ void main()
         discard;
     }
 
-    FragColor = texture(uTexture0, fUv) * uTintColor;
+    // fUv (0~1) はクリッピング判定専用。サンプリングはテクスチャのUV範囲へ写像する
+    FragColor = texture(uTexture0, mix(uUvStart, uUvEnd, fUv)) * uTintColor;
 }

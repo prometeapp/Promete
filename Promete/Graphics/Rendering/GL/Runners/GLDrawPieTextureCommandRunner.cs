@@ -24,6 +24,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
     private int _uTintColor;
     private int _uStartAngle;
     private int _uEndAngle;
+    private int _uUvStart;
+    private int _uUvEnd;
     private uint _vbo;
     private uint _vao;
     private uint _ebo;
@@ -92,6 +94,10 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
         var startAngle = ((startPercent / 100.0f * 360.0f) - 90.0f) * MathF.PI / 180.0f;
         var endAngle = ((percent / 100.0f * 360.0f) - 90.0f) * MathF.PI / 180.0f;
 
+        // スプライトシートのセルなど、テクスチャが占めるUV範囲
+        var uvStart = texture.UvStart;
+        var uvEnd = texture.UvEnd;
+
         // 描画開始
         gl.Enable(GLEnum.Blend);
         gl.BlendFuncSeparate(
@@ -117,6 +123,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
             var uTint = GLMaterialApplier.GetLocation(gl, program, "uTintColor");
             var uStart = GLMaterialApplier.GetLocation(gl, program, "uStartAngle");
             var uEnd = GLMaterialApplier.GetLocation(gl, program, "uEndAngle");
+            var uUvStart = GLMaterialApplier.GetLocation(gl, program, "uUvStart");
+            var uUvEnd = GLMaterialApplier.GetLocation(gl, program, "uUvEnd");
             if (uModel >= 0)
                 gl.UniformMatrix4(uModel, 1, false, (float*)&modelMatrix);
             if (uProj >= 0)
@@ -129,6 +137,10 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
                 gl.Uniform1(uStart, startAngle);
             if (uEnd >= 0)
                 gl.Uniform1(uEnd, endAngle);
+            if (uUvStart >= 0)
+                gl.Uniform2(uUvStart, uvStart.X, uvStart.Y);
+            if (uUvEnd >= 0)
+                gl.Uniform2(uUvEnd, uvEnd.X, uvEnd.Y);
             GLMaterialApplier.Apply(gl, program, material);
         }
         else
@@ -140,6 +152,8 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
             gl.Uniform4(_uTintColor, new Vector4(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f));
             gl.Uniform1(_uStartAngle, startAngle);
             gl.Uniform1(_uEndAngle, endAngle);
+            gl.Uniform2(_uUvStart, uvStart.X, uvStart.Y);
+            gl.Uniform2(_uUvEnd, uvEnd.X, uvEnd.Y);
         }
 
         // 描画
@@ -251,5 +265,7 @@ public class GLDrawPieTextureCommandRunner(IGameView view) : CommandRunner<DrawP
         _uTintColor = gl.GetUniformLocation(_shader, "uTintColor");
         _uStartAngle = gl.GetUniformLocation(_shader, "uStartAngle");
         _uEndAngle = gl.GetUniformLocation(_shader, "uEndAngle");
+        _uUvStart = gl.GetUniformLocation(_shader, "uUvStart");
+        _uUvEnd = gl.GetUniformLocation(_shader, "uUvEnd");
     }
 }

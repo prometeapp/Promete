@@ -369,12 +369,12 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             vk.CreatePipelineLayout(device, in layoutInfo, null, out _blitLayout);
         }
 
-        // pie: set0 = sampler, push constant = mat4 + vec4 + vec2 (両ステージ, 96 bytes)
+        // pie: set0 = sampler, push constant = mat4 + vec4 + vec2 + vec2 + vec2 (両ステージ, 104 bytes)
         {
             var pushConstant = new PushConstantRange(
                 ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
                 0,
-                96
+                104
             );
             var layoutInfo = new PipelineLayoutCreateInfo
             {
@@ -598,7 +598,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             CustomKind.Pie => new PushConstantRange(
                 ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
                 0,
-                96
+                104
             ),
             CustomKind.Primitive => new PushConstantRange(ShaderStageFlags.FragmentBit, 0, 16),
             _ => default,
