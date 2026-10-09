@@ -23,7 +23,12 @@ public class TileCollectTests
 
         var commands = CollectAll(map);
 
-        var batch = commands.Should().ContainSingle().Subject.Should().BeOfType<DrawTextureBatchedCommand>().Subject;
+        var batch = commands
+            .Should()
+            .ContainSingle()
+            .Subject.Should()
+            .BeOfType<DrawTextureBatchedCommand>()
+            .Subject;
         batch.Texture.Handle.Should().Be(1);
         batch.Items.Should().ContainSingle();
     }
@@ -79,7 +84,12 @@ public class TileCollectTests
 
         public Color Tint { get; private set; }
 
-        public void Collect(RenderCommandQueue queue, Tilemap map, VectorInt tileLocation, Color tint)
+        public void Collect(
+            RenderCommandQueue queue,
+            Tilemap map,
+            VectorInt tileLocation,
+            Color tint
+        )
         {
             Location = tileLocation;
             Tint = tint;

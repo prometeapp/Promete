@@ -38,12 +38,7 @@ public interface ITile
     /// <param name="map">このタイルを持つ <see cref="Tilemap" />。</param>
     /// <param name="tileLocation">タイル座標。</param>
     /// <param name="tint">タイルに適用する色。</param>
-    public void Collect(
-        RenderCommandQueue queue,
-        Tilemap map,
-        VectorInt tileLocation,
-        Color tint
-    )
+    public void Collect(RenderCommandQueue queue, Tilemap map, VectorInt tileLocation, Color tint)
     {
         queue.Enqueue(
             new DrawTextureCommand
