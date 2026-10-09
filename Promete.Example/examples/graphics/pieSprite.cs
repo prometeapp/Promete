@@ -11,8 +11,10 @@ public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
 {
     private PieSprite _progressBar = null!;
     private PieSprite _progressBar2 = null!;
+    private PieSprite _sheetBar = null!;
     private Text _label1 = null!;
     private Text _label2 = null!;
+    private Text _label3 = null!;
 
     public override void OnStart()
     {
@@ -39,7 +41,18 @@ public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
             _progressBar2.Location.Y - 30
         );
 
-        Root.AddRange(_progressBar, _progressBar2, _label1, _label2);
+        // スプライトシートのセルでも、そのセルの範囲だけが扇状に描画されること
+        var cells = App.TextureFactory.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32));
+        _sheetBar = new PieSprite(cells[2])
+            .Location(View.Width / 2f - 64, View.Height * 3f / 4 - 64)
+            .Size(128, 128);
+
+        _label3 = new Text("スプライトシートの例", font, Color.Lime).Location(
+            _sheetBar.Location.X,
+            _sheetBar.Location.Y - 30
+        );
+
+        Root.AddRange(_progressBar, _progressBar2, _sheetBar, _label1, _label2, _label3);
     }
 
     public override void OnUpdate()
@@ -50,6 +63,7 @@ public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         _progressBar.Percent = progress;
         _progressBar2.Percent = MathHelper.EaseOut(progress / 100f, 0, 100);
         _progressBar2.StartPercent = MathHelper.EaseIn(progress / 100f, 0, 100);
+        _sheetBar.Percent = progress;
 
         if (keyboard.Escape.IsKeyUp)
             App.LoadScene<MainScene>();

@@ -19,8 +19,8 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
     VulkanMaterialSystem materials
 ) : CommandRunner<DrawPieTextureCommand>, IDisposable
 {
-    // push constant: mat4 (16) + vec4 tint (4) + vec2 angles (2) + padding (2) = 24 floats
-    private const int PushConstantFloats = 24;
+    // push constant: mat4 (16) + vec4 tint (4) + vec2 angles (2) + vec2 uvStart (2) + vec2 uvEnd (2) = 26 floats
+    private const int PushConstantFloats = 26;
 
     private Buffer _quadVbo;
     private DeviceMemory _quadVboMemory;
@@ -108,6 +108,10 @@ internal sealed unsafe class VulkanDrawPieTextureCommandRunner(
         push[19] = color.A / 255f;
         push[20] = startAngle;
         push[21] = endAngle;
+        push[22] = texture.UvStart.X;
+        push[23] = texture.UvStart.Y;
+        push[24] = texture.UvEnd.X;
+        push[25] = texture.UvEnd.Y;
 
         var vk = ctx.Vk;
         var cmd = ctx.CurrentCommandBuffer;
