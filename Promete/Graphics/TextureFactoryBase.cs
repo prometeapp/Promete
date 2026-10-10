@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -155,6 +156,71 @@ public abstract class TextureFactoryBase
             size,
             options
         );
+    }
+
+    /// <summary>
+    /// 指定したパスからテクスチャを読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks>
+    /// 不揃いなサイズで詰め込まれたアトラスなど、格子状でない画像に使用します。
+    /// 返される配列は <paramref name="rects"/> と同じ順序・同じ長さです。矩形同士が重なっていても構いません。
+    /// <inheritdoc cref="LoadSpriteSheet(string, int, int, VectorInt)"/>
+    /// </remarks>
+    /// <param name="path">画像ファイルのパス。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="rects"/> に、画像の範囲外、または幅か高さが 0 以下の矩形が含まれる場合。
+    /// </exception>
+    /// <returns></returns>
+    public virtual Texture2D[] LoadSpriteSheet(string path, params ReadOnlySpan<RectInt> rects)
+    {
+        return LoadSpriteSheet(path, TextureOptions.Default, rects);
+    }
+
+    /// <summary>
+    /// 指定したパスからテクスチャを読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="path">画像ファイルのパス。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <returns></returns>
+    public virtual Texture2D[] LoadSpriteSheet(
+        string path,
+        TextureOptions options,
+        params ReadOnlySpan<RectInt> rects
+    )
+    {
+        return LoadSpriteSheet(ImageDecoder.Decode(path), rects, options);
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="stream">画像データのストリーム。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <returns></returns>
+    public virtual Texture2D[] LoadSpriteSheet(Stream stream, params ReadOnlySpan<RectInt> rects)
+    {
+        return LoadSpriteSheet(stream, TextureOptions.Default, rects);
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="stream">画像データのストリーム。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <returns></returns>
+    public virtual Texture2D[] LoadSpriteSheet(
+        Stream stream,
+        TextureOptions options,
+        params ReadOnlySpan<RectInt> rects
+    )
+    {
+        return LoadSpriteSheet(ImageDecoder.Decode(stream), rects, options);
     }
 
     /// <summary>
@@ -444,6 +510,50 @@ public abstract class TextureFactoryBase
     }
 
     /// <summary>
+    /// 指定したパスからテクスチャを非同期に読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="path">画像ファイルのパス。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture2D[]> LoadSpriteSheetAsync(
+        string path,
+        IReadOnlyList<RectInt> rects,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(rects);
+        var snapshot = rects.ToArray();
+        var image = await Task.Run(() => ImageDecoder.Decode(path), cancellationToken);
+        return await LoadSpriteSheetAsync(image, snapshot, options, cancellationToken);
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを非同期に読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="stream">画像データのストリーム。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <returns></returns>
+    public virtual async Task<Texture2D[]> LoadSpriteSheetAsync(
+        Stream stream,
+        IReadOnlyList<RectInt> rects,
+        TextureOptions options = default,
+        CancellationToken cancellationToken = default
+    )
+    {
+        ArgumentNullException.ThrowIfNull(rects);
+        var snapshot = rects.ToArray();
+        var image = await Task.Run(() => ImageDecoder.Decode(stream), cancellationToken);
+        return await LoadSpriteSheetAsync(image, snapshot, options, cancellationToken);
+    }
+
+    /// <summary>
     /// 指定したパスから 9 スライステクスチャを非同期に読み込みます。
     /// </summary>
     /// <param name="options">サンプリングの設定。</param>
@@ -561,10 +671,23 @@ public abstract class TextureFactoryBase
         if (!ValidateSpriteSheet(bmp, horizontalCount, verticalCount, size))
             return [];
 
+        return LoadSpriteSheet(bmp, GridToRects(horizontalCount, verticalCount, size), options);
+    }
+
+    private Texture2D[] LoadSpriteSheet(
+        RgbaImage bmp,
+        ReadOnlySpan<RectInt> rects,
+        TextureOptions options
+    )
+    {
+        ValidateRects(bmp, rects);
+        if (rects.IsEmpty)
+            return [];
+
         var handle = UploadTexture(
             new TextureUploadRequest(bmp.Pixels, (bmp.Width, bmp.Height), options)
         );
-        return CreateSpriteSheetCells(handle, bmp, horizontalCount, verticalCount, size);
+        return CreateSpriteSheetCells(handle, bmp, rects);
     }
 
     private async Task<Texture2D[]> LoadSpriteSheetAsync(
@@ -579,9 +702,67 @@ public abstract class TextureFactoryBase
         if (!ValidateSpriteSheet(bmp, horizontalCount, verticalCount, size))
             return [];
 
+        return await LoadSpriteSheetAsync(
+            bmp,
+            GridToRects(horizontalCount, verticalCount, size),
+            options,
+            cancellationToken
+        );
+    }
+
+    private async Task<Texture2D[]> LoadSpriteSheetAsync(
+        RgbaImage bmp,
+        RectInt[] rects,
+        TextureOptions options,
+        CancellationToken cancellationToken
+    )
+    {
+        ValidateRects(bmp, rects);
+        if (rects.Length == 0)
+            return [];
+
         cancellationToken.ThrowIfCancellationRequested();
         var handle = await UploadTextureAsync(bmp.Pixels, (bmp.Width, bmp.Height), options);
-        return CreateSpriteSheetCells(handle, bmp, horizontalCount, verticalCount, size);
+        return CreateSpriteSheetCells(handle, bmp, rects);
+    }
+
+    /// <summary>
+    /// 格子状の分割を、行優先の矩形の並びに展開します。
+    /// </summary>
+    private static RectInt[] GridToRects(int horizontalCount, int verticalCount, VectorInt size)
+    {
+        var rects = new RectInt[Math.Max(0, verticalCount * horizontalCount)];
+        for (var y = 0; y < verticalCount; y++)
+        for (var x = 0; x < horizontalCount; x++)
+            rects[(y * horizontalCount) + x] = new RectInt(
+                new VectorInt(x * size.X, y * size.Y),
+                size
+            );
+
+        return rects;
+    }
+
+    /// <summary>
+    /// 切り抜く矩形がすべて画像に収まり、面積を持つことを検証します。
+    /// </summary>
+    private static void ValidateRects(RgbaImage bmp, ReadOnlySpan<RectInt> rects)
+    {
+        for (var i = 0; i < rects.Length; i++)
+        {
+            var r = rects[i];
+            if (
+                r.Left < 0
+                || r.Top < 0
+                || r.Width <= 0
+                || r.Height <= 0
+                || r.Width > bmp.Width - r.Left
+                || r.Height > bmp.Height - r.Top
+            )
+                throw new ArgumentException(
+                    $"rects[{i}] が画像の範囲外、またはサイズが 0 以下です。",
+                    nameof(rects)
+                );
+        }
     }
 
     /// <summary>
@@ -606,9 +787,7 @@ public abstract class TextureFactoryBase
     private Texture2D[] CreateSpriteSheetCells(
         int handle,
         RgbaImage bmp,
-        int horizontalCount,
-        int verticalCount,
-        VectorInt size
+        ReadOnlySpan<RectInt> rects
     )
     {
         var width = (float)bmp.Width;
@@ -624,25 +803,13 @@ public abstract class TextureFactoryBase
             DestroyTexture(handle);
         }
 
-        var textures = new Texture2D[verticalCount * horizontalCount];
-        for (var y = 0; y < verticalCount; y++)
+        var textures = new Texture2D[rects.Length];
+        for (var i = 0; i < rects.Length; i++)
         {
-            for (var x = 0; x < horizontalCount; x++)
-            {
-                var px = x * size.X;
-                var py = y * size.Y;
-
-                var uvStart = new Vector(px / width, py / height);
-                var uvEnd = new Vector((px + size.X) / width, (py + size.Y) / height);
-
-                textures[(y * horizontalCount) + x] = new Texture2D(
-                    handle,
-                    size,
-                    Release,
-                    uvStart,
-                    uvEnd
-                );
-            }
+            var r = rects[i];
+            var uvStart = new Vector(r.Left / width, r.Top / height);
+            var uvEnd = new Vector((r.Left + r.Width) / width, (r.Top + r.Height) / height);
+            textures[i] = new Texture2D(handle, r.Size, Release, uvStart, uvEnd);
         }
 
         return textures;

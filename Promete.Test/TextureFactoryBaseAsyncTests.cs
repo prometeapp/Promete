@@ -44,6 +44,33 @@ public class TextureFactoryBaseAsyncTests
     }
 
     [Fact]
+    public async Task 任意矩形のLoadSpriteSheetAsyncは渡した順に1枚のテクスチャを共有する()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(8, 4);
+
+        var cells = await factory.LoadSpriteSheetAsync(stream, [(0, 0, 2, 4), (2, 1, 6, 2)]);
+
+        cells.Should().HaveCount(2);
+        cells[1].Size.Should().Be(new VectorInt(6, 2));
+        cells[1].UvStart.Should().Be(new Vector(0.25f, 0.25f));
+        factory.CreatedCount.Should().Be(1);
+        cells.Select(c => c.Handle).Distinct().Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task 任意矩形が範囲外の場合はLoadSpriteSheetAsyncが例外になる()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+
+        var act = () => factory.LoadSpriteSheetAsync(stream, [(3, 0, 2, 2)]);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        factory.CreatedCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task Load9SlicedAsyncは9枚のテクスチャを生成する()
     {
         var factory = new FakeTextureFactory();

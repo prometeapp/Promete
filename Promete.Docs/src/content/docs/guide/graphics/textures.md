@@ -124,6 +124,30 @@ public class SpriteSheetExample : Scene
 v2.2以降では、すでに解放された後の `Dispose` は何も行わないので、上のように全要素に対して `Dispose` を呼んでも問題ありません。それ以前のバージョンでは未定義動作となるので注意してください。
 :::
 
+### 任意の矩形で切り抜く `v2.4~`
+
+サイズがバラバラの画像を詰め込んだアトラスのように、格子状ではない画像は、切り抜く範囲を `RectInt` で直接指定できます。
+
+```csharp
+// (左, 上, 幅, 高さ) の順。戻り値は渡した順に並ぶ
+var textures = App.TextureFactory.LoadSpriteSheet(
+    "assets/atlas.png",
+    (0, 0, 32, 32),
+    (32, 0, 16, 48),
+    (48, 0, 64, 24)
+);
+```
+
+`TextureOptions` を渡す場合は、矩形より前に置きます。
+
+```csharp
+var textures = App.TextureFactory.LoadSpriteSheet("assets/atlas.png", TextureOptions.Default, rects);
+```
+
+非同期版の `LoadSpriteSheetAsync` は、矩形を `IReadOnlyList<RectInt>` で受け取ります。`[(0, 0, 32, 32), (32, 0, 16, 48)]` のようにコレクション式で渡せます。
+
+画像の範囲外にはみ出す矩形や、幅・高さが 0 以下の矩形を渡すと `ArgumentException` になります。得られたテクスチャが1枚の画像を共有する点は、格子版と同じです。
+
 ## プログラムによるテクスチャ生成
 ファイルを用いずに、動的にテクスチャを生成する方法もあります。
 
