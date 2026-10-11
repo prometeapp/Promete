@@ -515,14 +515,46 @@ public abstract class TextureFactoryBase
     /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
     /// <param name="path">画像ファイルのパス。</param>
     /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <returns></returns>
+    public virtual Task<Texture2D[]> LoadSpriteSheetAsync(
+        string path,
+        params IReadOnlyList<RectInt> rects
+    )
+    {
+        return LoadSpriteSheetAsync(path, default, CancellationToken.None, rects);
+    }
+
+    /// <summary>
+    /// 指定したパスからテクスチャを非同期に読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="path">画像ファイルのパス。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <returns></returns>
+    public virtual Task<Texture2D[]> LoadSpriteSheetAsync(
+        string path,
+        TextureOptions options,
+        params IReadOnlyList<RectInt> rects
+    )
+    {
+        return LoadSpriteSheetAsync(path, options, CancellationToken.None, rects);
+    }
+
+    /// <summary>
+    /// 指定したパスからテクスチャを非同期に読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="path">画像ファイルのパス。</param>
     /// <param name="options">サンプリングの設定。</param>
     /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
     /// <returns></returns>
     public virtual async Task<Texture2D[]> LoadSpriteSheetAsync(
         string path,
-        IReadOnlyList<RectInt> rects,
-        TextureOptions options = default,
-        CancellationToken cancellationToken = default
+        TextureOptions options,
+        CancellationToken cancellationToken,
+        params IReadOnlyList<RectInt> rects
     )
     {
         ArgumentNullException.ThrowIfNull(rects);
@@ -537,14 +569,46 @@ public abstract class TextureFactoryBase
     /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
     /// <param name="stream">画像データのストリーム。</param>
     /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <returns></returns>
+    public virtual Task<Texture2D[]> LoadSpriteSheetAsync(
+        Stream stream,
+        params IReadOnlyList<RectInt> rects
+    )
+    {
+        return LoadSpriteSheetAsync(stream, default, CancellationToken.None, rects);
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを非同期に読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="stream">画像データのストリーム。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
+    /// <returns></returns>
+    public virtual Task<Texture2D[]> LoadSpriteSheetAsync(
+        Stream stream,
+        TextureOptions options,
+        params IReadOnlyList<RectInt> rects
+    )
+    {
+        return LoadSpriteSheetAsync(stream, options, CancellationToken.None, rects);
+    }
+
+    /// <summary>
+    /// 指定したストリームからテクスチャを非同期に読み込み、任意の矩形で切り抜きます。 (v2.4~)
+    /// </summary>
+    /// <remarks><inheritdoc cref="LoadSpriteSheet(string, ReadOnlySpan{RectInt})"/></remarks>
+    /// <param name="stream">画像データのストリーム。</param>
     /// <param name="options">サンプリングの設定。</param>
     /// <param name="cancellationToken">転送の開始前にキャンセルするためのトークン。</param>
+    /// <param name="rects">切り抜く領域 (ピクセル単位、左上が原点)。</param>
     /// <returns></returns>
     public virtual async Task<Texture2D[]> LoadSpriteSheetAsync(
         Stream stream,
-        IReadOnlyList<RectInt> rects,
-        TextureOptions options = default,
-        CancellationToken cancellationToken = default
+        TextureOptions options,
+        CancellationToken cancellationToken,
+        params IReadOnlyList<RectInt> rects
     )
     {
         ArgumentNullException.ThrowIfNull(rects);

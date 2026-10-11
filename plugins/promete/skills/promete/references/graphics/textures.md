@@ -144,7 +144,7 @@ var textures = App.TextureFactory.LoadSpriteSheet(
 var textures = App.TextureFactory.LoadSpriteSheet("assets/atlas.png", TextureOptions.Default, rects);
 ```
 
-非同期版の `LoadSpriteSheetAsync` は、矩形を `IReadOnlyList<RectInt>` で受け取ります。`[(0, 0, 32, 32), (32, 0, 16, 48)]` のようにコレクション式で渡せます。
+非同期版の `LoadSpriteSheetAsync` も、同じ形で矩形を渡せます。`TextureOptions` や `CancellationToken` は、矩形より前に置きます。
 
 画像の範囲外にはみ出す矩形や、幅・高さが 0 以下の矩形を渡すと `ArgumentException` になります。得られたテクスチャが1枚の画像を共有する点は、格子版と同じです。
 

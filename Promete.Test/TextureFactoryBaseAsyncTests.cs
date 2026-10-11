@@ -49,7 +49,7 @@ public class TextureFactoryBaseAsyncTests
         var factory = new FakeTextureFactory();
         using var stream = CreatePng(8, 4);
 
-        var cells = await factory.LoadSpriteSheetAsync(stream, [(0, 0, 2, 4), (2, 1, 6, 2)]);
+        var cells = await factory.LoadSpriteSheetAsync(stream, (0, 0, 2, 4), (2, 1, 6, 2));
 
         cells.Should().HaveCount(2);
         cells[1].Size.Should().Be(new VectorInt(6, 2));
@@ -64,7 +64,7 @@ public class TextureFactoryBaseAsyncTests
         var factory = new FakeTextureFactory();
         using var stream = CreatePng(4, 4);
 
-        var act = () => factory.LoadSpriteSheetAsync(stream, [(3, 0, 2, 2)]);
+        var act = () => factory.LoadSpriteSheetAsync(stream, (3, 0, 2, 2));
 
         await act.Should().ThrowAsync<ArgumentException>();
         factory.CreatedCount.Should().Be(0);
