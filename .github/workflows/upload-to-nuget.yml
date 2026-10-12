@@ -1,35 +1,56 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: "Promete: Upload to NuGet"
+name: Upload to NuGet
 
 on:
   push:
     tags:
       - 'core-*'
+      - 'imgui-*'
+      - 'web-*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '擬似的なタグ名 (例: imgui-1.0.0)'
+        required: true
+      dry_run:
+        description: 'nuget.org へ push せず、pack までで止める'
+        type: boolean
+        default: true
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
 
-    - name: Build
-      run: dotnet build --configuration Release
-      working-directory: ./Promete
+    - name: Resolve project from tag
+      id: project
+      env:
+        TAG: ${{ inputs.tag || github.ref_name }}
+      run: |
+        case "$TAG" in
+          core-*)  echo "path=Promete" ;;
+          imgui-*) echo "path=Promete.ImGui" ;;
+          web-*)   echo "path=Promete.Web" ;;
+          *)       echo "Unknown tag: $TAG" >&2; exit 1 ;;
+        esac >> "$GITHUB_OUTPUT"
 
     - name: Generate nuget package.
-      run: dotnet pack --configuration Release -o nupkg
-      working-directory: ./Promete
+      run: dotnet pack ${{ steps.project.outputs.path }} --configuration Release -o nupkg
 
     - name: Publish to nuget
-      run: find . -type f -name *.nupkg -print0 | xargs -0 -I pkg dotnet nuget push pkg -k $nuget_api_key -s "https://api.nuget.org/v3/index.json" --skip-duplicate
+      if: github.event_name == 'push' || !inputs.dry_run
+      run: dotnet nuget push "nupkg/*.nupkg" -k "$NUGET_API_KEY" -s "https://api.nuget.org/v3/index.json" --skip-duplicate
       env:
-        nuget_api_key: ${{ secrets.NUGET_API_KEY }}
-      working-directory: ./Promete/nupkg
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+    - name: Dry run (skip push)
+      if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+      run: |
+        echo "dry-run: nuget.org へは push しません。生成されたパッケージ:"
+        ls -l nupkg
