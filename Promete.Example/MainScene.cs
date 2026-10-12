@@ -4,9 +4,17 @@ using static Promete.Example.Kernel.DemoKernel;
 
 namespace Promete.Example;
 
-public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
+public class MainScene(Keyboard keyboard, Mouse mouse, ConsoleLayer console) : Scene
 {
-    public override void OnStart() { }
+    // 項目が始まる行。タイトルとディレクトリの各行は、末尾の改行のぶん 2 行ずつ使う
+    private const int HeaderLines = 4;
+
+    private VectorInt _lastMousePosition;
+
+    public override void OnStart()
+    {
+        _lastMousePosition = mouse.Position;
+    }
 
     public override void OnUpdate()
     {
@@ -34,6 +42,8 @@ public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
 
     private void HandleInput()
     {
+        HandleMouse();
+
         if (keyboard.Up.IsKeyDown)
         {
             CurrentIndex--;
@@ -48,28 +58,7 @@ public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
         }
         else if (keyboard.Enter.IsKeyDown)
         {
-            if (CurrentIndex == CurrentFolder.Files.Count)
-            {
-                if (CurrentFolder.Parent == null)
-                    return;
-
-                CurrentFolder = CurrentFolder.Parent;
-                CurrentIndex = 0;
-            }
-            else
-            {
-                var item = CurrentFolder.Files[CurrentIndex];
-                switch (item)
-                {
-                    case Folder folder:
-                        CurrentFolder = folder;
-                        CurrentIndex = 0;
-                        break;
-                    case SceneFile file:
-                        App.LoadScene(file.Scene);
-                        break;
-                }
-            }
+            Activate();
         }
         else if (keyboard.Escape.IsKeyDown)
         {
@@ -78,6 +67,56 @@ public class MainScene(Keyboard keyboard, ConsoleLayer console) : Scene
 
             CurrentFolder = CurrentFolder.Parent;
             CurrentIndex = 0;
+        }
+    }
+
+    /// <summary>マウスやタッチで、項目の選択と決定を行う。</summary>
+    private void HandleMouse()
+    {
+        var position = mouse.Position;
+        var moved = position != _lastMousePosition;
+        _lastMousePosition = position;
+
+        var clicked = mouse[MouseButtonType.Left].IsButtonDown;
+        if (!moved && !clicked)
+            return;
+
+        var lineHeight = console.Font.Metrics.LineHeight;
+        if (lineHeight <= 0)
+            return;
+
+        var index = (int)(position.Y / lineHeight) - HeaderLines;
+        if (index < 0 || index > CurrentFolder.Files.Count)
+            return;
+
+        // カーソルが乗った項目を選択する。タッチでは、押した瞬間に移動と決定が同時に起きる
+        CurrentIndex = index;
+        if (clicked)
+            Activate();
+    }
+
+    /// <summary>選択中の項目を開く。</summary>
+    private void Activate()
+    {
+        if (CurrentIndex == CurrentFolder.Files.Count)
+        {
+            if (CurrentFolder.Parent == null)
+                return;
+
+            CurrentFolder = CurrentFolder.Parent;
+            CurrentIndex = 0;
+            return;
+        }
+
+        switch (CurrentFolder.Files[CurrentIndex])
+        {
+            case Folder folder:
+                CurrentFolder = folder;
+                CurrentIndex = 0;
+                break;
+            case SceneFile file:
+                App.LoadScene(file.Scene);
+                break;
         }
     }
 }
