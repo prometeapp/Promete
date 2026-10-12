@@ -8,8 +8,7 @@
 #   secrets.CLOUDFLARE_API_TOKEN   : "Cloudflare Pages: Edit" 権限のある API トークン
 #   secrets.CLOUDFLARE_ACCOUNT_ID  : アカウント ID
 #   vars.CLOUDFLARE_PAGES_PROJECT  : Pages のプロジェクト名 (省略時は promete-web-example)
-# Pages のプロジェクトは、Cloudflare のダッシュボードで先に作り、production branch を master にしておく。
-# (wrangler に任せると、最初にデプロイしたブランチが production 扱いになるおそれがある)
+# Pages のプロジェクトは、無ければ production branch を master にして自動で作る (すでにあれば何もしない)。
 
 name: Web Example Deploy
 
@@ -91,6 +90,10 @@ jobs:
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # 初回だけプロジェクトを作る。すでにある場合は失敗するので無視する (本当の失敗は次の deploy で出る)
+        preCommands: >
+          npx wrangler pages project create ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'promete-web-example' }}
+          --production-branch=master || true
         command: >
           pages deploy out/wwwroot
           --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'promete-web-example' }}
