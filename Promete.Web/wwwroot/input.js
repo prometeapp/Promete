@@ -28,12 +28,24 @@ export function attach(selector) {
         const y = (e.clientY - rect.top) * canvas.height / rect.height;
         return `${x}:${y}`;
     };
-    canvas.addEventListener('pointermove', e => queue.push(`mm:${position(e)}`));
+    // タッチの操作をブラウザのスクロールやズームに取られないようにする。
+    // 取られると pointercancel になり、ドラッグの途中で操作が切れる
+    canvas.style.touchAction = 'none';
+    // 指が複数あるときは、最初の 1 本だけをマウスとして扱う
+    canvas.addEventListener('pointermove', e => {
+        if (e.isPrimary) queue.push(`mm:${position(e)}`);
+    });
     canvas.addEventListener('pointerdown', e => {
+        if (!e.isPrimary) return;
         canvas.setPointerCapture(e.pointerId);
         queue.push(`mm:${position(e)}`, `md:${e.button}`);
     });
-    canvas.addEventListener('pointerup', e => queue.push(`mm:${position(e)}`, `mu:${e.button}`));
+    const release = e => {
+        if (e.isPrimary) queue.push(`mm:${position(e)}`, `mu:${e.button}`);
+    };
+    canvas.addEventListener('pointerup', release);
+    // 取り消されたときも離したことにする。押しっぱなしのまま残さない
+    canvas.addEventListener('pointercancel', release);
     canvas.addEventListener('contextmenu', e => e.preventDefault());
     canvas.addEventListener('wheel', e => {
         // deltaMode: 0 = ピクセル (1 ノッチを約 100 とみなす)、1 = 行 (1 ノッチを 3 行とみなす)、2 = ページ

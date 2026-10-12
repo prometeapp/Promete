@@ -1,0 +1,117 @@
+# Promete.Web.Example を AOT で publish し、Cloudflare Pages にデプロイする。
+#   - master への push: 本番 (production) にデプロイ
+#   - PR: プレビュー (ブランチごとの URL) にデプロイし、PR にリンクをコメントする
+#   - フォークからの PR: Secrets が使えないのでビルドだけ行う
+# 将来、ドキュメントサイトから iframe で埋め込む想定だが、今はスタンドアロンで公開するだけ。
+#
+# 必要な設定 (リポジトリの Settings > Secrets and variables > Actions):
+#   secrets.CLOUDFLARE_API_TOKEN   : "Cloudflare Pages: Edit" 権限のある API トークン
+#   secrets.CLOUDFLARE_ACCOUNT_ID  : アカウント ID
+#   vars.CLOUDFLARE_PAGES_PROJECT  : Pages のプロジェクト名 (省略時は promete-web-example)
+# Pages のプロジェクトは、無ければ production branch を master にして自動で作る (すでにあれば何もしない)。
+
+name: Web Example Deploy
+
+on:
+  pull_request:
+    paths:
+      - "Promete/**"
+      - "Promete.Web/**"
+      - "Promete.Web.Example/**"
+      - "Promete.Example/**"
+      - "Promete.SceneGen/**"
+      - ".github/workflows/web-example-deploy.yml"
+  push:
+    branches: [ "master" ]
+    paths:
+      - "Promete/**"
+      - "Promete.Web/**"
+      - "Promete.Web.Example/**"
+      - "Promete.Example/**"
+      - "Promete.SceneGen/**"
+      - ".github/workflows/web-example-deploy.yml"
+  workflow_dispatch:
+
+# 同じ ref で走っている AOT ビルドは古いので捨てる (PR と master は別グループ)
+concurrency:
+  group: web-example-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Install wasm-tools workload
+      run: dotnet workload install wasm-tools
+
+    # Promete.Web の props により、Release では RunAOTCompilation が既定で有効になる
+    - name: Publish (Release, AOT)
+      run: >
+        dotnet publish Promete.Web.Example/Promete.Web.Example.csproj
+        --configuration Release
+        --output out
+
+    # Cloudflare が配信時に圧縮するので、事前圧縮ファイルは置かない (ファイル数とアップロード量の節約)。
+    # Pages は 1 ファイル 25MiB までなので、超えていたらここで落として原因を分かりやすくする。
+    - name: Prepare site
+      run: |
+        site=out/wwwroot
+        for f in index.html main.js promete-assets.json; do
+          test -f "$site/$f" || { echo "::error::$site/$f が無い"; exit 1; }
+        done
+        find "$site" \( -name '*.br' -o -name '*.gz' \) -delete
+        big=$(find "$site" -type f -size +25M)
+        if [ -n "$big" ]; then
+          echo "::error::Cloudflare Pages の上限 (25MiB) を超えるファイルがある:"
+          find "$site" -type f -size +25M -exec ls -lh {} \;
+          exit 1
+        fi
+        du -sh "$site"
+        find "$site" -type f -size +1M -exec ls -lh {} \;
+
+    - name: Deploy to Cloudflare Pages
+      id: deploy
+      # フォークからの PR には Secrets が渡らない
+      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # 初回だけプロジェクトを作る。すでにある場合は失敗するので無視する (本当の失敗は次の deploy で出る)
+        preCommands: >
+          npx wrangler pages project create ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'promete-web-example' }}
+          --production-branch=master || true
+        command: >
+          pages deploy out/wwwroot
+          --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'promete-web-example' }}
+          --branch=${{ github.head_ref || github.ref_name }}
+          --commit-dirty=true
+
+    - name: Comment preview URL
+      if: github.event_name == 'pull_request' && steps.deploy.outcome == 'success'
+      uses: actions/github-script@v7
+      env:
+        PREVIEW_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url || steps.deploy.outputs.deployment-url }}
+      with:
+        script: |
+          const marker = '<!-- web-example-preview -->';
+          const body = `${marker}\nWeb サンプルのプレビュー: ${process.env.PREVIEW_URL}\n\nコミット: ${context.payload.pull_request.head.sha.slice(0, 7)}`;
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+          const mine = comments.find(c => c.body?.includes(marker));
+          if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+          else await github.rest.issues.createComment({ owner, repo, issue_number, body });

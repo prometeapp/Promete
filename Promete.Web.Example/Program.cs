@@ -42,6 +42,8 @@ public static partial class Program
             .Use<CoroutineManager>()
             .Use<Gamepads>()
             .Use<ConsoleLayer>()
+            .Use<BackButton>()
+            .Use<ViewportSize>()
             .BuildWithWeb(WindowOptions.Default with { Title = "Promete.Web Example" });
 
         switch (query["scene"])
