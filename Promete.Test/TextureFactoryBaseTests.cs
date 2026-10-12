@@ -152,6 +152,85 @@ public class TextureFactoryBaseTests
     }
 
     [Fact]
+    public void 任意矩形のスプライトシートは渡した順にサイズとUVが決まる()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(8, 4);
+
+        var cells = factory.LoadSpriteSheet(stream, (0, 0, 2, 4), (2, 1, 6, 2));
+
+        cells.Should().HaveCount(2);
+        cells[0].Size.Should().Be(new VectorInt(2, 4));
+        cells[0].UvStart.Should().Be(new Vector(0f, 0f));
+        cells[0].UvEnd.Should().Be(new Vector(0.25f, 1f));
+        cells[1].Size.Should().Be(new VectorInt(6, 2));
+        cells[1].UvStart.Should().Be(new Vector(0.25f, 0.25f));
+        cells[1].UvEnd.Should().Be(new Vector(1f, 0.75f));
+    }
+
+    [Fact]
+    public void 任意矩形のスプライトシートは全セルが1枚のテクスチャを共有し解放は一度だけ行われる()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+        var cells = factory.LoadSpriteSheet(stream, (0, 0, 2, 2), (2, 2, 2, 2));
+
+        foreach (var cell in cells)
+            cell.Dispose();
+
+        factory.CreatedCount.Should().Be(1);
+        cells.Select(c => c.Handle).Distinct().Should().HaveCount(1);
+        factory.DisposedHandles.Should().Equal(cells[0].Handle);
+    }
+
+    [Fact]
+    public void 任意矩形のスプライトシートにオプションを渡せる()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+        var options = new TextureOptions(TextureFilterMode.Linear, TextureAddressMode.Repeat);
+
+        var cells = factory.LoadSpriteSheet(stream, options, (0, 0, 2, 2));
+
+        factory.GetOptions(cells[0].Handle).Should().Be(options);
+    }
+
+    [Fact]
+    public void 任意矩形が空の場合は何も生成しない()
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+
+        var cells = factory.LoadSpriteSheet(stream);
+
+        cells.Should().BeEmpty();
+        factory.CreatedCount.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(-1, 0, 2, 2)]
+    [InlineData(0, -1, 2, 2)]
+    [InlineData(0, 0, 0, 2)]
+    [InlineData(0, 0, 2, 0)]
+    [InlineData(3, 0, 2, 2)]
+    [InlineData(0, 3, 2, 2)]
+    public void 任意矩形が範囲外か面積を持たない場合はアップロード前に例外になる(
+        int left,
+        int top,
+        int width,
+        int height
+    )
+    {
+        var factory = new FakeTextureFactory();
+        using var stream = CreatePng(4, 4);
+
+        var act = () => factory.LoadSpriteSheet(stream, (0, 0, 2, 2), (left, top, width, height));
+
+        act.Should().Throw<ArgumentException>();
+        factory.CreatedCount.Should().Be(0);
+    }
+
+    [Fact]
     public void オプションを省略すると既定の設定で生成される()
     {
         var factory = new FakeTextureFactory();
