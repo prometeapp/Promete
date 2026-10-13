@@ -130,4 +130,79 @@ public class NodeTests
         child.ModelMatrix.M41.Should().Be(10);
         child.ModelMatrix.M42.Should().Be(11);
     }
+
+    [Fact]
+    public void Absolute_WithoutRotationOrPivot_ShouldComposeLocationAndScale()
+    {
+        var parent = new Container { Location = (100, 100), Scale = (2, 2) };
+        var child = new Container { Location = (50, 0) };
+        parent.Add(child);
+
+        child.AbsoluteLocation.Should().Be((Vector)(200, 100));
+        child.AbsoluteScale.Should().Be((Vector)(2, 2));
+        child.AbsoluteAngle.ToDegrees().Should().BeApproximately(0, 1e-4f);
+    }
+
+    [Fact]
+    public void AbsoluteLocation_WithRotatedParent_ShouldRotateChildOffset()
+    {
+        var parent = new Container { Location = (100, 100), Angle = Angle.FromDegrees(90) };
+        var child = new Container { Location = (10, 0) };
+        parent.Add(child);
+
+        // 時計回り 90°: ローカル +X は画面の +Y へ向く
+        child.AbsoluteLocation.X.Should().BeApproximately(100, 1e-3f);
+        child.AbsoluteLocation.Y.Should().BeApproximately(110, 1e-3f);
+        child.AbsoluteAngle.ToDegrees().Should().BeApproximately(90, 1e-3f);
+    }
+
+    [Fact]
+    public void AbsoluteLocation_WithParentPivot_ShouldShiftChild()
+    {
+        var parent = new Container
+        {
+            Size = (20, 20),
+            Pivot = (0.5f, 0.5f),
+            Location = (100, 100),
+        };
+        var child = new Container { Location = (10, 10) };
+        parent.Add(child);
+
+        // 親のピボット (10, 10) が Location に来るので、子のローカル (10, 10) はちょうど親の Location に重なる
+        child.AbsoluteLocation.Should().Be((Vector)(100, 100));
+    }
+
+    [Fact]
+    public void Absolute_WithFlippedParent_ShouldReflectNegativeScale()
+    {
+        // FrameBuffer の子コンテナと同じ構成
+        var parent = new Container { Location = (0, 240), Scale = (1, -1) };
+        var child = new Container { Location = (0, 10), Angle = Angle.FromDegrees(30) };
+        parent.Add(child);
+
+        child.AbsoluteLocation.Should().Be((Vector)(0, 230));
+        child.AbsoluteScale.Should().Be((Vector)(1, -1));
+        child.AbsoluteAngle.ToDegrees().Should().BeApproximately(-30, 1e-3f);
+    }
+
+    [Fact]
+    public void Absolute_AfterLocationChange_ShouldNotWaitForRender()
+    {
+        var parent = new Container();
+        var child = new Container();
+        parent.Add(child);
+        parent.UpdateModelMatrix();
+
+        parent.Location = (30, 40);
+
+        child.AbsoluteLocation.Should().Be((Vector)(30, 40));
+    }
+
+    [Fact]
+    public void AbsoluteLocation_ShouldNotApplyPixelSnap()
+    {
+        var node = new Container { Location = (0.25f, 0.75f) };
+
+        node.AbsoluteLocation.Should().Be((Vector)(0.25f, 0.75f));
+    }
 }
