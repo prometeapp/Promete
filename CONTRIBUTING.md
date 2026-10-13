@@ -25,6 +25,9 @@
 - Promete.ImGui
     - PrometeでImGUIを利用できるプラグインのプロジェクトです
     - NuGetにデプロイする対象です
+- Promete.Vulkan.Validation
+    - Vulkan バックエンド用のバリデーションレイヤーを有効にするプラグインです
+    - NuGetにデプロイする対象です
 - Promete.MeltySynth
     - Prometeで https://github.com/sinshu/meltysynth/ を利用するデモ
 - Promete.Test
@@ -150,6 +153,7 @@ csproj の `PropertyGroup` に書いてください。利用者にはパッケ�
 
 - Promete 本体（コア）の場合は、 `core-<バージョン>` とする（例：`core-1.0.0`）
 - Promete.ImGui の場合は、 `imgui-<バージョン>` とする（例：`imgui-1.0.0`）
+- Promete.Vulkan.Validation の場合は、 `vulkan-validation-<バージョン>` とする（例：`vulkan-validation-2.0.0`）
 
 ### AIエージェント
 
