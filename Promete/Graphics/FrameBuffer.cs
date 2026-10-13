@@ -136,14 +136,7 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
     {
         var app = PrometeApp.Current;
         var queue = app.GetPlugin<RenderCommandQueue>();
-        var view = app.View;
-        var ctx = new RenderContext
-        {
-            WindowSize = view.Size,
-            WindowScale = view.Scale,
-            ActualWidth = view.ActualWidth,
-            ActualHeight = view.ActualHeight,
-        };
+        var ctx = CreateRenderContext();
 
         var clearColor = AutoClear ? BackgroundColor : (Color?)null;
         using var _ = _renderTexture.BeginCapture(clearColor);
@@ -152,6 +145,17 @@ public class FrameBuffer : IEnumerable<Node>, IDisposable
         foreach (var child in SortedChildren)
             app.CollectNode(child, queue, ctx);
         queue.PopScopeAndFlush();
+    }
+
+    internal RenderContext CreateRenderContext()
+    {
+        return new RenderContext
+        {
+            WindowSize = Size,
+            WindowScale = 1f,
+            ActualWidth = Size.X,
+            ActualHeight = Size.Y,
+        };
     }
 
     /// <summary>
