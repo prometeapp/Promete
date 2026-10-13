@@ -153,7 +153,7 @@ csproj の `PropertyGroup` に書いてください。利用者にはパッケ�
 
 - Promete 本体（コア）の場合は、 `core-<バージョン>` とする（例：`core-1.0.0`）
 - Promete.ImGui の場合は、 `imgui-<バージョン>` とする（例：`imgui-1.0.0`）
-- Promete.Vulkan.Validation の場合は、 `vulkan-validation-<バージョン>` とする（例：`vulkan-validation-2.0.0`）
+- Promete.Vulkan.Validation の場合は、 `vulkan-validation-<バージョン>` とする（例：`vulkan-validation-2.3.0`）
 
 ### AIエージェント
 

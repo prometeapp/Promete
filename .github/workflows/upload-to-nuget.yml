@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '擬似的なタグ名 (例: imgui-1.0.0 / vulkan-validation-2.0.0)'
+        description: '擬似的なタグ名 (例: imgui-1.0.0 / vulkan-validation-2.3.0)'
         required: true
       dry_run:
         description: 'nuget.org へ push せず、pack までで止める'

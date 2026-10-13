@@ -7,7 +7,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
         <PackageId>Promete.Vulkan.Validation</PackageId>
-        <Version>2.0.0-beta.8</Version>
+        <Version>2.3.0</Version>
         <PackageTags>Game Engine;2D;gamedev;games;gaming;Vulkan;validation</PackageTags>
         <Description>Vulkan validation layer plugin for Promete. For development use only.</Description>
         <Authors>Ebise Lutica</Authors>
