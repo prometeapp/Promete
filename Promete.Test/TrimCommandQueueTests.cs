@@ -64,6 +64,55 @@ public class TrimCommandQueueTests
         command.Width.Should().Be(640);
     }
 
+    [Fact]
+    public void ピボットを設定してもトリム矩形の左上は見た目の左上になる()
+    {
+        var container = new Container().Size(200, 100).Pivot(0.5f, 0.5f);
+        container.Location = (300, 200);
+
+        var command = PushTrim(container);
+
+        command.X.Should().Be(200);
+        command.Y.Should().Be(150);
+        command.Width.Should().Be(200);
+        command.Height.Should().Be(100);
+    }
+
+    [Fact]
+    public void 負のスケールの親の中でもトリム矩形は消えない()
+    {
+        var parent = new Container();
+        parent.Scale = (1, -1);
+        parent.Location = (0, 300);
+        var container = new Container().Size(200, 100);
+        container.Location = (50, 0);
+        parent.Add(container);
+        parent.BeforeRender();
+        container.BeforeRender();
+
+        var command = PushTrim(container);
+
+        command.X.Should().Be(50);
+        command.Y.Should().Be(200);
+        command.Width.Should().Be(200);
+        command.Height.Should().Be(100);
+    }
+
+    [Fact]
+    public void 回転したトリム対象は外接矩形になる()
+    {
+        var container = new Container().Size(100, 50);
+        container.Angle = Angle.FromDegrees(90);
+        container.Location = (200, 100);
+
+        var command = PushTrim(container);
+
+        command.X.Should().Be(150);
+        command.Y.Should().Be(100);
+        command.Width.Should().Be(50);
+        command.Height.Should().Be(100);
+    }
+
     /// <summary>
     /// 指摘#03 の本質。外側の過大な幅が内側の積集合へ漏れないことを確認する。
     /// </summary>
@@ -116,7 +165,16 @@ public class TrimCommandQueueTests
 
         var container = new Container().Size(size);
         container.Location = location;
+
+        return PushTrim(container);
+    }
+
+    private static BeginTrimCommand PushTrim(Container container)
+    {
         container.BeforeRender();
+        var queue = new RenderCommandQueue();
+        var captured = new List<BeginTrimCommand>();
+        queue.RegisterRunner(new CapturingRunner(captured));
 
         queue.PushTrim(container, new RenderContext { WindowSize = WindowSize });
         queue.ProcessAndFlush();
