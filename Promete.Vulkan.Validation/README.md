@@ -19,4 +19,4 @@ var app = PrometeApp.Create()
     .BuildWithVulkanDesktop();
 ```
 
-詳しくは https://promete.app を参照してください。
+詳しくは [ドキュメント](https://promete.app/guide/other/vulkan/) を参照してください。

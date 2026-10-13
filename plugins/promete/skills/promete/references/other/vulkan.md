@@ -100,6 +100,38 @@ public class MainScene : Scene
 }
 ```
 
+## バリデーションレイヤーを有効にする `v2.3~`
+
+Vulkanの使い方に誤りがないかを検査する「バリデーションレイヤー」を、`Promete.Vulkan.Validation` パッケージで有効にできます。
+Prometeの開発や、Vulkanバックエンドの不具合調査に役立ちます。
+
+```sh
+dotnet add package Promete.Vulkan.Validation
+```
+
+`BuildWithVulkanDesktop()` より前に `UseVulkanValidation()` を呼び出します。
+
+```csharp title="Program.cs"
+using Promete;
+using Promete.Vulkan.Validation;
+using Promete.VulkanDesktop;
+
+var app = PrometeApp.Create()
+    .UseVulkanValidation()
+    .BuildWithVulkanDesktop();
+
+return app.Run<MainScene>();
+```
+
+警告とエラーは、標準エラー出力に `[Vulkan Warning]` / `[Vulkan Error]` の形式で表示されます。
+
+:::caution
+バリデーションレイヤーは描画性能を大きく下げます。**開発中にだけ**使い、リリースするゲームではパッケージへの参照ごと外してください。
+:::
+
+- バリデーションレイヤー本体はパッケージに含まれません。[Vulkan SDK](https://vulkan.lunarg.com/sdk/home) をインストールしてください
+- レイヤーが見つからない環境では、警告を出したうえで、検査なしのまま動作します
+
 ## 注意点
 
 ### カスタムシェーダー
