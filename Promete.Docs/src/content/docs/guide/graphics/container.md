@@ -77,6 +77,16 @@ var relativePos = child.Location; // (50, 50)
 var absolutePos = child.AbsoluteLocation; // (150, 150)
 ```
 
+`AbsoluteLocation`、`AbsoluteScale`、`AbsoluteAngle` は、親の位置・回転・スケール・ピボットをすべて反映した値を返します `v2.3.1~`。
+親が反転 (負のスケール) していれば `AbsoluteScale` も負になり、`AbsoluteAngle` の向きも反転します。
+また、`AbsoluteAngle` は -180° 〜 180° に正規化されます。
+
+`AbsoluteLocation` はピボット点の座標であり、ピクセルスナップは適用されません。
+
+:::note
+`v2.3` 以前は、親の回転・ピボット・反転が反映されませんでした。
+:::
+
 ## トリムモード
 
 `IsTrimmable` プロパティを `true` に設定すると、`Container` はトリムモードで動作します。
