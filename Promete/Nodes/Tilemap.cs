@@ -78,16 +78,11 @@ public class Tilemap(
         if (!TryGetVisibleTileRange(ctx, out var min, out var max))
             return TilemapRenderingMode.Scan;
 
-        // タイルマップの空間的広がり（タイル単位）
-        var mapW = _maxTileX - _minTileX + 1;
-        var mapH = _maxTileY - _minTileY + 1;
+        // 画面に映る範囲のマス数（ScanAndCollect と同じ範囲）
+        var viewCells = (long)(max.X - min.X + 1) * (max.Y - min.Y + 1);
 
-        // ビューポートに収まるタイル数（ScanAndCollect と同じ範囲）
-        var viewW = max.X - min.X + 1;
-        var viewH = max.Y - min.Y + 1;
-
-        // マップ全体がビューポートに収まる場合のみ RenderAll、それ以外は Scan
-        return (mapW <= viewW && mapH <= viewH)
+        // タイル数がマス数以下なら全描画でも走査量は変わらないため、RenderAll を選ぶ
+        return _tiles.Count <= viewCells
             ? TilemapRenderingMode.RenderAll
             : TilemapRenderingMode.Scan;
     }
