@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using Promete.Graphics.Rendering.Commands;
 using Promete.Nodes;
 
@@ -91,8 +92,25 @@ public class RenderCommandQueue
     {
         var parent = _trimStack.TryPeek(out var p) ? p : new TrimState(0, 0, 0, 0, false);
 
-        var left = (VectorInt)node.AbsoluteLocation;
-        var size = (VectorInt)(node.Size * node.AbsoluteScale);
+        // Size の矩形の四隅をワールド座標へ変換し、その外接矩形をトリム矩形とする。
+        // ピボット・反転・回転を ModelMatrix 一つで扱える。
+        var w = node.Size.X;
+        var h = node.Size.Y;
+        var m = node.ModelMatrix;
+        var p0 = Vector2.Transform(Vector2.Zero, m);
+        var p1 = Vector2.Transform(new Vector2(w, 0), m);
+        var p2 = Vector2.Transform(new Vector2(0, h), m);
+        var p3 = Vector2.Transform(new Vector2(w, h), m);
+        var minX = Math.Min(Math.Min(p0.X, p1.X), Math.Min(p2.X, p3.X));
+        var minY = Math.Min(Math.Min(p0.Y, p1.Y), Math.Min(p2.Y, p3.Y));
+        var maxX = Math.Max(Math.Max(p0.X, p1.X), Math.Max(p2.X, p3.X));
+        var maxY = Math.Max(Math.Max(p0.Y, p1.Y), Math.Max(p2.Y, p3.Y));
+
+        var left = new VectorInt((int)MathF.Floor(minX), (int)MathF.Floor(minY));
+        var size = new VectorInt(
+            (int)MathF.Ceiling(maxX) - left.X,
+            (int)MathF.Ceiling(maxY) - left.Y
+        );
 
         // 原点を 0 にクランプする際は、切り詰めた分だけサイズも縮める。
         // 縮めないと可視領域がはみ出した量だけ右下へ広がり、
