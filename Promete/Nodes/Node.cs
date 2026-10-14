@@ -177,12 +177,9 @@ public abstract class Node
     public bool IsVisible { get; set; } = true;
 
     /// <summary>
-    /// このノードの絶対位置（ピボット点の、画面上での座標）を取得します。
+    /// このノードの絶対位置（親の位置・回転・スケール・ピボットを反映した、ピボット点の座標）を取得します。
+    /// ピクセルスナップは適用されません。
     /// </summary>
-    /// <remarks>
-    /// 親ノードの位置・回転・スケール・ピボットをすべて反映します。<br />
-    /// <see cref="ModelMatrix"/> と違い、ピクセルスナップは適用されず、描画前でも最新の値を返します。
-    /// </remarks>
     public Vector AbsoluteLocation
     {
         get
@@ -196,12 +193,8 @@ public abstract class Node
     }
 
     /// <summary>
-    /// このノードの絶対スケール（親ノードのスケールを考慮したスケール）を取得します。
+    /// このノードの絶対スケール（親の反転を含む、親ノードのスケールを考慮したスケール）を取得します。
     /// </summary>
-    /// <remarks>
-    /// 親が反転（負のスケール）していれば、結果にも反映されます。<br />
-    /// 回転を挟んだ非均一スケールは剪断になるため、近似値になります。
-    /// </remarks>
     public Vector AbsoluteScale
     {
         get
@@ -212,12 +205,9 @@ public abstract class Node
     }
 
     /// <summary>
-    /// このノードの絶対角度（親ノードの角度を考慮した角度）を取得します。
-    /// </summary>
-    /// <remarks>
-    /// 親が反転していれば、回転の向きも反転します。<br />
+    /// このノードの絶対角度（親の反転を含む、親ノードの角度を考慮した角度）を取得します。
     /// 値は -180° 〜 180° の範囲に正規化されます。
-    /// </remarks>
+    /// </summary>
     public Angle AbsoluteAngle
     {
         get

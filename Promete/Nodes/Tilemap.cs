@@ -115,13 +115,8 @@ public class Tilemap(
 
     /// <summary>
     /// 画面に映りうるタイルの範囲（タイル座標、両端を含む）を求めます。
+    /// 反転や回転、親の変形があっても求められます。回転時は、画面外のタイルを多少含みます。
     /// </summary>
-    /// <remarks>
-    /// 画面の四隅をモデル行列の逆行列でこのノードのローカル座標へ戻し、その外接矩形をタイル単位にします。
-    /// 反転（負のスケール）や回転、親の変形があっても同じ式で求められます。
-    /// 回転時は外接矩形になるため、画面外のタイルを多少含みます。<br />
-    /// 端数やピクセルスナップの誤差のため、上下左右に 1 タイルずつ余白を取ります。
-    /// </remarks>
     /// <returns>行列が逆変換できず、何も映らない場合は <c>false</c>。</returns>
     private bool TryGetVisibleTileRange(RenderContext ctx, out VectorInt min, out VectorInt max)
     {
@@ -130,6 +125,7 @@ public class Tilemap(
         if (TileSize.X <= 0 || TileSize.Y <= 0 || !Matrix4x4.Invert(ModelMatrix, out var inverse))
             return false;
 
+        // 画面の四隅をローカル座標へ戻し、その外接矩形を求める
         var (ww, wh) = ctx.WindowSize;
         Span<Vector2> corners = [new(0, 0), new(ww, 0), new(0, wh), new(ww, wh)];
 
@@ -142,6 +138,7 @@ public class Tilemap(
             hi = Vector2.Max(hi, p);
         }
 
+        // 端数やピクセルスナップの誤差のため、上下左右に 1 タイルずつ余白を取る
         min = (ToTileIndex(lo.X, TileSize.X) - 1, ToTileIndex(lo.Y, TileSize.Y) - 1);
         max = (ToTileIndex(hi.X, TileSize.X) + 1, ToTileIndex(hi.Y, TileSize.Y) + 1);
         return true;
