@@ -83,9 +83,66 @@ public class TilemapCullingTests
         collected.Should().BeEmpty();
     }
 
+    [Fact]
+    public void Auto_WithFewTiles_ShouldRenderAll()
+    {
+        var tile = new RecordingTile();
+        var map = CreateMap(tile, TilemapRenderingMode.Auto, (0, 0), (500, 500));
+
+        var collected = CollectLocations(map, map);
+
+        collected.Should().Contain([(0, 0), (500, 500)]);
+    }
+
+    [Fact]
+    public void Auto_WithMoreTilesThanVisibleCells_ShouldScan()
+    {
+        var tile = new RecordingTile();
+        var map = new Tilemap(TileSize);
+        map.Fill(0, 0, 100, 100, tile);
+
+        var collected = CollectLocations(map, map);
+
+        collected.Should().Contain((0, 0));
+        collected.Should().NotContain((99, 99));
+    }
+
+    [Fact]
+    public void Auto_WithNoTiles_ShouldCollectNothing()
+    {
+        var map = new Tilemap(TileSize);
+        var queue = new RenderCommandQueue();
+
+        map.BeforeRender();
+        var act = () => map.Collect(queue, new RenderContext { WindowSize = Viewport });
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Auto_WithSingularMatrix_ShouldCollectNothing()
+    {
+        var tile = new RecordingTile();
+        var map = CreateMap(tile, TilemapRenderingMode.Auto, (0, 0));
+        map.Scale = (0, 0);
+
+        var collected = CollectLocations(map, map);
+
+        collected.Should().BeEmpty();
+    }
+
     private static Tilemap CreateMap(ITile tile, params VectorInt[] locations)
     {
-        var map = new Tilemap(TileSize, renderingMode: TilemapRenderingMode.Scan);
+        return CreateMap(tile, TilemapRenderingMode.Scan, locations);
+    }
+
+    private static Tilemap CreateMap(
+        ITile tile,
+        TilemapRenderingMode mode,
+        params VectorInt[] locations
+    )
+    {
+        var map = new Tilemap(TileSize, renderingMode: mode);
         foreach (var location in locations)
             map.SetTile(location, tile);
         return map;
