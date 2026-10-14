@@ -7,18 +7,28 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
         <PackageId>Promete.Vulkan.Validation</PackageId>
-        <Version>2.0.0-beta.8</Version>
+        <Version>2.3.0</Version>
+        <PackageTags>Game Engine;2D;gamedev;games;gaming;Vulkan;validation</PackageTags>
+        <Description>Vulkan validation layer plugin for Promete. For development use only.</Description>
         <Authors>Ebise Lutica</Authors>
-        <Description>
-            Promete の Vulkan バックエンド用バリデーションレイヤープラグイン。
-            開発時のみ参照し、リリースビルドでは参照を外してください。
-        </Description>
+        <Copyright>(C)2024-2026 Promete Developers</Copyright>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://promete.app</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/prometeapp/Promete</RepositoryUrl>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Silk.NET.Vulkan.Extensions.EXT" Version="2.23.0" />
+        <PackageReference
+            Include="Promete.Silk.Vulkan.Extensions.EXT"
+            Version="2.23.0-prmt.1.0.0"
+        />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" Visible="false" />
     </ItemGroup>
 
     <ItemGroup>
