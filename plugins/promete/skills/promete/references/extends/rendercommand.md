@@ -150,6 +150,15 @@ public override void Collect(RenderCommandQueue queue, RenderContext ctx)
 }
 ```
 
+### FrameBuffer への描画時 `v2.3.1~`
+
+`FrameBuffer` の子ノードを描画するときは、`RenderContext` の各値が `FrameBuffer` 自身のサイズに合わせて設定されます。
+
+- `WindowSize` は `FrameBuffer.Size` になる
+- `WindowScale` は `1`、`ActualWidth` / `ActualHeight` は `FrameBuffer.Size` と同じ値になる
+
+`Tilemap` の画面内判定やトリムのクランプは `WindowSize` を基準にするため、ゲーム画面と違うサイズの `FrameBuffer` でも、`FrameBuffer` の範囲に対して正しく動作します。
+
 ## CommandRunner の実装（バックエンド開発者向け）
 
 カスタムコマンドを追加する場合は、`CommandRunner<T>` を継承して `Execute()` を実装し、`RenderCommandQueue` に登録します。
