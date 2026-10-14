@@ -37,6 +37,7 @@ public class mouse(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : Scene
     {
         var btn = mouse[type];
         console.Print(
-            $"{type.ToString(),-10} Press:{btn.IsPressed} Down:{btn.IsButtonDown}\tUp:{btn.IsButtonUp}\tTime:{btn.ElapsedTime}\t\tFrame:{btn.ElapsedFrameCount}");
+            $"{type.ToString(), -10} Press:{btn.IsPressed} Down:{btn.IsButtonDown}\tUp:{btn.IsButtonUp}\tTime:{btn.ElapsedTime}\t\tFrame:{btn.ElapsedFrameCount}"
+        );
     }
 }

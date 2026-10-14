@@ -7,10 +7,10 @@ namespace Promete.UI;
 /// <param name="name">グループの識別名。</param>
 public class FocusGroup(string name)
 {
-	/// <summary>
-	/// グループの識別名を取得します。
-	/// </summary>
-	public string Name { get; } = name;
+    /// <summary>
+    /// グループの識別名を取得します。
+    /// </summary>
+    public string Name { get; } = name;
 
-	public override string ToString() => $"FocusGroup({Name})";
+    public override string ToString() => $"FocusGroup({Name})";
 }

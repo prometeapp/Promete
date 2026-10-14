@@ -8,18 +8,18 @@ namespace Promete.UI;
 [Flags]
 public enum UIElementState
 {
-	/// <summary>通常状態。</summary>
-	Normal = 0,
+    /// <summary>通常状態。</summary>
+    Normal = 0,
 
-	/// <summary>マウスカーソルが要素上にある状態。</summary>
-	Hovered = 1 << 0,
+    /// <summary>マウスカーソルが要素上にある状態。</summary>
+    Hovered = 1 << 0,
 
-	/// <summary>要素が押下されている状態。</summary>
-	Pressed = 1 << 1,
+    /// <summary>要素が押下されている状態。</summary>
+    Pressed = 1 << 1,
 
-	/// <summary>要素にフォーカスがある状態。</summary>
-	Focused = 1 << 2,
+    /// <summary>要素にフォーカスがある状態。</summary>
+    Focused = 1 << 2,
 
-	/// <summary>要素が無効化されている状態。</summary>
-	Disabled = 1 << 3,
+    /// <summary>要素が無効化されている状態。</summary>
+    Disabled = 1 << 3,
 }

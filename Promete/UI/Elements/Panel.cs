@@ -10,33 +10,33 @@ namespace Promete.UI.Elements;
 /// </summary>
 public class Panel : UIElement
 {
-	private IUIStyle<Panel> _style;
+    private IUIStyle<Panel> _style;
 
-	/// <summary>
-	/// Panel の新しいインスタンスを初期化します。
-	/// </summary>
-	/// <param name="style">適用するスタイル。null の場合は DefaultPanelStyle が使用されます。</param>
-	public Panel(IUIStyle<Panel>? style = null)
-	{
-		_style = style ?? new DefaultPanelStyle();
-		IsFocusable = false;
-	}
+    /// <summary>
+    /// Panel の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="style">適用するスタイル。null の場合は DefaultPanelStyle が使用されます。</param>
+    public Panel(IUIStyle<Panel>? style = null)
+    {
+        _style = style ?? new DefaultPanelStyle();
+        IsFocusable = false;
+    }
 
-	/// <summary>
-	/// パネルのスタイルを取得または設定します。
-	/// </summary>
-	public IUIStyle<Panel> Style
-	{
-		get => _style;
-		set
-		{
-			_style = value;
-			NotifyStyleDirty();
-		}
-	}
+    /// <summary>
+    /// パネルのスタイルを取得または設定します。
+    /// </summary>
+    public IUIStyle<Panel> Style
+    {
+        get => _style;
+        set
+        {
+            _style = value;
+            NotifyStyleDirty();
+        }
+    }
 
-	protected override void ApplyStyle(UIElementState state)
-	{
-		_style.Apply(this, state);
-	}
+    protected override void ApplyStyle(UIElementState state)
+    {
+        _style.Apply(this, state);
+    }
 }

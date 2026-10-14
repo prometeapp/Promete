@@ -11,7 +11,9 @@ namespace Promete.UI;
 /// UIシステムの中核プラグインです。
 /// ヒットテスト、フォーカス管理、モーダルスタック、入力ディスパッチを一元管理します。
 /// </summary>
-public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : IInitializable, IUpdatable
+public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
+    : IInitializable,
+        IUpdatable
 {
     private readonly List<UIElement> _elementBuffer = [];
     private readonly Stack<UIElement> _modalStack = new();
@@ -33,16 +35,15 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
     /// <summary>現在マウスキャプチャされている要素。</summary>
     public UIElement? CapturedElement => _capturedElement;
 
-    public void OnStart()
-    {
-    }
+    public void OnStart() { }
 
     public void OnUpdate()
     {
         // UI要素を収集
         _elementBuffer.Clear();
         CollectUIElements(app.GlobalBackground, _elementBuffer);
-        if (app.Root != null) CollectUIElements(app.Root, _elementBuffer);
+        if (app.Root != null)
+            CollectUIElements(app.Root, _elementBuffer);
         CollectUIElements(app.GlobalForeground, _elementBuffer);
 
         // モーダルが存在する場合、モーダル内の要素のみを対象にする
@@ -131,7 +132,8 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
     /// <returns>ポップされたモーダル要素。スタックが空の場合は null。</returns>
     public UIElement? PopModal()
     {
-        if (_modalStack.Count == 0) return null;
+        if (_modalStack.Count == 0)
+            return null;
         var popped = _modalStack.Pop();
         ClearHover();
         return popped;
@@ -143,7 +145,8 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
     /// <param name="element">フォーカスする要素。null でフォーカスを解除します。</param>
     public void SetFocus(UIElement? element)
     {
-        if (_focusedElement == element) return;
+        if (_focusedElement == element)
+            return;
 
         if (_focusedElement != null)
         {
@@ -166,7 +169,8 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
     public void MoveFocusNext()
     {
         var focusable = GetFocusableElements();
-        if (focusable.Count == 0) return;
+        if (focusable.Count == 0)
+            return;
         MoveFocus(focusable, 1);
     }
 
@@ -176,13 +180,15 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
     public void MoveFocusPrevious()
     {
         var focusable = GetFocusableElements();
-        if (focusable.Count == 0) return;
+        if (focusable.Count == 0)
+            return;
         MoveFocus(focusable, -1);
     }
 
     private void UpdateHover(UIElement? hitElement)
     {
-        if (_hoveredElement == hitElement) return;
+        if (_hoveredElement == hitElement)
+            return;
 
         if (_hoveredElement != null)
         {
@@ -272,7 +278,8 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
     {
         var scroll = -mouse.Scroll;
         _lastScroll = scroll;
-        if (Math.Abs(scroll.X) < 0.001f && Math.Abs(scroll.Y) < 0.001f) return;
+        if (Math.Abs(scroll.X) < 0.001f && Math.Abs(scroll.Y) < 0.001f)
+            return;
 
         // ヒットした要素、またはその祖先で最も近い ScrollView を探す
         var current = hitElement as Node;
@@ -303,9 +310,11 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 
     private void ProcessFocusActivation()
     {
-        if (_focusedElement == null) return;
+        if (_focusedElement == null)
+            return;
         // TextInput/Slider フォーカス中は Enter/Space でアクティベートしない
-        if (_focusedElement is TextInput or Slider) return;
+        if (_focusedElement is TextInput or Slider)
+            return;
 
         if (keyboard.Enter.IsKeyDown || keyboard.Space.IsKeyDown)
         {
@@ -324,8 +333,10 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
         for (var i = 0; i < elements.Count; i++)
         {
             var element = elements[i];
-            if (!element.IsEnabled || !element.IsVisible) continue;
-            if (!element.HitTest(point)) continue;
+            if (!element.IsEnabled || !element.IsVisible)
+                continue;
+            if (!element.HitTest(point))
+                continue;
 
             var (depth, zIndex) = ComputeEffectiveOrder(element);
             if (zIndex > bestZIndex || (zIndex == bestZIndex && depth > bestDepth))
@@ -373,7 +384,10 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
         var source = _modalStack.Count > 0 ? GetModalElements() : _elementBuffer;
 
         return source
-            .Where(e => e is { IsEnabled: true, IsFocusable: true, IsVisible: true } && e.FocusGroup == focusGroup)
+            .Where(e =>
+                e is { IsEnabled: true, IsFocusable: true, IsVisible: true }
+                && e.FocusGroup == focusGroup
+            )
             .OrderBy(e => e.NavigationOrder)
             .ToList();
     }
@@ -388,14 +402,17 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard) : 
 
     private void MoveFocus(List<UIElement> focusable, int direction)
     {
-        if (focusable.Count == 0) return;
+        if (focusable.Count == 0)
+            return;
 
         var currentIndex = _focusedElement != null ? focusable.IndexOf(_focusedElement) : -1;
         var nextIndex = currentIndex + direction;
 
         // ループ
-        if (nextIndex < 0) nextIndex = focusable.Count - 1;
-        else if (nextIndex >= focusable.Count) nextIndex = 0;
+        if (nextIndex < 0)
+            nextIndex = focusable.Count - 1;
+        else if (nextIndex >= focusable.Count)
+            nextIndex = 0;
 
         SetFocus(focusable[nextIndex]);
     }

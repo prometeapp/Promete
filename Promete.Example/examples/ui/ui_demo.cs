@@ -8,8 +8,12 @@ using Promete.UI.Styles;
 
 namespace Promete.Example.examples.ui;
 
-[Demo("ui/ui_demo.demo", "UIライブラリのデモ — ボタン、チェックボックス、スライダー、テキスト入力、スクロール、パネル")]
-public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, ConsoleLayer console) : Scene
+[Demo(
+    "ui/ui_demo.demo",
+    "UIライブラリのデモ — ボタン、チェックボックス、スライダー、テキスト入力、スクロール、パネル"
+)]
+public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, ConsoleLayer console)
+    : Scene
 {
     // InputMap はUIと独立して使える
     private readonly InputMap _inputMap = new();
@@ -21,8 +25,10 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
     public override void OnStart()
     {
         // --- ステータス表示 ---
-        statusText = new Text("UI要素をクリック・操作してみよう！", color: Color.White)
-            .Location(20, 16);
+        statusText = new Text("UI要素をクリック・操作してみよう！", color: Color.White).Location(
+            20,
+            16
+        );
         Root.Add(statusText);
 
         // ========== 左カラム ==========
@@ -50,10 +56,7 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
             TextColor = Color.FromArgb(255, 200, 255, 220),
         };
 
-        var greenButton = new Button("カスタムスタイル")
-        {
-            Style = customStyle,
-        };
+        var greenButton = new Button("カスタムスタイル") { Style = customStyle };
         greenButton
             .Location(30, 115)
             .Size(180, 45)
@@ -86,8 +89,7 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
         Root.Add(nineSliceButton);
 
         // --- チェックボックス ---
-        var checkLabel = new Text("Checkbox:", color: Color.LightGray)
-            .Location(30, 290);
+        var checkLabel = new Text("Checkbox:", color: Color.LightGray).Location(30, 290);
         Root.Add(checkLabel);
 
         var checkbox1 = new Checkbox("オプション A", isChecked: true)
@@ -106,14 +108,10 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
         checkbox2.CheckedChanged += v => statusText.Content = $"オプション B: {(v ? "ON" : "OFF")}";
 
         // --- スライダー ---
-        var sliderLabel = new Text("Slider:", color: Color.LightGray)
-            .Location(30, 385);
+        var sliderLabel = new Text("Slider:", color: Color.LightGray).Location(30, 385);
         Root.Add(sliderLabel);
 
-        var slider = new Slider(0, 5, 3)
-            .Location(30, 410)
-            .Size(200, 28)
-            .NavigationOrder(6);
+        var slider = new Slider(0, 5, 3).Location(30, 410).Size(200, 28).NavigationOrder(6);
         Root.Add(slider);
 
         slider.ValueChanged += v => statusText.Content = $"スライダー値: {v:F1}";
@@ -128,8 +126,7 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
                 var modal = new Modal((280, 160));
                 modal.Size = View.Size;
 
-                var label = new Text("モーダルダイアログです", color: Color.White)
-                    .Location(20, 20);
+                var label = new Text("モーダルダイアログです", color: Color.White).Location(20, 20);
                 modal.Body.Add(label);
 
                 var closeBtn = new Button("閉じる")
@@ -146,8 +143,7 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
         // ========== 右カラム ==========
 
         // --- テキスト入力 ---
-        var inputLabel = new Text("TextInput:", color: Color.LightGray)
-            .Location(280, 60);
+        var inputLabel = new Text("TextInput:", color: Color.LightGray).Location(280, 60);
         Root.Add(inputLabel);
 
         var textInput = new TextInput("入力してください...")
@@ -160,13 +156,10 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
         textInput.Submitted += t => statusText.Content = $"確定: {t}";
 
         // --- パネル内にボタン群 ---
-        var panelLabel = new Text("Panel + FocusGroup:", color: Color.LightGray)
-            .Location(280, 135);
+        var panelLabel = new Text("Panel + FocusGroup:", color: Color.LightGray).Location(280, 135);
         Root.Add(panelLabel);
 
-        var panel = new Panel()
-            .Location(280, 160)
-            .Size(250, 200);
+        var panel = new Panel().Location(280, 160).Size(250, 200);
         Root.Add(panel);
 
         var focusGroup = new FocusGroup("menu");
@@ -183,20 +176,22 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
         }
 
         // --- スクロールビュー ---
-        var scrollLabel = new Text("ScrollView (ホイールでスクロール):", color: Color.LightGray)
-            .Location(280, 375);
+        var scrollLabel = new Text(
+            "ScrollView (ホイールでスクロール):",
+            color: Color.LightGray
+        ).Location(280, 375);
         Root.Add(scrollLabel);
 
         var scrollView = new ScrollView { ContentSize = (250, 400) };
-        scrollView
-            .Location(280, 400)
-            .Size(250, 120);
+        scrollView.Location(280, 400).Size(250, 120);
         Root.Add(scrollView);
 
         for (var i = 0; i < 10; i++)
         {
-            var item = new Text($"  アイテム {i + 1}", color: Color.FromArgb(255, 180, 200, 255))
-                .Location(0, i * 35);
+            var item = new Text(
+                $"  アイテム {i + 1}",
+                color: Color.FromArgb(255, 180, 200, 255)
+            ).Location(0, i * 35);
             scrollView.Content.Add(item);
         }
 
@@ -222,7 +217,8 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
 
     public override void OnUpdate()
     {
-        if (!_inputMapInitialized) InitInputMap();
+        if (!_inputMapInitialized)
+            InitInputMap();
         _inputMap.Update(keyboard, mouse);
 
         if (_inputMap.GetAction("count").IsJustPressed)
@@ -237,6 +233,7 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
             statusText.Content = "InputMap カウントをリセット！";
         }
 
-        if (keyboard.Escape.IsKeyDown) App.LoadScene<MainScene>();
+        if (keyboard.Escape.IsKeyDown)
+            App.LoadScene<MainScene>();
     }
 }
