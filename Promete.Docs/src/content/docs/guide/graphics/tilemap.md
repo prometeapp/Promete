@@ -143,3 +143,11 @@ tilemap.RenderingMode = TilemapRenderingMode.RenderAll;
 // 画面内のタイルのみ描画
 tilemap.RenderingMode = TilemapRenderingMode.Scan;
 ```
+
+`Scan` は、タイルマップや親ノードが回転・反転 (負のスケール) していても、画面内のタイルを正しく判定します `v2.3.1~`。
+`FrameBuffer` の中に置いた場合も同様です。回転している場合は、画面外のタイルを多少含めて描画します。
+
+:::note
+`v2.3` 以前は、回転や反転を考慮していませんでした。
+回転・反転したタイルマップで、タイルが描画されなかったり、画面端で欠けたりすることがありました。
+:::

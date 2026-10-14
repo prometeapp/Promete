@@ -177,20 +177,45 @@ public abstract class Node
     public bool IsVisible { get; set; } = true;
 
     /// <summary>
-    /// このノードの絶対位置（親ノードの位置を考慮した位置）を取得します。
+    /// このノードの絶対位置（親の位置・回転・スケール・ピボットを反映した、ピボット点の座標）を取得します。
+    /// ピクセルスナップは適用されません。
     /// </summary>
-    public Vector AbsoluteLocation =>
-        Parent == null ? Location : (Location * Parent.AbsoluteScale) + Parent.AbsoluteLocation;
+    public Vector AbsoluteLocation
+    {
+        get
+        {
+            var p = Vector2.Transform(
+                new Vector2(Pivot.X * Size.X, Pivot.Y * Size.Y),
+                CreateWorldMatrix()
+            );
+            return (p.X, p.Y);
+        }
+    }
 
     /// <summary>
-    /// このノードの絶対スケール（親ノードのスケールを考慮したスケール）を取得します。
+    /// このノードの絶対スケール（親の反転を含む、親ノードのスケールを考慮したスケール）を取得します。
     /// </summary>
-    public Vector AbsoluteScale => Parent == null ? Scale : Scale * Parent.AbsoluteScale;
+    public Vector AbsoluteScale
+    {
+        get
+        {
+            Decompose(CreateWorldMatrix(), out var scale, out _);
+            return scale;
+        }
+    }
 
     /// <summary>
-    /// このノードの絶対角度（親ノードの角度を考慮した角度）を取得します。
+    /// このノードの絶対角度（親の反転を含む、親ノードの角度を考慮した角度）を取得します。
+    /// 値は -180° 〜 180° の範囲に正規化されます。
     /// </summary>
-    public Angle AbsoluteAngle => Parent == null ? Angle : Angle + Parent.AbsoluteAngle;
+    public Angle AbsoluteAngle
+    {
+        get
+        {
+            Decompose(CreateWorldMatrix(), out _, out var angle);
+            return angle;
+        }
+    }
 
     /// <summary>
     /// このノードの親ノードを取得します。
@@ -239,12 +264,7 @@ public abstract class Node
     protected internal virtual void UpdateModelMatrix()
     {
         var parentMatrix = Parent?.ModelMatrix ?? Matrix4x4.Identity;
-        var matrix =
-            Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0)
-            * Matrix4x4.CreateScale(Scale.X, Scale.Y, 1)
-            * Matrix4x4.CreateRotationZ(Angle.ToRadians())
-            * Matrix4x4.CreateTranslation(Location.X, Location.Y, 0)
-            * parentMatrix;
+        var matrix = CreateLocalMatrix() * parentMatrix;
 
         if (IsPixelSnapEnabled)
         {
@@ -254,6 +274,44 @@ public abstract class Node
 
         ModelMatrix = matrix;
         _isModelMatrixDirty = false;
+    }
+
+    /// <summary>
+    /// 親を含まない、このノード単体の変換行列を作成します。
+    /// </summary>
+    private Matrix4x4 CreateLocalMatrix() =>
+        Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0)
+        * Matrix4x4.CreateScale(Scale.X, Scale.Y, 1)
+        * Matrix4x4.CreateRotationZ(Angle.ToRadians())
+        * Matrix4x4.CreateTranslation(Location.X, Location.Y, 0);
+
+    /// <summary>
+    /// 祖先まで辿って、ピクセルスナップなしのワールド変換行列を作成します。
+    /// キャッシュされた <see cref="ModelMatrix"/> は描画前だと古いため、Absolute 系プロパティはこちらを使います。
+    /// </summary>
+    private Matrix4x4 CreateWorldMatrix() =>
+        CreateLocalMatrix() * (Parent?.CreateWorldMatrix() ?? Matrix4x4.Identity);
+
+    /// <summary>
+    /// 変換行列を、スケールと角度に分解します。
+    /// </summary>
+    private static void Decompose(in Matrix4x4 m, out Vector scale, out Angle angle)
+    {
+        var sx = MathF.Sqrt((m.M11 * m.M11) + (m.M12 * m.M12));
+
+        // 回転なしなら対角成分がそのままスケールになる。(-1, 1) のような反転も、そのまま返せる。
+        // X のスケールが 0 の場合は角度が決まらないので、同じ扱いにする。
+        if ((m.M12 == 0 && m.M21 == 0) || sx == 0)
+        {
+            scale = (m.M11, m.M22);
+            angle = Angle.Zero;
+            return;
+        }
+
+        // 回転ありの場合、反転は Y に寄せる（(-1, 1) と (1, -1) + 180° は同じ変換）。
+        var det = (m.M11 * m.M22) - (m.M12 * m.M21);
+        scale = (sx, det / sx);
+        angle = Angle.FromRadians(MathF.Atan2(m.M12, m.M11));
     }
 
     protected virtual void OnUpdate() { }

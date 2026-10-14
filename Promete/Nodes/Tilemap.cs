@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Numerics;
 using Promete.Graphics;
 using Promete.Graphics.Rendering;
 using Promete.Graphics.Rendering.Commands;
@@ -73,45 +74,80 @@ public class Tilemap(
         if (_tiles.Count == 0)
             return TilemapRenderingMode.RenderAll;
 
+        // 行列が潰れていて何も映らない場合は、Scan で何も描かない
+        if (!TryGetVisibleTileRange(ctx, out var min, out var max))
+            return TilemapRenderingMode.Scan;
+
         // タイルマップの空間的広がり（タイル単位）
         var mapW = _maxTileX - _minTileX + 1;
         var mapH = _maxTileY - _minTileY + 1;
 
-        // ビューポートに収まるタイル数（ScanAndCollect と同じ計算式）
-        var tileSize = TileSize * AbsoluteScale;
-        var (ww, wh) = ctx.WindowSize;
-        var maxTilesX = (ww / tileSize.X) + 2;
-        var maxTilesY = (wh / tileSize.Y) + 2;
+        // ビューポートに収まるタイル数（ScanAndCollect と同じ範囲）
+        var viewW = max.X - min.X + 1;
+        var viewH = max.Y - min.Y + 1;
 
         // マップ全体がビューポートに収まる場合のみ RenderAll、それ以外は Scan
-        return (mapW <= maxTilesX && mapH <= maxTilesY)
+        return (mapW <= viewW && mapH <= viewH)
             ? TilemapRenderingMode.RenderAll
             : TilemapRenderingMode.Scan;
     }
 
     private void ScanAndCollect(RenderCommandQueue queue, RenderContext ctx)
     {
-        var tileSize = TileSize * AbsoluteScale;
-        var (ww, wh) = ctx.WindowSize;
-        var maxTilesX = (ww / tileSize.X) + 2;
-        var maxTilesY = (wh / tileSize.Y) + 2;
+        if (!TryGetVisibleTileRange(ctx, out var min, out var max))
+            return;
 
-        var tl = -AbsoluteLocation / tileSize;
-        if (tl.X < 0)
-            tl.X--;
-        if (tl.Y < 0)
-            tl.Y--;
-        var (tx, ty) = (VectorInt)tl;
+        // 登録済みタイルの範囲に絞る。極端に縮小された場合でも、ループが膨らまない。
+        var x0 = Math.Max(min.X, _minTileX);
+        var x1 = Math.Min(max.X, _maxTileX);
+        var y0 = Math.Max(min.Y, _minTileY);
+        var y1 = Math.Min(max.Y, _maxTileY);
 
-        for (var y = ty; y < ty + maxTilesY; y++)
-        for (var x = tx; x < tx + maxTilesX; x++)
+        for (var y = y0; y <= y1; y++)
+        for (var x = x0; x <= x1; x++)
         {
-            var tile = this[x, y];
-            if (tile == null)
+            if (!_tiles.TryGetValue((x, y), out var entry))
                 continue;
 
-            tile.Collect(queue, this, (x, y), GetTileColorAt(x, y).GetValueOrDefault(Color.White));
+            entry.tile.Collect(queue, this, (x, y), entry.color.GetValueOrDefault(Color.White));
         }
+    }
+
+    /// <summary>
+    /// 画面に映りうるタイルの範囲（タイル座標、両端を含む）を求めます。
+    /// 反転や回転、親の変形があっても求められます。回転時は、画面外のタイルを多少含みます。
+    /// </summary>
+    /// <returns>行列が逆変換できず、何も映らない場合は <c>false</c>。</returns>
+    private bool TryGetVisibleTileRange(RenderContext ctx, out VectorInt min, out VectorInt max)
+    {
+        min = max = default;
+
+        if (TileSize.X <= 0 || TileSize.Y <= 0 || !Matrix4x4.Invert(ModelMatrix, out var inverse))
+            return false;
+
+        // 画面の四隅をローカル座標へ戻し、その外接矩形を求める
+        var (ww, wh) = ctx.WindowSize;
+        Span<Vector2> corners = [new(0, 0), new(ww, 0), new(0, wh), new(ww, wh)];
+
+        var lo = new Vector2(float.MaxValue);
+        var hi = new Vector2(float.MinValue);
+        foreach (var corner in corners)
+        {
+            var p = Vector2.Transform(corner, inverse);
+            lo = Vector2.Min(lo, p);
+            hi = Vector2.Max(hi, p);
+        }
+
+        // 端数やピクセルスナップの誤差のため、上下左右に 1 タイルずつ余白を取る
+        min = (ToTileIndex(lo.X, TileSize.X) - 1, ToTileIndex(lo.Y, TileSize.Y) - 1);
+        max = (ToTileIndex(hi.X, TileSize.X) + 1, ToTileIndex(hi.Y, TileSize.Y) + 1);
+        return true;
+    }
+
+    private static int ToTileIndex(float position, int tileSize)
+    {
+        // int の範囲を超えるとキャストが不定になるため、先に丸める
+        return (int)Math.Clamp(MathF.Floor(position / tileSize), -1e9f, 1e9f);
     }
 
     private void FullCollect(RenderCommandQueue queue)
