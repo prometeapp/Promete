@@ -4,6 +4,7 @@ using Promete;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Input;
+using Promete.UI;
 using Promete.Web;
 using Promete.Web.Example;
 using Promete.Windowing;
@@ -44,6 +45,7 @@ public static partial class Program
             .Use<ConsoleLayer>()
             .Use<BackButton>()
             .Use<ViewportSize>()
+            .Use<UIManager>()
             .BuildWithWeb(WindowOptions.Default with { Title = "Promete.Web Example" });
 
         switch (query["scene"])
