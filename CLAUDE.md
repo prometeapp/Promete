@@ -79,7 +79,7 @@ dotnet publish Promete.Example/Promete.Example.csproj -c Release -r osx-arm64
 詳細は [CONTRIBUTING.md](CONTRIBUTING.md#ブランチ運用) を参照してください。要点だけ:
 
 - 通常の PR は `master` ではなく、使い捨ての統合ブランチ `develop/<仮バージョン>` (例: `develop/2.4`) に向ける。作業ブランチは `develop/<仮バージョン>` から切る
-- 不具合修正 (パッチ) は、`master` から `hotfix/<バージョン>` を切って `master` へ直接 PR する
+- 不具合修正 (パッチ) は、`master` から切った使い捨ての統合ブランチ `hotfix/<バージョン>` で行う。扱いは `develop/*` と同じで、作業ブランチは最新の `hotfix/<バージョン>` から切って、そこへ PR する
 - `master` への PR は、元ブランチが `develop/*` か `hotfix/*` のものだけ許可される (`master-pr-check.yml`)
 - `master` が進んだら、生きている `develop/*` へ `master` を取り込む
 - リリースは `master` への push が起点。csproj の `Version` が変わったパッケージだけが NuGet に公開され、タグと GitHub Release が自動で作られる。**タグは手で打たない**
