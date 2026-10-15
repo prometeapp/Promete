@@ -6,7 +6,7 @@ name: Web Build
 
 on:
   push:
-    branches: [ "main", "master", "develop", "v2", "feature/**" ]
+    branches: [ "main", "master", "develop", "v2", "feature/**", "develop/**", "hotfix/**" ]
     paths-ignore: [ "Promete.Docs/**", "plugins/**", "**.md" ]
   pull_request:
     paths-ignore: [ "Promete.Docs/**", "plugins/**", "**.md" ]
