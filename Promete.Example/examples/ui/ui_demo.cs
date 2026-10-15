@@ -192,12 +192,13 @@ public class UIDemoScene(Keyboard keyboard, UIManager uiManager, ConsoleLayer co
 
         // --- 操作説明 ---
         var helpText = new Text(
-            "[Tab] フォーカス移動  [Enter/Space] ボタン押下  [ESC] 終了",
+            "[Tab/方向キー] フォーカス移動  [Enter/Space] ボタン押下  [ESC] 終了",
             color: Color.Gray
         ).Location(20, 540);
         Root.Add(helpText);
 
         // 初期フォーカス
+        uiManager.SpatialNavigation = true;
         uiManager.SetFocus(basicButton);
     }
 

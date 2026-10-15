@@ -17,6 +17,11 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 {
     private const string FocusNextAction = "ui.focus_next";
     private const string ActivateAction = "ui.activate";
+    private const string FocusUpAction = "ui.focus_up";
+    private const string FocusDownAction = "ui.focus_down";
+    private const string FocusLeftAction = "ui.focus_left";
+    private const string FocusRightAction = "ui.focus_right";
+    private const float SecondaryAxisWeight = 2f;
 
     private readonly InputMap _inputMap = CreateInputMap();
     private readonly List<UIElement> _elementBuffer = [];
@@ -29,6 +34,13 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     /// <summary>モーダルのオーバーレイ領域がクリックされたときに発火します。</summary>
     public event Action? ModalOverlayClicked;
+
+    /// <summary>
+    /// 方向キーによるフォーカス移動を、要素の位置関係に基づく空間ナビゲーションにするかどうかを取得または設定します。
+    /// false（デフォルト）の場合、上キーは前の要素、下キーは次の要素への移動になります（左右キーでは移動しません）。
+    /// true の場合、押した方向にある最も近い要素へ移動します。
+    /// </summary>
+    public bool SpatialNavigation { get; set; }
 
     /// <summary>現在マウスがホバーしているUI要素。</summary>
     public UIElement? HoveredElement => _hoveredElement;
@@ -271,6 +283,18 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     private void ProcessKeyboardNavigation()
     {
+        // TextInput / Slider は左右キーを自身の操作に使うため、左右ではフォーカスを移動しない
+        var consumesHorizontal = _focusedElement is TextInput or Slider;
+
+        if (_inputMap.GetAction(FocusUpAction).IsJustPressed)
+            MoveFocusDirection(0, -1);
+        if (_inputMap.GetAction(FocusDownAction).IsJustPressed)
+            MoveFocusDirection(0, 1);
+        if (!consumesHorizontal && _inputMap.GetAction(FocusLeftAction).IsJustPressed)
+            MoveFocusDirection(-1, 0);
+        if (!consumesHorizontal && _inputMap.GetAction(FocusRightAction).IsJustPressed)
+            MoveFocusDirection(1, 0);
+
         if (_inputMap.GetAction(FocusNextAction).IsJustPressed)
         {
             if (keyboard.ShiftLeft.IsPressed || keyboard.ShiftRight.IsPressed)
@@ -384,6 +408,33 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         }
     }
 
+    private void MoveFocusDirection(int dx, int dy)
+    {
+        if (!SpatialNavigation)
+        {
+            // 空間ナビゲーションが無効な場合、上下キーは NavigationOrder 順の移動として扱う
+            if (dy < 0)
+                MoveFocusPrevious();
+            else if (dy > 0)
+                MoveFocusNext();
+            return;
+        }
+
+        var focusable = GetFocusableElements();
+        if (focusable.Count == 0)
+            return;
+
+        if (_focusedElement == null || !focusable.Contains(_focusedElement))
+        {
+            SetFocus(focusable[0]);
+            return;
+        }
+
+        var next = FindSpatialNeighbor(_focusedElement, focusable, dx, dy);
+        if (next != null)
+            SetFocus(next);
+    }
+
     private List<UIElement> GetFocusableElements()
     {
         var focusGroup = _focusedElement?.FocusGroup;
@@ -423,6 +474,54 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         SetFocus(focusable[nextIndex]);
     }
 
+    /// <summary>
+    /// 指定した方向にある、中心間距離が最も近い要素を探します。
+    /// 進行方向の距離に、直交方向のずれを重み付きで加えたものをスコアとし、最小のものを選びます。
+    /// </summary>
+    /// <param name="from">移動元の要素。</param>
+    /// <param name="candidates">移動先の候補。<paramref name="from"/> 自身は無視されます。</param>
+    /// <param name="dx">X方向（-1: 左, 1: 右, 0: なし）。</param>
+    /// <param name="dy">Y方向（-1: 上, 1: 下, 0: なし）。</param>
+    /// <returns>見つかった要素。該当がなければ null。</returns>
+    internal static UIElement? FindSpatialNeighbor(
+        UIElement from,
+        IEnumerable<UIElement> candidates,
+        int dx,
+        int dy
+    )
+    {
+        var origin = GetCenter(from);
+        UIElement? best = null;
+        var bestScore = float.MaxValue;
+
+        foreach (var candidate in candidates)
+        {
+            if (candidate == from)
+                continue;
+
+            var center = GetCenter(candidate);
+            var primary = dx != 0 ? (center.X - origin.X) * dx : (center.Y - origin.Y) * dy;
+            if (primary <= 0)
+                continue;
+
+            var secondary = dx != 0 ? Math.Abs(center.Y - origin.Y) : Math.Abs(center.X - origin.X);
+            var score = primary + secondary * SecondaryAxisWeight;
+            if (score < bestScore)
+            {
+                best = candidate;
+                bestScore = score;
+            }
+        }
+
+        return best;
+    }
+
+    private static Vector GetCenter(UIElement element)
+    {
+        var rect = element.GetHitRect();
+        return new Vector(rect.Location.X + rect.Size.X / 2, rect.Location.Y + rect.Size.Y / 2);
+    }
+
     private static InputMap CreateInputMap()
     {
         var map = new InputMap();
@@ -430,6 +529,14 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         map.BindKey(FocusNextAction, KeyCode.Tab);
         map.AddAction(ActivateAction);
         map.BindKey(ActivateAction, KeyCode.Enter).BindKey(ActivateAction, KeyCode.Space);
+        map.AddAction(FocusUpAction);
+        map.BindKey(FocusUpAction, KeyCode.Up);
+        map.AddAction(FocusDownAction);
+        map.BindKey(FocusDownAction, KeyCode.Down);
+        map.AddAction(FocusLeftAction);
+        map.BindKey(FocusLeftAction, KeyCode.Left);
+        map.AddAction(FocusRightAction);
+        map.BindKey(FocusRightAction, KeyCode.Right);
         return map;
     }
 
