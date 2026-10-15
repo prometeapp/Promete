@@ -9,6 +9,40 @@ namespace Promete.UI.Elements;
 /// </summary>
 public class Slider : UIElement
 {
+    private float _value;
+    private float _minimum;
+    private float _maximum = 1f;
+    private bool _isDragging;
+    private IUIStyle<Slider> _style;
+
+    /// <summary>
+    /// Slider の新しいインスタンスを初期化します。
+    /// </summary>
+    /// <param name="minimum">最小値。</param>
+    /// <param name="maximum">最大値。</param>
+    /// <param name="value">初期値。</param>
+    /// <param name="style">適用するスタイル。null の場合は DefaultSliderStyle が使用されます。</param>
+    public Slider(
+        float minimum = 0f,
+        float maximum = 1f,
+        float value = 0f,
+        IUIStyle<Slider>? style = null
+    )
+    {
+        _style = style ?? new DefaultSliderStyle();
+        _minimum = minimum;
+        _maximum = maximum;
+        _value = Math.Clamp(value, minimum, maximum);
+        Size = (200, 24);
+
+        PointerPressed += OnPointerPressed;
+        PointerMoved += OnPointerMoved;
+        PointerReleased += OnPointerReleased;
+    }
+
+    /// <summary>値が変更されたときに発火します。</summary>
+    public event Action<float>? ValueChanged;
+
     /// <summary>現在の値を取得または設定します。</summary>
     public float Value
     {
@@ -77,40 +111,6 @@ public class Slider : UIElement
 
     /// <summary>ドラッグ中かどうか。</summary>
     public bool IsDragging => _isDragging;
-
-    /// <summary>値が変更されたときに発火します。</summary>
-    public event Action<float>? ValueChanged;
-
-    private float _value;
-    private float _minimum;
-    private float _maximum = 1f;
-    private bool _isDragging;
-    private IUIStyle<Slider> _style;
-
-    /// <summary>
-    /// Slider の新しいインスタンスを初期化します。
-    /// </summary>
-    /// <param name="minimum">最小値。</param>
-    /// <param name="maximum">最大値。</param>
-    /// <param name="value">初期値。</param>
-    /// <param name="style">適用するスタイル。null の場合は DefaultSliderStyle が使用されます。</param>
-    public Slider(
-        float minimum = 0f,
-        float maximum = 1f,
-        float value = 0f,
-        IUIStyle<Slider>? style = null
-    )
-    {
-        _style = style ?? new DefaultSliderStyle();
-        _minimum = minimum;
-        _maximum = maximum;
-        _value = Math.Clamp(value, minimum, maximum);
-        Size = (200, 24);
-
-        PointerPressed += OnPointerPressed;
-        PointerMoved += OnPointerMoved;
-        PointerReleased += OnPointerReleased;
-    }
 
     /// <summary>
     /// フォーカス中に左右キーで値を変更します。

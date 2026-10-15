@@ -14,5 +14,5 @@ public interface IUIStyle<in T>
     /// </summary>
     /// <param name="element">対象のUI要素。</param>
     /// <param name="state">現在のインタラクション状態。</param>
-    void Apply(T element, UIElementState state);
+    public void Apply(T element, UIElementState state);
 }

@@ -15,6 +15,10 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     : IInitializable,
         IUpdatable
 {
+    private const string FocusNextAction = "ui.focus_next";
+    private const string ActivateAction = "ui.activate";
+
+    private readonly InputMap _inputMap = CreateInputMap();
     private readonly List<UIElement> _elementBuffer = [];
     private readonly Stack<UIElement> _modalStack = new();
     private UIElement? _capturedElement;
@@ -22,6 +26,9 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     private UIElement? _hoveredElement;
     private Vector _lastScroll;
     private UIElement? _pressedElement;
+
+    /// <summary>モーダルのオーバーレイ領域がクリックされたときに発火します。</summary>
+    public event Action? ModalOverlayClicked;
 
     /// <summary>現在マウスがホバーしているUI要素。</summary>
     public UIElement? HoveredElement => _hoveredElement;
@@ -39,6 +46,8 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     public void OnUpdate()
     {
+        _inputMap.Update(keyboard);
+
         // UI要素を収集
         _elementBuffer.Clear();
         CollectUIElements(app.GlobalBackground, _elementBuffer);
@@ -94,9 +103,6 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         // Enter/Space でフォーカス中の要素をアクティベート（TextInput/Slider フォーカス中は除外）
         ProcessFocusActivation();
     }
-
-    /// <summary>モーダルのオーバーレイ領域がクリックされたときに発火します。</summary>
-    public event Action? ModalOverlayClicked;
 
     /// <summary>
     /// マウスキャプチャを設定します。
@@ -265,7 +271,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     private void ProcessKeyboardNavigation()
     {
-        if (keyboard.Tab.IsKeyDown)
+        if (_inputMap.GetAction(FocusNextAction).IsJustPressed)
         {
             if (keyboard.ShiftLeft.IsPressed || keyboard.ShiftRight.IsPressed)
                 MoveFocusPrevious();
@@ -316,7 +322,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         if (_focusedElement is TextInput or Slider)
             return;
 
-        if (keyboard.Enter.IsKeyDown || keyboard.Space.IsKeyDown)
+        if (_inputMap.GetAction(ActivateAction).IsJustPressed)
         {
             _focusedElement.RaiseClicked();
         }
@@ -417,6 +423,16 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         SetFocus(focusable[nextIndex]);
     }
 
+    private static InputMap CreateInputMap()
+    {
+        var map = new InputMap();
+        map.AddAction(FocusNextAction);
+        map.BindKey(FocusNextAction, KeyCode.Tab);
+        map.AddAction(ActivateAction);
+        map.BindKey(ActivateAction, KeyCode.Enter).BindKey(ActivateAction, KeyCode.Space);
+        return map;
+    }
+
     private static void CollectUIElements(Node node, List<UIElement> results)
     {
         if (node is UIElement element && element.IsVisible)
@@ -426,7 +442,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
         if (node is ContainableNode containable)
         {
-            foreach (var child in containable.sortedChildren)
+            foreach (var child in containable.SortedChildren)
             {
                 CollectUIElements(child, results);
             }

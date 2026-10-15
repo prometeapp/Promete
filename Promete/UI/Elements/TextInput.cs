@@ -41,6 +41,12 @@ public class TextInput : UIElement
         GotFocus += () => _needsBufferFlush = true;
     }
 
+    /// <summary>テキストが変更されたときに発火します。</summary>
+    public event Action<string>? TextChanged;
+
+    /// <summary>Enterキーが押されたときに発火します。</summary>
+    public event Action<string>? Submitted;
+
     /// <summary>入力テキストを取得または設定します。</summary>
     public string Text
     {
@@ -101,12 +107,6 @@ public class TextInput : UIElement
             NotifyStyleDirty();
         }
     }
-
-    /// <summary>テキストが変更されたときに発火します。</summary>
-    public event Action<string>? TextChanged;
-
-    /// <summary>Enterキーが押されたときに発火します。</summary>
-    public event Action<string>? Submitted;
 
     /// <summary>
     /// フォーカス中にキーボード入力を処理します。

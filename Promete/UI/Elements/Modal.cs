@@ -30,6 +30,9 @@ public class Modal : UIElement
         Add(_body);
     }
 
+    /// <summary>モーダルが閉じられたときに発火します。</summary>
+    public event Action? Closed;
+
     /// <summary>モーダル本体のパネル。子要素はここに追加します。</summary>
     public Panel Body => _body;
 
@@ -46,9 +49,6 @@ public class Modal : UIElement
             NotifyStyleDirty();
         }
     }
-
-    /// <summary>モーダルが閉じられたときに発火します。</summary>
-    public event Action? Closed;
 
     /// <summary>
     /// モーダルを表示します。UIManager のモーダルスタックにプッシュします。

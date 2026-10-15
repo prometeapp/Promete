@@ -37,7 +37,7 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
         ImGuiUI.Begin("ImGui Window");
 
         ImGuiUI.Text("Hello, ImGui from Promete!");
-        if (ImGuiUI.Button($"{(ichigo == null ? "Show" : "Hide")} Ichigo"))
+        if (ImGuiUI.Button($"{(_ichigo == null ? "Show" : "Hide")} Ichigo"))
             ToggleIchigo();
 
         if (_ichigo != null)

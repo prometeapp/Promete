@@ -82,4 +82,3 @@ UI要素はノードなので、`Location`、`Scale`、`ZIndex` などの標準�
 - [UI要素](/guide/ui/elements/) — 各UI要素の詳細な使い方
 - [スタイルシステム](/guide/ui/styles/) — 見た目のカスタマイズ方法
 - [フォーカスとモーダル](/guide/ui/focus-and-modal/) — フォーカスナビゲーションとモーダルダイアログ
-- [InputMap](/guide/input/input-map/) — 入力アクションマッピング

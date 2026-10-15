@@ -38,11 +38,17 @@ public class ScrollView : UIElement
         PointerReleased += OnPointerReleased;
     }
 
+    /// <summary>スクロール位置が変更されたときに発火します。</summary>
+    public event Action<Vector>? ScrollChanged;
+
     /// <summary>コンテンツの論理サイズ。スクロール可能な範囲を決定します。</summary>
     public VectorInt ContentSize { get; set; } = (200, 400);
 
     /// <summary>現在のスクロールオフセットを取得します。</summary>
     public Vector ScrollOffset => _scrollOffset;
+
+    /// <summary>ドラッグ中かどうか。</summary>
+    public bool IsDragging => _isDragging;
 
     /// <summary>マウスホイールによるスクロール量（ピクセル/ノッチ）。</summary>
     public float ScrollSpeed { get; set; } = 30f;
@@ -91,9 +97,6 @@ public class ScrollView : UIElement
         }
     }
 
-    /// <summary>スクロール位置が変更されたときに発火します。</summary>
-    public event Action<Vector>? ScrollChanged;
-
     /// <summary>
     /// スクロール位置を設定します。
     /// </summary>
@@ -112,9 +115,6 @@ public class ScrollView : UIElement
         var dy = VerticalScrollEnabled ? -scroll.Y * ScrollSpeed : 0;
         SetScrollOffset(_scrollOffset.X + dx, _scrollOffset.Y + dy);
     }
-
-    /// <summary>ドラッグ中かどうか。</summary>
-    public bool IsDragging => _isDragging;
 
     protected override void ApplyStyle(UIElementState state)
     {

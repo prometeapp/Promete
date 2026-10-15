@@ -13,6 +13,30 @@ public abstract class UIElement() : Container(isTrimmable: false)
     private bool _isStyleDirty = true;
     private Node? _backgroundNode;
 
+    /// <summary>要素がクリックされたときに発火します。</summary>
+    public event Action? Clicked;
+
+    /// <summary>マウスカーソルが要素に入ったときに発火します。</summary>
+    public event Action? PointerEntered;
+
+    /// <summary>マウスカーソルが要素から出たときに発火します。</summary>
+    public event Action? PointerLeft;
+
+    /// <summary>要素にフォーカスが当たったときに発火します。</summary>
+    public event Action? GotFocus;
+
+    /// <summary>要素からフォーカスが外れたときに発火します。</summary>
+    public event Action? LostFocus;
+
+    /// <summary>要素上でマウスボタンが押されたときに発火します。引数はワールド座標です。</summary>
+    public event Action<VectorInt>? PointerPressed;
+
+    /// <summary>要素上でマウスが移動したとき（ドラッグ中）に発火します。引数はワールド座標です。</summary>
+    public event Action<VectorInt>? PointerMoved;
+
+    /// <summary>要素上でマウスボタンが離されたときに発火します。引数はワールド座標です。</summary>
+    public event Action<VectorInt>? PointerReleased;
+
     /// <summary>
     /// 現在のインタラクション状態を取得します。
     /// UIManager によって更新されます。
@@ -60,30 +84,6 @@ public abstract class UIElement() : Container(isTrimmable: false)
 
     /// <summary>押下状態かどうか。</summary>
     public bool IsPressed => State.HasFlag(UIElementState.Pressed);
-
-    /// <summary>要素がクリックされたときに発火します。</summary>
-    public event Action? Clicked;
-
-    /// <summary>マウスカーソルが要素に入ったときに発火します。</summary>
-    public event Action? PointerEntered;
-
-    /// <summary>マウスカーソルが要素から出たときに発火します。</summary>
-    public event Action? PointerLeft;
-
-    /// <summary>要素にフォーカスが当たったときに発火します。</summary>
-    public event Action? GotFocus;
-
-    /// <summary>要素からフォーカスが外れたときに発火します。</summary>
-    public event Action? LostFocus;
-
-    /// <summary>要素上でマウスボタンが押されたときに発火します。引数はワールド座標です。</summary>
-    public event Action<VectorInt>? PointerPressed;
-
-    /// <summary>要素上でマウスが移動したとき（ドラッグ中）に発火します。引数はワールド座標です。</summary>
-    public event Action<VectorInt>? PointerMoved;
-
-    /// <summary>要素上でマウスボタンが離されたときに発火します。引数はワールド座標です。</summary>
-    public event Action<VectorInt>? PointerReleased;
 
     /// <summary>
     /// ヒットテスト用の矩形を取得します。

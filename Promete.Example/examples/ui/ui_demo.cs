@@ -12,13 +12,8 @@ namespace Promete.Example.examples.ui;
     "ui/ui_demo.demo",
     "UIライブラリのデモ — ボタン、チェックボックス、スライダー、テキスト入力、スクロール、パネル"
 )]
-public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, ConsoleLayer console)
-    : Scene
+public class UIDemoScene(Keyboard keyboard, UIManager uiManager, ConsoleLayer console) : Scene
 {
-    // InputMap はUIと独立して使える
-    private readonly InputMap _inputMap = new();
-    private int _inputMapCount;
-    private bool _inputMapInitialized;
     private int clickCount;
     private Text statusText = null!;
 
@@ -206,33 +201,8 @@ public class UIDemoScene(Keyboard keyboard, Mouse mouse, UIManager uiManager, Co
         uiManager.SetFocus(basicButton);
     }
 
-    private void InitInputMap()
-    {
-        _inputMap.AddAction("count");
-        _inputMap.BindKey("count", KeyCode.Space);
-        _inputMap.AddAction("reset");
-        _inputMap.BindKey("reset", KeyCode.G);
-        _inputMapInitialized = true;
-    }
-
     public override void OnUpdate()
     {
-        if (!_inputMapInitialized)
-            InitInputMap();
-        _inputMap.Update(keyboard, mouse);
-
-        if (_inputMap.GetAction("count").IsJustPressed)
-        {
-            _inputMapCount++;
-            statusText.Content = $"InputMap カウント: {_inputMapCount}";
-        }
-
-        if (_inputMap.GetAction("reset").IsJustPressed)
-        {
-            _inputMapCount = 0;
-            statusText.Content = "InputMap カウントをリセット！";
-        }
-
         if (keyboard.Escape.IsKeyDown)
             App.LoadScene<MainScene>();
     }

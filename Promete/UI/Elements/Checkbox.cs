@@ -31,6 +31,9 @@ public class Checkbox : UIElement
         Clicked += OnClicked;
     }
 
+    /// <summary>チェック状態が変更されたときに発火します。</summary>
+    public event Action<bool>? CheckedChanged;
+
     /// <summary>チェック状態を取得または設定します。</summary>
     public bool IsChecked
     {
@@ -67,9 +70,6 @@ public class Checkbox : UIElement
             NotifyStyleDirty();
         }
     }
-
-    /// <summary>チェック状態が変更されたときに発火します。</summary>
-    public event Action<bool>? CheckedChanged;
 
     /// <summary>チェックボックスのサイズ（正方形の辺の長さ）。</summary>
     public int BoxSize { get; set; } = 20;
