@@ -39,3 +39,54 @@ public class MainScene : Scene
 ## レンダリング
 
 独自の描画処理を行うには、`Collect()` メソッドをオーバーライドして、レンダリングコマンドをキューに追加します。詳細は[カスタムノードレンダラー](/guide/extends/renderers)のページを参照してください。
+
+## レイアウトの変更を通知する `v2.4~`
+
+`Container` の `AutoSize` のように、子ノードの位置や大きさに依存して動作するコンテナがあります。
+これらは、子ノードから通知を受けたときに再計算を行います。
+
+`Location` / `Size` / `Scale` / `Angle` / `Pivot` など、`Node` が標準で持つプロパティは、値が変わると自動で通知されます。
+一方、カスタムノードが独自に追加した、**サイズや描画範囲に影響するプロパティ**は、値が変わったときに `NotifyLayoutChanged()` を呼んでください。
+
+```csharp
+public class Gauge : Node
+{
+    private int _max = 100;
+
+    public int Max
+    {
+        get => _max;
+        set
+        {
+            if (_max == value)
+                return;
+            _max = value;
+            Size = (value * 2, 8); // Node 標準の Size は、代入すれば自動で通知される
+        }
+    }
+}
+```
+
+`Size` をオーバーライドして独自に管理する場合は、値が変わったときに自分で通知します。
+
+```csharp
+public class Icon : Node
+{
+    private VectorInt _size;
+
+    public override VectorInt Size
+    {
+        get => _size;
+        set
+        {
+            if (_size == value)
+                return;
+            _size = value;
+            NotifyLayoutChanged();
+        }
+    }
+}
+```
+
+内容によってサイズが変わる場合 (画像の差し替え、テキストの変更など) も同様です。通知を忘れると `AutoSize` などが古いサイズのままになります。
+

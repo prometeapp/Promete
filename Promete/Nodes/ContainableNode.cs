@@ -25,8 +25,18 @@ public abstract class ContainableNode : Node
 
     protected ContainableNode()
     {
-        children.CollectionChanged += (_, _) => RequestSorting();
+        children.CollectionChanged += (_, _) =>
+        {
+            RequestSorting();
+            OnChildLayoutChanged(null);
+        };
     }
+
+    /// <summary>
+    /// 子ノードの増減、または子ノードのレイアウトに影響するプロパティの変化が起きたときに呼ばれます。
+    /// </summary>
+    /// <param name="child">変化した子ノード。子ノードの増減の場合は null。</param>
+    internal virtual void OnChildLayoutChanged(Node? child) { }
 
     /// <summary>
     /// ノードのソートを要求します。要求された場合、次のUpdateフレームでソートが行われます。

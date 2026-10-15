@@ -44,7 +44,11 @@ public class Text : Node
     /// </summary>
     public override VectorInt Size
     {
-        get => Layout.Size;
+        get
+        {
+            FlushLayoutUpdate();
+            return Layout.Size;
+        }
         set => PreferredSize = value;
     }
 
@@ -59,7 +63,7 @@ public class Text : Node
             if (Options.Size == value)
                 return;
             Options.Size = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -74,7 +78,7 @@ public class Text : Node
             if (_content == value)
                 return;
             _content = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -89,7 +93,7 @@ public class Text : Node
             if (Options.TextColor == value)
                 return;
             Options.TextColor = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -104,7 +108,7 @@ public class Text : Node
             if (Options.BorderColor == value)
                 return;
             Options.BorderColor = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -119,7 +123,7 @@ public class Text : Node
             if (Options.BorderThickness == value)
                 return;
             Options.BorderThickness = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -134,7 +138,7 @@ public class Text : Node
             if (_font.Equals(value))
                 return;
             _font = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -149,7 +153,7 @@ public class Text : Node
             if (Options.LineSpacing.Equals(value))
                 return;
             Options.LineSpacing = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -164,7 +168,7 @@ public class Text : Node
             if (Options.LetterSpacing.Equals(value))
                 return;
             Options.LetterSpacing = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -179,7 +183,7 @@ public class Text : Node
             if (Options.WrapMode == value)
                 return;
             Options.WrapMode = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -194,7 +198,7 @@ public class Text : Node
             if (Options.KinsokuMode == value)
                 return;
             Options.KinsokuMode = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -209,7 +213,7 @@ public class Text : Node
             if (Options.MaxLines == value)
                 return;
             Options.MaxLines = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -224,7 +228,7 @@ public class Text : Node
             if (Options.Ellipsis == value)
                 return;
             Options.Ellipsis = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -239,7 +243,7 @@ public class Text : Node
             if (Options.VerticalAlignment == value)
                 return;
             Options.VerticalAlignment = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -254,7 +258,7 @@ public class Text : Node
             if (Options.HorizontalAlignment == value)
                 return;
             Options.HorizontalAlignment = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -269,7 +273,7 @@ public class Text : Node
             if (Options.UseRichText == value)
                 return;
             Options.UseRichText = value;
-            _isUpdateRequested = true;
+            RequestLayoutUpdate();
         }
     }
 
@@ -334,10 +338,21 @@ public class Text : Node
 
     protected override void OnPreRender()
     {
+        FlushLayoutUpdate();
+    }
+
+    private void RequestLayoutUpdate()
+    {
+        _isUpdateRequested = true;
+        NotifyLayoutChanged();
+    }
+
+    private void FlushLayoutUpdate()
+    {
         if (!_isUpdateRequested)
             return;
-        UpdateLayout();
         _isUpdateRequested = false;
+        UpdateLayout();
     }
 
     /// <summary>
@@ -347,5 +362,6 @@ public class Text : Node
     {
         Layout = TextLayoutEngine.Layout(Content, _font, Options);
         UpdateModelMatrix();
+        NotifyLayoutChanged();
     }
 }

@@ -87,6 +87,27 @@ var absolutePos = child.AbsoluteLocation; // (150, 150)
 `v2.3` 以前は、親の回転・ピボット・反転が反映されませんでした。
 :::
 
+## サイズの自動調整 `v2.4~`
+
+`AutoSize` プロパティを `true` にすると、`Container` の `Size` (`Width`, `Height`) が、子ノードの位置とサイズに合わせて自動で決まります。
+
+```csharp title="AutoSize の使用"
+var container = new Container { AutoSize = true };
+container.Add(new Sprite(texture1).Location(0, 0));
+container.Add(new Sprite(texture2).Location(100, 50));
+
+// 子ノードがすべて収まる大きさになる
+Console.WriteLine(container.Size);
+```
+
+- サイズは、`Container` の原点 (左上) から、子ノードが占める範囲の右下端までです
+- 子ノードの回転・スケール・ピボットも考慮します。回転している場合は、回転後の矩形を囲む外接矩形で計算します
+- 子ノードがない場合は `(0, 0)` です。非表示 (`IsVisible = false`) の子ノードも計算に含まれます
+- 子ノードの追加・削除や、子ノードの位置・サイズなどの変更は、自動的に反映されます。入れ子の `AutoSize` コンテナも連鎖して更新されます
+- `AutoSize` が有効な間、`Size` / `Width` / `Height` への代入は無視されます
+
+独自のノードを作る場合は、サイズに影響するプロパティが変わったときに `NotifyLayoutChanged()` を呼んでください。詳しくは[カスタムノード](/guide/extends/nodes#レイアウトの変更を通知する)を参照してください。
+
 ## トリムモード
 
 `IsTrimmable` プロパティを `true` に設定すると、`Container` はトリムモードで動作します。
