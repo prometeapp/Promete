@@ -68,9 +68,9 @@ dotnet build Promete.slnx
 
 ### 4. CHANGELOG を更新
 
-対象パッケージの `CHANGELOG.md`（`core` なら `Promete/CHANGELOG.md`）を更新する。無いパッケージは、リリースノートが自動生成になるので、無理に作らなくてよい。
+リポジトリ直下の `CHANGELOG.md`（全パッケージ共通）を更新する。見出しは `## <パッケージID> <version>`（例：`## Promete 2.4.0`）。
 
-- `## Unreleased` の中身を、`## <version>` に書き換える。`Unreleased` が空なら、下書きを作る
+- `## Unreleased` の `### <パッケージID>` の中身を、`## <パッケージID> <version>` の節に移し、見出しを一段上げる（`####` → `###`）。`Unreleased` に無ければ、下書きを作る
 - 下書きは、前回リリース以降のマージ済み PR とコミットから作る。前回のタグは `git tag --list '<接頭辞>-*' --sort=-v:refname | head -1` で得られる
 
 ```bash
@@ -79,8 +79,8 @@ gh pr list --state merged --base develop/<仮バージョン> --limit 100
 ```
 
 - 既存の書式（冒頭の要約文、`### Features` / `### Enhancements` / `### Bug Fixes`、箇条書き）に合わせ、日本語で書く
-- 下書きはユーザーに見せて確認を取る。見出し `## <version>` の節が GitHub Release のノートにそのまま使われる
-- 空になった `## Unreleased` は先頭に残しておく
+- 下書きはユーザーに見せて確認を取る。`## <パッケージID> <version>` の節が GitHub Release のノートにそのまま使われる
+- 移した後の `## Unreleased` は、他パッケージの分も含めて先頭に残しておく
 
 ### 5. コミット
 
@@ -89,7 +89,7 @@ gh pr list --state merged --base develop/<仮バージョン> --limit 100
 ```bash
 git add <csproj>
 git commit -m "chore: <パッケージ名> のバージョンを <version> に更新"
-git add <CHANGELOG>
+git add CHANGELOG.md
 git commit -m "docs(CHANGELOG): <version> の CHANGELOG を追加する"
 ```
 

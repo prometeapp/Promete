@@ -1,7 +1,7 @@
 # master への push を起点に、csproj の Version が変わったパッケージだけを NuGet へ公開する。
 #   - 比較は push の before..sha (develop/hotfix の PR を master にマージした時点)
 #   - 公開できたら core-x.y.z のようなタグと GitHub Release を自動で作る (既にあれば何もしない)
-#     Release のノートは <プロジェクト>/CHANGELOG.md の該当バージョンの節。無ければ自動生成
+#     Release のノートは CHANGELOG.md の "## <パッケージ ID> <バージョン>" の節。無ければ自動生成
 #   - 対象パッケージの一覧は .github/scripts/packages.tsv
 #   - workflow_dispatch では、指定したパッケージを現在の Version で公開できる (既定は dry-run)
 # 必要な設定: secrets.NUGET_API_KEY
@@ -108,8 +108,8 @@ jobs:
           fi
           git tag "$tag" "$GITHUB_SHA"
           git push origin "refs/tags/$tag"
-          # ノートはプロジェクトの CHANGELOG.md (例: Promete/CHANGELOG.md) の該当節を使う。無ければ自動生成
-          .github/scripts/changelog-section.sh "$(dirname "$csproj")/CHANGELOG.md" "$version" > notes.md
+          # ノートは CHANGELOG.md の該当節を使う。無ければ自動生成
+          .github/scripts/changelog-section.sh CHANGELOG.md "$id" "$version" > notes.md
           flags=()
           case "$version" in *-*) flags+=(--prerelease) ;; esac
           if [ -s notes.md ]; then

@@ -231,7 +231,7 @@ csproj の `PropertyGroup` に書いてください。利用者にはパッケ�
 
 - push の前後（`github.event.before..sha`）で csproj の `Version` が変わったプロジェクトだけをビルドして、NuGet に push する（公開済みのバージョンは `--skip-duplicate` で無視される）
 - 公開したプロジェクトのタグを打つ（既にあるタグはスキップ）
-- GitHub Release を作る。ノートには、各プロジェクトの `CHANGELOG.md` の該当バージョンの節を使う。節が無ければ自動生成される
+- GitHub Release を作る。ノートには、`CHANGELOG.md` の該当パッケージ・バージョンの節を使う。節が無ければ自動生成される
 - 公開したプロジェクトとスキップしたプロジェクトを、ジョブのサマリに一覧する
 
 手動で実行（`workflow_dispatch`）すると、指定したパッケージを現在の `Version` で公開できます。既定は dry-run（pack まで）です。
@@ -252,11 +252,30 @@ csproj の `PropertyGroup` に書いてください。利用者にはパッケ�
 
 ### 変更履歴（CHANGELOG.md）
 
-パッケージのディレクトリごとに `CHANGELOG.md` を置いています（現在は `Promete/CHANGELOG.md`。ドキュメントサイトの「更新履歴」にも表示されます）。
+全パッケージ共通の変更履歴を、リポジトリ直下の `CHANGELOG.md` に書きます（ドキュメントサイトの「更新履歴」にも表示されます）。パッケージごとにバージョンが独立しているため、見出しにパッケージ ID を含めます。
 
-- 変更は `## Unreleased` に追記しておきます
-- リリースする PR（`develop/*` → `master`）の中で、`## Unreleased` を `## <バージョン>` に書き換えます。マージ済みの PR や差分から内容をまとめてください
-- 見出しは `## <バージョン>`（例：`## 2.3.1`）の形式にします。GitHub Release のノートとして、この節がそのまま使われます
+- 変更は `## Unreleased` の `### <パッケージ ID>`（例：`### Promete`、`### Promete.ImGui`）の下に追記しておきます
+- リリースする PR（`develop/*` → `master`）の中で、リリースするパッケージの内容を `## <パッケージ ID> <バージョン>`（例：`## Promete 2.3.1`）の節に移します。マージ済みの PR や差分から内容をまとめてください
+- 移すときは、見出しを一段上げます（`#### Features` → `### Features`）
+- GitHub Release のノートとして、この節がそのまま使われます。同じ名前の節が無い場合は自動生成になります
+
+```md
+## Unreleased
+
+### Promete.ImGui
+
+#### Bug Fixes
+
+- 〜
+
+## Promete 2.3.1
+
+〜の不具合を修正しました。
+
+### Bug Fixes
+
+- 〜
+```
 
 ### AIエージェント
 
