@@ -1,0 +1,48 @@
+# master への PR を検査する。
+#   - source-branch: PR の元ブランチが develop/* か hotfix/* であること (required status check にする)
+#   - version-check: パッケージの Version を検査する
+#       Version が変わっていないのに差分がある → 警告のみ
+#       Version が変更前以下、または nuget.org に公開済み → エラー
+# ブランチ運用の詳細は CONTRIBUTING.md を参照。
+
+name: Master PR Check
+
+on:
+  pull_request:
+    branches: [ "master" ]
+    # base の付け替えにも反応させる
+    types: [ opened, synchronize, reopened, edited ]
+
+jobs:
+  source-branch:
+    name: Check source branch
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+    - name: Check that the source branch is develop/* or hotfix/*
+      env:
+        HEAD_REF: ${{ github.head_ref }}
+      run: |
+        if [[ "$HEAD_REF" =~ ^(develop|hotfix)/ ]]; then
+          echo "OK: $HEAD_REF"
+        else
+          echo "::error::master への PR は develop/<バージョン> か hotfix/<バージョン> からのみ受け付けます (今回: $HEAD_REF)。通常の変更は develop/<バージョン> に向けてください。詳細は CONTRIBUTING.md を参照。"
+          exit 1
+        fi
+
+  version-check:
+    name: Check package versions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        # 三点 diff (merge base との比較) に履歴が要る
+        fetch-depth: 0
+
+    - name: Check versions
+      run: python3 .github/scripts/check-versions.py "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}"

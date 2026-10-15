@@ -1,58 +1,156 @@
+# master への push を起点に、csproj の Version が変わったパッケージだけを NuGet へ公開する。
+#   - 比較は push の before..sha (develop/hotfix の PR を master にマージした時点)
+#   - 公開できたら core-x.y.z のようなタグと GitHub Release を自動で作る (既にあれば何もしない)
+#     Release のノートは CHANGELOG.md の "## <パッケージ ID> <バージョン>" の節。無ければ自動生成
+#   - 対象パッケージの一覧は .github/scripts/packages.tsv
+#   - workflow_dispatch では、指定したパッケージを現在の Version で公開できる (既定は dry-run)
+# 必要な設定: secrets.NUGET_API_KEY
+
 name: Upload to NuGet
 
 on:
   push:
-    tags:
-      - 'core-*'
-      - 'imgui-*'
-      - 'web-*'
-      - 'vulkan-validation-*'
+    branches: [ "master" ]
   workflow_dispatch:
     inputs:
-      tag:
-        description: '擬似的なタグ名 (例: imgui-1.0.0 / vulkan-validation-2.3.0)'
+      package:
+        description: '公開するパッケージ (タグ接頭辞)'
+        type: choice
         required: true
+        options: [ core, imgui, web, vulkan-validation ]
       dry_run:
         description: 'nuget.org へ push せず、pack までで止める'
         type: boolean
         default: true
 
+# 同時に走ると、同じタグを二重に作ろうとして失敗しうる
+concurrency:
+  group: upload-to-nuget
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        # before..sha の比較に履歴が要る
+        fetch-depth: 0
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
 
-    - name: Resolve project from tag
-      id: project
+    - name: Detect packages to publish
+      id: detect
       env:
-        TAG: ${{ inputs.tag || github.ref_name }}
+        EVENT: ${{ github.event_name }}
+        BEFORE: ${{ github.event.before }}
+        INPUT_PACKAGE: ${{ inputs.package }}
       run: |
-        case "$TAG" in
-          core-*)  echo "path=Promete" ;;
-          imgui-*) echo "path=Promete.ImGui" ;;
-          web-*)   echo "path=Promete.Web" ;;
-          vulkan-validation-*) echo "path=Promete.Vulkan.Validation" ;;
-          *)       echo "Unknown tag: $TAG" >&2; exit 1 ;;
-        esac >> "$GITHUB_OUTPUT"
+        : > targets.txt
+        : > skipped.txt
+        while IFS=$'\t' read -r prefix csproj id paths; do
+          new=$(.github/scripts/csproj-version.sh "$csproj")
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ "$prefix" = "$INPUT_PACKAGE" ]; then
+              printf '%s\t%s\t%s\t%s\n' "$prefix" "$csproj" "$id" "$new" >> targets.txt
+            fi
+            continue
+          fi
+          old=$(.github/scripts/csproj-version.sh "$csproj" "$BEFORE")
+          if [ -n "$new" ] && [ "$new" != "$old" ]; then
+            printf '%s\t%s\t%s\t%s\n' "$prefix" "$csproj" "$id" "$new" >> targets.txt
+          else
+            printf '%s\t%s\n' "$id" "${new:-不明}" >> skipped.txt
+          fi
+        done < .github/scripts/packages.tsv
+        echo "公開対象:"; cat targets.txt
 
-    - name: Generate nuget package.
-      run: dotnet pack ${{ steps.project.outputs.path }} --configuration Release -o nupkg
+    - name: Pack
+      run: |
+        mkdir -p nupkg
+        while IFS=$'\t' read -r prefix csproj id version; do
+          dotnet pack "$csproj" --configuration Release -o "nupkg/$prefix"
+        done < targets.txt
 
     - name: Publish to nuget
       if: github.event_name == 'push' || !inputs.dry_run
-      run: dotnet nuget push "nupkg/*.nupkg" -k "$NUGET_API_KEY" -s "https://api.nuget.org/v3/index.json" --skip-duplicate
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        while IFS=$'\t' read -r prefix csproj id version; do
+          dotnet nuget push "nupkg/$prefix/*.nupkg" -k "$NUGET_API_KEY" -s "https://api.nuget.org/v3/index.json" --skip-duplicate
+        done < targets.txt
 
     - name: Dry run (skip push)
       if: github.event_name == 'workflow_dispatch' && inputs.dry_run
       run: |
         echo "dry-run: nuget.org へは push しません。生成されたパッケージ:"
-        ls -l nupkg
+        ls -lR nupkg
+
+    # 公開に成功したものだけ。タグが既にあればスキップする
+    - name: Tag and create GitHub Release
+      if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || !inputs.dry_run)
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        : > tagged.txt
+        while IFS=$'\t' read -r prefix csproj id version; do
+          tag="$prefix-$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "タグ $tag は既にあるのでスキップ"
+            continue
+          fi
+          git tag "$tag" "$GITHUB_SHA"
+          git push origin "refs/tags/$tag"
+          # ノートは CHANGELOG.md の該当節を使う。無ければ自動生成
+          .github/scripts/changelog-section.sh CHANGELOG.md "$id" "$version" > notes.md
+          flags=()
+          case "$version" in *-*) flags+=(--prerelease) ;; esac
+          if [ -s notes.md ]; then
+            flags+=(--notes-file notes.md)
+          else
+            flags+=(--generate-notes)
+          fi
+          gh release create "$tag" --title "$id $version" --verify-tag "${flags[@]}"
+          echo "$tag" >> tagged.txt
+        done < targets.txt
+
+    - name: Summary
+      if: always()
+      run: |
+        {
+          echo "## NuGet 公開結果"
+          echo
+          echo "### 公開したプロジェクト"
+          if [ -s targets.txt ]; then
+            while IFS=$'\t' read -r prefix csproj id version; do
+              if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+                echo "- $id $version (dry-run: pack のみ)"
+              else
+                echo "- $id $version"
+              fi
+            done < targets.txt
+          else
+            echo "- なし"
+          fi
+          echo
+          echo "### スキップしたプロジェクト (Version に変更なし)"
+          if [ -s skipped.txt ]; then
+            while IFS=$'\t' read -r id version; do
+              echo "- $id (現在 $version)"
+            done < skipped.txt
+          else
+            echo "- なし"
+          fi
+          if [ -s tagged.txt ]; then
+            echo
+            echo "### 作成したタグ"
+            sed 's/^/- /' tagged.txt
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"

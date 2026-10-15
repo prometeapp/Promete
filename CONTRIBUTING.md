@@ -36,6 +36,66 @@
 
 これら以外のブランチは開発途上であり、ドキュメント化していません。気になる場合はコードを読んでください。
 
+## ブランチ運用
+
+次のブランチを使います。
+
+- `master`
+    - 最新のリリース済みの状態です。直接 push や、後述以外のブランチからの PR はできません
+- `develop/<仮バージョン>`（例：`develop/2.4`）
+    - 次のリリースに向けた統合ブランチです。リリースのたびに作り、マージしたら捨てます
+    - 通常の変更はすべてここに向けて PR を出します
+- `hotfix/<バージョン>`（例：`hotfix/2.3.1`）
+    - 公開済みバージョンの不具合修正（パッチバージョン）用の統合ブランチです。`master` から切って使い、マージしたら捨てます
+    - 扱いは `develop/<仮バージョン>` と同じで、ブランチ名が違うだけです
+- それ以外（`feature/*`、`fix/*` など）
+    - タスクごとの作業ブランチです。`develop/<仮バージョン>` または `hotfix/<バージョン>` から切って、そこに向けて PR を出します
+    - 大きな機能改修も、`develop/<仮バージョン>` の下の feature ブランチで行います
+
+ブランチ名のバージョンは識別用のラベルです。csproj の `Version` と一致していなくても構いません。また、パッケージ（Promete / Promete.ImGui / Promete.Web / Promete.Vulkan.Validation）ごとにバージョンは独立しています。
+
+### 通常の変更
+
+1. 最新の `develop/<仮バージョン>` から作業ブランチを切る（無ければメンテナーに相談してください）
+2. 変更をコミットして、`develop/<仮バージョン>` に向けて PR を出す
+3. マージされるまでレビューに対応する
+
+不具合修正（パッチバージョン向け）も同じです。`develop/<仮バージョン>` を `hotfix/<バージョン>` に読み替えてください。`hotfix/<バージョン>` が無ければ、メンテナーが `master` から切ります。
+
+### master が進んだとき
+
+`hotfix` などで `master` が進んだら、**マージした人が**、生きている `develop/*` へ `master` を取り込んでください（merge でも rebase でも構いません）。
+
+```bash
+git switch develop/2.4
+git merge master
+git push
+```
+
+取り込みを忘れると、`develop/*` から `master` への PR で衝突として表に出ます。
+
+### master への PR の検査
+
+`master` への PR には、GitHub Actions（`.github/workflows/master-pr-check.yml`）が次の検査を行います。
+
+- **元ブランチの検査**（`Check source branch`）：`develop/*` か `hotfix/*` 以外はエラーになります
+- **Version の検査**（`Check package versions`）
+    - パッケージのファイルに差分があるのに csproj の `Version` が変わっていなければ、**警告**を出します（エラーにはなりません）。自動で判定できないため、公開が必要かどうかは人が判断してください
+    - `Version` が変更前以下の場合や、nuget.org に公開済みのバージョンと同じ場合は、**エラー**になります
+
+警告の判定は、パッケージごとに次のファイルの差分を見ています。
+
+| パッケージ | 見るディレクトリ |
+| --- | --- |
+| Promete | `Promete/`、`Promete.SceneGen/` |
+| Promete.ImGui | `Promete.ImGui/` |
+| Promete.Web | `Promete.Web/` |
+| Promete.Vulkan.Validation | `Promete.Vulkan.Validation/` |
+
+- `Promete.Docs`、`Promete.Test`、`Promete.Example` などの他のプロジェクトと、`*.md` は対象外です
+- `Directory.Build.props` と `Directory.Build.targets` は全パッケージに影響しうるので、変更があれば全パッケージが対象です
+- `stylecop.json` は静的解析の設定だけで成果物を変えないので、対象外です
+
 ## 文書化
 
 Promete のドキュメントは、Promete.Docs プロジェクトにて作業しています。
@@ -80,7 +140,11 @@ draft: true
 
 ## 継続的インテグレーション
 
-Promete では、 GitHub Actions を用いてデプロイの自動化を行っています。設定ファイルは `.github/workflow` にあります。
+Promete では、 GitHub Actions を用いて検査とデプロイの自動化を行っています。設定ファイルは `.github/workflows` にあります。
+
+- `lint.yml`、`test.yml`、`web.yml`、`docs-skill.yml`：PR と、`master`、`develop/**`、`hotfix/**`、`feature/**` への push で実行されます
+- `master-pr-check.yml`：`master` への PR の検査（前述）
+- `upload-to-nuget.yml`：`master` への push で NuGet に公開します（後述）
 
 ## コーディング規則
 
@@ -137,27 +201,82 @@ csproj の `PropertyGroup` に書いてください。利用者にはパッケ�
 .NET のアップデートは、[SUPPORT.md](SUPPORT.md) に従ってメンテナーが行います。
 そのため、.NET のアップデートに関する PR は作成しないでください。
 
-## デプロイ手順
+## リリース手順
 
-デプロイはメイン開発者の @EbiseLutica が行います。従ってこの項目はフォークされたプロジェクトの管理者向けの情報となります。
+リリースはメイン開発者の @EbiseLutica が行います。従ってこの項目はフォークされたプロジェクトの管理者向けの情報となります。
+
+リリースは `master` への push（＝ PR のマージ）をきっかけに、GitHub Actions が自動で行います。タグを手で打つ必要はありません。
+
+### 通常のリリース
 
 1. 最新版の変更がビルドできて、サンプルコードに不具合が発生しないことを確認する
-2. master に最新版をコミットする
-3. Promete/Promete.csproj 内のバージョン表記を書き換える
-4. 上記の変更をコミットする
-5. タグを作成する（タグの命名規則は下記）
-6. pushする
-7. :pray:
+2. `develop/<仮バージョン>` 上で、リリースするパッケージの csproj の `<Version>` を書き換える
+3. CHANGELOG を更新する（後述）
+4. `develop/<仮バージョン>` から `master` への PR を作る
+5. PR の検査が通ったらマージする
+6. 自動で、`Version` が変わったパッケージだけが NuGet に公開される。同時に、タグと GitHub Release が作られる
+
+バージョン番号は、これまでどおり手動で決めます。
+
+### hotfix のリリース
+
+通常のリリースと同じ手順です。`develop/<仮バージョン>` を `hotfix/<バージョン>` に読み替えて、`hotfix/<バージョン>` から `master` への PR で Version と CHANGELOG を更新します。マージ後は、生きている `develop/*` に `master` を取り込んでください。
+
+### リリース後に自動で行われること
+
+`master` への push で `upload-to-nuget.yml` が動き、次のことを行います。
+
+- push の前後（`github.event.before..sha`）で csproj の `Version` が変わったプロジェクトだけをビルドして、NuGet に push する（公開済みのバージョンは `--skip-duplicate` で無視される）
+- 公開したプロジェクトのタグを打つ（既にあるタグはスキップ）
+- GitHub Release を作る。ノートには、`CHANGELOG.md` の該当パッケージ・バージョンの節を使う。節が無ければ自動生成される
+- 公開したプロジェクトとスキップしたプロジェクトを、ジョブのサマリに一覧する
+
+手動で実行（`workflow_dispatch`）すると、指定したパッケージを現在の `Version` で公開できます。既定は dry-run（pack まで）です。
+
+必要な設定は次のとおりです。
+
+- Secrets：`NUGET_API_KEY`
+- Branch Ruleset（`master`）：PR を必須にし、`Check source branch` を required status check にする
 
 ### タグの命名規則
 
+自動で作られるタグは次の形式です。
+
 - Promete 本体（コア）の場合は、 `core-<バージョン>` とする（例：`core-1.0.0`）
 - Promete.ImGui の場合は、 `imgui-<バージョン>` とする（例：`imgui-1.0.0`）
+- Promete.Web の場合は、 `web-<バージョン>` とする（例：`web-2.1.0`）
 - Promete.Vulkan.Validation の場合は、 `vulkan-validation-<バージョン>` とする（例：`vulkan-validation-2.3.0`）
+
+### 変更履歴（CHANGELOG.md）
+
+全パッケージ共通の変更履歴を、リポジトリ直下の `CHANGELOG.md` に書きます（ドキュメントサイトの「更新履歴」にも表示されます）。パッケージごとにバージョンが独立しているため、見出しにパッケージ ID を含めます。
+
+- 変更は `## Unreleased` の `### <パッケージ ID>`（例：`### Promete`、`### Promete.ImGui`）の下に追記しておきます
+- リリースする PR（`develop/*` → `master`）の中で、リリースするパッケージの内容を `## <パッケージ ID> <バージョン>`（例：`## Promete 2.3.1`）の節に移します。マージ済みの PR や差分から内容をまとめてください
+- 移すときは、見出しを一段上げます（`#### Features` → `### Features`）
+- GitHub Release のノートとして、この節がそのまま使われます。同じ名前の節が無い場合は自動生成になります
+
+```md
+## Unreleased
+
+### Promete.ImGui
+
+#### Bug Fixes
+
+- 〜
+
+## Promete 2.3.1
+
+〜の不具合を修正しました。
+
+### Bug Fixes
+
+- 〜
+```
 
 ### AIエージェント
 
-Claude Code用のスキル `/deploy` を使うことでデプロイを自動化できます。
+Claude Code用のスキル `/deploy` を使うと、リリース用の PR の準備（バージョン更新、CHANGELOG の下書き、PR 作成）を自動化できます。
 
 `/deploy マイナーバージョンを1つあげて` `/deploy リビジョンを1つあげて` などに対応しているはずです。
 

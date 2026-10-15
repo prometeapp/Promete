@@ -1,53 +1,113 @@
 ---
 name: deploy
-description: Promete のリリースデプロイを行う。バージョン更新・コミット・タグ作成・push を CONTRIBUTING.md 準拠の手順で実行する。ユーザーが「デプロイして」「リリースして」「バージョンを上げて公開」「core-x.y.z のタグを切って」などと言った場合、必ずこのスキルを使用すること。
+description: Promete のリリース PR を準備する。バージョン更新・CHANGELOG の下書き・develop/* から master への PR 作成までを CONTRIBUTING.md 準拠の手順で行う。タグ付けと NuGet 公開は master へのマージ後に GitHub Actions が自動で行う。ユーザーが「デプロイして」「リリースして」「バージョンを上げて公開」「リリース PR を作って」などと言った場合、必ずこのスキルを使用すること。
 metadata:
   internal: true
 ---
 
-# Promete デプロイ
+# Promete リリース
 
-引数で渡された値をデプロイするバージョンとして使用する。引数がない場合はユーザーにバージョンを尋ねること。
+新しいブランチ運用では、リリースは `master` への push（PR のマージ）を起点に GitHub Actions が行う。
+**このスキルでタグは打たない。`master` へ直接 push もしない。** リリース PR を用意するところまでが役目。
 
-以下の手順でデプロイ作業を行う。
+ブランチ運用の詳細は CONTRIBUTING.md の「ブランチ運用」「リリース手順」を参照すること。
+
+## 引数
+
+`<パッケージ> <バージョン>` の形で受け取る（例: `core 2.4.0`）。パッケージは次のいずれか。
+
+| 接頭辞 | csproj |
+| --- | --- |
+| `core` | `Promete/Promete.csproj` |
+| `imgui` | `Promete.ImGui/Promete.ImGui.csproj` |
+| `web` | `Promete.Web/Promete.Web.csproj` |
+| `vulkan-validation` | `Promete.Vulkan.Validation/Promete.Vulkan.Validation.csproj` |
+
+一覧は `.github/scripts/packages.tsv` にもある。複数パッケージを同時に上げてもよい。
+引数が足りなければユーザーに尋ねる。「マイナーを1つ上げて」のような指定なら、現在の `<Version>` から計算してユーザーに確認する。バージョン番号は必ずユーザーが決める。
 
 ## 前提確認
 
-まず現在のブランチ名と直近10件のコミットログを表示し、ユーザーに確認を求める。
-確認が取れたら以下の手順を実行する。
+現在のブランチ名と直近10件のコミットログを表示し、ユーザーに確認を求める。
 
-## デプロイ手順（CONTRIBUTING.md 準拠）
+リリース PR の元になるブランチは次のどちらか。それ以外のブランチだった場合は、中止してユーザーに知らせる。
 
-以下、`<version>` は引数で指定されたバージョンを指す。
+- 通常のリリース: `develop/<仮バージョン>`
+- hotfix: `hotfix/<バージョン>`（`develop/*` と同じ扱い。リリース PR の元になる統合ブランチ）
 
-### 1. ビルド確認
+## 手順
+
+以下、`<version>` は引数のバージョン、`<csproj>` は対象パッケージの csproj を指す。
+
+### 1. master の取り込み確認
+
+`master` が進んでいるのに取り込んでいなければ、リリース PR が衝突する。事前に確認する。
+
 ```bash
-dotnet build Promete/Promete.csproj
-```
-ビルドが失敗した場合はデプロイを中止してユーザーに報告する。
-
-### 2. Promete.csproj のバージョンを更新
-`Promete/Promete.csproj` 内の `<Version>` タグを `<version>` に書き換える。
-
-### 3. バージョン更新をコミット
-```bash
-git add Promete/Promete.csproj
-git commit -m "chore: バージョンを <version> に更新"
+git fetch origin
+git log --oneline HEAD..origin/master
 ```
 
-### 4. タグを作成
-CONTRIBUTING.md のタグ命名規則に従い `core-<version>` というタグを作成する。
+出力があれば、`origin/master` を取り込むかユーザーに確認する（マージ方式はどちらでもよい）。
+
+### 2. ビルド確認
+
 ```bash
-git tag core-<version>
+dotnet build Promete.slnx
 ```
 
-### 5. push する前にユーザーに確認
-コミットとタグの内容を表示してから、push してよいか確認を取る。
-OKであれば以下を実行する。
+失敗した場合は中止して、ユーザーに報告する。
+
+### 3. バージョンを更新
+
+`<csproj>` の `<Version>` を `<version>` に書き換える。
+
+次を確認する。
+- `<version>` が現在の値より大きい
+- nuget.org に公開済みのバージョンと重複していない（`https://api.nuget.org/v3-flatcontainer/<小文字のパッケージID>/index.json`）。重複していたら PR の検査でエラーになる
+
+### 4. CHANGELOG を更新
+
+リポジトリ直下の `CHANGELOG.md`（全パッケージ共通）を更新する。見出しは `## <パッケージID> <version>`（例：`## Promete 2.4.0`）。
+
+- `## Unreleased` の `### <パッケージID>` の中身を、`## <パッケージID> <version>` の節に移し、見出しを一段上げる（`####` → `###`）。`Unreleased` に無ければ、下書きを作る
+- 下書きは、前回リリース以降のマージ済み PR とコミットから作る。前回のタグは `git tag --list '<接頭辞>-*' --sort=-v:refname | head -1` で得られる
+
 ```bash
-git push origin HEAD
-git push origin core-<version>
+git log <前回のタグ>..HEAD --oneline --no-merges -- <パッケージのディレクトリ>
+gh pr list --state merged --base develop/<仮バージョン> --limit 100
 ```
 
-### 6. 完了報告
-push 完了後、タグ名と対象コミットを報告する。
+- 既存の書式（冒頭の要約文、`### Features` / `### Enhancements` / `### Bug Fixes`、箇条書き）に合わせ、日本語で書く
+- 下書きはユーザーに見せて確認を取る。`## <パッケージID> <version>` の節が GitHub Release のノートにそのまま使われる
+- 移した後の `## Unreleased` は、他パッケージの分も含めて先頭に残しておく
+
+### 5. コミット
+
+関心事ごとに分けてコミットする。
+
+```bash
+git add <csproj>
+git commit -m "chore: <パッケージ名> のバージョンを <version> に更新"
+git add CHANGELOG.md
+git commit -m "docs(CHANGELOG): <version> の CHANGELOG を追加する"
+```
+
+### 6. push してリリース PR を作る
+
+push と PR 作成の前に、コミット内容を表示してユーザーに確認を取る。OK であれば実行する。
+
+```bash
+git push -u origin HEAD
+gh pr create --base master --title "<パッケージ名> <version> をリリースする" --body-file <本文ファイル>
+```
+
+PR のタイトルと本文は日本語で書く。本文には、リリースするパッケージとバージョン、CHANGELOG の該当節、`master` を取り込み済みであることを載せる。
+
+### 7. 完了報告
+
+PR の URL を報告し、次のことを伝える。
+
+- PR の検査（`Check source branch` / `Check package versions`）が通ってからマージする
+- マージ後は GitHub Actions（`upload-to-nuget.yml`）が、NuGet への公開、タグ `<接頭辞>-<version>`、GitHub Release を自動で作る。ジョブのサマリで公開結果を確認できる
+- hotfix をマージしたら、生きている `develop/*` に `master` を取り込む必要がある

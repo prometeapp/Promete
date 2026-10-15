@@ -1,0 +1,4 @@
+core	Promete/Promete.csproj	Promete	Promete Promete.SceneGen
+imgui	Promete.ImGui/Promete.ImGui.csproj	Promete.ImGui	Promete.ImGui
+vulkan-validation	Promete.Vulkan.Validation/Promete.Vulkan.Validation.csproj	Promete.Vulkan.Validation	Promete.Vulkan.Validation
+web	Promete.Web/Promete.Web.csproj	Promete.Web	Promete.Web

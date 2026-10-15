@@ -2,7 +2,7 @@ name: Lint
 
 on:
   push:
-    branches: ["main", "master", "develop", "v2", "feature/**"]
+    branches: ["main", "master", "develop", "v2", "feature/**", "develop/**", "hotfix/**"]
   pull_request:
 
 jobs:
