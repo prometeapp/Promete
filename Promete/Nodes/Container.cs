@@ -50,8 +50,7 @@ public class Container : ContainableNode, IEnumerable<Node>
             if (_autoSize == value)
                 return;
             _autoSize = value;
-            _isLayoutDirty = true;
-            NotifyLayoutChanged();
+            RequestLayout();
         }
     }
 
@@ -253,7 +252,24 @@ public class Container : ContainableNode, IEnumerable<Node>
             bottom = MathF.Max(bottom, max.Y);
         }
 
-        base.Size = (CeilingWithTolerance(right), CeilingWithTolerance(bottom));
+        SetLayoutSize((CeilingWithTolerance(right), CeilingWithTolerance(bottom)));
+    }
+
+    /// <summary>
+    /// レイアウトの再計算を要求します。
+    /// </summary>
+    internal void RequestLayout()
+    {
+        _isLayoutDirty = true;
+        NotifyLayoutChanged();
+    }
+
+    /// <summary>
+    /// <see cref="AutoSize"/> による制限を受けずに、サイズを設定します。
+    /// </summary>
+    internal void SetLayoutSize(VectorInt size)
+    {
+        base.Size = size;
     }
 
     /// <summary>

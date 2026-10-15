@@ -8,6 +8,10 @@
     - 有効にすると、子ノードの位置・サイズ (回転・スケール・ピボットを含む外接矩形) に応じて `Size` が自動で決まります
     - 子ノードの追加・削除や、位置・サイズなどの変更に追従します。入れ子の `AutoSize` コンテナも連鎖して更新されます
     - `AutoSize` が有効な間、`Size` / `Width` / `Height` への代入は無視されます
+- `StackContainer` を追加しました
+    - 子ノードを縦または横に自動で積み重ねるコンテナです。`new StackContainer(StackDirection.Vertical, gap: 3) { ... }` のように使います
+    - 周囲の余白 `Padding`、並べる方向と直交する方向の揃え位置 `Align` (`Start` / `Center` / `End`) を指定できます
+    - `Size` は常に自動で決まります
 - `Node.NotifyLayoutChanged()` を追加しました
     - カスタムノードが、サイズや描画範囲に影響するプロパティを独自に持つ場合に、値が変わったときに呼び出します
     - `Location` / `Size` / `Scale` / `Angle` / `Pivot` や、`Sprite`・`Text` は自動で通知されます

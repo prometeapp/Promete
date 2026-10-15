@@ -97,6 +97,7 @@ Root.Add(sprite);
 - [Shape](references/graphics/shape.md): 基本的な図形（線、矩形、三角形など）を描画するShapeノードの使用方法について解説します。
 - [NineSliceSprite](references/graphics/nine-slice-sprite.md): 9スライス方式でリサイズ可能なUI要素を表示するNineSliceSpriteノードの使用方法について解説します。
 - [Container](references/graphics/container.md): 複数のノードをグループ化して管理するContainerノードの使用方法について解説します。
+- [StackContainer](references/graphics/stack-container.md): 子ノードを縦または横に自動で積み重ねるStackContainerの使用方法について解説します。
 - [フレームバッファ](references/graphics/framebuffer.md): ノードをテクスチャにレンダリングするFrameBufferの使用方法について解説します。
 - [MaskedContainer](references/graphics/masked-container.md): マスク画像を使用して子要素を切り抜いて描画するMaskedContainerノードの使用方法について解説します。
 - [シェーダーとマテリアル](references/graphics/shader.md): ShaderProgramとMaterialを使ってノードにカスタムシェーダーを適用する方法を解説します。
