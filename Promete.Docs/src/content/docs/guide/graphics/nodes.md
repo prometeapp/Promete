@@ -27,6 +27,7 @@ sidebar:
 | `Shape` | 図形（線、矩形、円など）を表示 |
 | `Tilemap` | タイルマップを表示 |
 | `NineSliceSprite` | 9スライス画像を表示 |
+| `DeformedSprite` | 4頂点を指定してテクスチャを変形して表示 (v2.4~) |
 | `Container` | 他のノードをグループ化 |
 
 ## ノードの基本プロパティ

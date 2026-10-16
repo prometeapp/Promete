@@ -99,6 +99,7 @@ public class FeatureScene : Scene
 
     private Sprite? _rotating;
     private PieSprite? _pie;
+    private DeformedSprite? _deformed;
     private Material? _rasterMaterial;
     private Graphics.FrameBuffer? _frameBuffer;
     private Sprite? _frameBufferContent;
@@ -121,6 +122,7 @@ public class FeatureScene : Scene
             ("stencil", c => BuildMask(c, useAlphaMask: false)),
             ("alphamask", c => BuildMask(c, useAlphaMask: true)),
             ("pie", BuildPie),
+            ("deformed", BuildDeformed),
             ("nine", BuildNineSlice),
             ("tilemap", BuildTilemap),
             ("material", BuildMaterial),
@@ -170,6 +172,15 @@ public class FeatureScene : Scene
             _rotating.Angle = Angle.FromDegrees(t * 60);
         if (_pie != null)
             _pie.Percent = (t * 25) % 100;
+        if (_deformed != null)
+        {
+            // 台形 (射影補間) と凹形 (アフィン補間) の間を行き来させる
+            var wobble = MathF.Sin(t * 2);
+            _deformed.TopLeft = (24 * wobble, 0);
+            _deformed.TopRight = (96 - (24 * wobble), 0);
+            var inward = (1 - MathF.Cos(t * 1.3f)) / 2;
+            _deformed.BottomRight = (96 - (56 * inward), 80 - (50 * inward));
+        }
         if (_rasterMaterial != null)
             _rasterMaterial["uTime"] = t;
         if (_frameBufferContent != null)
@@ -219,6 +230,16 @@ public class FeatureScene : Scene
         var texture = App.TextureFactory.CreateSolid(Color.Gold, (48, 48));
         _pie = new PieSprite(texture) { Percent = 50 }.Location(40, 20);
         c.Add(_pie);
+    }
+
+    private void BuildDeformed(Container c)
+    {
+        var texture = App.TextureFactory.Load("/assets/ichigo.png");
+        _deformed = new DeformedSprite(texture, (0, 0), (96, 0), (0, 80), (96, 80)).Location(
+            32,
+            20
+        );
+        c.Add(_deformed);
     }
 
     private void BuildNineSlice(Container c)

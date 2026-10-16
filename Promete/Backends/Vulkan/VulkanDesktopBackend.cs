@@ -166,6 +166,13 @@ public class VulkanDesktopBackend : BackendBase
         queue.RegisterRunnerRange(
             _textureRunner,
             _pieRunner,
+            new VulkanDrawDeformedTextureCommandRunner(
+                _context,
+                _resources,
+                _pipelines,
+                _shaderManager,
+                _materialSystem
+            ),
             new VulkanDrawPrimitiveCommandRunner(
                 _context,
                 _pipelines,

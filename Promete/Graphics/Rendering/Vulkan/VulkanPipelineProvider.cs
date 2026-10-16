@@ -40,6 +40,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
     private PipelineLayout _primitiveLayout;
     private PipelineLayout _blitLayout;
     private PipelineLayout _pieLayout;
+    private PipelineLayout _deformedLayout;
     private PipelineLayout _maskedLayout;
     private PipelineLayout _stencilWriteLayout;
     private DescriptorSetLayout _emptySetLayout;
@@ -80,6 +81,9 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
 
         /// <summary>プリミティブ用 (primitive 互換の頂点レイアウトと push constant)。</summary>
         Primitive,
+
+        /// <summary>変形テクスチャ用 (deformed 互換の頂点レイアウトと push constant)。</summary>
+        Deformed,
     }
 
     /// <summary>ステンシルの動作モード。</summary>
@@ -101,6 +105,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         Primitive,
         Blit,
         Pie,
+        Deformed,
         Masked,
         StencilWrite,
     }
@@ -110,6 +115,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         None,
         Position2D,
         PositionUv,
+        PositionUvq,
         InstancedSprite,
     }
 
@@ -150,6 +156,16 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         {
             EnsureInitialized();
             return _pieLayout;
+        }
+    }
+
+    /// <summary>変形テクスチャ描画用のパイプラインレイアウトを取得します。</summary>
+    public PipelineLayout DeformedLayout
+    {
+        get
+        {
+            EnsureInitialized();
+            return _deformedLayout;
         }
     }
 
@@ -209,6 +225,10 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
     public Pipeline GetPiePipeline(PassClass pass, StencilMode stencil = StencilMode.None) =>
         GetOrCreate(PipelineKind.Pie, pass, PrimitiveTopology.TriangleList, stencil);
 
+    /// <summary>変形テクスチャ描画用のパイプラインを取得します。</summary>
+    public Pipeline GetDeformedPipeline(PassClass pass, StencilMode stencil = StencilMode.None) =>
+        GetOrCreate(PipelineKind.Deformed, pass, PrimitiveTopology.TriangleList, stencil);
+
     /// <summary>アルファマスク合成用のパイプラインを取得します。</summary>
     public Pipeline GetMaskedPipeline(PassClass pass) =>
         GetOrCreate(PipelineKind.Masked, pass, PrimitiveTopology.TriangleList, StencilMode.None);
@@ -252,6 +272,20 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
         PassClass pass,
         StencilMode stencil = StencilMode.None
     ) => GetOrCreateCustom(shaderId, CustomKind.Pie, pass, stencil, PrimitiveTopology.TriangleList);
+
+    /// <summary>カスタムシェーダーによる変形テクスチャ描画用のパイプラインを取得します。</summary>
+    public Pipeline GetCustomDeformedPipeline(
+        int shaderId,
+        PassClass pass,
+        StencilMode stencil = StencilMode.None
+    ) =>
+        GetOrCreateCustom(
+            shaderId,
+            CustomKind.Deformed,
+            pass,
+            stencil,
+            PrimitiveTopology.TriangleList
+        );
 
     /// <summary>カスタムシェーダーによるプリミティブ描画用のパイプラインを取得します。</summary>
     public Pipeline GetCustomPrimitivePipeline(
@@ -315,6 +349,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             vk.DestroyPipelineLayout(device, _primitiveLayout, null);
             vk.DestroyPipelineLayout(device, _blitLayout, null);
             vk.DestroyPipelineLayout(device, _pieLayout, null);
+            vk.DestroyPipelineLayout(device, _deformedLayout, null);
             vk.DestroyPipelineLayout(device, _maskedLayout, null);
             vk.DestroyPipelineLayout(device, _stencilWriteLayout, null);
             vk.DestroyDescriptorSetLayout(device, _emptySetLayout, null);
@@ -385,6 +420,24 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 PPushConstantRanges = &pushConstant,
             };
             vk.CreatePipelineLayout(device, in layoutInfo, null, out _pieLayout);
+        }
+
+        // deformed: set0 = sampler, push constant = mat4 + vec4 (両ステージ, 80 bytes)
+        {
+            var pushConstant = new PushConstantRange(
+                ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
+                0,
+                80
+            );
+            var layoutInfo = new PipelineLayoutCreateInfo
+            {
+                SType = StructureType.PipelineLayoutCreateInfo,
+                SetLayoutCount = 1,
+                PSetLayouts = &textureSetLayout,
+                PushConstantRangeCount = 1,
+                PPushConstantRanges = &pushConstant,
+            };
+            vk.CreatePipelineLayout(device, in layoutInfo, null, out _deformedLayout);
         }
 
         // カスタムプリミティブ用の空セットレイアウト (set0 プレースホルダー)
@@ -495,6 +548,16 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 VertexLayout.PositionUv,
                 stencil
             ),
+            PipelineKind.Deformed => CreateEmbeddedPipeline(
+                "deformed",
+                "deformed",
+                _deformedLayout,
+                pass,
+                PrimitiveTopology.TriangleList,
+                enableBlend: true,
+                VertexLayout.PositionUvq,
+                stencil
+            ),
             PipelineKind.Masked => CreateEmbeddedPipeline(
                 "masked",
                 "masked",
@@ -541,6 +604,7 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
             CustomKind.Sprite => (VertexLayout.InstancedSprite, true),
             CustomKind.Blit => (VertexLayout.None, false),
             CustomKind.Pie => (VertexLayout.PositionUv, true),
+            CustomKind.Deformed => (VertexLayout.PositionUvq, true),
             CustomKind.Primitive => (VertexLayout.Position2D, true),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
@@ -601,6 +665,11 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 104
             ),
             CustomKind.Primitive => new PushConstantRange(ShaderStageFlags.FragmentBit, 0, 16),
+            CustomKind.Deformed => new PushConstantRange(
+                ShaderStageFlags.VertexBit | ShaderStageFlags.FragmentBit,
+                0,
+                80
+            ),
             _ => default,
         };
 
@@ -718,6 +787,18 @@ internal sealed unsafe class VulkanPipelineProvider : IDisposable
                 bindings[0] = new VertexInputBindingDescription(0, 16, VertexInputRate.Vertex);
                 attributes[0] = new VertexInputAttributeDescription(0, 0, Format.R32G32Sfloat, 0);
                 attributes[1] = new VertexInputAttributeDescription(1, 0, Format.R32G32Sfloat, 8);
+                bindingCount = 1;
+                attributeCount = 2;
+                break;
+            case VertexLayout.PositionUvq:
+                bindings[0] = new VertexInputBindingDescription(0, 20, VertexInputRate.Vertex);
+                attributes[0] = new VertexInputAttributeDescription(0, 0, Format.R32G32Sfloat, 0);
+                attributes[1] = new VertexInputAttributeDescription(
+                    1,
+                    0,
+                    Format.R32G32B32Sfloat,
+                    8
+                );
                 bindingCount = 1;
                 attributeCount = 2;
                 break;

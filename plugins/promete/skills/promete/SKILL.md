@@ -91,6 +91,7 @@ Root.Add(sprite);
 - [テクスチャ](references/graphics/textures.md): Prometeにおけるテクスチャの読み込みと管理について解説します。
 - [ノードとは？](references/graphics/nodes.md): Prometeの描画システムの基本となるノードの概念について解説します。
 - [Sprite](references/graphics/sprite.md): テクスチャ（画像）を表示するSpriteノードの使用方法について解説します。
+- [DeformedSprite](references/graphics/deformed-sprite.md): 4つの頂点を自由に指定してテクスチャを変形して描画する、DeformedSpriteノードの使用方法について解説します。
 - [PieSprite](references/graphics/pie-sprite.md): テクスチャを扇状（円グラフ状）に描画するPieSpriteノードの使用方法について解説します。
 - [Text](references/graphics/text.md): テキストを表示するTextノードの使用方法について解説します。
 - [Tilemap](references/graphics/tilemap.md): タイルベースの2Dマップを効率的に表示するTilemapノードの使用方法について解説します。

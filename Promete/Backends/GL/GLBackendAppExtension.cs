@@ -35,6 +35,7 @@ public static class GLBackendAppExtension
             .Use<GLBeginAlphaMaskCommandRunner>()
             .Use<GLEndMaskCommandRunner>()
             .Use<GLDrawPieTextureCommandRunner>()
+            .Use<GLDrawDeformedTextureCommandRunner>()
             .Build<TBackend>(opts);
 
         // ビルド後にランナーをキューへ一括紐付け
@@ -47,7 +48,8 @@ public static class GLBackendAppExtension
                 app.GetPlugin<GLBeginStencilMaskCommandRunner>(),
                 app.GetPlugin<GLBeginAlphaMaskCommandRunner>(),
                 app.GetPlugin<GLEndMaskCommandRunner>(),
-                app.GetPlugin<GLDrawPieTextureCommandRunner>()
+                app.GetPlugin<GLDrawPieTextureCommandRunner>(),
+                app.GetPlugin<GLDrawDeformedTextureCommandRunner>()
             );
 
         return app;
