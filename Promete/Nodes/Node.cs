@@ -144,7 +144,7 @@ public abstract class Node
     /// 単位は、このノードの幅・高さを 1 とした相対座標です。<br />
     /// 幅・高さのいずれかが 0 の場合、中心点は無効化されます。
     /// </remarks>
-    public Vector Pivot
+    public virtual Vector Pivot
     {
         get => _pivot;
         set

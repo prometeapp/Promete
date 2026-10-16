@@ -98,6 +98,22 @@ queue.Enqueue(new DrawPieTextureCommand
 });
 ```
 
+### DrawDeformedTextureCommand `v2.4~`
+
+4つの頂点に合わせて、テクスチャを変形して描画します。`DeformedSprite` で使用されます。頂点はワールド座標で指定します。
+
+```csharp
+queue.Enqueue(new DrawDeformedTextureCommand
+{
+    Texture = tex,
+    TopLeft = (100, 100),       // テクスチャの左上に対応する頂点
+    TopRight = (200, 110),
+    BottomLeft = (90, 220),
+    BottomRight = (210, 200),
+    TintColor = Color.White,
+});
+```
+
 ### シザーテスト（描画範囲のクリッピング）
 
 `BeginTrimCommand` / `EndTrimCommand` で描画範囲を矩形に制限します。`Container` ノードの実装で使用されます。
