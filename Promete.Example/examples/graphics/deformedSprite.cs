@@ -42,7 +42,7 @@ public class DeformedSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         _rootWobble = new Wobble(rootSprite, (0, 0));
         _info = new Text("", font, Color.White).Location(8, View.Height - 64);
         Root.AddRange(
-            new Text("Root", font, Color.Lime).Location(rootSprite.Location.X, top - 32),
+            new Text("Root", font, Color.Lime).Location(rootSprite.Location.X, top - 56),
             rootSprite,
             _info
         );
@@ -55,7 +55,7 @@ public class DeformedSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         Root.AddRange(
             new Text("Container", font, Color.Lime).Location(
                 (columnWidth * 1.5f) - (QuadSize / 2),
-                top - 32
+                top - 56
             ),
             _rotatingContainer
         );
@@ -63,7 +63,7 @@ public class DeformedSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         // 3. FrameBuffer の子。描画結果を Sprite で表示する
         var frameBufferLabel = new Text("FrameBuffer", font, Color.Lime).Location(
             (columnWidth * 2.5f) - (QuadSize / 2),
-            top - 32
+            top - 56
         );
         Root.Add(frameBufferLabel);
         if (!App.IsFrameBufferSupported)
