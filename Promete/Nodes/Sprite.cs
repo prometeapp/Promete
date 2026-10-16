@@ -23,6 +23,7 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
         {
             _texture = value;
             UpdateModelMatrix();
+            NotifyLayoutChanged();
         }
     }
 
@@ -37,7 +38,13 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
     public override VectorInt Size
     {
         get => _size ?? Texture?.Size ?? (0, 0);
-        set => _size = value;
+        set
+        {
+            if (_size == value)
+                return;
+            _size = value;
+            NotifyLayoutChanged();
+        }
     }
 
     public override void Collect(RenderCommandQueue queue, RenderContext ctx)
@@ -64,5 +71,6 @@ public class Sprite(Texture2D? texture = null, Color? tintColor = default) : Nod
     public void ResetSize()
     {
         _size = null;
+        NotifyLayoutChanged();
     }
 }

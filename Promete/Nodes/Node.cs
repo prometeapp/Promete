@@ -40,6 +40,7 @@ public abstract class Node
                 return;
             _location = value;
             _isModelMatrixDirty = true;
+            NotifyLayoutChanged();
         }
     }
 
@@ -55,6 +56,7 @@ public abstract class Node
                 return;
             _scale = value;
             _isModelMatrixDirty = true;
+            NotifyLayoutChanged();
         }
     }
 
@@ -70,6 +72,7 @@ public abstract class Node
                 return;
             _size = value;
             _isModelMatrixDirty = true;
+            NotifyLayoutChanged();
         }
     }
 
@@ -85,6 +88,7 @@ public abstract class Node
                 return;
             _angle = value;
             _isModelMatrixDirty = true;
+            NotifyLayoutChanged();
         }
     }
 
@@ -149,6 +153,7 @@ public abstract class Node
                 return;
             _pivot = value;
             _isModelMatrixDirty = true;
+            NotifyLayoutChanged();
         }
     }
 
@@ -279,7 +284,7 @@ public abstract class Node
     /// <summary>
     /// 親を含まない、このノード単体の変換行列を作成します。
     /// </summary>
-    private Matrix4x4 CreateLocalMatrix() =>
+    internal Matrix4x4 CreateLocalMatrix() =>
         Matrix4x4.CreateTranslation(-Pivot.X * Size.X, -Pivot.Y * Size.Y, 0)
         * Matrix4x4.CreateScale(Scale.X, Scale.Y, 1)
         * Matrix4x4.CreateRotationZ(Angle.ToRadians())
@@ -312,6 +317,20 @@ public abstract class Node
         var det = (m.M11 * m.M22) - (m.M12 * m.M21);
         scale = (sx, det / sx);
         angle = Angle.FromRadians(MathF.Atan2(m.M12, m.M11));
+    }
+
+    /// <summary>
+    /// このノードのレイアウトに影響するプロパティが変化したことを、親ノードに通知します。
+    /// </summary>
+    /// <remarks>
+    /// 位置・サイズ・スケール・角度・ピボットなど、見た目の範囲が変わる値を変更したときに呼び出してください。<br />
+    /// <see cref="Container.AutoSize"/> など、子のレイアウトに依存するノードが再計算を行います。<br />
+    /// カスタムノードで、サイズや描画範囲に影響するプロパティを独自に追加・オーバーライドする場合は、値が変わったときにこのメソッドを呼び出す必要があります。
+    /// <see cref="Node"/> 標準のプロパティは自動的に通知されます。
+    /// </remarks>
+    protected void NotifyLayoutChanged()
+    {
+        Parent?.OnChildLayoutChanged(this);
     }
 
     protected virtual void OnUpdate() { }

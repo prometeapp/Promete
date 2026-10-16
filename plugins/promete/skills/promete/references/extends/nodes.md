@@ -39,3 +39,50 @@ public class MainScene : Scene
 ## レンダリング
 
 独自の描画処理を行うには、`Collect()` メソッドをオーバーライドして、レンダリングコマンドをキューに追加します。詳細は[カスタムノードレンダラー](/guide/extends/renderers)のページを参照してください。
+
+## レイアウトの変更を通知する `v2.4~`
+
+`Container` の `AutoSize` のように、子ノードの位置や大きさに依存して動作するコンテナがあります。
+これらは、子ノードから通知を受けたときに再計算を行います。
+
+`Location` / `Size` / `Scale` / `Angle` / `Pivot` など、`Node` が標準で持つプロパティは、値が変わると自動で通知されます。
+一方、カスタムノードが独自に追加した、**サイズや描画範囲に影響するプロパティ**は、値が変わったときに `NotifyLayoutChanged()` を呼んでください。
+
+```csharp
+public class Badge : Node
+{
+    private int _count;
+
+    public int Count
+    {
+        get => _count;
+        set
+        {
+            if (_count == value)
+                return;
+            _count = value;
+            Size = (16 + (value.ToString().Length * 8), 16); // 標準の Size は自動で通知される
+        }
+    }
+
+    private int _margin;
+
+    public int Margin
+    {
+        get => _margin;
+        set
+        {
+            if (_margin == value)
+                return;
+            _margin = value;
+            NotifyLayoutChanged(); // 独自のプロパティは、自分で通知する
+        }
+    }
+}
+```
+
+通知が必要になるのは、たとえば次のような場合です。通知を忘れると、`AutoSize` などが古いサイズのままになります。
+
+- 独自に追加した、サイズや描画範囲に影響するプロパティが変わった
+- 画像の差し替えやテキストの変更など、内容の変化でサイズが変わった
+- `Size` をオーバーライドして独自に管理していて、その値が変わった
