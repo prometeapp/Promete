@@ -49,44 +49,40 @@ public class MainScene : Scene
 一方、カスタムノードが独自に追加した、**サイズや描画範囲に影響するプロパティ**は、値が変わったときに `NotifyLayoutChanged()` を呼んでください。
 
 ```csharp
-public class Gauge : Node
+public class Badge : Node
 {
-    private int _max = 100;
+    private int _count;
 
-    public int Max
+    public int Count
     {
-        get => _max;
+        get => _count;
         set
         {
-            if (_max == value)
+            if (_count == value)
                 return;
-            _max = value;
-            Size = (value * 2, 8); // Node 標準の Size は、代入すれば自動で通知される
+            _count = value;
+            Size = (16 + (value.ToString().Length * 8), 16); // 標準の Size は自動で通知される
+        }
+    }
+
+    private int _margin;
+
+    public int Margin
+    {
+        get => _margin;
+        set
+        {
+            if (_margin == value)
+                return;
+            _margin = value;
+            NotifyLayoutChanged(); // 独自のプロパティは、自分で通知する
         }
     }
 }
 ```
 
-`Size` をオーバーライドして独自に管理する場合は、値が変わったときに自分で通知します。
+通知が必要になるのは、たとえば次のような場合です。通知を忘れると、`AutoSize` などが古いサイズのままになります。
 
-```csharp
-public class Icon : Node
-{
-    private VectorInt _size;
-
-    public override VectorInt Size
-    {
-        get => _size;
-        set
-        {
-            if (_size == value)
-                return;
-            _size = value;
-            NotifyLayoutChanged();
-        }
-    }
-}
-```
-
-内容によってサイズが変わる場合 (画像の差し替え、テキストの変更など) も同様です。通知を忘れると `AutoSize` などが古いサイズのままになります。
-
+- 独自に追加した、サイズや描画範囲に影響するプロパティが変わった
+- 画像の差し替えやテキストの変更など、内容の変化でサイズが変わった
+- `Size` をオーバーライドして独自に管理していて、その値が変わった
