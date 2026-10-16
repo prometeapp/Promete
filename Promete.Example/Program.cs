@@ -5,6 +5,7 @@ using Promete.Example.Kernel;
 using Promete.GLDesktop;
 using Promete.ImGui;
 using Promete.Input;
+using Promete.UI;
 using Promete.Vulkan.Validation;
 using Promete.VulkanDesktop;
 using Promete.Windowing;
@@ -22,6 +23,7 @@ var builder = PrometeApp
     .Use<Gamepads>()
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
+    .Use<UIManager>()
     .Use<ImGuiPlugin>();
 
 if (DemoKernel.UseVulkan && useValidation)
