@@ -30,7 +30,7 @@ v1 の `IWindow` はウィンドウ操作・時間管理・イベントのすべ
 | `window.Start` / `Update` / `Render` / `Destroy` (イベント) | `App.Start` / `Update` / `Render` / `Destroy` |
 | `window.PreUpdate` / `PostUpdate` (イベント) | `App.PreUpdate` / `PostUpdate` |
 | `window.Exit()` | `App.Exit()` |
-| `window.IsVsyncMode` | 起動時の `WindowOptions.IsVsyncMode` のみ。実行中の変更はできない |
+| `window.IsVsyncMode` | `Time.IsVsyncMode` (v2.4~)。v2.3 以前は起動時の `WindowOptions.IsVsyncMode` のみで、実行中の変更はできない |
 | `window.TextureFactory` | `App.TextureFactory` (型は `TextureFactoryBase`) |
 
 v2 では `App` に `PreRender` / `PostRender` イベントも追加されている。
@@ -197,6 +197,6 @@ v1 で自分で `new` していたプラグインは、DI に登録されてい�
 `IWindow` は後方互換のために残されており、参照箇所には `[Obsolete]` 警告が出る。多くのメンバーは動作するが、次のものはそのままでは動かない。
 
 - `IWindow.Run(WindowOptions)`: `NotSupportedException` をスローする。`app.Run()` を使う
-- `IWindow.IsVsyncMode`: 値を設定しても反映されない
+- `IWindow.IsVsyncMode`: v2.3 以前は値を設定しても反映されない。v2.4 以降は `Time.IsVsyncMode` に転送される
 - `IWindow._RawInputContext`: `RawInputContext` に名前が変わったため、コンパイルエラーになる。ただし `RawInputContext` に改名するだけでは不十分で、v2 では通常 `null` が返り、使うと `NullReferenceException` になる。上記のとおり `InputProvider.CreateInput()` を使う
 - `IWindow.TextureFactory`: 型が `TextureFactoryBase` に変わっている

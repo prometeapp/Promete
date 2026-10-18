@@ -134,8 +134,11 @@ public class CompatibleWindow(PrometeApp app) : IWindow
     public long UpdatePerSeconds => app.Time.UpdatePerSeconds;
     public long TotalFrame => app.Time.TotalFrame;
 
-    // 初期化後の変更はバックエンドに反映されないため、互換用のスタブ
-    public bool IsVsyncMode { get; set; }
+    public bool IsVsyncMode
+    {
+        get => app.Time.IsVsyncMode;
+        set => app.Time.IsVsyncMode = value;
+    }
 
     public int TargetFps
     {

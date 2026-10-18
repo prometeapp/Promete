@@ -28,6 +28,13 @@ internal sealed class WebTimeProvider : ITimeProvider
 
     public int TargetUps { get; set; } = 60;
 
+    // requestAnimationFrame はディスプレイのリフレッシュに同期するため、常に有効で変更できない
+    public bool IsVsyncMode
+    {
+        get => true;
+        set { }
+    }
+
     public float TimeScale { get; set; } = 1f;
 
     internal void Tick(double delta)

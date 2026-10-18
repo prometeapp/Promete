@@ -71,14 +71,14 @@ internal sealed unsafe class VulkanContext : IDisposable
     private bool _frameActive;
     private bool _swapchainPassActive;
     private bool _swapchainPassDone;
-    private bool _framebufferResized;
+    private bool _swapchainInvalidated;
     private bool _disposed;
 
     public VulkanContext(IWindow window, IVulkanInstanceHook? hook = null)
     {
         _window = window;
         _hook = hook;
-        _window.FramebufferResize += _ => _framebufferResized = true;
+        _window.FramebufferResize += _ => _swapchainInvalidated = true;
         for (var i = 0; i < FramesInFlight; i++)
             _deferredDestroys[i] = [];
     }
@@ -285,9 +285,9 @@ internal sealed unsafe class VulkanContext : IDisposable
 
         var result = _khrSwapchain.QueuePresent(_graphicsQueue, in presentInfo);
 
-        if (result is Result.ErrorOutOfDateKhr or Result.SuboptimalKhr || _framebufferResized)
+        if (result is Result.ErrorOutOfDateKhr or Result.SuboptimalKhr || _swapchainInvalidated)
         {
-            _framebufferResized = false;
+            _swapchainInvalidated = false;
             RecreateSwapchain();
         }
         else if (result != Result.Success)
@@ -682,6 +682,15 @@ internal sealed unsafe class VulkanContext : IDisposable
     public void WaitIdle()
     {
         Vk.DeviceWaitIdle(_device);
+    }
+
+    /// <summary>
+    /// 次のプレゼント後にスワップチェーンを再作成させます。
+    /// プレゼントモードなど、スワップチェーンの作成時にしか反映されない設定を変えたときに呼びます。
+    /// </summary>
+    public void InvalidateSwapchain()
+    {
+        _swapchainInvalidated = true;
     }
 
     /// <summary>

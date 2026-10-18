@@ -18,6 +18,7 @@ public class HeadlessTimeProvider : ITimeProvider
     public long TotalFrame { get; private set; }
     public int TargetFps { get; set; } = 60;
     public int TargetUps { get; set; } = 60;
+    public bool IsVsyncMode { get; set; }
     public float TimeScale { get; set; } = 1f;
 
     internal void Tick(double delta)

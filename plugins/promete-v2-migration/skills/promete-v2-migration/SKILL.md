@@ -55,7 +55,7 @@ Promete v1 のプロジェクトを v2 に移行する。v2 では `IWindow` が
 
 - **v1 の単位の違い**: `Vector.Angle()` / `Vector.Rotate(float)` はラジアン、`Node.Angle` は度数法だった。機械的に `.Degrees` を付けると誤る。ラジアンだった箇所には `.Radians` を使う
 - **オーディオのサンプル数**: v1 の `Samples` は全チャンネル合計のサンプル数、v2 の `Frames` は 1 チャンネルあたりのフレーム数。`BufferSize` も同じく単位が変わっている
-- **コンパイルが通っても動かない `IWindow` のメンバー**: `IWindow.Run(WindowOptions)` は `NotSupportedException` をスローし、`IWindow.IsVsyncMode` への設定は反映されない。`IWindow` を使い続けず、置き換えきること
+- **コンパイルが通っても動かない `IWindow` のメンバー**: `IWindow.Run(WindowOptions)` は `NotSupportedException` をスローし、`IWindow.IsVsyncMode` への設定は v2.3 以前では反映されない。`IWindow` を使い続けず、置き換えきること
 - **`Render` イベントのタイミング**: v1 の `window.Render` はシーン描画の後に呼ばれていたが、v2 の `App.Render` はシーンのコマンド収集後・描画の実行前に呼ばれる。GL を直接呼んで重ね描きしていたハンドラは `App.PostRender` に移す ([references/window-time-app.md](references/window-time-app.md))
 - **スプライトシートの破棄**: v2 の `LoadSpriteSheet` は全セルが 1 枚のテクスチャを共有する。セルを 1 つ `Dispose` すると全セルが使えなくなる ([references/rendering.md](references/rendering.md))
 - **警告を握りつぶさない**: CS0618 を `#pragma warning disable` や `NoWarn` で消さず、API を置き換えて解消する

@@ -1,3 +1,5 @@
+using System;
+
 namespace Promete.Backends.SilkNetCommon;
 
 public class SilkNetCommonTimeProvider : ITimeProvider
@@ -21,6 +23,14 @@ public class SilkNetCommonTimeProvider : ITimeProvider
         _window.Update += OnUpdate;
     }
 
+    /// <summary>
+    /// <see cref="IsVsyncMode"/> が変更されたときに発生します。(v2.4~)
+    /// </summary>
+    /// <remarks>
+    /// Vulkan のように、変更の反映にスワップチェーンの再作成などが必要なバックエンドが購読します。
+    /// </remarks>
+    public event Action? VsyncModeChanged;
+
     public float TotalTime { get; private set; }
     public float TotalTimeWithoutScale { get; private set; }
     public float DeltaTime { get; private set; }
@@ -38,6 +48,18 @@ public class SilkNetCommonTimeProvider : ITimeProvider
     {
         get => (int)_window.UpdatesPerSecond;
         set => _window.UpdatesPerSecond = value;
+    }
+
+    public bool IsVsyncMode
+    {
+        get => _window.VSync;
+        set
+        {
+            if (_window.VSync == value)
+                return;
+            _window.VSync = value;
+            VsyncModeChanged?.Invoke();
+        }
     }
 
     public float TimeScale { get; set; } = 1;

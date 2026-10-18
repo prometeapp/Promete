@@ -41,6 +41,25 @@ long fps = Time.FramePerSeconds;
 Time.TargetFps = 60;
 ```
 
+### 垂直同期 (VSync) `v2.4~`
+
+`IsVsyncMode` を `true` にすると、対応するバックエンドで、描画がディスプレイのリフレッシュレートに同期するよう構成できます。画面の上下で絵がずれる現象 (ティアリング) を防げます。実行中に切り替えることもできます。
+
+```csharp
+// 垂直同期を有効にする
+Time.IsVsyncMode = true;
+```
+
+起動時から有効にしたい場合は、`WindowOptions` で指定します。
+
+```csharp
+var options = WindowOptions.Default with { IsVsyncMode = true };
+```
+
+:::note
+ブラウザ (`Promete.Web`) では、描画が常にディスプレイに同期するため、`IsVsyncMode` は常に `true` を返し、設定しても変わりません。
+:::
+
 ### タイムスケール
 
 `TimeScale` を変更することで、ゲーム全体の時間の流れを変化させられます。`DeltaTime` と `TotalTime` の値に影響します。
