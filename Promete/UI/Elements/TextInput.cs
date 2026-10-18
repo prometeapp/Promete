@@ -16,7 +16,7 @@ public class TextInput : UIElement
     private string _text = "";
     private string _placeholder = "";
     private int _cursorPosition;
-    private int _cursorBlinkCounter;
+    private float _cursorBlinkTimer;
     private bool _cursorVisible;
     private bool _needsBufferFlush;
     private IUIStyle<TextInput> _style;
@@ -91,8 +91,8 @@ public class TextInput : UIElement
     /// <summary>テキストの左パディング。</summary>
     public int PaddingLeft { get; set; } = 6;
 
-    /// <summary>カーソルの点滅間隔（フレーム数）。</summary>
-    public int CursorBlinkInterval { get; set; } = 30;
+    /// <summary>カーソルの点滅間隔（秒）。フレームレートに依存しません。</summary>
+    public float CursorBlinkInterval { get; set; } = 0.5f;
 
     /// <summary>カーソル表示状態。スタイルから参照されます。</summary>
     public bool IsCursorVisible => _cursorVisible && IsFocused;
@@ -112,7 +112,7 @@ public class TextInput : UIElement
     /// フォーカス中にキーボード入力を処理します。
     /// UIManager から毎フレーム呼ばれます。
     /// </summary>
-    internal void ProcessInput(Keyboard keyboard)
+    internal void ProcessInput(Keyboard keyboard, float deltaTime)
     {
         if (!IsFocused)
             return;
@@ -126,11 +126,11 @@ public class TextInput : UIElement
         }
 
         // カーソル点滅
-        _cursorBlinkCounter++;
-        if (_cursorBlinkCounter >= CursorBlinkInterval)
+        _cursorBlinkTimer += deltaTime;
+        if (_cursorBlinkTimer >= CursorBlinkInterval)
         {
             _cursorVisible = !_cursorVisible;
-            _cursorBlinkCounter = 0;
+            _cursorBlinkTimer = 0;
             NotifyStyleDirty();
         }
 
@@ -226,6 +226,6 @@ public class TextInput : UIElement
     private void ResetCursorBlink()
     {
         _cursorVisible = true;
-        _cursorBlinkCounter = 0;
+        _cursorBlinkTimer = 0;
     }
 }

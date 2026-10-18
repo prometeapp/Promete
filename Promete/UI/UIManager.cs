@@ -330,7 +330,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         switch (_focusedElement)
         {
             case TextInput textInput:
-                textInput.ProcessInput(keyboard);
+                textInput.ProcessInput(keyboard, app.Time.DeltaTime);
                 break;
             case Slider slider:
                 slider.ProcessKeyboardInput(keyboard);

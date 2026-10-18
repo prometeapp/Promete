@@ -116,7 +116,7 @@ Root.Add(input);
 | `Placeholder` | `string` | プレースホルダーテキスト |
 | `CursorPosition` | `int` | カーソル位置 |
 | `PaddingLeft` | `int` | テキストの左パディング |
-| `CursorBlinkInterval` | `int` | カーソルの点滅間隔（フレーム数） |
+| `CursorBlinkInterval` | `float` | カーソルの点滅間隔（秒）。既定値は 0.5 |
 
 ### キーボード操作
 
