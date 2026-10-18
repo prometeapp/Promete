@@ -24,10 +24,12 @@ public class SilkNetCommonTimeProvider : ITimeProvider
     }
 
     /// <summary>
-    /// <see cref="IsVsyncMode"/> が変更されたときに発生します。
-    /// Vulkan のように、反映にスワップチェーンの再作成が必要なバックエンドが購読します。
+    /// <see cref="IsVsyncMode"/> が変更されたときに発生します。(v2.4~)
     /// </summary>
-    internal event Action? VsyncModeChanged;
+    /// <remarks>
+    /// Vulkan のように、変更の反映にスワップチェーンの再作成などが必要なバックエンドが購読します。
+    /// </remarks>
+    public event Action? VsyncModeChanged;
 
     public float TotalTime { get; private set; }
     public float TotalTimeWithoutScale { get; private set; }
