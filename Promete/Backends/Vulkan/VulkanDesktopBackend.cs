@@ -88,6 +88,8 @@ public class VulkanDesktopBackend : BackendBase
             _materialSystem
         );
         _time = new SilkNetCommonTimeProvider(_nativeWindow);
+        // プレゼントモードはスワップチェーンの作成時にしか反映されないため、作り直させる
+        _time.VsyncModeChanged += _context.InvalidateSwapchain;
         _gameView = new VulkanDesktopGameView(_app, _nativeWindow, opts.Size, opts.Scale);
         _textureFactory = new VulkanTextureFactory(_app, _resources);
         _renderTextureProvider = new VulkanRenderTextureProvider(_context, _resources);

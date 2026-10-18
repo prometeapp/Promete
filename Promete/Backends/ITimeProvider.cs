@@ -43,6 +43,18 @@ public interface ITimeProvider
     public int TargetUps { get; set; }
 
     /// <summary>
+    /// 垂直同期 (VSync) を有効にするかどうかを取得または設定します。(v2.4~)
+    /// </summary>
+    /// <remarks>
+    /// 垂直同期に対応しないバックエンドでは、設定しても無視されます。
+    /// </remarks>
+    public bool IsVsyncMode
+    {
+        get => false;
+        set { }
+    }
+
+    /// <summary>
     /// 時間が流れる速度（通常の速度を<c>1.0f</c>とした倍率）を取得または設定します。
     /// </summary>
     public float TimeScale { get; set; }

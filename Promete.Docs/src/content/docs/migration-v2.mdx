@@ -94,7 +94,7 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
    | `window.Start` / `Update` / `Render` / `Destroy`（イベント）          | `App.Start` / `Update` / `Render` / `Destroy`                    |
    | `window.PreUpdate` / `PostUpdate`（イベント）                         | `App.PreUpdate` / `PostUpdate`                                   |
    | `window.Exit()`                                                       | `App.Exit()`                                                     |
-   | `window.IsVsyncMode`                                                  | 起動時の `WindowOptions.IsVsyncMode` のみ（実行中の変更は不可） |
+   | `window.IsVsyncMode`                                                  | `Time.IsVsyncMode` (v2.4~)                                       |
 
    <Aside type="caution">
      `window.Render` と `App.Render` は、呼ばれるタイミングが異なります。v1 の `window.Render` はシーンの描画が終わった後に呼ばれていましたが、v2 の `App.Render` はシーンの描画コマンドを集めた後、それを実行する前に呼ばれます。
@@ -473,7 +473,7 @@ import { Aside, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
     `IWindow` は後方互換のために残されていますが、次のメンバーはそのままでは動きません。
 
     - `IWindow.Run(WindowOptions)`: `NotSupportedException` をスローします。手順6のとおり `app.Run()` を使ってください
-    - `IWindow.IsVsyncMode`: 値を設定しても反映されません
+    - `IWindow.IsVsyncMode`: 値を設定しても反映されません。v2.4 以降は `Time.IsVsyncMode` に転送されるため反映されます
     - `IWindow._RawInputContext`: `RawInputContext` に名前が変わっているため、コンパイルエラーになります。v2 では `InputProvider` を DI で受け取り、`CreateInput()` で取得してください
     - `IWindow.TextureFactory`: 型が `TextureFactoryBase` に変わっています
 

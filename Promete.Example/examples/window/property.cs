@@ -24,8 +24,7 @@ public class Property(ConsoleLayer console, Keyboard keyboard) : Scene
         console.Print($"[3]: Set WindowMode to {nameof(WindowMode.NoFrame)}");
         console.Print("[4]: Toggle Fullscreen: " + View.IsFullScreen);
 
-        // TODO: vsyncmodeを復活させたら修正する
-        // console.Print("[5]: Toggle VSync: " + View.IsVsyncMode);
+        console.Print("[5]: Toggle VSync: " + Time.IsVsyncMode);
         console.Print("[6]: Toggle TopMost: " + View.TopMost);
         console.Print("[ESC]: Exit");
 
@@ -38,8 +37,8 @@ public class Property(ConsoleLayer console, Keyboard keyboard) : Scene
         if (keyboard.Number4.IsKeyDown)
             View.IsFullScreen = !View.IsFullScreen;
 
-        // if (keyboard.Number5.IsKeyDown)
-        //     Window.IsVsyncMode = !Window.IsVsyncMode;
+        if (keyboard.Number5.IsKeyDown)
+            Time.IsVsyncMode = !Time.IsVsyncMode;
         if (keyboard.Number6.IsKeyDown)
             View.TopMost = !View.TopMost;
         if (keyboard.Escape.IsKeyDown)

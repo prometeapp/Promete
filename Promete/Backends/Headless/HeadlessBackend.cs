@@ -30,7 +30,12 @@ public class HeadlessBackend : BackendBase
             IsFullScreen = opts.IsFullScreen,
             Mode = opts.Mode,
         };
-        _time = new HeadlessTimeProvider { TargetFps = opts.TargetFps, TargetUps = opts.TargetUps };
+        _time = new HeadlessTimeProvider
+        {
+            TargetFps = opts.TargetFps,
+            TargetUps = opts.TargetUps,
+            IsVsyncMode = opts.IsVsyncMode,
+        };
         _renderTextureProvider = new HeadlessRenderTextureProvider();
         _screenBlitter = new HeadlessScreenBlitter(_renderTextureProvider, _gameView);
     }
