@@ -454,7 +454,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
             var element = elements[i];
             if (!element.IsEnabled || !element.IsVisible)
                 continue;
-            if (!element.HitTest(point))
+            if (!element.HitTest(point) || IsClippedByScrollView(element, point))
                 continue;
 
             var (depth, zIndex) = ComputeEffectiveOrder(element);
@@ -467,6 +467,20 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         }
 
         return best;
+    }
+
+    /// <summary>
+    /// 要素が、祖先の ScrollView の表示範囲の外にあるために、指定した座標では見えない状態かどうかを判定します。
+    /// </summary>
+    private static bool IsClippedByScrollView(UIElement element, VectorInt point)
+    {
+        for (var node = element.Parent; node != null; node = node.Parent)
+        {
+            if (node is ScrollView scrollView && !scrollView.HitTest(point))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>
