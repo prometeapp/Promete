@@ -12,6 +12,7 @@ public abstract class UIElement() : Container(isTrimmable: false)
     private UIElementState _state = UIElementState.Normal;
     private bool _isStyleDirty = true;
     private Node? _backgroundNode;
+    private VectorInt _styledSize;
 
     /// <summary>要素がクリックされたときに発火します。</summary>
     public event Action? Clicked;
@@ -160,6 +161,14 @@ public abstract class UIElement() : Container(isTrimmable: false)
     protected override void OnUpdate()
     {
         base.OnUpdate();
+
+        // スタイルは Size を基に背景を作るため、Size が変わったら作り直す
+        var size = Size;
+        if (!size.Equals(_styledSize))
+        {
+            _styledSize = size;
+            _isStyleDirty = true;
+        }
 
         if (_isStyleDirty)
         {

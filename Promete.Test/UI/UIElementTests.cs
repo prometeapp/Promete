@@ -109,4 +109,45 @@ public class UIElementTests : IDisposable
         rect.Width.Should().Be(200);
         rect.Height.Should().Be(80);
     }
+
+    [Fact]
+    public void Style_ShouldBeReappliedWhenSizeChanges()
+    {
+        var style = new SizeRecordingPanelStyle();
+        var panel = new Panel(style);
+        panel.Location = (300, 300);
+        panel.Size = (100, 50);
+        _app.GlobalForeground.Add(panel);
+        _app.OnUpdate();
+        style.AppliedSizes.Last().Should().Be(new VectorInt(100, 50));
+
+        panel.Size = (200, 80);
+        _app.OnUpdate();
+
+        style.AppliedSizes.Last().Should().Be(new VectorInt(200, 80));
+    }
+
+    [Fact]
+    public void Style_ShouldNotBeReapplied_WhenNothingChanged()
+    {
+        var style = new SizeRecordingPanelStyle();
+        var panel = new Panel(style);
+        panel.Location = (300, 300);
+        panel.Size = (100, 50);
+        _app.GlobalForeground.Add(panel);
+        _app.OnUpdate();
+        var count = style.AppliedSizes.Count;
+
+        _app.OnUpdate();
+        _app.OnUpdate();
+
+        style.AppliedSizes.Count.Should().Be(count);
+    }
+
+    private sealed class SizeRecordingPanelStyle : IUIStyle<Panel>
+    {
+        public List<VectorInt> AppliedSizes { get; } = [];
+
+        public void Apply(Panel element, UIElementState state) => AppliedSizes.Add(element.Size);
+    }
 }
