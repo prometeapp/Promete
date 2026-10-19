@@ -177,16 +177,23 @@ public class UIDemoScene(Keyboard keyboard, UIManager uiManager, ConsoleLayer co
         ).Location(280, 375);
         Root.Add(scrollLabel);
 
-        var scrollView = new ScrollView { ContentSize = (250, 400) };
+        var scrollView = new ScrollView { ContentSize = (250, 440) };
         scrollView.Location(280, 400).Size(250, 120);
         Root.Add(scrollView);
+
+        // ScrollView の中に置いても、ドロップダウンの一覧は見切れずに最前面に出る
+        var dropdown = new Dropdown("ドロップダウン").Location(0, 0).Size(230, 32);
+        for (var i = 1; i <= 12; i++)
+            dropdown.AddItem($"選択肢 {i}");
+        dropdown.SelectionChanged += i => statusText.Content = $"選択: {dropdown.SelectedItem}";
+        scrollView.Content.Add(dropdown);
 
         for (var i = 0; i < 10; i++)
         {
             var item = new Text(
                 $"  アイテム {i + 1}",
                 color: Color.FromArgb(255, 180, 200, 255)
-            ).Location(0, i * 35);
+            ).Location(0, 40 + i * 35);
             scrollView.Content.Add(item);
         }
 
@@ -204,7 +211,8 @@ public class UIDemoScene(Keyboard keyboard, UIManager uiManager, ConsoleLayer co
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyDown)
+        // ドロップダウンを閉じた Esc では、シーンを抜けない
+        if (keyboard.Escape.IsKeyDown && !uiManager.IsCancelConsumed)
             App.LoadScene<MainScene>();
     }
 }

@@ -39,6 +39,12 @@ public abstract class UIElement() : Container(isTrimmable: false)
     public event Action<VectorInt>? PointerReleased;
 
     /// <summary>
+    /// この要素を処理している UIManager。ポップアップを開くなど、要素が自身で UIManager を使う場合に参照します。
+    /// UIManager が最初に要素を処理するまでは null です。
+    /// </summary>
+    internal UIManager? Manager { get; set; }
+
+    /// <summary>
     /// 現在のインタラクション状態を取得します。
     /// UIManager によって更新されます。
     /// </summary>

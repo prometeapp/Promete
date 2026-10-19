@@ -29,10 +29,18 @@ public class UILayoutDemoScene(Keyboard keyboard, UIManager uiManager) : Scene
         newsCheckbox.CheckedChanged += v =>
             statusText.Content = $"お知らせ: {(v ? "受け取る" : "受け取らない")}";
 
+        var languageDropdown = new Dropdown("言語を選択").Size(240, 34);
+        languageDropdown.AddItem("日本語").AddItem("English").AddItem("한국어").AddItem("中文");
+        languageDropdown.SelectedIndex = 0;
+        languageDropdown.SelectionChanged += i =>
+            statusText.Content = $"言語: {languageDropdown.SelectedItem}";
+
         var profileCard = CreateCard(
             "プロフィール",
             Label("名前"),
             nameInput,
+            Label("言語"),
+            languageDropdown,
             Label("通知"),
             newsCheckbox
         );
@@ -91,7 +99,8 @@ public class UILayoutDemoScene(Keyboard keyboard, UIManager uiManager) : Scene
 
     public override void OnUpdate()
     {
-        if (keyboard.Escape.IsKeyDown)
+        // ドロップダウンを閉じた Esc では、シーンを抜けない
+        if (keyboard.Escape.IsKeyDown && !uiManager.IsCancelConsumed)
             App.LoadScene<MainScene>();
     }
 

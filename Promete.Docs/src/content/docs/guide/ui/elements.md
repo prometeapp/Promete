@@ -319,3 +319,67 @@ if (keyboard.Escape.IsKeyDown && !uiManager.IsCancelConsumed)
     App.LoadScene<MainScene>();
 ```
 :::
+
+## Dropdown
+
+項目の一覧から1つを選ぶドロップダウンです。クリック、またはフォーカス中の Enter / Space で、項目の一覧を [`Popup`](#popup) として開きます。
+
+```csharp
+var language = new Dropdown("言語を選択")
+    .Location(30, 60)
+    .Size(240, 34);
+
+language.AddItem("日本語").AddItem("English").AddItem("한국어");
+language.SelectedIndex = 0;
+
+language.SelectionChanged += index =>
+{
+    Console.WriteLine($"選ばれた項目: {language.SelectedItem}");
+};
+
+Root.Add(language);
+```
+
+一覧は、ドロップダウンの下に表示されます。画面の下に収まらないときは、上に表示されます。
+
+### 主なプロパティ
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `Items` | `IList<string>` | 項目の一覧（`AddItem` でも追加できる） |
+| `SelectedIndex` | `int` | 選択中の項目の位置。未選択は `-1` |
+| `SelectedItem` | `string?` | 選択中の項目。未選択は `null` |
+| `Placeholder` | `string` | 未選択のときに表示する文字列 |
+| `MaxVisibleItems` | `int` | 一度に表示する項目の最大数（デフォルト: `8`）。これを超えるとスクロールする |
+| `ItemHeight` | `int` | 項目1つの高さ（デフォルト: `28`） |
+| `IsOpen` | `bool` | 一覧が開いているかどうか |
+
+### メソッドとイベント
+
+| 名前 | 説明 |
+|---|---|
+| `AddItem(string)` | 項目を末尾に追加 |
+| `Open()` / `Close()` | 一覧を開く / 閉じる |
+| `SelectionChanged` | 選択が変わったときに発火（引数は新しい位置、未選択は `-1`） |
+
+### キーボード操作
+
+一覧が開くと、選択中の項目（なければ先頭の項目）にフォーカスが移ります。
+
+| キー | 動作 |
+|---|---|
+| ↑ / ↓ | 項目を移動（`SpatialNavigation` が有効でも同じ） |
+| Enter / Space | フォーカス中の項目を選んで閉じる |
+| Esc | 選択を変えずに閉じる |
+
+一覧の外側をクリックしたときも、選択を変えずに閉じます。閉じたあとは、フォーカスがドロップダウンに戻ります。
+
+項目が画面に収まらないときは、収まる数まで表示する項目を減らし、スクロールして選びます。
+
+:::note
+一覧を開くには、`UIManager` が一度この要素を処理している必要があります。ノードツリーに追加した直後のフレームでは、まだ開けません。
+:::
+
+:::note
+シーンで Esc を別の用途に使っている場合は、一覧を閉じた Esc を無視してください。詳しくは [Popup](#popup) を参照してください。
+:::

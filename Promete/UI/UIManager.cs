@@ -96,6 +96,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         // Disabled 状態の同期
         foreach (var element in _elementBuffer)
         {
+            element.Manager = this;
             if (!element.IsEnabled)
                 element.State |= UIElementState.Disabled;
             else
