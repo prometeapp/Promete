@@ -233,3 +233,89 @@ modal.Show(uiManager, Root);
 :::tip
 `modal.Size` をウィンドウサイズに合わせると、半透明オーバーレイが画面全体を覆います。
 :::
+
+## Popup
+
+アンカー（ドロップダウン本体やボタンなど）の近くに表示するポップアップです。最前面に表示され、画面からはみ出さないように位置が自動で調整されます。
+
+```csharp
+var popup = new Popup();
+popup.Add(new Button("コピー").Size(120, 32));
+
+// ボタンの下に表示する
+popup.Show(uiManager, anchorButton);
+```
+
+子ノードを追加して中身を作ります。サイズは中身に合わせて自動で決まります。複数の項目を並べるときは [`StackContainer`](/guide/graphics/stack-container/) が便利です。
+
+```csharp
+var popup = new Popup();
+popup.Add(new StackContainer(StackDirection.Vertical, gap: 4, padding: 8)
+{
+    new Button("コピー").Size(120, 32),
+    new Button("貼り付け").Size(120, 32),
+});
+```
+
+### 表示位置
+
+既定ではアンカーの下に、アンカーの左端に揃えて表示します。下に収まらないときは上に反転します。上下どちらにも収まらないときは、空きが広い方に表示します。左右にはみ出す場合は、画面内に収まるようにずらします。
+
+アンカーが移動（スクロールなど）すると、ポップアップも追従します。ウィンドウサイズが変わった場合も、位置が調整されます。
+
+```csharp
+popup.Side = PopupSide.Right;     // アンカーの右に出す（収まらなければ左）
+popup.Align = PopupAlign.Center;  // アンカーの中央に揃える
+popup.Gap = 4;                    // アンカーとの間隔
+```
+
+画面上の任意の位置を基準にする場合は、`ShowAt` を使います。
+
+```csharp
+popup.ShowAt(uiManager, mouse.Position);
+```
+
+### 閉じ方
+
+- ポップアップの外側をクリックすると閉じます。このクリックは、下にある要素には届きません（アンカーをもう一度クリックすると、閉じるだけです）。
+- Esc キーで閉じます。
+- `Close()` で閉じます。
+
+閉じたときは、表示する前にフォーカスしていた要素にフォーカスが戻ります。
+
+アンカーがノードツリーから外れると、自動で閉じます。
+
+### 主なプロパティ
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `Side` | `PopupSide` | 優先する表示位置（デフォルト: `Bottom`） |
+| `Align` | `PopupAlign` | アンカーに対する揃え位置（デフォルト: `Start`） |
+| `Gap` | `float` | アンカーとの間隔 |
+| `CloseOnOutsideClick` | `bool` | 外側のクリックで閉じるか（デフォルト: `true`） |
+| `CloseOnCancel` | `bool` | Esc で閉じるか（デフォルト: `true`） |
+| `FocusTarget` | `UIElement?` | 表示時にフォーカスを移す要素 |
+| `AvailableSize` | `Vector` | 現在の表示位置に収まる最大のサイズ |
+| `IsOpen` | `bool` | 表示中かどうか |
+
+### メソッドとイベント
+
+| 名前 | 説明 |
+|---|---|
+| `Show(UIManager, UIElement)` | アンカーの近くに表示 |
+| `ShowAt(UIManager, Vector)` | 画面上の位置を基準に表示 |
+| `Close()` | 閉じる |
+| `Opened` / `Closed` | 表示された / 閉じられたときに発火 |
+
+:::note
+中身が `AvailableSize` を超える場合、画面からはみ出します。項目が多い場合は、[`ScrollView`](#scrollview) で包んで高さを制限してください。
+:::
+
+:::note
+シーン側で Esc を別の用途（シーンの終了など）に使っている場合、ポップアップを閉じた Esc でシーンも終了してしまいます。`uiManager.IsCancelConsumed` が `true` のフレームは、Esc を無視してください。
+
+```csharp
+if (keyboard.Escape.IsKeyDown && !uiManager.IsCancelConsumed)
+    App.LoadScene<MainScene>();
+```
+:::

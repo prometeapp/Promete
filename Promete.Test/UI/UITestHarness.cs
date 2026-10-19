@@ -75,16 +75,28 @@ internal sealed class UITestHarness : IDisposable
         Frame();
     }
 
-    /// <summary>キーを1フレームだけ押します。</summary>
-    public void PressKey(KeyCode code)
+    /// <summary>キーを押して1フレーム進めます。キーは押されたままになります。</summary>
+    public void KeyDown(KeyCode code)
     {
         var key = Keyboard.KeyOf(code);
         key.IsPressed = true;
         key.IsKeyDown = true;
         Frame();
+    }
 
+    /// <summary>押されているキーを離して1フレーム進めます。</summary>
+    public void KeyUp(KeyCode code)
+    {
+        var key = Keyboard.KeyOf(code);
         key.IsPressed = false;
         key.IsKeyUp = true;
         Frame();
+    }
+
+    /// <summary>キーを押して離します。</summary>
+    public void PressKey(KeyCode code)
+    {
+        KeyDown(code);
+        KeyUp(code);
     }
 }

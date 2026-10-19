@@ -43,6 +43,18 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     /// </summary>
     public bool SpatialNavigation { get; set; }
 
+    /// <summary>
+    /// このフレームの Esc 入力が、レイヤー (ポップアップなど) の閉じる操作として処理されたかどうかを取得します。
+    /// シーン側で Esc を別の用途 (シーンの終了など) に使っている場合、この値が true のフレームは無視してください。
+    /// </summary>
+    public bool IsCancelConsumed { get; private set; }
+
+    /// <summary>ポップアップなど、最前面に表示する要素の追加先。</summary>
+    internal Container PopupHost => app.GlobalForeground;
+
+    /// <summary>画面のサイズ。</summary>
+    internal Vector ViewSize => app.View.Size;
+
     /// <summary>現在マウスがホバーしているUI要素。</summary>
     public UIElement? HoveredElement => _hoveredElement;
 
@@ -60,6 +72,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     public void OnUpdate()
     {
         _inputMap.Update(keyboard);
+        IsCancelConsumed = false;
 
         // UI要素を収集
         _elementBuffer.Clear();
@@ -153,6 +166,18 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
             return null;
         RemoveLayer(layer.Root);
         return layer.Root;
+    }
+
+    /// <summary>
+    /// 指定したノードが、アプリのノードツリー (シーンのルートまたはグローバルな前景・背景) に属しているかどうかを判定します。
+    /// </summary>
+    internal bool IsInTree(Node node)
+    {
+        var top = node;
+        while (top.Parent != null)
+            top = top.Parent;
+
+        return top == app.Root || top == app.GlobalForeground || top == app.GlobalBackground;
     }
 
     /// <summary>
@@ -337,7 +362,12 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         if (_layers.Count == 0 || !_inputMap.GetAction(CancelAction).IsJustPressed)
             return;
 
-        _layers[^1].Options.OnCancel?.Invoke();
+        var onCancel = _layers[^1].Options.OnCancel;
+        if (onCancel == null)
+            return;
+
+        IsCancelConsumed = true;
+        onCancel();
     }
 
     private void ProcessKeyboardNavigation()
