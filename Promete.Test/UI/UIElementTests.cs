@@ -144,6 +144,25 @@ public class UIElementTests : IDisposable
         style.AppliedSizes.Count.Should().Be(count);
     }
 
+    [Fact]
+    public void AutoSize_ShouldShrinkWhenContentShrinks_EvenWithBackground()
+    {
+        var panel = new Panel { AutoSize = true };
+        panel.Location = (300, 300);
+        var child = new Button("a");
+        child.Size = (100, 50);
+        panel.Add(child);
+        _app.GlobalForeground.Add(panel);
+        _app.OnUpdate();
+        panel.Size.Should().Be(new VectorInt(100, 50));
+
+        child.Size = (40, 20);
+        _app.OnUpdate();
+        _app.OnUpdate();
+
+        panel.Size.Should().Be(new VectorInt(40, 20));
+    }
+
     private sealed class SizeRecordingPanelStyle : IUIStyle<Panel>
     {
         public List<VectorInt> AppliedSizes { get; } = [];
