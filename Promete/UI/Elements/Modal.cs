@@ -58,13 +58,16 @@ public class Modal : UIElement
     public void Show(UIManager uiManager, Container parent)
     {
         parent.Add(this);
-        uiManager.PushModal(this);
+        uiManager.PushLayer(
+            this,
+            new UILayerOptions
+            {
+                IsModal = true,
+                RootIsBackdrop = true,
+                OnOutsideClick = OnOverlayClicked,
+            }
+        );
         _boundManager = uiManager;
-
-        if (CloseOnOverlayClick)
-        {
-            uiManager.ModalOverlayClicked += OnOverlayClicked;
-        }
     }
 
     /// <summary>
@@ -75,8 +78,7 @@ public class Modal : UIElement
         if (_boundManager == null)
             return;
 
-        _boundManager.ModalOverlayClicked -= OnOverlayClicked;
-        _boundManager.PopModal();
+        _boundManager.RemoveLayer(this);
         _boundManager = null;
 
         (Parent as Container)?.Remove(this);
@@ -98,6 +100,7 @@ public class Modal : UIElement
 
     private void OnOverlayClicked()
     {
-        Close();
+        if (CloseOnOverlayClick)
+            Close();
     }
 }

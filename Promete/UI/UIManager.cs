@@ -17,6 +17,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 {
     private const string FocusNextAction = "ui.focus_next";
     private const string ActivateAction = "ui.activate";
+    private const string CancelAction = "ui.cancel";
     private const string FocusUpAction = "ui.focus_up";
     private const string FocusDownAction = "ui.focus_down";
     private const string FocusLeftAction = "ui.focus_left";
@@ -25,14 +26,14 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     private readonly InputMap _inputMap = CreateInputMap();
     private readonly List<UIElement> _elementBuffer = [];
-    private readonly Stack<UIElement> _modalStack = new();
+    private readonly List<UILayer> _layers = [];
     private UIElement? _capturedElement;
     private UIElement? _focusedElement;
     private UIElement? _hoveredElement;
     private Vector _lastScroll;
     private UIElement? _pressedElement;
 
-    /// <summary>モーダルのオーバーレイ領域がクリックされたときに発火します。</summary>
+    /// <summary>最上位のモーダルの外側（オーバーレイ領域）がクリックされたときに発火します。</summary>
     public event Action? ModalOverlayClicked;
 
     /// <summary>
@@ -48,8 +49,8 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     /// <summary>現在フォーカスされているUI要素。</summary>
     public UIElement? FocusedElement => _focusedElement;
 
-    /// <summary>現在のモーダルスタックの最上位要素。</summary>
-    public UIElement? CurrentModal => _modalStack.Count > 0 ? _modalStack.Peek() : null;
+    /// <summary>現在のモーダルの最上位要素。モーダルがなければ null。</summary>
+    public UIElement? CurrentModal => _layers.LastOrDefault(l => l.Options.IsModal)?.Root;
 
     /// <summary>現在マウスキャプチャされている要素。</summary>
     public UIElement? CapturedElement => _capturedElement;
@@ -67,16 +68,12 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
             CollectUIElements(app.Root, _elementBuffer);
         CollectUIElements(app.GlobalForeground, _elementBuffer);
 
-        // モーダルが存在する場合、モーダル内の要素のみを対象にする
+        // レイヤーが存在する場合、最上位のレイヤー内の要素のみを対象にする
         List<UIElement> activeElements;
-        if (_modalStack.Count > 0)
+        if (_layers.Count > 0)
         {
-            var modal = _modalStack.Peek();
             activeElements = [];
-            CollectUIElements(modal, activeElements);
-            // モーダル自身も対象に含める
-            if (modal.IsEnabled)
-                activeElements.Add(modal);
+            CollectUIElements(_layers[^1].Root, activeElements);
         }
         else
         {
@@ -112,6 +109,9 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         // キーボードによるフォーカスナビゲーション
         ProcessKeyboardNavigation();
 
+        // Esc で最上位のレイヤーをキャンセル
+        ProcessCancel();
+
         // Enter/Space でフォーカス中の要素をアクティベート（TextInput/Slider フォーカス中は除外）
         ProcessFocusActivation();
     }
@@ -139,9 +139,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     /// </summary>
     public void PushModal(UIElement modalRoot)
     {
-        _modalStack.Push(modalRoot);
-        // モーダル外の要素のホバー状態をクリア
-        ClearHover();
+        PushLayer(modalRoot, new UILayerOptions { IsModal = true, RootIsBackdrop = true });
     }
 
     /// <summary>
@@ -150,11 +148,53 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     /// <returns>ポップされたモーダル要素。スタックが空の場合は null。</returns>
     public UIElement? PopModal()
     {
-        if (_modalStack.Count == 0)
+        var layer = _layers.LastOrDefault(l => l.Options.IsModal);
+        if (layer == null)
             return null;
-        var popped = _modalStack.Pop();
+        RemoveLayer(layer.Root);
+        return layer.Root;
+    }
+
+    /// <summary>
+    /// レイヤーを最前面に積みます。以降、最上位のレイヤーの子孫だけが入力を受け取ります。
+    /// </summary>
+    internal void PushLayer(UIElement root, UILayerOptions options)
+    {
+        var layer = new UILayer(root, options)
+        {
+            ReturnFocusTo = options.RestoreFocus ? _focusedElement : null,
+        };
+        _layers.Add(layer);
+
+        // レイヤー外の要素のホバー状態をクリア
         ClearHover();
-        return popped;
+    }
+
+    /// <summary>
+    /// 指定したルートのレイヤーを、スタックのどこにあっても取り除きます。
+    /// 最上位のレイヤーだった場合、設定に応じてフォーカスを元の要素へ戻します。
+    /// </summary>
+    /// <returns>取り除いた場合は true。</returns>
+    internal bool RemoveLayer(UIElement root)
+    {
+        var index = _layers.FindLastIndex(l => l.Root == root);
+        if (index < 0)
+            return false;
+
+        var layer = _layers[index];
+        var wasTop = index == _layers.Count - 1;
+        _layers.RemoveAt(index);
+        ClearHover();
+
+        if (
+            wasTop
+            && layer.ReturnFocusTo is { IsEnabled: true, IsVisible: true, IsFocusable: true } target
+        )
+        {
+            SetFocus(target);
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -228,9 +268,25 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         // キャプチャ中はキャプチャ先にイベントを集中させる
         var effectiveTarget = _capturedElement ?? hitElement;
 
+        // レイヤーの外側へのクリックか。ルートが背景を兼ねるレイヤーでは、ルート自体へのクリックも外側として扱う
+        var topLayer = _layers.Count > 0 ? _layers[^1] : null;
+        var isOutsideClick =
+            topLayer != null
+            && _capturedElement == null
+            && (
+                hitElement == null
+                || (topLayer.Options.RootIsBackdrop && hitElement == topLayer.Root)
+            );
+
         if (leftButton.IsButtonDown)
         {
-            if (effectiveTarget != null)
+            if (isOutsideClick)
+            {
+                topLayer!.Options.OnOutsideClick?.Invoke();
+                if (topLayer.Options.IsModal)
+                    ModalOverlayClicked?.Invoke();
+            }
+            else if (effectiveTarget != null)
             {
                 _pressedElement = effectiveTarget;
                 effectiveTarget.State |= UIElementState.Pressed;
@@ -243,11 +299,6 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
                 // クリックでフォーカスも移動
                 if (effectiveTarget.IsFocusable)
                     SetFocus(effectiveTarget);
-            }
-            else if (_modalStack.Count > 0)
-            {
-                // モーダル外のクリック
-                ModalOverlayClicked?.Invoke();
             }
             else
             {
@@ -279,6 +330,14 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
             _pressedElement = null;
         }
+    }
+
+    private void ProcessCancel()
+    {
+        if (_layers.Count == 0 || !_inputMap.GetAction(CancelAction).IsJustPressed)
+            return;
+
+        _layers[^1].Options.OnCancel?.Invoke();
     }
 
     private void ProcessKeyboardNavigation()
@@ -438,7 +497,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     private List<UIElement> GetFocusableElements()
     {
         var focusGroup = _focusedElement?.FocusGroup;
-        var source = _modalStack.Count > 0 ? GetModalElements() : _elementBuffer;
+        var source = _layers.Count > 0 ? GetLayerElements() : _elementBuffer;
 
         return source
             .Where(e =>
@@ -449,11 +508,11 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
             .ToList();
     }
 
-    private List<UIElement> GetModalElements()
+    private List<UIElement> GetLayerElements()
     {
         var list = new List<UIElement>();
-        if (_modalStack.Count > 0)
-            CollectUIElements(_modalStack.Peek(), list);
+        if (_layers.Count > 0)
+            CollectUIElements(_layers[^1].Root, list);
         return list;
     }
 
@@ -529,6 +588,8 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         map.BindKey(FocusNextAction, KeyCode.Tab);
         map.AddAction(ActivateAction);
         map.BindKey(ActivateAction, KeyCode.Enter).BindKey(ActivateAction, KeyCode.Space);
+        map.AddAction(CancelAction);
+        map.BindKey(CancelAction, KeyCode.Escape);
         map.AddAction(FocusUpAction);
         map.BindKey(FocusUpAction, KeyCode.Up);
         map.AddAction(FocusDownAction);

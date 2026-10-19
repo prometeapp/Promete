@@ -139,9 +139,7 @@ public class ModalBehaviorTests : IDisposable
         _h.UI.CurrentModal.Should().BeSameAs(modal);
     }
 
-    [Fact(
-        Skip = "既知の不具合: モーダルが画面全体を覆うと、オーバーレイ部分のクリックがモーダルルートに当たり ModalOverlayClicked が発火しない"
-    )]
+    [Fact]
     public void ClickOnOverlayArea_ShouldClose_WhenCloseOnOverlayClick()
     {
         // モーダルが画面全体を覆う使い方 (デモと同じ) で、本体の外側 (オーバーレイ部分) をクリックする
@@ -158,7 +156,7 @@ public class ModalBehaviorTests : IDisposable
     {
         var modal = ShowModal(out _, out _);
 
-        _h.Click(500, 400);
+        _h.Click(500, 300);
 
         _h.UI.CurrentModal.Should().BeSameAs(modal);
     }
@@ -188,19 +186,26 @@ public class ModalBehaviorTests : IDisposable
         _outside.IsHovered.Should().BeFalse();
     }
 
+    private Modal ShowSecondModal(out Func<int> clicks, bool closeOnOverlayClick = true)
+    {
+        var second = new Modal((200, 100)) { CloseOnOverlayClick = closeOnOverlayClick };
+        second.Size = (800, 600);
+        var count = 0;
+        var secondButton = new Button("second").Location(10, 10).Size(100, 30);
+        secondButton.Clicked += () => count++;
+        second.Body.Add(secondButton);
+        second.Show(_h.UI, _h.App.GlobalForeground);
+        _h.Frame(2);
+
+        clicks = () => count;
+        return second;
+    }
+
     [Fact]
     public void NestedModals_OnlyTopReceivesInput_AndPopRestoresPrevious()
     {
         var first = ShowModal(out _, out _);
-
-        var second = new Modal((200, 100));
-        second.Size = (800, 600);
-        var secondClicks = 0;
-        var secondButton = new Button("second").Location(10, 10).Size(100, 30);
-        secondButton.Clicked += () => secondClicks++;
-        second.Body.Add(secondButton);
-        second.Show(_h.UI, _h.App.GlobalForeground);
-        _h.Frame(2);
+        var second = ShowSecondModal(out var secondClicks, closeOnOverlayClick: false);
 
         _h.UI.CurrentModal.Should().BeSameAs(second);
 
@@ -210,7 +215,7 @@ public class ModalBehaviorTests : IDisposable
 
         // 2つ目の本体は (300, 250) に 200x100。内側のボタンは (310, 260)
         _h.Click(320, 270);
-        secondClicks.Should().Be(1);
+        secondClicks().Should().Be(1);
 
         second.Close();
         _h.Frame(2);
@@ -218,5 +223,18 @@ public class ModalBehaviorTests : IDisposable
 
         _h.Click(270, 220);
         _insideCounter().Should().Be(1);
+    }
+
+    [Fact]
+    public void NestedModals_OverlayClick_ShouldCloseOnlyTheTopModal()
+    {
+        var first = ShowModal(out _, out _);
+        var second = ShowSecondModal(out _);
+
+        _h.Click(700, 500);
+
+        _h.UI.CurrentModal.Should().BeSameAs(first);
+        second.Parent.Should().BeNull();
+        first.Parent.Should().NotBeNull();
     }
 }
