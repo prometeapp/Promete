@@ -810,7 +810,17 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public void Unload(string path, AssetScope scope)
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        List<Entry> released = [];
+        lock (_lock)
+        {
+            DetachOwners(key => key.Path == normalized, owner, released);
+        }
+
+        ReleaseEntries(released);
     }
 
     /// <summary>
@@ -823,7 +833,16 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public void Unload(string path)
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+
+        List<Entry> released = [];
+        lock (_lock)
+        {
+            DetachOwners(key => key.Path == normalized, owner: null, released);
+        }
+
+        ReleaseEntries(released);
     }
 
     /// <summary>
@@ -837,7 +856,16 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public void Unload(AssetScope scope)
     {
-        throw new NotImplementedException();
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        List<Entry> released = [];
+        lock (_lock)
+        {
+            DetachOwners(_ => true, owner, released);
+        }
+
+        ReleaseEntries(released);
     }
 
     /// <summary>
@@ -967,6 +995,49 @@ public sealed class AssetManager : IDisposable
         }
 
         return winner;
+    }
+
+    /// <summary>
+    /// 条件に合うエントリから所有者を外します。所有者がいなくなった値のあるエントリはキャッシュから外し、<paramref name="released"/> に集めます。
+    /// </summary>
+    /// <remarks>
+    /// 値の無いエントリ (実行中の非同期) はキャッシュに残します。完了時の処理が、所有者が空なら解放します。ロックの中で呼びます。
+    /// </remarks>
+    /// <param name="match">対象のキーを選ぶ条件。</param>
+    /// <param name="owner">外す所有者。<see langword="null"/> なら、すべての所有者を外します。</param>
+    /// <param name="released">キャッシュから外したエントリを集めるリスト。</param>
+    private void DetachOwners(Func<CacheKey, bool> match, object? owner, List<Entry> released)
+    {
+        foreach (var key in _cache.Keys.Where(match).ToList())
+        {
+            var entry = _cache[key];
+            if (owner is null)
+            {
+                entry.Owners.Clear();
+            }
+            else
+            {
+                entry.Owners.Remove(owner);
+            }
+
+            if (entry.HasValue && entry.Owners.Count == 0)
+            {
+                _cache.Remove(key);
+                released.Add(entry);
+            }
+        }
+    }
+
+    /// <summary>
+    /// キャッシュから外したエントリの値を解放します。ロックの外で呼びます。
+    /// </summary>
+    /// <param name="entries">解放するエントリ。</param>
+    private void ReleaseEntries(List<Entry> entries)
+    {
+        foreach (var entry in entries)
+        {
+            ReleaseValue(entry.Release, entry.Value);
+        }
     }
 
     /// <summary>
