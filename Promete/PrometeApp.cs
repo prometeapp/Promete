@@ -186,6 +186,14 @@ public sealed class PrometeApp : IDisposable
     internal IAudioProvider AudioProvider { get; private set; } = null!;
 
     /// <summary>
+    /// 現在のシーンを取得します。シーンが無い場合は <see langword="null"/> を返します。
+    /// </summary>
+    /// <remarks>
+    /// 遷移の途中では、<c>OnDestroy</c> を呼んだ後のシーンや、<c>OnStart</c> を呼ぶ前のシーンを返すことがあります。
+    /// </remarks>
+    internal Scene? CurrentScene => throw new NotImplementedException();
+
+    /// <summary>
     /// Promete アプリケーションを作成します。
     /// </summary>
     /// <returns></returns>
@@ -294,6 +302,16 @@ public sealed class PrometeApp : IDisposable
             }
         });
         return completion.Task;
+    }
+
+    /// <summary>
+    /// シーンの生成と破棄を知らせるフックを登録します。登録した順に呼ばれます。
+    /// </summary>
+    /// <param name="hook">登録するフック。</param>
+    /// <exception cref="ArgumentNullException"><paramref name="hook"/> が <see langword="null"/> の場合。</exception>
+    internal void AddSceneLifecycleHook(ISceneLifecycleHook hook)
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>
