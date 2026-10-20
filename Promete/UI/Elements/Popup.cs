@@ -107,19 +107,13 @@ public class Popup : UIElement
     /// <summary>
     /// ポップアップを閉じます。表示前にフォーカスしていた要素がある場合、フォーカスをその要素に戻します。
     /// </summary>
-    public void Close()
-    {
-        if (_boundManager == null)
-            return;
+    public void Close() => CloseCore(notify: true);
 
-        var manager = _boundManager;
-        _boundManager = null;
-        _anchor = null;
-
-        manager.RemoveLayer(this);
-        (Parent as Container)?.Remove(this);
-        Closed?.Invoke();
-    }
+    /// <summary>
+    /// <see cref="Closed"/> を発火させずに閉じます。
+    /// シーンの切り替え中など、イベントのハンドラを呼ぶと切り替えの処理が入れ子になる場面で使います。
+    /// </summary>
+    internal void Dismiss() => CloseCore(notify: false);
 
     protected override void ApplyStyle(UIElementState state)
     {
@@ -135,6 +129,21 @@ public class Popup : UIElement
 
         if (!UpdatePlacement(_boundManager))
             Close();
+    }
+
+    private void CloseCore(bool notify)
+    {
+        if (_boundManager == null)
+            return;
+
+        var manager = _boundManager;
+        _boundManager = null;
+        _anchor = null;
+
+        manager.RemoveLayer(this);
+        (Parent as Container)?.Remove(this);
+        if (notify)
+            Closed?.Invoke();
     }
 
     private void Open(UIManager uiManager, UIElement? anchor, Rect fixedAnchor)

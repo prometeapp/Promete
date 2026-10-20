@@ -57,6 +57,10 @@ public class Modal : UIElement
     /// <param name="parent">モーダルを追加する親ノード。</param>
     public void Show(UIManager uiManager, Container parent)
     {
+        // すでに表示中の場合は、レイヤーが二重に積まれないよう何もしない
+        if (_boundManager != null)
+            return;
+
         parent.Add(this);
         uiManager.PushLayer(
             this,
@@ -64,6 +68,7 @@ public class Modal : UIElement
             {
                 IsModal = true,
                 RootIsBackdrop = true,
+                RestoreFocus = true,
                 OnOutsideClick = OnOverlayClicked,
             }
         );
@@ -73,17 +78,13 @@ public class Modal : UIElement
     /// <summary>
     /// モーダルを閉じます。UIManager のモーダルスタックからポップします。
     /// </summary>
-    public void Close()
-    {
-        if (_boundManager == null)
-            return;
+    public void Close() => CloseCore(notify: true);
 
-        _boundManager.RemoveLayer(this);
-        _boundManager = null;
-
-        (Parent as Container)?.Remove(this);
-        Closed?.Invoke();
-    }
+    /// <summary>
+    /// <see cref="Closed"/> を発火させずに閉じます。
+    /// シーンの切り替え中など、イベントのハンドラを呼ぶと切り替えの処理が入れ子になる場面で使います。
+    /// </summary>
+    internal void Dismiss() => CloseCore(notify: false);
 
     protected override void ApplyStyle(UIElementState state)
     {
@@ -96,6 +97,19 @@ public class Modal : UIElement
 
         // モーダル本体を中央に配置
         _body.Location = new Vector((Size.X - _body.Size.X) / 2f, (Size.Y - _body.Size.Y) / 2f);
+    }
+
+    private void CloseCore(bool notify)
+    {
+        if (_boundManager == null)
+            return;
+
+        _boundManager.RemoveLayer(this);
+        _boundManager = null;
+
+        (Parent as Container)?.Remove(this);
+        if (notify)
+            Closed?.Invoke();
     }
 
     private void OnOverlayClicked()

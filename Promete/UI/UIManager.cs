@@ -26,6 +26,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     private readonly InputMap _inputMap = CreateInputMap();
     private readonly List<UIElement> _elementBuffer = [];
+    private readonly List<UIElement> _layerBuffer = [];
     private readonly List<UILayer> _layers = [];
     private UIElement? _capturedElement;
     private UIElement? _focusedElement;
@@ -62,12 +63,27 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     public UIElement? FocusedElement => _focusedElement;
 
     /// <summary>現在のモーダルの最上位要素。モーダルがなければ null。</summary>
-    public UIElement? CurrentModal => _layers.LastOrDefault(l => l.Options.IsModal)?.Root;
+    public UIElement? CurrentModal
+    {
+        get
+        {
+            for (var i = _layers.Count - 1; i >= 0; i--)
+            {
+                if (_layers[i].Options.IsModal)
+                    return _layers[i].Root;
+            }
+
+            return null;
+        }
+    }
 
     /// <summary>現在マウスキャプチャされている要素。</summary>
     public UIElement? CapturedElement => _capturedElement;
 
-    public void OnStart() { }
+    public void OnStart()
+    {
+        app.SceneWillChange += _ => ResetInteraction();
+    }
 
     public void OnUpdate()
     {
@@ -85,8 +101,9 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         List<UIElement> activeElements;
         if (_layers.Count > 0)
         {
-            activeElements = [];
-            CollectUIElements(_layers[^1].Root, activeElements);
+            _layerBuffer.Clear();
+            CollectUIElements(_layers[^1].Root, _layerBuffer);
+            activeElements = _layerBuffer;
         }
         else
         {
@@ -102,6 +119,10 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
             else
                 element.State &= ~UIElementState.Disabled;
         }
+
+        // フォーカス中の要素が、ツリーから外れた・非表示になった・無効になった場合は、フォーカスを外す
+        if (_focusedElement != null && !IsFocusAvailable(_focusedElement))
+            SetFocus(null);
 
         // ヒットテスト（マウス位置、ZIndex を考慮して最前面の要素を選択）
         var mousePos = mouse.Position;
@@ -153,7 +174,15 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
     /// </summary>
     public void PushModal(UIElement modalRoot)
     {
-        PushLayer(modalRoot, new UILayerOptions { IsModal = true, RootIsBackdrop = true });
+        PushLayer(
+            modalRoot,
+            new UILayerOptions
+            {
+                IsModal = true,
+                RootIsBackdrop = true,
+                RestoreFocus = true,
+            }
+        );
     }
 
     /// <summary>
@@ -192,8 +221,10 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         };
         _layers.Add(layer);
 
-        // レイヤー外の要素のホバー状態をクリア
+        // レイヤー外の要素のホバー状態と、フォーカスをクリア
         ClearHover();
+        if (_focusedElement != null && !IsSelfOrDescendantOf(_focusedElement, root))
+            SetFocus(null);
     }
 
     /// <summary>
@@ -209,16 +240,19 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
         var layer = _layers[index];
         var wasTop = index == _layers.Count - 1;
+        var focusWasInside = _focusedElement != null && IsSelfOrDescendantOf(_focusedElement, root);
         _layers.RemoveAt(index);
         ClearHover();
 
+        // 取り除いたレイヤーの中にフォーカスがあった場合は、元の要素に戻す。戻せなければ外す
         if (
             wasTop
-            && layer.ReturnFocusTo is { IsEnabled: true, IsVisible: true, IsFocusable: true } target
+            && layer.ReturnFocusTo is { IsFocusable: true } target
+            && IsFocusAvailable(target)
         )
-        {
             SetFocus(target);
-        }
+        else if (focusWasInside)
+            SetFocus(null);
 
         return true;
     }
@@ -420,6 +454,9 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     private void ProcessFocusedElementInput()
     {
+        if (_focusedElement == null || !IsInActiveLayer(_focusedElement))
+            return;
+
         switch (_focusedElement)
         {
             case TextInput textInput:
@@ -433,7 +470,7 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     private void ProcessFocusActivation()
     {
-        if (_focusedElement == null)
+        if (_focusedElement == null || !IsInActiveLayer(_focusedElement))
             return;
         // TextInput/Slider フォーカス中は Enter/Space でアクティベートしない
         if (_focusedElement is TextInput or Slider)
@@ -647,6 +684,79 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         map.AddAction(FocusRightAction);
         map.BindKey(FocusRightAction, KeyCode.Right);
         return map;
+    }
+
+    /// <summary>
+    /// モーダルやポップアップの表示中に、最上位のレイヤーの中の要素かどうかを判定します。
+    /// レイヤーがない間は、常に true です。
+    /// </summary>
+    private bool IsInActiveLayer(UIElement element) =>
+        _layers.Count == 0 || IsSelfOrDescendantOf(element, _layers[^1].Root);
+
+    /// <summary>
+    /// 要素がフォーカスを持ち続けられる状態かどうかを判定します。
+    /// ツリーから外れている、自身または祖先が非表示、無効のいずれかの場合は false です。
+    /// </summary>
+    private bool IsFocusAvailable(UIElement element)
+    {
+        if (!element.IsEnabled || !IsInTree(element))
+            return false;
+
+        for (Node? node = element; node != null; node = node.Parent)
+        {
+            if (!node.IsVisible)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// シーンが切り替わる前に、UI の操作状態をすべて初期状態に戻します。
+    /// 開いているモーダルやポップアップを閉じ、フォーカス・キャプチャ・押下・ホバーを解除します。
+    /// </summary>
+    private void ResetInteraction()
+    {
+        while (_layers.Count > 0)
+        {
+            var count = _layers.Count;
+            var root = _layers[^1].Root;
+            switch (root)
+            {
+                // シーンの切り替え中に Closed のハンドラが走ると、切り替えが入れ子になりうるので、発火させない
+                case Popup popup:
+                    popup.Dismiss();
+                    break;
+                case Modal modal:
+                    modal.Dismiss();
+                    break;
+            }
+
+            // 閉じる処理でレイヤーが減らなかった場合は、直接取り除く
+            if (_layers.Count == count)
+                RemoveLayer(root);
+        }
+
+        SetFocus(null);
+        ReleaseCapture();
+        if (_pressedElement != null)
+        {
+            _pressedElement.State &= ~UIElementState.Pressed;
+            _pressedElement = null;
+        }
+
+        ClearHover();
+    }
+
+    private static bool IsSelfOrDescendantOf(Node node, Node ancestor)
+    {
+        for (Node? current = node; current != null; current = current.Parent)
+        {
+            if (current == ancestor)
+                return true;
+        }
+
+        return false;
     }
 
     private static void CollectUIElements(Node node, List<UIElement> results)

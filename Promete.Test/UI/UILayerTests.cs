@@ -126,7 +126,7 @@ public class UILayerTests : IDisposable
     }
 
     [Fact]
-    public void RemoveLayer_ShouldNotRestoreFocus_ByDefault()
+    public void RemoveLayer_ShouldClearFocus_WhenItWasInsideAndRestoreIsNotRequested()
     {
         _h.UI.SetFocus(_outside);
         var popup = PushPopup(new UILayerOptions(), out var item);
@@ -134,7 +134,30 @@ public class UILayerTests : IDisposable
 
         _h.UI.RemoveLayer(popup);
 
-        _h.UI.FocusedElement.Should().BeSameAs(item);
+        // 取り除いたレイヤーの要素にフォーカスを残さない。元の要素にも戻さない
+        _h.UI.FocusedElement.Should().BeNull();
+    }
+
+    [Fact]
+    public void PushLayer_ShouldClearFocusOutsideTheNewLayer()
+    {
+        _h.UI.SetFocus(_outside);
+
+        PushPopup(new UILayerOptions(), out _);
+
+        _h.UI.FocusedElement.Should().BeNull();
+    }
+
+    [Fact]
+    public void KeyInput_ShouldNotReachAFocusedElementOutsideTheTopLayer()
+    {
+        PushPopup(new UILayerOptions(), out _);
+        // プログラムから、レイヤーの外の要素にフォーカスを戻した場合
+        _h.UI.SetFocus(_outside);
+
+        _h.PressKey(Promete.Input.KeyCode.Enter);
+
+        _outsideClicks.Should().Be(0);
     }
 
     [Fact]

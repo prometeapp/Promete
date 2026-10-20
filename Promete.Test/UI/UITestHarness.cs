@@ -12,7 +12,13 @@ internal sealed class UITestHarness : IDisposable
 {
     public UITestHarness()
     {
-        App = PrometeApp.Create().Use<Keyboard>().Use<Mouse>().Use<UIManager>().BuildWithHeadless();
+        App = PrometeApp
+            .Create()
+            .Use<Keyboard>()
+            .Use<Mouse>()
+            .Use<UIManager>()
+            .UseScenesFrom(typeof(UITestHarness).Assembly)
+            .BuildWithHeadless();
         App.OnStart();
         UI = App.GetPlugin<UIManager>();
         Mouse = App.GetPlugin<Mouse>();
@@ -111,5 +117,19 @@ internal sealed class UITestHarness : IDisposable
         foreach (var c in text)
             queue.Enqueue(c);
         Frame();
+    }
+}
+
+/// <summary>
+/// シーンの切り替えをテストするための、何もしないシーンです。
+/// </summary>
+internal sealed class UITestScene : Scene
+{
+    /// <summary>OnStart が呼ばれた回数。</summary>
+    public static int StartCount { get; set; }
+
+    public override void OnStart()
+    {
+        StartCount++;
     }
 }
