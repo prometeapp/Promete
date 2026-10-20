@@ -59,6 +59,29 @@ public class UIWidgetsDemoScene(Keyboard keyboard, UIManager uiManager) : Scene
             difficulty
         );
 
+        // --- タブバー ---
+        var generalPage = new StackContainer(StackDirection.Vertical, gap: 10)
+        {
+            new Checkbox("全画面表示").Size(220, 24),
+            new Checkbox("垂直同期", isChecked: true).Size(220, 24),
+        };
+        var soundPage = new StackContainer(StackDirection.Vertical, gap: 10)
+        {
+            Label("BGM"),
+            new Slider(0, 10, 7).Size(220, 24),
+        };
+        var aboutPage = new StackContainer(StackDirection.Vertical, gap: 10)
+        {
+            Label("Promete UI のデモです"),
+            new Button("OK").Size(100, 32).OnClick(() => statusText.Content = "OK が押された"),
+        };
+
+        var tabBar = new TabBar().Size(300, 150);
+        tabBar.AddTab("一般", generalPage).AddTab("サウンド", soundPage).AddTab("情報", aboutPage);
+        tabBar.SelectionChanged += i => statusText.Content = $"タブ: {i + 1} 番目";
+
+        var tabSection = Section("TabBar", tabBar);
+
         var screen = new StackContainer(StackDirection.Vertical, gap: 16, padding: 24)
         {
             new Text("UI 要素のデモ", color: Color.White),
@@ -66,6 +89,7 @@ public class UIWidgetsDemoScene(Keyboard keyboard, UIManager uiManager) : Scene
             {
                 progressSection,
                 radioSection,
+                tabSection,
             },
             statusText,
             new Text("[Tab/方向キー] フォーカス移動  [ESC] 終了", color: Color.Gray),

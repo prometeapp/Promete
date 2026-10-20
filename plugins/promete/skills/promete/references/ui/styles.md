@@ -52,6 +52,8 @@ var button = new Button("保存") { Style = style };
 | `DefaultProgressBarStyle` | `ProgressBar` | Shape ベースのプログレスバースタイル |
 | `DefaultRadioGroupStyle` | `RadioGroup` | 項目の間隔・余白・揃え位置と、グループの背景 |
 | `DefaultRadioItemStyle` | `RadioItem` | 円形のマーカーとラベルの並び、項目の大きさ |
+| `DefaultTabBarStyle` | `TabBar` | 見出しの間隔と、ページ領域の背景・枠線 |
+| `DefaultTabButtonStyle` | `TabButton` | 見出し1つ分の大きさ・色・選択中の下線 |
 
 ## NineSliceSprite によるテクスチャスタイル
 

@@ -488,3 +488,81 @@ quality.ItemStyle = new DefaultRadioItemStyle
 :::note
 `group.IsEnabled = false` にすると、全ての項目が操作できなくなります。
 :::
+
+## TabBar
+
+上部の見出し（タブ）で、複数のページを切り替えるタブバーです。ページは `Container` で、タブごとに1つ用意します。
+
+```csharp
+var general = new Container();
+general.Add(new Checkbox("全画面表示").Location(0, 0).Size(200, 24));
+
+var sound = new Container();
+sound.Add(new Slider(0, 10, 7).Location(0, 0).Size(200, 24));
+
+var tabs = new TabBar()
+    .Location(30, 60)
+    .Size(400, 240);
+
+tabs.AddTab("一般", general).AddTab("サウンド", sound);
+
+tabs.SelectionChanged += index =>
+{
+    Console.WriteLine($"選択: {index}");
+};
+
+Root.Add(tabs);
+```
+
+最初に追加したタブが、自動で選択されます。選択されているページだけが表示され、それ以外のページは非表示になります。
+非表示のページの中の要素は、クリックにもフォーカス移動にも反応しません。
+
+ページの原点は、見出しの下の `ContentPadding`（デフォルト: 8px）の内側の左上です。タブバー全体の大きさは `Size` で指定します。
+
+### 主なプロパティ
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `SelectedIndex` | `int` | 選択中のタブの位置。タブがなければ `-1`。範囲外の値は無視される |
+| `SelectedPage` | `Container?` | 選択中のページ |
+| `Pages` | `IReadOnlyList<Container>` | ページの一覧 |
+| `TabCount` | `int` | タブの数 |
+| `ContentPadding` | `Padding` | ページ領域の内側の余白 |
+| `TabStyle` | `IUIStyle<TabButton>` | 見出し1つ分のスタイル |
+| `SelectionChanged` | イベント | 選択が変わったときに発火（引数は新しい位置） |
+
+### メソッド
+
+| メソッド | 説明 |
+|---|---|
+| `AddTab(string, Container)` | 見出しの文字列とページを組にして、末尾に追加 |
+| `RemoveTab(int)` | タブとページを取り除く。選択中のタブを取り除くと、隣のタブが選択される |
+| `GetTabButton(int)` | 見出し（`TabButton`）を取得 |
+
+### キーボード操作
+
+見出しは、それぞれフォーカスを受け取ります。
+
+| 操作 | 動作 |
+|---|---|
+| Tab / ↑ / ↓ | 見出しとページ内の要素の間のフォーカス移動 |
+| Enter / Space | フォーカス中の見出しのタブを選択 |
+| クリック | クリックした見出しのタブを選択 |
+
+ページの中にフォーカスがある状態でタブを切り替えると、フォーカスは新しく選ばれた見出しに移ります。
+
+### スタイルによるレイアウト
+
+`RadioGroup` と同じように、2段のスタイルで決まります。
+
+- **タブバーのスタイル** (`IUIStyle<TabBar>`): 見出し同士の間隔と、ページ領域の背景・枠線を決めます。見出しを並べる `StackContainer` は `tabs.Header` で取得できます。
+- **見出しのスタイル** (`IUIStyle<TabButton>`): 見出し1つ分の大きさ・色・選択中の表示を決めます。
+
+```csharp
+tabs.Style = new DefaultTabBarStyle { HeaderGap = 6 };
+tabs.TabStyle = new DefaultTabButtonStyle
+{
+    HorizontalPadding = 24,
+    Height = 36,
+};
+```
