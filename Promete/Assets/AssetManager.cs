@@ -866,7 +866,7 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        return LoadAsync(path, key, factory, scope, leaveOpen: false, cancellationToken);
     }
 
     /// <summary>
@@ -893,7 +893,21 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(factory);
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        // Load と同じく型を含めるので、型付きの読み込みとはキャッシュを共有しない
+        var cacheKey = new CacheKey(CacheKind.Custom, normalized, (key, typeof(T)));
+        return GetOrLoadAsync(
+            cacheKey,
+            owner,
+            () => ReadWithAsync(normalized, factory, leaveOpen),
+            ReleaseDisposable,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -1137,6 +1151,196 @@ public sealed class AssetManager : IDisposable
     }
 
     /// <summary>
+    /// 非同期の読み込みを、キャッシュを通して行います。同じキーの値があればそれを、実行中の読み込みがあればそれを共有します。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 所有者は呼び出した時点で加わります。新しく読む場合は、読み込み全体 (ストリームを開く処理を含む) をスレッドプールで行います。
+    /// </para>
+    /// <para>
+    /// <paramref name="cancellationToken"/> は待つのをやめるためだけに使います。共有している読み込みは止めません。
+    /// </para>
+    /// </remarks>
+    /// <typeparam name="T">値の型。</typeparam>
+    /// <param name="key">キャッシュのキー。</param>
+    /// <param name="owner">所有者。</param>
+    /// <param name="load">値を非同期に読み込む処理。スレッドプールで呼ばれます。</param>
+    /// <param name="release">値を解放する処理。</param>
+    /// <param name="cancellationToken">待つのをやめるためのトークン。</param>
+    /// <returns>読み込んだ値。</returns>
+    private Task<T> GetOrLoadAsync<T>(
+        CacheKey key,
+        object owner,
+        Func<Task<T>> load,
+        Action<object?> release,
+        CancellationToken cancellationToken
+    )
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Task<object?> pending;
+        lock (_lock)
+        {
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+
+            if (_cache.TryGetValue(key, out var existing))
+            {
+                existing.Owners.Add(owner);
+                if (existing.HasValue)
+                {
+                    return Task.FromResult((T)existing.Value!);
+                }
+
+                // 値の無いエントリは実行中の読み込み。完了を待つ
+                pending = existing.Pending!;
+            }
+            else
+            {
+                var entry = new Entry(release);
+                entry.Owners.Add(owner);
+                _cache.Add(key, entry);
+                var task = Task.Run(() => CompleteAsyncLoad(key, entry, load, release));
+                entry.Pending = task;
+                pending = task;
+            }
+        }
+
+        return AwaitSharedAsync<T>(pending, cancellationToken);
+    }
+
+    /// <summary>
+    /// 読み込みを行い、結果をキャッシュに入れて、待っている全員に返す値を決めます。読み込みの Task の中で実行します。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 成功時、既に値が入っていれば (同期の読み込みが先に入れた) 自分の結果を解放して、その値を返します。
+    /// 所有者がいなくなった場合や破棄された後に完了した場合は、キャッシュに入れずに解放して、解放済みの結果を返します。
+    /// </para>
+    /// <para>
+    /// 失敗時、値が入っていればその値を返し、無ければキャッシュから外して例外を投げ直します。
+    /// </para>
+    /// </remarks>
+    /// <typeparam name="T">値の型。</typeparam>
+    /// <param name="key">キャッシュのキー。</param>
+    /// <param name="entry">この読み込みのエントリ。</param>
+    /// <param name="load">値を非同期に読み込む処理。</param>
+    /// <param name="release">値を解放する処理。</param>
+    /// <returns>待っている全員に返す値。</returns>
+    private async Task<object?> CompleteAsyncLoad<T>(
+        CacheKey key,
+        Entry entry,
+        Func<Task<T>> load,
+        Action<object?> release
+    )
+    {
+        T value;
+        try
+        {
+            value = await load().ConfigureAwait(false);
+        }
+        catch
+        {
+            object? existingValue = null;
+            var hasExisting = false;
+            lock (_lock)
+            {
+                entry.Pending = null;
+                if (IsCurrent(key, entry) && entry.HasValue)
+                {
+                    hasExisting = true;
+                    existingValue = entry.Value;
+                }
+                else
+                {
+                    RemoveIfCurrent(key, entry);
+                }
+            }
+
+            if (hasExisting)
+            {
+                return existingValue;
+            }
+
+            throw;
+        }
+
+        object? winner = value;
+        var shouldRelease = false;
+        lock (_lock)
+        {
+            entry.Pending = null;
+            if (IsCurrent(key, entry) && entry.HasValue)
+            {
+                // 同期の読み込みが先に値を入れていたので、そちらを使う
+                winner = entry.Value;
+                shouldRelease = true;
+            }
+            else if (
+                IsCurrent(key, entry)
+                && entry.Owners.Count > 0
+                && Volatile.Read(ref _disposed) == 0
+            )
+            {
+                entry.Value = value;
+                entry.HasValue = true;
+            }
+            else
+            {
+                // 所有者がいない、または破棄された後の完了。キャッシュに入れずに解放する
+                RemoveIfCurrent(key, entry);
+                shouldRelease = true;
+            }
+        }
+
+        if (shouldRelease)
+        {
+            ReleaseValue(release, value);
+        }
+
+        return winner;
+    }
+
+    /// <summary>
+    /// 実行中の読み込みの完了を待ち、結果を返します。待つのをやめるのは <paramref name="cancellationToken"/> のときだけで、読み込み自体は止めません。
+    /// </summary>
+    /// <typeparam name="T">値の型。</typeparam>
+    /// <param name="pending">実行中の読み込み。</param>
+    /// <param name="cancellationToken">待つのをやめるためのトークン。</param>
+    /// <returns>読み込んだ値。</returns>
+    private async Task<T> AwaitSharedAsync<T>(
+        Task<object?> pending,
+        CancellationToken cancellationToken
+    )
+    {
+        var value = await pending.WaitAsync(cancellationToken).ConfigureAwait(false);
+        return (T)value!;
+    }
+
+    /// <summary>
+    /// エントリがキャッシュに今も入っているかどうかを表します。ロックの中で呼びます。
+    /// </summary>
+    /// <param name="key">キャッシュのキー。</param>
+    /// <param name="entry">調べるエントリ。</param>
+    /// <returns>同じキーのエントリとして今も入っていれば <see langword="true"/>。</returns>
+    private bool IsCurrent(CacheKey key, Entry entry)
+    {
+        return _cache.TryGetValue(key, out var current) && ReferenceEquals(current, entry);
+    }
+
+    /// <summary>
+    /// エントリが今もキャッシュに入っていれば外します。ロックの中で呼びます。
+    /// </summary>
+    /// <param name="key">キャッシュのキー。</param>
+    /// <param name="entry">外すエントリ。</param>
+    private void RemoveIfCurrent(CacheKey key, Entry entry)
+    {
+        if (IsCurrent(key, entry))
+        {
+            _cache.Remove(key);
+        }
+    }
+
+    /// <summary>
     /// 条件に合うエントリから所有者を外します。所有者がいなくなった値のあるエントリはキャッシュから外し、<paramref name="released"/> に集めます。
     /// </summary>
     /// <remarks>
@@ -1194,6 +1398,43 @@ public sealed class AssetManager : IDisposable
         try
         {
             value = factory(stream);
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+
+        if (!leaveOpen)
+        {
+            stream.Dispose();
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// ストリームを非同期に読み込みます。ストリームは、<paramref name="factory"/> の Task が完了した後に閉じます。
+    /// </summary>
+    /// <remarks>
+    /// 呼び出し元 (<see cref="GetOrLoadAsync{T}"/>) がスレッドプールで呼ぶので、ストリームを開く処理もスレッドプールで行われます。
+    /// </remarks>
+    /// <typeparam name="T">値の型。</typeparam>
+    /// <param name="path">正規化した論理パス。</param>
+    /// <param name="factory">ストリームから値を作る非同期の処理。</param>
+    /// <param name="leaveOpen">正常に完了した後もストリームを閉じないなら <see langword="true"/>。</param>
+    /// <returns>読み込んだ値。</returns>
+    private async Task<T> ReadWithAsync<T>(
+        string path,
+        Func<Stream, Task<T>> factory,
+        bool leaveOpen
+    )
+    {
+        var stream = FileSystem.OpenRead(path);
+        T value;
+        try
+        {
+            value = await factory(stream).ConfigureAwait(false);
         }
         catch
         {
@@ -1590,9 +1831,9 @@ public sealed class AssetManager : IDisposable
         public object? Value { get; set; }
 
         /// <summary>
-        /// 実行中の非同期の読み込みです。値が入るまで設定されます。
+        /// 実行中の非同期の読み込みです。完了の処理が終わるまで設定されます。結果は値として <see cref="object"/> で返します。
         /// </summary>
-        public Task? Pending { get; set; }
+        public Task<object?>? Pending { get; set; }
 
         /// <summary>
         /// 値を解放する処理です。
