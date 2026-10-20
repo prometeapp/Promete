@@ -47,6 +47,20 @@
         </Reference>
     </ItemGroup>
 
+    <!-- EmbeddedResourceAssetSource のテスト用。論理パスは LogicalName で / 区切りにする -->
+    <ItemGroup>
+        <EmbeddedResource Include="assets\embedded\hello.txt" LogicalName="embedded/hello.txt" />
+        <EmbeddedResource
+            Include="assets\embedded\sub\nested.txt"
+            LogicalName="embedded/sub/nested.txt"
+        />
+        <EmbeddedResource Include="assets\embedded\Upper.txt" LogicalName="embedded/Upper.txt" />
+        <EmbeddedResource
+            Include="assets\embedded-other\ignored.txt"
+            LogicalName="other/ignored.txt"
+        />
+    </ItemGroup>
+
     <ItemGroup>
         <None Update="assets\**\*">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
