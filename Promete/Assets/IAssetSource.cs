@@ -15,6 +15,11 @@ namespace Promete.Assets;
 /// <para>
 /// 実装は、どのスレッドから呼ばれても安全である必要があります。
 /// </para>
+/// <para>
+/// <see cref="AssetFileSystem"/> は、Unmount や Dispose の直後に、読み込み中の別スレッドからこのソースのメンバーを呼ぶことがあります。
+/// 破棄された後に呼ばれたら <see cref="System.ObjectDisposedException"/> を投げてかまいません (<see cref="AssetFileSystem"/> はそのソースに無いものとして扱います)。
+/// 既に開いたストリームは、閉じられるまで有効にしておいてください。
+/// </para>
 /// </remarks>
 public interface IAssetSource
 {

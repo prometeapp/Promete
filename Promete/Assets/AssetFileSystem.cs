@@ -153,7 +153,7 @@ public sealed class AssetFileSystem : IDisposable
 
         foreach (var entry in mounts)
         {
-            if (entry.Source.Exists(normalized))
+            if (TryExists(entry.Source, normalized))
             {
                 return true;
             }
@@ -187,18 +187,32 @@ public sealed class AssetFileSystem : IDisposable
         // 1. 完全一致するソースのうち、優先度の最も高いものを読む
         foreach (var entry in mounts)
         {
-            if (entry.Source.Exists(normalized))
+            if (!TryExists(entry.Source, normalized))
             {
-                return EnsureSeekable(entry.Source.OpenRead(normalized));
+                continue;
             }
+
+            Stream stream;
+            try
+            {
+                stream = entry.Source.OpenRead(normalized);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Exists と OpenRead の間に破棄されたソースは無いものとして次へ進む
+                continue;
+            }
+
+            return EnsureSeekable(stream);
         }
 
         // 2. 無ければ、大文字・小文字だけ違うヒントを伝えるため各ソースに開かせる
         foreach (var entry in mounts)
         {
+            Stream stream;
             try
             {
-                return EnsureSeekable(entry.Source.OpenRead(normalized));
+                stream = entry.Source.OpenRead(normalized);
             }
             catch (AssetPathCaseMismatchException)
             {
@@ -207,7 +221,15 @@ public sealed class AssetFileSystem : IDisposable
             catch (FileNotFoundException)
             {
                 // 他のソースを試す
+                continue;
             }
+            catch (ObjectDisposedException)
+            {
+                // 破棄されたソースは無いものとして次へ進む
+                continue;
+            }
+
+            return EnsureSeekable(stream);
         }
 
         throw new FileNotFoundException($"アセット '{normalized}' が見つかりません。", normalized);
@@ -237,10 +259,21 @@ public sealed class AssetFileSystem : IDisposable
         var results = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var entry in mounts)
         {
-            foreach (var path in entry.Source.Enumerate(normalizedDirectory, pattern, recursive))
+            // 途中で破棄された場合に備えて、いったん全部集めてから結果に加える
+            List<string> paths;
+            try
             {
-                results.Add(path);
+                paths = new List<string>(
+                    entry.Source.Enumerate(normalizedDirectory, pattern, recursive)
+                );
             }
+            catch (ObjectDisposedException)
+            {
+                // 破棄されたソースの結果は使わない
+                continue;
+            }
+
+            results.UnionWith(paths);
         }
 
         var array = new string[results.Count];
@@ -265,7 +298,7 @@ public sealed class AssetFileSystem : IDisposable
 
         foreach (var entry in mounts)
         {
-            if (!entry.Source.Exists(normalized))
+            if (!TryExists(entry.Source, normalized))
             {
                 continue;
             }
@@ -273,7 +306,15 @@ public sealed class AssetFileSystem : IDisposable
             // 優先度で勝ったソースだけを見る。下のソースには落ちない
             if (entry.Source is IFileBackedAssetSource fileBacked)
             {
-                return fileBacked.TryGetFilePath(normalized, out fullPath);
+                try
+                {
+                    return fileBacked.TryGetFilePath(normalized, out fullPath);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Exists の後に破棄されたソースは無いものとして次へ進む
+                    continue;
+                }
             }
 
             fullPath = null;
@@ -319,6 +360,21 @@ public sealed class AssetFileSystem : IDisposable
     {
         var byPriority = b.Priority.CompareTo(a.Priority);
         return byPriority != 0 ? byPriority : b.Sequence.CompareTo(a.Sequence);
+    }
+
+    /// <summary>
+    /// ソースに存在を尋ねます。ソースが破棄済みで <see cref="ObjectDisposedException"/> を投げた場合は、そのソースには無いものとして <see langword="false"/> を返します。
+    /// </summary>
+    private static bool TryExists(IAssetSource source, string path)
+    {
+        try
+        {
+            return source.Exists(path);
+        }
+        catch (ObjectDisposedException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
