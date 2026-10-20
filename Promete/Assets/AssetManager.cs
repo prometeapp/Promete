@@ -38,7 +38,13 @@ public sealed class AssetManager : IDisposable
         }
         catch
         {
-            FileSystem.Dispose();
+            // ロールバックの失敗で、利用者が知るべき元の例外を隠さない
+            try
+            {
+                FileSystem.Dispose();
+            }
+            catch { }
+
             throw;
         }
     }
