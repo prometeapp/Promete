@@ -376,9 +376,12 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
         // TextInput / Slider は左右キーを自身の操作に使うため、左右ではフォーカスを移動しない
         var consumesHorizontal = _focusedElement is TextInput or Slider;
 
-        if (_inputMap.GetAction(FocusUpAction).IsJustPressed)
+        // 複数行の TextInput は、上下キーをキャレットの移動に使う
+        var consumesVertical = _focusedElement is TextInput { IsMultiline: true };
+
+        if (!consumesVertical && _inputMap.GetAction(FocusUpAction).IsJustPressed)
             MoveFocusDirection(0, -1);
-        if (_inputMap.GetAction(FocusDownAction).IsJustPressed)
+        if (!consumesVertical && _inputMap.GetAction(FocusDownAction).IsJustPressed)
             MoveFocusDirection(0, 1);
         if (!consumesHorizontal && _inputMap.GetAction(FocusLeftAction).IsJustPressed)
             MoveFocusDirection(-1, 0);

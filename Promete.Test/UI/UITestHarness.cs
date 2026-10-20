@@ -28,6 +28,10 @@ internal sealed class UITestHarness : IDisposable
             "Mouse.Position のバッキングフィールドが見つかりません。"
         );
 
+    private static readonly FieldInfo KeyCharsField =
+        typeof(Keyboard).GetField("_keyChars", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException("Keyboard の文字バッファが見つかりません。");
+
     public PrometeApp App { get; }
 
     public UIManager UI { get; }
@@ -98,5 +102,14 @@ internal sealed class UITestHarness : IDisposable
     {
         KeyDown(code);
         KeyUp(code);
+    }
+
+    /// <summary>文字を入力して1フレーム進めます。</summary>
+    public void TypeText(string text)
+    {
+        var queue = (Queue<char>)KeyCharsField.GetValue(Keyboard)!;
+        foreach (var c in text)
+            queue.Enqueue(c);
+        Frame();
     }
 }

@@ -82,6 +82,12 @@ public class UIWidgetsDemoScene(Keyboard keyboard, UIManager uiManager) : Scene
 
         var tabSection = Section("TabBar", tabBar);
 
+        // --- 複数行テキスト入力 ---
+        var memo = new TextInput("メモを入力 (Ctrl+Enter で確定)...") { Rows = 4 }.Size(300, 0);
+        memo.Submitted += t => statusText.Content = $"確定: {t.Replace("\n", " / ")}";
+
+        var memoSection = Section("TextInput (Rows = 4)", memo);
+
         var screen = new StackContainer(StackDirection.Vertical, gap: 16, padding: 24)
         {
             new Text("UI 要素のデモ", color: Color.White),
@@ -90,6 +96,7 @@ public class UIWidgetsDemoScene(Keyboard keyboard, UIManager uiManager) : Scene
                 progressSection,
                 radioSection,
                 tabSection,
+                memoSection,
             },
             statusText,
             new Text("[Tab/方向キー] フォーカス移動  [ESC] 終了", color: Color.Gray),

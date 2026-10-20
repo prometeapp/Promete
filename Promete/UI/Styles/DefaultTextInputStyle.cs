@@ -42,10 +42,11 @@ public class DefaultTextInputStyle : IUIStyle<TextInput>
 
         if (element.IsCursorVisible)
         {
-            // カーソル位置をテキストの文字幅から計算
-            var cursorX = element.PaddingLeft + EstimateCursorX(element);
-            var cursorY = 4;
-            var cursorH = element.Size.Y - 8;
+            // キャレットの位置は、テキストのレイアウトから求めたものを使う
+            var caret = element.CaretLocation;
+            var cursorX = (int)caret.X;
+            var cursorY = (int)caret.Y;
+            var cursorH = element.CaretHeight;
 
             var cursor = Shape
                 .CreateRect(
@@ -56,21 +57,6 @@ public class DefaultTextInputStyle : IUIStyle<TextInput>
                 .Name("_cursor");
             element.Add(cursor);
         }
-    }
-
-    private static int EstimateCursorX(TextInput element)
-    {
-        // テキストノードのサイズから1文字あたりの幅を推定
-        var text = element.Text;
-        if (string.IsNullOrEmpty(text) || element.CursorPosition == 0)
-            return 0;
-
-        var textWidth = element.TextNode.Size.X;
-        if (textWidth <= 0 || text.Length == 0)
-            return 0;
-
-        var charWidth = textWidth / text.Length;
-        return (int)(charWidth * element.CursorPosition);
     }
 
     private static Node? FindNamedChild(TextInput element, string name)
