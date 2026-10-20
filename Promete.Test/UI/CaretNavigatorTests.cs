@@ -5,13 +5,12 @@ using Promete.UI;
 namespace Promete.Test.UI;
 
 /// <summary>
-/// 既定のフォント (等幅) の寸法は実行環境によって違うので、<see cref="TestFont"/> で測った値を使います。
-/// 以下では、1文字の幅を W として表します。
+/// 既定のフォントは実行環境によって違い、比例フォントの場合もあります。
+/// そのため、位置を比べるテストでは同じ文字 (a) だけを並べ、文字ごとの幅の違いが出ないようにします。
+/// 座標の期待値は、レイアウトが持つグリフの位置や行の幅と突き合わせます。
 /// </summary>
 public class CaretNavigatorTests
 {
-    private static readonly int W = TestFont.CharWidth;
-
     private static TextLayout Layout(string text, int wrapWidth = 0)
     {
         var options = new TextRenderingOptions
@@ -22,17 +21,30 @@ public class CaretNavigatorTests
         return TextLayoutEngine.Layout(text, Font.GetDefault(), options);
     }
 
-    /// <summary>5 文字で折り返す幅。</summary>
-    private static int FiveChars => 5 * W;
+    /// <summary>
+    /// 同じ文字 5 つが 1 行に収まり、6 つ目は収まらない幅。
+    /// 幅の丸めで 5 つ目が収まらなくならないよう、1px の余裕を持たせます。
+    /// </summary>
+    private static int FiveChars => Layout("aaaaa").Size.X + 1;
 
     [Fact]
     public void GetX_ShouldReturnCharacterLeftEdge()
     {
-        var layout = Layout("abc");
+        var layout = Layout("aaa");
 
         CaretNavigator.GetX(layout, 0).Should().Be(0);
-        CaretNavigator.GetX(layout, 1).Should().Be(W);
-        CaretNavigator.GetX(layout, 3).Should().Be(3 * W);
+        CaretNavigator.GetX(layout, 1).Should().Be(layout.Glyphs[1].Position.X);
+        CaretNavigator.GetX(layout, 2).Should().Be(layout.Glyphs[2].Position.X);
+        CaretNavigator.GetX(layout, 1).Should().BeGreaterThan(0);
+        CaretNavigator.GetX(layout, 2).Should().BeGreaterThan(CaretNavigator.GetX(layout, 1));
+    }
+
+    [Fact]
+    public void GetX_ShouldBeLineWidth_AtEndOfText()
+    {
+        var layout = Layout("aaa");
+
+        CaretNavigator.GetX(layout, 3).Should().Be(layout.Lines[0].Width);
     }
 
     [Fact]
@@ -72,24 +84,25 @@ public class CaretNavigatorTests
     }
 
     [Fact]
-    public void GetX_ShouldReturnLineWidth_AtEndOfLine()
+    public void GetX_ShouldReturnLineWidth_AtEndOfEachLine()
     {
         var layout = Layout("ab\ncd");
 
-        CaretNavigator.GetX(layout, 2).Should().Be(2 * W);
-        CaretNavigator.GetX(layout, 5).Should().Be(2 * W);
+        CaretNavigator.GetX(layout, 2).Should().Be(layout.Lines[0].Width);
+        CaretNavigator.GetX(layout, 5).Should().Be(layout.Lines[1].Width);
     }
 
     [Fact]
     public void SoftWrap_ShouldPlaceCaretAtWrapBoundaryOnTheNextLine()
     {
         // 5 文字ごとに折り返す
-        var layout = Layout("abcdefghij", FiveChars);
+        var layout = Layout("aaaaaaaaaa", FiveChars);
 
         layout.Lines.Count.Should().Be(2);
         CaretNavigator.FindLine(layout, 5).Should().Be(1);
         CaretNavigator.GetX(layout, 5).Should().Be(0);
-        CaretNavigator.GetX(layout, 7).Should().Be(2 * W);
+        CaretNavigator.GetX(layout, 7).Should().Be(layout.Glyphs[7].Position.X);
+        CaretNavigator.GetX(layout, 7).Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -105,7 +118,7 @@ public class CaretNavigatorTests
     [Fact]
     public void LineEnd_ShouldStayBeforeTheLastCharacter_OnSoftWrappedLine()
     {
-        var layout = Layout("abcdefghij", FiveChars);
+        var layout = Layout("aaaaaaaaaa", FiveChars);
 
         // 1行目の末尾は 5 だが、そこは2行目の先頭と同じ位置なので、1つ手前にする
         CaretNavigator.LineEnd(layout, 0).Should().Be(4);
@@ -115,47 +128,50 @@ public class CaretNavigatorTests
     [Fact]
     public void MoveVertically_ShouldKeepColumn()
     {
-        var layout = Layout("abcd\nefgh");
+        var layout = Layout("aaaa\naaaa");
 
-        // 1行目の 2 文字目 (x = 2W) から下へ
-        CaretNavigator.MoveVertically(layout, 2, 2 * W, 1).Should().Be(7);
-        // 2行目の 3 文字目から上へ
-        CaretNavigator.MoveVertically(layout, 8, 3 * W, -1).Should().Be(3);
+        // 1行目の 3 文字目の位置から下へ。2行目の同じ桁 (インデックス 5 + 2) になる
+        CaretNavigator.MoveVertically(layout, 2, CaretNavigator.GetX(layout, 2), 1).Should().Be(7);
+        // 2行目の 4 文字目の位置から上へ
+        CaretNavigator
+            .MoveVertically(layout, 8, CaretNavigator.GetX(layout, 8), -1)
+            .Should()
+            .Be(3);
     }
 
     [Fact]
     public void MoveVertically_ShouldClampToShorterLine()
     {
-        var layout = Layout("abcdef\nxy");
+        var layout = Layout("aaaaaa\naa");
 
-        CaretNavigator.MoveVertically(layout, 6, 6 * W, 1).Should().Be(9);
+        CaretNavigator.MoveVertically(layout, 6, CaretNavigator.GetX(layout, 6), 1).Should().Be(9);
     }
 
     [Fact]
     public void MoveVertically_ShouldLandOnBlankLine()
     {
-        var layout = Layout("abc\n\ndef");
+        var layout = Layout("aaa\n\naaa");
 
-        CaretNavigator.MoveVertically(layout, 2, 2 * W, 1).Should().Be(4);
+        CaretNavigator.MoveVertically(layout, 2, CaretNavigator.GetX(layout, 2), 1).Should().Be(4);
         CaretNavigator.MoveVertically(layout, 4, 0, 1).Should().Be(5);
     }
 
     [Fact]
     public void MoveVertically_ShouldNotMove_AtFirstOrLastLine()
     {
-        var layout = Layout("ab\ncd");
+        var layout = Layout("aa\naa");
 
-        CaretNavigator.MoveVertically(layout, 1, W, -1).Should().Be(1);
-        CaretNavigator.MoveVertically(layout, 4, W, 1).Should().Be(4);
+        CaretNavigator.MoveVertically(layout, 1, CaretNavigator.GetX(layout, 1), -1).Should().Be(1);
+        CaretNavigator.MoveVertically(layout, 4, CaretNavigator.GetX(layout, 4), 1).Should().Be(4);
     }
 
     [Fact]
     public void MoveVertically_ShouldWorkAcrossSoftWrappedLines()
     {
-        var layout = Layout("abcdefghij", FiveChars);
+        var layout = Layout("aaaaaaaaaa", FiveChars);
 
-        CaretNavigator.MoveVertically(layout, 2, 2 * W, 1).Should().Be(7);
-        CaretNavigator.MoveVertically(layout, 7, 2 * W, -1).Should().Be(2);
+        CaretNavigator.MoveVertically(layout, 2, CaretNavigator.GetX(layout, 2), 1).Should().Be(7);
+        CaretNavigator.MoveVertically(layout, 7, CaretNavigator.GetX(layout, 7), -1).Should().Be(2);
     }
 
     [Fact]

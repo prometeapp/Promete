@@ -9,7 +9,7 @@ namespace Promete.Test.UI;
 
 /// <summary>
 /// 複数行の TextInput (Rows &gt; 1) の挙動と、1行の TextInput が変わっていないことを検証します。
-/// 既定のフォント (等幅) の寸法は実行環境によって違うので、<see cref="TestFont"/> で測った値を使います。
+/// 既定のフォントの寸法は実行環境によって違い、比例フォントの場合もあるので、<see cref="TestFont"/> で測った値を使い、位置を比べるテストでは同じ文字 (a) だけを並べます。
 /// 以下では、1文字の幅を W、1行の高さを H として表します。
 /// </summary>
 public class MultilineTextInputTests : IDisposable
@@ -184,7 +184,7 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void UpAndDown_ShouldMoveCaretByLine_KeepingColumn()
     {
-        _input.Text = "abcd\nefgh";
+        _input.Text = "aaaa\naaaa";
         _input.CursorPosition = 2;
 
         _h.PressKey(KeyCode.Down);
@@ -201,7 +201,7 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void UpAndDown_ShouldRememberColumnAcrossShortLines()
     {
-        _input.Text = "abcdef\nxy\nabcdef";
+        _input.Text = "aaaaaa\naa\naaaaaa";
         _input.CursorPosition = 5;
 
         _h.PressKey(KeyCode.Down);
