@@ -123,7 +123,7 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public Texture2D LoadTexture(string path, AssetScope scope)
     {
-        throw new NotImplementedException();
+        return LoadTexture(path, TextureOptions.Default, scope);
     }
 
     /// <summary>
@@ -139,7 +139,22 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public Texture2D LoadTexture(string path, TextureOptions options, AssetScope scope)
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(CacheKind.Texture, normalized, options);
+        return GetOrLoad(
+            key,
+            owner,
+            () =>
+                ReadWith(
+                    normalized,
+                    stream => _app.TextureFactory.Load(stream, options),
+                    leaveOpen: false
+                ),
+            ReleaseDisposable
+        );
     }
 
     /// <summary>
@@ -163,7 +178,14 @@ public sealed class AssetManager : IDisposable
         AssetScope scope
     )
     {
-        throw new NotImplementedException();
+        return LoadSpriteSheet(
+            path,
+            horizontalCount,
+            verticalCount,
+            size,
+            TextureOptions.Default,
+            scope
+        );
     }
 
     /// <summary>
@@ -189,7 +211,34 @@ public sealed class AssetManager : IDisposable
         AssetScope scope
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(
+            CacheKind.SpriteGrid,
+            normalized,
+            (horizontalCount, verticalCount, size, options)
+        );
+        var cells = GetOrLoad(
+            key,
+            owner,
+            () =>
+                ReadWith(
+                    normalized,
+                    stream =>
+                        _app.TextureFactory.LoadSpriteSheet(
+                            stream,
+                            horizontalCount,
+                            verticalCount,
+                            size,
+                            options
+                        ),
+                    leaveOpen: false
+                ),
+            ReleaseTextureArray
+        );
+        return (Texture2D[])cells.Clone();
     }
 
     /// <summary>
@@ -212,7 +261,7 @@ public sealed class AssetManager : IDisposable
         params ReadOnlySpan<RectInt> rects
     )
     {
-        throw new NotImplementedException();
+        return LoadSpriteRects(path, TextureOptions.Default, scope, rects.ToArray());
     }
 
     /// <summary>
@@ -235,7 +284,7 @@ public sealed class AssetManager : IDisposable
         params ReadOnlySpan<RectInt> rects
     )
     {
-        throw new NotImplementedException();
+        return LoadSpriteRects(path, options, scope, rects.ToArray());
     }
 
     /// <summary>
@@ -261,7 +310,7 @@ public sealed class AssetManager : IDisposable
         AssetScope scope
     )
     {
-        throw new NotImplementedException();
+        return Load9Sliced(path, left, top, right, bottom, TextureOptions.Default, scope);
     }
 
     /// <summary>
@@ -289,7 +338,27 @@ public sealed class AssetManager : IDisposable
         AssetScope scope
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(
+            CacheKind.NineSlice,
+            normalized,
+            (left, top, right, bottom, options)
+        );
+        return GetOrLoad(
+            key,
+            owner,
+            () =>
+                ReadWith(
+                    normalized,
+                    stream =>
+                        _app.TextureFactory.Load9Sliced(stream, left, top, right, bottom, options),
+                    leaveOpen: false
+                ),
+            ReleaseDisposable
+        );
     }
 
     /// <summary>
@@ -1114,9 +1183,120 @@ public sealed class AssetManager : IDisposable
     }
 
     /// <summary>
+    /// テクスチャの配列の要素をすべて Dispose します。
+    /// </summary>
+    /// <param name="value">解放する <see cref="Texture2D"/> の配列。</param>
+    private static void ReleaseTextureArray(object? value)
+    {
+        foreach (var texture in (Texture2D[])value!)
+        {
+            texture.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// 矩形の並びで切り抜いたテクスチャを、キャッシュを通して読み込みます。呼び出し元が渡した配列のコピーを使います。
+    /// </summary>
+    /// <param name="path">画像ファイルの論理パス。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="scope">アセットを所有させるスコープ。</param>
+    /// <param name="rects">切り抜く領域のコピー。キーと読み込みの両方に使います。</param>
+    /// <returns>切り抜いたテクスチャの配列 (呼び出しごとに新しい配列)。</returns>
+    private Texture2D[] LoadSpriteRects(
+        string path,
+        TextureOptions options,
+        AssetScope scope,
+        RectInt[] rects
+    )
+    {
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(CacheKind.SpriteRects, normalized, new RectsKey(rects, options));
+        var cells = GetOrLoad(
+            key,
+            owner,
+            () =>
+                ReadWith(
+                    normalized,
+                    stream => _app.TextureFactory.LoadSpriteSheet(stream, options, rects),
+                    leaveOpen: false
+                ),
+            ReleaseTextureArray
+        );
+        return (Texture2D[])cells.Clone();
+    }
+
+    /// <summary>
     /// キャッシュのキーです。(種類, 正規化した論理パス, オプション) の組で同一性を決めます。
     /// </summary>
     private readonly record struct CacheKey(CacheKind Kind, string Path, object? Options);
+
+    /// <summary>
+    /// 矩形の並びとオプションのキーです。矩形は順序と各要素の値 (左上と大きさ) で比べます。
+    /// </summary>
+    private sealed class RectsKey(RectInt[] rects, TextureOptions options) : IEquatable<RectsKey>
+    {
+        private readonly RectInt[] _rects = rects;
+        private readonly TextureOptions _options = options;
+
+        /// <summary>
+        /// 別のキーと等しいかどうかを判定します。
+        /// </summary>
+        /// <param name="other">比較する相手。</param>
+        /// <returns>矩形の並びとオプションが等しければ <see langword="true"/>。</returns>
+        public bool Equals(RectsKey? other)
+        {
+            if (
+                other is null
+                || _rects.Length != other._rects.Length
+                || !_options.Equals(other._options)
+            )
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _rects.Length; i++)
+            {
+                var a = _rects[i];
+                var b = other._rects[i];
+                if (
+                    a.Left != b.Left
+                    || a.Top != b.Top
+                    || a.Width != b.Width
+                    || a.Height != b.Height
+                )
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            return obj is RectsKey other && Equals(other);
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(_options);
+            foreach (var rect in _rects)
+            {
+                hash.Add(rect.Left);
+                hash.Add(rect.Top);
+                hash.Add(rect.Width);
+                hash.Add(rect.Height);
+            }
+
+            return hash.ToHashCode();
+        }
+    }
 
     /// <summary>
     /// キャッシュの 1 件です。値と、それを所有するスコープの集合を持ちます。
