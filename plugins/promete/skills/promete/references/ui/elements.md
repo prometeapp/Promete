@@ -415,3 +415,76 @@ progress.Value = 65;
 label.Content = $"{progress.Fraction:P0}";
 ```
 :::
+
+## RadioGroup
+
+項目の一覧から1つを選ぶ、ラジオボタンのグループです。`Dropdown` と同じように、項目の文字列と選択位置を扱います。項目は縦にも横にも並べられます。
+
+```csharp
+var quality = new RadioGroup(["低", "中", "高"])
+    .Location(30, 60);
+
+quality.SelectedIndex = 1;
+quality.SelectionChanged += index =>
+{
+    Console.WriteLine($"画質: {quality.SelectedItem}");
+};
+
+Root.Add(quality);
+```
+
+横に並べる場合は、`Direction` を指定します。
+
+```csharp
+var difficulty = new RadioGroup(["かんたん", "ふつう", "むずかしい"], StackDirection.Horizontal);
+```
+
+### 主なプロパティ
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `Items` | `IList<string>` | 項目の一覧。変更すると表示も更新される（`AddItem` でも追加できる） |
+| `SelectedIndex` | `int` | 選択中の項目の位置。未選択は `-1` |
+| `SelectedItem` | `string?` | 選択中の項目。未選択は `null` |
+| `Direction` | `StackDirection` | 項目を並べる方向（デフォルト: `Vertical`） |
+| `ItemStyle` | `IUIStyle<RadioItem>` | 各項目のスタイル |
+| `SelectionChanged` | イベント | 選択が変わったときに発火（引数は新しい位置） |
+
+### キーボード操作
+
+各項目が、個別にフォーカスを受け取ります。Tab や方向キーはフォーカスの移動だけを行い、選択は確定操作で行います。
+
+| 操作 | 動作 |
+|---|---|
+| Tab / ↑ / ↓ | 項目間のフォーカス移動 |
+| Enter / Space | フォーカス中の項目を選択 |
+| クリック | クリックした項目を選択 |
+
+### スタイルによるレイアウト
+
+`RadioGroup` の並べ方と見た目は、2段のスタイルで決まります。
+
+- **グループのスタイル** (`IUIStyle<RadioGroup>`): 項目の間隔・余白・揃え位置・背景を決めます。内部の `StackContainer` は `group.Stack` で取得でき、スタイルの `Apply` から設定します。
+- **項目のスタイル** (`IUIStyle<RadioItem>`): マーカーとラベルの並び、項目の大きさ、見た目を決めます。
+
+```csharp
+quality.Style = new DefaultRadioGroupStyle
+{
+    VerticalGap = 12,                           // 縦に並べるときの間隔
+    HorizontalGap = 24,                         // 横に並べるときの間隔
+    Padding = new Padding(8),                   // 周囲の余白
+    BackgroundColor = Color.FromArgb(120, 0, 0, 0),
+};
+
+quality.ItemStyle = new DefaultRadioItemStyle
+{
+    MarkerSize = 20,
+    Spacing = 10,
+};
+```
+
+独自のスタイルを作る場合は、`IUIStyle<RadioGroup>` で `element.Stack` の `Gap` / `Padding` / `Align` を設定し、`IUIStyle<RadioItem>` で `element.Size` と `element.Label.Location` を設定します。`element.IsSelected` で、選択中かどうかを判定できます。
+
+:::note
+`group.IsEnabled = false` にすると、全ての項目が操作できなくなります。
+:::

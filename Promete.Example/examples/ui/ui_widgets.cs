@@ -39,10 +39,34 @@ public class UIWidgetsDemoScene(Keyboard keyboard, UIManager uiManager) : Scene
             manualSlider
         );
 
+        // --- ラジオボタン ---
+        var quality = new RadioGroup(["低", "中", "高"]);
+        quality.SelectedIndex = 1;
+        quality.SelectionChanged += i => statusText.Content = $"画質: {quality.SelectedItem}";
+
+        var difficulty = new RadioGroup(
+            ["かんたん", "ふつう", "むずかしい"],
+            StackDirection.Horizontal
+        );
+        difficulty.SelectionChanged += i =>
+            statusText.Content = $"難易度: {difficulty.SelectedItem}";
+
+        var radioSection = Section(
+            "RadioGroup",
+            Label("画質 (縦並び)"),
+            quality,
+            Label("難易度 (横並び)"),
+            difficulty
+        );
+
         var screen = new StackContainer(StackDirection.Vertical, gap: 16, padding: 24)
         {
             new Text("UI 要素のデモ", color: Color.White),
-            progressSection,
+            new StackContainer(StackDirection.Horizontal, gap: 16)
+            {
+                progressSection,
+                radioSection,
+            },
             statusText,
             new Text("[Tab/方向キー] フォーカス移動  [ESC] 終了", color: Color.Gray),
         };
