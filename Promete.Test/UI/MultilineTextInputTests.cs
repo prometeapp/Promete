@@ -56,6 +56,55 @@ public class MultilineTextInputTests : IDisposable
     }
 
     [Fact]
+    public void ZeroHeight_ShouldFollowRows_WhenSizeIsSetAfterRows()
+    {
+        // 幅だけを指定する書き方 (高さに 0 を渡しても、Rows から決まる)
+        var input = new TextInput { Rows = 4 }.Size(300, 0);
+
+        input.Size.Should().Be(new VectorInt(300, 4 * 16 + 12));
+        input.HitTest((10, 30)).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ExplicitHeight_ShouldWinOverRows_AndZeroGoesBackToRows()
+    {
+        var input = new TextInput { Rows = 3 };
+
+        input.Size = (200, 100);
+        input.Size.Y.Should().Be(100);
+
+        input.Size = (200, 0);
+        input.Size.Y.Should().Be(3 * 16 + 12);
+    }
+
+    [Fact]
+    public void ChainedSizeAfterRows_ShouldBeClickableAndTypeable()
+    {
+        var input = new TextInput("メモ") { Rows = 4 }
+            .Location(100, 400)
+            .Size(300, 0);
+        _h.App.GlobalForeground.Add(input);
+        _h.Frame(2);
+
+        _h.Click(200, 420);
+        _h.Frame(2);
+        Type("x");
+
+        _h.UI.FocusedElement.Should().BeSameAs(input);
+        input.Text.Should().Be("x");
+    }
+
+    [Fact]
+    public void BackToOneRow_ShouldRestoreTheDefaultHeight_WhenHeightFollowedRows()
+    {
+        var input = new TextInput { Rows = 3 };
+
+        input.Rows = 1;
+
+        input.Size.Y.Should().Be(32);
+    }
+
+    [Fact]
     public void Rows_One_ShouldNotChangeSize()
     {
         var input = new TextInput();

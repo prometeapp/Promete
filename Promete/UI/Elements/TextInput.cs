@@ -19,6 +19,7 @@ namespace Promete.UI.Elements;
 public class TextInput : UIElement
 {
     private const int SingleLineCaretMargin = 4;
+    private const int DefaultHeight = 32;
 
     private readonly Text _textNode;
     private readonly Text _placeholderNode;
@@ -51,7 +52,7 @@ public class TextInput : UIElement
         _viewport.Add(_textNode);
         Add(_placeholderNode);
         Add(_viewport);
-        Size = (200, 32);
+        Size = (200, DefaultHeight);
         IsFocusable = true;
         _needsBufferFlush = true;
 
@@ -101,8 +102,9 @@ public class TextInput : UIElement
     /// 2 以上にすると複数行の入力欄になり、高さがこの行数に合わせて決まります。
     /// </summary>
     /// <remarks>
-    /// 高さは、設定した時点で <c>行数 × 1行の高さ + 上下の余白</c> に更新されます。
-    /// その後に <see cref="Node.Size"/> で高さを変えた場合は、その高さに収まる分だけが表示されます。
+    /// 複数行の入力欄の高さは、<c>行数 × 1行の高さ + 上下の余白</c> に自動で決まります。
+    /// <see cref="Node.Size"/> で高さを指定した場合はその高さが優先され、収まる分の行だけが表示されます。
+    /// 高さに 0 を指定すると、<see cref="Rows"/> から決まる高さに戻ります。
     /// </remarks>
     public int Rows
     {
@@ -114,8 +116,12 @@ public class TextInput : UIElement
                 return;
 
             _rows = rows;
+
+            // 複数行では高さを Rows から決める。1 行に戻す場合は、既定の高さに戻す
             if (IsMultiline)
-                Size = (Size.X, rows * GetLineHeight() + PaddingTop * 2);
+                base.Size = (base.Size.X, 0);
+            else if (base.Size.Y <= 0)
+                base.Size = (base.Size.X, DefaultHeight);
 
             _scrollY = 0;
             _desiredCaretX = -1;
@@ -206,6 +212,22 @@ public class TextInput : UIElement
     /// <summary>キャレットの高さを取得します。</summary>
     public int CaretHeight =>
         IsMultiline ? CaretLine(GetLayout()).Height : Size.Y - SingleLineCaretMargin * 2;
+
+    /// <summary>
+    /// このノードのサイズを取得または設定します。
+    /// 複数行の入力欄で高さが 0 の場合、高さは <see cref="Rows"/> から決まります。
+    /// </summary>
+    public override VectorInt Size
+    {
+        get
+        {
+            var size = base.Size;
+            return IsMultiline && size.Y <= 0
+                ? new VectorInt(size.X, _rows * GetLineHeight() + PaddingTop * 2)
+                : size;
+        }
+        set => base.Size = value;
+    }
 
     /// <summary>スタイルを取得または設定します。</summary>
     public IUIStyle<TextInput> Style
