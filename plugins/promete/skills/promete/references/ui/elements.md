@@ -383,3 +383,35 @@ Root.Add(language);
 :::note
 シーンで Esc を別の用途に使っている場合は、一覧を閉じた Esc を無視してください。詳しくは [Popup](#popup) を参照してください。
 :::
+
+## ProgressBar
+
+進捗を表示するプログレスバーです。`Minimum` から `Maximum` の範囲のうち、`Value` の割合だけを横方向に塗ります。表示専用の要素で、フォーカスもクリックも受け付けません。
+
+```csharp
+var progress = new ProgressBar(0, 100, 30)
+    .Location(30, 60)
+    .Size(300, 16);
+
+Root.Add(progress);
+
+// 進捗を更新する
+progress.Value = 65;
+```
+
+### 主なプロパティ
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `Value` | `float` | 現在の値。範囲外の値は、最小値から最大値の間に収められる |
+| `Minimum` | `float` | 最小値（デフォルト: `0`） |
+| `Maximum` | `float` | 最大値（デフォルト: `1`） |
+| `Fraction` | `float` | 値の割合（0〜1、読み取り専用） |
+
+:::tip
+`Fraction` は、ラベルに「65%」のようなパーセント表示をしたいときに便利です。
+
+```csharp
+label.Content = $"{progress.Fraction:P0}";
+```
+:::
