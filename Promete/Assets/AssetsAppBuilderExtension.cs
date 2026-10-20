@@ -9,11 +9,12 @@ namespace Promete.Assets;
 public static class AssetsAppBuilderExtension
 {
     /// <summary>
-    /// <see cref="AssetManager"/> を登録します。エントリアセンブリに Assets の属性があれば、それに従ってマウントします。
+    /// <see cref="AssetManager"/> を登録します。将来の MSBuild 統合 (<c>PrometeAsset</c>) で、アセンブリに書かれる属性に従ってマウントする予定です。
+    /// 現在のバージョンでは属性は無いので、明示的なマウント (<paramref name="configure"/>) だけが効きます。
     /// </summary>
     /// <remarks>
     /// <para>
-    /// 属性が無ければ何もマウントしません。テストホストのように、エントリアセンブリがアプリではない環境でも例外にはなりません。
+    /// 現在のバージョンには属性が無いため、<paramref name="configure"/> を渡さなければ何もマウントしません。テストホストのように、エントリアセンブリがアプリではない環境でも例外にはなりません。
     /// </para>
     /// <para>
     /// エントリアセンブリを取得できない環境 (WebAssembly) では、<paramref name="configure"/> の有無に関係なく例外をスローします。
@@ -33,10 +34,11 @@ public static class AssetsAppBuilderExtension
     }
 
     /// <summary>
-    /// <see cref="AssetManager"/> を登録します。指定したアセンブリに Assets の属性があれば、それに従ってマウントします。
+    /// <see cref="AssetManager"/> を登録します。将来の MSBuild 統合 (<c>PrometeAsset</c>) で、アセンブリに書かれる属性に従ってマウントする予定です。
+    /// 現在のバージョンでは属性は無いので、明示的なマウント (<paramref name="configure"/>) だけが効きます。
     /// </summary>
     /// <param name="builder">登録先のビルダー。</param>
-    /// <param name="assembly">Assets の属性を持つアセンブリ。属性が無ければ、明示的なマウントだけが効きます。</param>
+    /// <param name="assembly">マウントの対象となるアセンブリ。将来、Assets の属性 (MSBuild 統合で追加予定) を読むために使います。現在のバージョンでは属性は無いので、明示的なマウントだけが効きます。</param>
     /// <param name="configure">明示的なマウントの設定。属性によるマウントより高い優先度で重なります。</param>
     /// <returns>メソッドチェーン用に、同じビルダーを返します。</returns>
     /// <exception cref="ArgumentNullException"><paramref name="assembly"/> が <see langword="null"/> の場合。</exception>

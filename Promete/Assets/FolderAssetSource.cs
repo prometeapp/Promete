@@ -19,6 +19,13 @@ namespace Promete.Assets;
 /// ディレクトリごとの名前の一覧はキャッシュします。見つからなかったときは、そのディレクトリを列挙し直してから判断するので、
 /// 実行中に追加したファイルも読めます。キャッシュにあったファイルが実際には消えていた場合も、列挙し直して判断します。
 /// </para>
+/// <para>
+/// 大文字・小文字だけを変えるリネームをした直後は、キャッシュに古い名前が残っているので、古い綴りでもしばらく読めることがあります。
+/// </para>
+/// <para>
+/// ルートの物理パス (<see cref="RootPath"/>) は OS のファイルシステムの規則に従い、大文字・小文字を照合しません。
+/// 厳密に照合するのは論理パスの側だけです。
+/// </para>
 /// </remarks>
 public sealed class FolderAssetSource : IFileBackedAssetSource
 {
@@ -147,6 +154,7 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     public IEnumerable<string> Enumerate(string directory, string pattern, bool recursive)
     {
         var normalizedDirectory = AssetPath.NormalizeDirectory(directory);
+
         // パターンの検証 (null と区切り文字を弾く)
         AssetPath.IsMatch(string.Empty, pattern);
 
@@ -299,6 +307,24 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     }
 
     /// <summary>
+    /// 一覧から、序数比較で一致し、かつ種類 (ディレクトリ / ファイル) も同じ要素を探します。
+    /// </summary>
+    /// <param name="listing">名前の一覧。</param>
+    /// <param name="segment">照合する名前 (NFC)。</param>
+    /// <param name="wantDirectory">ディレクトリを期待する場合は <see langword="true"/>。</param>
+    /// <param name="entry">見つかった要素。</param>
+    /// <returns>見つかった場合は <see langword="true"/>。</returns>
+    private static bool TryGetSameKind(
+        Dictionary<string, DirectoryEntry> listing,
+        string segment,
+        bool wantDirectory,
+        out DirectoryEntry entry
+    )
+    {
+        return listing.TryGetValue(segment, out entry) && entry.IsDirectory == wantDirectory;
+    }
+
+    /// <summary>
     /// 残りの要素を辿って、ディレクトリの物理パスを解決します。大文字・小文字が違う場合は見つからない扱いです。
     /// </summary>
     /// <param name="segments">MountPoint を除いたディレクトリの要素。</param>
@@ -383,24 +409,6 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     }
 
     /// <summary>
-    /// 一覧から、序数比較で一致し、かつ種類 (ディレクトリ / ファイル) も同じ要素を探します。
-    /// </summary>
-    /// <param name="listing">名前の一覧。</param>
-    /// <param name="segment">照合する名前 (NFC)。</param>
-    /// <param name="wantDirectory">ディレクトリを期待する場合は <see langword="true"/>。</param>
-    /// <param name="entry">見つかった要素。</param>
-    /// <returns>見つかった場合は <see langword="true"/>。</returns>
-    private static bool TryGetSameKind(
-        Dictionary<string, DirectoryEntry> listing,
-        string segment,
-        bool wantDirectory,
-        out DirectoryEntry entry
-    )
-    {
-        return listing.TryGetValue(segment, out entry) && entry.IsDirectory == wantDirectory;
-    }
-
-    /// <summary>
     /// キャッシュ済みの名前の一覧を取得します。無ければ列挙して保存します。
     /// </summary>
     /// <param name="physicalDirectory">ディレクトリの物理パス。</param>
@@ -430,9 +438,9 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
                 );
             }
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // ディレクトリが無い (途中で消えた) 場合は空の一覧として扱う
+            // ディレクトリが無い (途中で消えた) か読めない場合は空の一覧として扱う
             listing.Clear();
         }
 

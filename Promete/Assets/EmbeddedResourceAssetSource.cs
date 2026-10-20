@@ -136,6 +136,7 @@ public sealed class EmbeddedResourceAssetSource : IAssetSource
     public IEnumerable<string> Enumerate(string directory, string pattern, bool recursive)
     {
         var normalizedDirectory = AssetPath.NormalizeDirectory(directory);
+
         // パターンの検証 (null と区切り文字を弾く)
         AssetPath.IsMatch(string.Empty, pattern);
 

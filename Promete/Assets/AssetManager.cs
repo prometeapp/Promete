@@ -53,7 +53,7 @@ public sealed class AssetManager : IDisposable
     /// </summary>
     public void Dispose()
     {
-        // アプリの Dispose とDI コンテナの破棄の両方から呼ばれるため、1 回だけ実行する
+        // アプリの Dispose と DI コンテナの破棄の両方から呼ばれるため、1 回だけ実行する
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
