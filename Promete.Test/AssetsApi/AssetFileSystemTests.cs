@@ -317,6 +317,21 @@ public class AssetFileSystemTests
         ((Action)(() => fs.TryGetFilePath("a.txt", out _)))
             .Should()
             .Throw<ObjectDisposedException>();
+        ((Func<IReadOnlyList<IAssetSource>>)(() => fs.Sources))
+            .Should()
+            .Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public async Task AfterDispose_MountAsyncShouldThrowObjectDisposed()
+    {
+        var fs = new AssetFileSystem();
+        fs.Dispose();
+
+        var act = () =>
+            fs.MountAsync(_ => Task.FromResult<IAssetSource>(new InMemoryAssetSource()));
+
+        await act.Should().ThrowAsync<ObjectDisposedException>();
     }
 
     [Fact]
@@ -384,5 +399,24 @@ public class AssetFileSystemTests
         using var stream = fs.OpenRead("player.png");
 
         stream.ReadAllText().Should().Be("memory", "どこかに完全一致があれば、そちらを読むはず");
+    }
+
+    [Fact]
+    public void CaseMismatchInSeveralSources_ShouldReportHigherPrioritySource()
+    {
+        using var high = new TempDirectory();
+        using var low = new TempDirectory();
+        high.CreateFile("Player.png");
+        low.CreateFile("PLAYER.png");
+        using var fs = new AssetFileSystem();
+        fs.Mount(new FolderAssetSource(low.Path), 0);
+        fs.Mount(new FolderAssetSource(high.Path), 10);
+
+        var act = () => fs.OpenRead("player.png");
+
+        act.Should()
+            .Throw<AssetPathCaseMismatchException>()
+            .Which.ActualPath.Should()
+            .Be("Player.png", "優先度の高いソースのヒントを伝えるはず");
     }
 }

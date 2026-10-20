@@ -287,4 +287,45 @@ public sealed class FolderAssetSourceTests : IDisposable
         source.Enumerate("", "*", true).Should().BeEquivalentTo("assets/x.png", "assets/sub/y.png");
         source.Enumerate("other", "*", true).Should().BeEmpty();
     }
+
+    [Fact]
+    public void Enumerate_SubdirectoryUnderMountPoint_ShouldReturnLogicalPaths()
+    {
+        _dir.CreateFile("x.png");
+        _dir.CreateFile("sub/y.png");
+        _dir.CreateFile("sub/deep/z.png");
+        var source = new FolderAssetSource(_dir.Path, "assets");
+
+        source.Enumerate("assets/sub", "*", false).Should().BeEquivalentTo("assets/sub/y.png");
+        source
+            .Enumerate("/assets/sub/", "*", true)
+            .Should()
+            .BeEquivalentTo("assets/sub/y.png", "assets/sub/deep/z.png");
+    }
+
+    [Fact]
+    public void Enumerate_CaseMismatchedMountPoint_ShouldBeEmpty()
+    {
+        _dir.CreateFile("sub/y.png");
+        var source = new FolderAssetSource(_dir.Path, "assets");
+
+        source.Enumerate("Assets/sub", "*", true).Should().BeEmpty();
+        source.Enumerate("Assets", "*", true).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RootPathWithTrailingSeparator_ShouldBeTrimmed()
+    {
+        _dir.CreateFile("a.txt", "a");
+
+        foreach (
+            var separator in new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }
+        )
+        {
+            var source = new FolderAssetSource(_dir.Path + separator);
+
+            source.RootPath.Should().Be(Path.GetFullPath(_dir.Path));
+            source.Exists("a.txt").Should().BeTrue();
+        }
+    }
 }

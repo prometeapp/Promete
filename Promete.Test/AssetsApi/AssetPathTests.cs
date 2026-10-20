@@ -169,4 +169,11 @@ public class AssetPathTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void IsMatch_NullArguments_ShouldThrowArgumentNull()
+    {
+        ((Action)(() => AssetPath.IsMatch(null!, "*"))).Should().Throw<ArgumentNullException>();
+        ((Action)(() => AssetPath.IsMatch("a.png", null!))).Should().Throw<ArgumentNullException>();
+    }
 }

@@ -181,14 +181,8 @@ public sealed class UseAssetsTests : IDisposable
 
         foreach (var configure in actions)
         {
-            var act = () =>
-            {
-                using var app = PrometeApp
-                    .Create()
-                    .UseAssets(TestAssembly, configure)
-                    .BuildWithHeadless();
-                app.GetPlugin<AssetManager>();
-            };
+            // 構成時 (UseAssets の呼び出し時) にすぐ検証するはず。Build や GetPlugin は呼ばない
+            var act = () => PrometeApp.Create().UseAssets(TestAssembly, configure);
             act.Should().Throw<ArgumentNullException>();
         }
     }
@@ -242,6 +236,11 @@ public sealed class UseAssetsTests : IDisposable
         assets.Dispose();
 
         source.DisposeCount.Should().Be(1);
+        var act = () => assets.FileSystem.Sources;
+        act.Should()
+            .Throw<ObjectDisposedException>(
+                "AssetManager の Dispose で FileSystem も破棄されるはず"
+            );
     }
 
     [Fact]
@@ -264,5 +263,53 @@ public sealed class UseAssetsTests : IDisposable
             using var stream = assets.FileSystem.OpenRead("a.txt");
             ReadContent = stream.ReadAllText();
         }
+    }
+
+    [Fact]
+    public void Options_InvalidMountPoint_ShouldThrowWhenConfigured()
+    {
+        var actions = new Action<AssetsOptions>[]
+        {
+            o => o.MountFolder(_dir.Path, "a\\b"),
+            o => o.MountEmbeddedResources(TestAssembly, "", "a\\b"),
+            o => o.MountEmbeddedResources(TestAssembly, "embedded\\", "res"),
+        };
+
+        foreach (var configure in actions)
+        {
+            // AssetManager を作る時点まで遅らせず、UseAssets の呼び出し時に ArgumentException になるはず
+            var act = () => PrometeApp.Create().UseAssets(TestAssembly, configure);
+            act.Should().Throw<ArgumentException>();
+        }
+    }
+
+    [Fact]
+    public void MountFailure_ShouldDisposeAlreadyMountedSources()
+    {
+        var source = new InMemoryAssetSource(("a.txt", "a"));
+        var missing = Path.Combine(_dir.Path, "missing");
+        using var app = PrometeApp
+            .Create()
+            .UseAssets(TestAssembly, o => o.Mount(source).MountFolder(missing))
+            .BuildWithHeadless();
+
+        var act = () => app.GetPlugin<AssetManager>();
+
+        act.Should().Throw<DirectoryNotFoundException>();
+        source
+            .DisposeCount.Should()
+            .Be(1, "途中で失敗したら、先にマウントしたソースを破棄して巻き戻すはず");
+    }
+
+    [Fact]
+    public void UseAssets_WithEntryAssemblyAndConfigure_ShouldMountExplicitSources()
+    {
+        var source = new InMemoryAssetSource(("a.txt", "a"));
+        using var app = PrometeApp.Create().UseAssets(o => o.Mount(source)).BuildWithHeadless();
+
+        var fs = app.GetPlugin<AssetManager>().FileSystem;
+
+        fs.Sources.Should().Equal(source);
+        fs.Exists("a.txt").Should().BeTrue();
     }
 }
