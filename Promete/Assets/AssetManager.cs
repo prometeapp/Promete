@@ -592,7 +592,7 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        return LoadTextureAsync(path, TextureOptions.Default, scope, cancellationToken);
     }
 
     /// <summary>
@@ -611,7 +611,23 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(CacheKind.Texture, normalized, options);
+        return GetOrLoadAsync(
+            key,
+            owner,
+            () =>
+                ReadWithAsync(
+                    normalized,
+                    stream => _app.TextureFactory.LoadAsync(stream, options),
+                    leaveOpen: false
+                ),
+            ReleaseDisposable,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -634,7 +650,15 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        return LoadSpriteSheetAsync(
+            path,
+            horizontalCount,
+            verticalCount,
+            size,
+            TextureOptions.Default,
+            scope,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -659,7 +683,36 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(
+            CacheKind.SpriteGrid,
+            normalized,
+            (horizontalCount, verticalCount, size, options)
+        );
+        return CloneCellsAsync(
+            GetOrLoadAsync(
+                key,
+                owner,
+                () =>
+                    ReadWithAsync(
+                        normalized,
+                        stream =>
+                            _app.TextureFactory.LoadSpriteSheetAsync(
+                                stream,
+                                horizontalCount,
+                                verticalCount,
+                                size,
+                                options
+                            ),
+                        leaveOpen: false
+                    ),
+                ReleaseTextureArray,
+                cancellationToken
+            )
+        );
     }
 
     /// <summary>
@@ -681,7 +734,7 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        return LoadSpriteSheetAsync(path, TextureOptions.Default, scope, rects, cancellationToken);
     }
 
     /// <summary>
@@ -702,7 +755,11 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(rects);
+
+        // 呼び出した時点の並びを使う。呼び出し元が後から配列を書き換えても影響しないようにする
+        var snapshot = rects.ToArray();
+        return LoadSpriteRectsAsync(path, options, scope, snapshot, cancellationToken);
     }
 
     /// <summary>
@@ -727,7 +784,16 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        return Load9SlicedAsync(
+            path,
+            left,
+            top,
+            right,
+            bottom,
+            TextureOptions.Default,
+            scope,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -754,7 +820,35 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(
+            CacheKind.NineSlice,
+            normalized,
+            (left, top, right, bottom, options)
+        );
+        return GetOrLoadAsync(
+            key,
+            owner,
+            () =>
+                ReadWithAsync(
+                    normalized,
+                    stream =>
+                        _app.TextureFactory.Load9SlicedAsync(
+                            stream,
+                            left,
+                            top,
+                            right,
+                            bottom,
+                            options
+                        ),
+                    leaveOpen: false
+                ),
+            ReleaseDisposable,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -776,7 +870,7 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        return LoadFontAsync(path, size, FontStyle.Normal, true, scope, cancellationToken);
     }
 
     /// <summary>
@@ -797,7 +891,7 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        return LoadFontAsync(path, size, style, true, scope, cancellationToken);
     }
 
     /// <summary>
@@ -820,7 +914,27 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        // 同期版と同じキーにして、グリフソースを共有する
+        var key = new CacheKey(CacheKind.FontSource, normalized, null);
+        var glyphs = GetOrLoadAsync(
+            key,
+            owner,
+            () =>
+                Task.FromResult(
+                    ReadWith(
+                        normalized,
+                        stream => CreateGlyphSource(normalized, stream),
+                        leaveOpen: false
+                    )
+                ),
+            ReleaseGlyphSource,
+            cancellationToken
+        );
+        return CreateFontAsync(glyphs, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -840,7 +954,21 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(CacheKind.Audio, normalized, null);
+        return GetOrLoadAsync(
+            key,
+            owner,
+            () =>
+                Task.FromResult(
+                    ReadWith(normalized, stream => DecodeAudio(normalized, stream), leaveOpen: true)
+                ),
+            ReleaseDisposable,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -1659,6 +1787,80 @@ public sealed class AssetManager : IDisposable
             ReleaseTextureArray
         );
         return (Texture2D[])cells.Clone();
+    }
+
+    /// <summary>
+    /// 矩形の並びで切り抜いたテクスチャを、キャッシュを通して非同期に読み込みます。呼び出し元が渡した配列のコピーを使います。
+    /// </summary>
+    /// <param name="path">画像ファイルの論理パス。</param>
+    /// <param name="options">サンプリングの設定。</param>
+    /// <param name="scope">アセットを所有させるスコープ。</param>
+    /// <param name="rects">切り抜く領域のコピー。キーと読み込みの両方に使います。</param>
+    /// <param name="cancellationToken">待つのをやめるためのトークン。</param>
+    /// <returns>切り抜いたテクスチャの配列 (呼び出しごとに新しい配列)。</returns>
+    private Task<Texture2D[]> LoadSpriteRectsAsync(
+        string path,
+        TextureOptions options,
+        AssetScope scope,
+        RectInt[] rects,
+        CancellationToken cancellationToken
+    )
+    {
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(CacheKind.SpriteRects, normalized, new RectsKey(rects, options));
+        return CloneCellsAsync(
+            GetOrLoadAsync(
+                key,
+                owner,
+                () =>
+                    ReadWithAsync(
+                        normalized,
+                        stream =>
+                            _app.TextureFactory.LoadSpriteSheetAsync(
+                                stream,
+                                options,
+                                CancellationToken.None,
+                                rects
+                            ),
+                        leaveOpen: false
+                    ),
+                ReleaseTextureArray,
+                cancellationToken
+            )
+        );
+    }
+
+    /// <summary>
+    /// 読み込みの完了を待ち、キャッシュの配列をコピーして返します。
+    /// </summary>
+    /// <param name="cells">読み込んだテクスチャの配列を返す Task。</param>
+    /// <returns>コピーしたテクスチャの配列。</returns>
+    private static async Task<Texture2D[]> CloneCellsAsync(Task<Texture2D[]> cells)
+    {
+        var loaded = await cells.ConfigureAwait(false);
+        return (Texture2D[])loaded.Clone();
+    }
+
+    /// <summary>
+    /// グリフソースの読み込みの完了を待ち、サイズとスタイルを付けたフォントを返します。
+    /// </summary>
+    /// <param name="glyphs">グリフソースを返す Task。</param>
+    /// <param name="size">フォントサイズ。</param>
+    /// <param name="style">フォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
+    /// <returns>読み込んだフォント。</returns>
+    private static async Task<Font> CreateFontAsync(
+        Task<GlyphSourceValue> glyphs,
+        float size,
+        FontStyle style,
+        bool isAntialiased
+    )
+    {
+        var loaded = await glyphs.ConfigureAwait(false);
+        return Font.FromGlyphSource(loaded.Source, size, style, isAntialiased);
     }
 
     /// <summary>
