@@ -17,7 +17,7 @@ namespace Promete.Assets;
 /// </para>
 /// <para>
 /// ディレクトリごとの名前の一覧はキャッシュします。見つからなかったときは、そのディレクトリを列挙し直してから判断するので、
-/// 実行中に追加したファイルも読めます。
+/// 実行中に追加したファイルも読めます。キャッシュにあったファイルが実際には消えていた場合も、列挙し直して判断します。
 /// </para>
 /// </remarks>
 public sealed class FolderAssetSource : IFileBackedAssetSource
@@ -60,6 +60,48 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     }
 
     /// <summary>
+    /// 名前の照合の結果です。
+    /// </summary>
+    private enum LookupKind
+    {
+        /// <summary>
+        /// 序数比較で一致した。
+        /// </summary>
+        Exact,
+
+        /// <summary>
+        /// 大文字・小文字を無視すると一致した。
+        /// </summary>
+        CaseMismatch,
+
+        /// <summary>
+        /// 一致するものが無い。
+        /// </summary>
+        NotFound,
+    }
+
+    /// <summary>
+    /// 論理パスの解決の結果です。
+    /// </summary>
+    private enum ResolveStatus
+    {
+        /// <summary>
+        /// 見つかった。
+        /// </summary>
+        Found,
+
+        /// <summary>
+        /// 大文字・小文字だけが違うものが見つかった。
+        /// </summary>
+        CaseMismatch,
+
+        /// <summary>
+        /// 見つからなかった。
+        /// </summary>
+        NotFound,
+    }
+
+    /// <summary>
     /// 読み出すフォルダのフルパスを取得します。
     /// </summary>
     public string RootPath { get; }
@@ -72,14 +114,20 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     /// <inheritdoc />
     public bool Exists(string path)
     {
-        return TryResolve(AssetPath.Normalize(path), out _);
+        return ResolveFile(AssetPath.Normalize(path)).Status == ResolveStatus.Found;
     }
 
     /// <inheritdoc />
     public Stream OpenRead(string path)
     {
         var normalized = AssetPath.Normalize(path);
-        if (!TryResolve(normalized, out var physicalPath))
+        var resolution = ResolveFile(normalized);
+        if (resolution.Status == ResolveStatus.CaseMismatch)
+        {
+            throw new AssetPathCaseMismatchException(normalized, resolution.ActualPath);
+        }
+
+        if (resolution.Status == ResolveStatus.NotFound)
         {
             throw new FileNotFoundException(
                 $"アセット '{normalized}' が見つかりません。",
@@ -88,7 +136,7 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
         }
 
         return new FileStream(
-            physicalPath,
+            resolution.PhysicalPath,
             FileMode.Open,
             FileAccess.Read,
             FileShare.Read | FileShare.Delete
@@ -138,7 +186,15 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     /// <inheritdoc />
     public bool TryGetFilePath(string path, [NotNullWhen(true)] out string? fullPath)
     {
-        return TryResolve(AssetPath.Normalize(path), out fullPath);
+        var resolution = ResolveFile(AssetPath.Normalize(path));
+        if (resolution.Status == ResolveStatus.Found)
+        {
+            fullPath = resolution.PhysicalPath;
+            return true;
+        }
+
+        fullPath = null;
+        return false;
     }
 
     /// <summary>
@@ -164,53 +220,86 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     }
 
     /// <summary>
+    /// 論理パス (正規化済み) を解決し、見つかったものが実在することを確かめます。
+    /// </summary>
+    /// <param name="normalizedPath">正規化済みの論理パス。</param>
+    /// <returns>解決の結果。</returns>
+    /// <remarks>
+    /// キャッシュにあった名前の実ファイルが消えていた場合は、すべての要素を列挙し直して解決し直します。
+    /// </remarks>
+    private Resolution ResolveFile(string normalizedPath)
+    {
+        var resolution = Resolve(normalizedPath, forceRefresh: false);
+        if (resolution.Status != ResolveStatus.NotFound && !File.Exists(resolution.PhysicalPath))
+        {
+            resolution = Resolve(normalizedPath, forceRefresh: true);
+        }
+
+        return resolution;
+    }
+
+    /// <summary>
     /// 論理パス (正規化済み) を物理パスに解決します。ファイルだけを対象にします。
     /// </summary>
     /// <param name="normalizedPath">正規化済みの論理パス。</param>
-    /// <param name="physicalPath">見つかった場合の物理フルパス。見つからない場合は <see langword="null"/>。</param>
-    /// <returns>見つかった場合は <see langword="true"/>。</returns>
-    private bool TryResolve(string normalizedPath, [NotNullWhen(true)] out string? physicalPath)
+    /// <param name="forceRefresh">すべての要素でキャッシュを使わず、列挙し直す場合は <see langword="true"/>。</param>
+    /// <returns>解決の結果。</returns>
+    private Resolution Resolve(string normalizedPath, bool forceRefresh)
     {
-        physicalPath = null;
-
         var segments = SplitSegments(normalizedPath);
-        if (
-            segments.Length <= _mountSegments.Length
-            || !StartsWithSegments(segments, _mountSegments)
-        )
+        if (segments.Length <= _mountSegments.Length)
         {
-            return false;
+            return new(ResolveStatus.NotFound, string.Empty, string.Empty);
         }
 
+        // マウントポイントの照合。大文字・小文字だけが違う場合は、残りを辿ってから不一致として扱う
+        var caseMismatch = false;
+        for (var i = 0; i < _mountSegments.Length; i++)
+        {
+            if (segments[i] == _mountSegments[i])
+            {
+                continue;
+            }
+
+            if (!string.Equals(segments[i], _mountSegments[i], StringComparison.OrdinalIgnoreCase))
+            {
+                return new(ResolveStatus.NotFound, string.Empty, string.Empty);
+            }
+
+            caseMismatch = true;
+        }
+
+        var actualSegments = new List<string>(_mountSegments);
         var relative = segments[_mountSegments.Length..];
         var current = RootPath;
         for (var i = 0; i < relative.Length; i++)
         {
-            if (!GetListing(current).TryGetValue(relative[i], out var entry))
-            {
-                return false;
-            }
-
             var isLast = i == relative.Length - 1;
-            if (isLast && entry.IsDirectory)
+            var lookup = Find(
+                current,
+                relative[i],
+                wantDirectory: !isLast,
+                forceRefresh,
+                out var name,
+                out var entry
+            );
+            if (lookup == LookupKind.NotFound)
             {
-                return false;
+                return new(ResolveStatus.NotFound, string.Empty, string.Empty);
             }
 
-            if (!isLast && !entry.IsDirectory)
-            {
-                return false;
-            }
-
+            caseMismatch |= lookup == LookupKind.CaseMismatch;
+            actualSegments.Add(name);
             current = Path.Combine(current, entry.ActualName);
         }
 
-        physicalPath = current;
-        return true;
+        return caseMismatch
+            ? new(ResolveStatus.CaseMismatch, current, string.Join('/', actualSegments))
+            : new(ResolveStatus.Found, current, string.Empty);
     }
 
     /// <summary>
-    /// 残りの要素を辿って、ディレクトリの物理パスを解決します。
+    /// 残りの要素を辿って、ディレクトリの物理パスを解決します。大文字・小文字が違う場合は見つからない扱いです。
     /// </summary>
     /// <param name="segments">MountPoint を除いたディレクトリの要素。</param>
     /// <returns>見つかった物理パス。無ければ <see langword="null"/>。</returns>
@@ -219,7 +308,16 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
         var current = RootPath;
         foreach (var segment in segments)
         {
-            if (!GetListing(current).TryGetValue(segment, out var entry) || !entry.IsDirectory)
+            if (
+                Find(
+                    current,
+                    segment,
+                    wantDirectory: true,
+                    forceRefresh: false,
+                    out _,
+                    out var entry
+                ) != LookupKind.Exact
+            )
             {
                 return null;
             }
@@ -228,6 +326,78 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
         }
 
         return current;
+    }
+
+    /// <summary>
+    /// ディレクトリの直下から名前を照合します。序数比較で一致しなければ列挙し直し、それでも無ければ大文字・小文字を無視して探します。
+    /// </summary>
+    /// <param name="physicalDirectory">ディレクトリの物理パス。</param>
+    /// <param name="segment">照合する名前 (NFC、正規化済み)。</param>
+    /// <param name="wantDirectory">ディレクトリを期待する場合は <see langword="true"/>、ファイルを期待する場合は <see langword="false"/>。</param>
+    /// <param name="forceRefresh">キャッシュを使わず、最初に列挙し直す場合は <see langword="true"/>。</param>
+    /// <param name="name">見つかった名前 (NFC)。</param>
+    /// <param name="entry">見つかった要素。</param>
+    /// <returns>照合の結果。</returns>
+    private LookupKind Find(
+        string physicalDirectory,
+        string segment,
+        bool wantDirectory,
+        bool forceRefresh,
+        out string name,
+        out DirectoryEntry entry
+    )
+    {
+        var listing = forceRefresh ? ReadListing(physicalDirectory) : GetListing(physicalDirectory);
+        if (TryGetSameKind(listing, segment, wantDirectory, out entry))
+        {
+            name = segment;
+            return LookupKind.Exact;
+        }
+
+        if (!forceRefresh)
+        {
+            listing = ReadListing(physicalDirectory);
+            if (TryGetSameKind(listing, segment, wantDirectory, out entry))
+            {
+                name = segment;
+                return LookupKind.Exact;
+            }
+        }
+
+        foreach (var (candidate, candidateEntry) in listing)
+        {
+            if (
+                candidateEntry.IsDirectory == wantDirectory
+                && string.Equals(candidate, segment, StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                name = candidate;
+                entry = candidateEntry;
+                return LookupKind.CaseMismatch;
+            }
+        }
+
+        name = string.Empty;
+        entry = default;
+        return LookupKind.NotFound;
+    }
+
+    /// <summary>
+    /// 一覧から、序数比較で一致し、かつ種類 (ディレクトリ / ファイル) も同じ要素を探します。
+    /// </summary>
+    /// <param name="listing">名前の一覧。</param>
+    /// <param name="segment">照合する名前 (NFC)。</param>
+    /// <param name="wantDirectory">ディレクトリを期待する場合は <see langword="true"/>。</param>
+    /// <param name="entry">見つかった要素。</param>
+    /// <returns>見つかった場合は <see langword="true"/>。</returns>
+    private static bool TryGetSameKind(
+        Dictionary<string, DirectoryEntry> listing,
+        string segment,
+        bool wantDirectory,
+        out DirectoryEntry entry
+    )
+    {
+        return listing.TryGetValue(segment, out entry) && entry.IsDirectory == wantDirectory;
     }
 
     /// <summary>
@@ -316,4 +486,16 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     /// <param name="ActualName">ファイルシステム上の実際の名前。</param>
     /// <param name="IsDirectory">ディレクトリの場合は <see langword="true"/>。</param>
     private readonly record struct DirectoryEntry(string ActualName, bool IsDirectory);
+
+    /// <summary>
+    /// 論理パスの解決の結果です。
+    /// </summary>
+    /// <param name="Status">解決の結果。</param>
+    /// <param name="PhysicalPath">見つかった場合の物理フルパス (実際の名前で組み立てたもの)。</param>
+    /// <param name="ActualPath">大文字・小文字の不一致の場合の、実際の論理パス。</param>
+    private readonly record struct Resolution(
+        ResolveStatus Status,
+        string PhysicalPath,
+        string ActualPath
+    );
 }
