@@ -38,6 +38,14 @@ public class TextInput : UIElement
     private VectorInt _lastSize;
     private IUIStyle<TextInput> _style;
 
+    private readonly KeyRepeater _backSpaceRepeater = new();
+    private readonly KeyRepeater _deleteRepeater = new();
+    private readonly KeyRepeater _leftRepeater = new();
+    private readonly KeyRepeater _rightRepeater = new();
+    private readonly KeyRepeater _upRepeater = new();
+    private readonly KeyRepeater _downRepeater = new();
+    private readonly KeyRepeater _enterRepeater = new();
+
     /// <summary>
     /// TextInput の新しいインスタンスを初期化します。
     /// </summary>
@@ -56,7 +64,11 @@ public class TextInput : UIElement
         IsFocusable = true;
         _needsBufferFlush = true;
 
-        GotFocus += () => _needsBufferFlush = true;
+        GotFocus += () =>
+        {
+            _needsBufferFlush = true;
+            ResetKeyRepeat();
+        };
     }
 
     /// <summary>テキストが変更されたときに発火します。</summary>
@@ -189,6 +201,15 @@ public class TextInput : UIElement
     /// <summary>カーソルの点滅間隔（秒）。フレームレートに依存しません。</summary>
     public float CursorBlinkInterval { get; set; } = 0.5f;
 
+    /// <summary>
+    /// BackSpace・Delete・矢印キー・Enter (複数行の改行) を押し続けたとき、繰り返しが始まるまでの時間 (秒)。
+    /// 文字キーの繰り返しは OS が行うので、この設定の対象ではありません。
+    /// </summary>
+    public float KeyRepeatDelay { get; set; } = 0.5f;
+
+    /// <summary>キーを押し続けたときの、繰り返しの間隔 (秒)。<see cref="KeyRepeatDelay"/> を参照してください。</summary>
+    public float KeyRepeatInterval { get; set; } = 0.033f;
+
     /// <summary>カーソル表示状態。スタイルから参照されます。</summary>
     public bool IsCursorVisible => _cursorVisible && IsFocused;
 
@@ -274,33 +295,46 @@ public class TextInput : UIElement
         if (input.Length > 0)
             InsertAtCursor(input);
 
-        // BackSpace
-        if (keyboard.BackSpace.IsKeyDown && _cursorPosition > 0)
+        // BackSpace / Delete / カーソル移動は、押し続けると繰り返す
+        for (var n = Repeats(_backSpaceRepeater, keyboard.BackSpace, deltaTime); n > 0; n--)
         {
+            if (_cursorPosition <= 0)
+                break;
+
             _text = _text.Remove(_cursorPosition - 1, 1);
             _cursorPosition--;
             AfterEdit();
         }
 
-        // Delete
-        if (keyboard.Delete.IsKeyDown && _cursorPosition < _text.Length)
+        for (var n = Repeats(_deleteRepeater, keyboard.Delete, deltaTime); n > 0; n--)
         {
+            if (_cursorPosition >= _text.Length)
+                break;
+
             _text = _text.Remove(_cursorPosition, 1);
             AfterEdit();
         }
 
-        // カーソル移動
-        if (keyboard.Left.IsKeyDown && _cursorPosition > 0)
-            MoveCaretTo(_cursorPosition - 1, keepColumn: false);
+        for (var n = Repeats(_leftRepeater, keyboard.Left, deltaTime); n > 0; n--)
+        {
+            if (_cursorPosition > 0)
+                MoveCaretTo(_cursorPosition - 1, keepColumn: false);
+        }
 
-        if (keyboard.Right.IsKeyDown && _cursorPosition < _text.Length)
-            MoveCaretTo(_cursorPosition + 1, keepColumn: false);
+        for (var n = Repeats(_rightRepeater, keyboard.Right, deltaTime); n > 0; n--)
+        {
+            if (_cursorPosition < _text.Length)
+                MoveCaretTo(_cursorPosition + 1, keepColumn: false);
+        }
 
+        // 上下キーは、複数行のときだけキャレットの移動に使う
+        var up = Repeats(_upRepeater, keyboard.Up, deltaTime);
+        var down = Repeats(_downRepeater, keyboard.Down, deltaTime);
         if (IsMultiline)
         {
-            if (keyboard.Up.IsKeyDown)
+            for (; up > 0; up--)
                 MoveCaretVertically(-1);
-            if (keyboard.Down.IsKeyDown)
+            for (; down > 0; down--)
                 MoveCaretVertically(1);
         }
 
@@ -320,14 +354,20 @@ public class TextInput : UIElement
             MoveCaretTo(end, keepColumn: false);
         }
 
-        // Enter: 複数行では改行、Ctrl+Enter または1行では Submit
-        if (keyboard.Enter.IsKeyDown)
+        // Enter: 複数行では改行 (押し続けると繰り返す)、Ctrl+Enter または1行では Submit (押した瞬間だけ)
+        var enter = Repeats(_enterRepeater, keyboard.Enter, deltaTime);
+        if (enter > 0)
         {
             var isCtrl = keyboard.ControlLeft.IsPressed || keyboard.ControlRight.IsPressed;
             if (IsMultiline && !isCtrl)
-                InsertAtCursor("\n");
-            else
+            {
+                for (; enter > 0; enter--)
+                    InsertAtCursor("\n");
+            }
+            else if (keyboard.Enter.IsKeyDown)
+            {
                 Submitted?.Invoke(_text);
+            }
         }
     }
 
@@ -510,6 +550,20 @@ public class TextInput : UIElement
 
         // 末尾に余白ができないように、スクロール量を範囲内に収める
         _scrollY = Math.Clamp(_scrollY, 0, Math.Max(0, layout.Size.Y - viewHeight));
+    }
+
+    private int Repeats(KeyRepeater repeater, Key key, float deltaTime) =>
+        repeater.Poll(key, deltaTime, KeyRepeatDelay, KeyRepeatInterval);
+
+    private void ResetKeyRepeat()
+    {
+        _backSpaceRepeater.Reset();
+        _deleteRepeater.Reset();
+        _leftRepeater.Reset();
+        _rightRepeater.Reset();
+        _upRepeater.Reset();
+        _downRepeater.Reset();
+        _enterRepeater.Reset();
     }
 
     private void ResetCursorBlink()

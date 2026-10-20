@@ -121,6 +121,8 @@ Root.Add(input);
 | `WrapMode` | `WrapMode` | 複数行のときの折り返し方（デフォルト: `Mixed`） |
 | `KinsokuMode` | `KinsokuMode` | 複数行のときの禁則処理（デフォルト: `Standard`） |
 | `CursorBlinkInterval` | `float` | カーソルの点滅間隔（秒）。既定値は 0.5 |
+| `KeyRepeatDelay` | `float` | キーを押し続けたとき、繰り返しが始まるまでの時間（秒）。既定値は 0.5 |
+| `KeyRepeatInterval` | `float` | 繰り返しの間隔（秒）。既定値は 0.033 |
 
 ### キーボード操作
 
@@ -132,6 +134,8 @@ Root.Add(input);
 | ← / → | カーソル移動 |
 | Home / End | 先頭/末尾に移動（複数行では、カーソルがある行の先頭/末尾） |
 | Enter | `Submitted` イベント発火（複数行では改行） |
+
+BackSpace・Delete・← / →（複数行では ↑ / ↓ と Enter の改行も）は、押し続けると繰り返されます。`KeyRepeatDelay` と `KeyRepeatInterval` で調整できます。文字キーの繰り返しは OS の設定に従います。
 
 ### 複数行の入力
 
