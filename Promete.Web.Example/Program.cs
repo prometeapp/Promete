@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices.JavaScript;
 using System.Web;
 using Promete;
+using Promete.Assets;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Input;
@@ -44,6 +45,7 @@ public static partial class Program
             .Use<ConsoleLayer>()
             .Use<BackButton>()
             .Use<ViewportSize>()
+            .UseAssets(typeof(Program).Assembly, o => o.MountFolder("/assets", "assets"))
             .BuildWithWeb(WindowOptions.Default with { Title = "Promete.Web Example" });
 
         switch (query["scene"])
