@@ -41,6 +41,11 @@ public sealed class AssetManager : IDisposable
     /// </summary>
     private const float GlyphSourceProbeSize = 16;
 
+    /// <summary>
+    /// 音声の形式を判定するために読む、先頭のバイト数。<see cref="IAudioDecoder.CanDecode"/> に渡されます。
+    /// </summary>
+    private const int AudioHeaderLength = 64;
+
     private readonly object _lock = new();
     private readonly Dictionary<CacheKey, Entry> _cache = new();
     private readonly object _globalOwner = new();
@@ -472,7 +477,17 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public IAudioSource LoadAudio(string path, AssetScope scope)
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var key = new CacheKey(CacheKind.Audio, normalized, null);
+        return GetOrLoad(
+            key,
+            owner,
+            () => ReadWith(normalized, stream => DecodeAudio(normalized, stream), leaveOpen: true),
+            ReleaseDisposable
+        );
     }
 
     /// <summary>
@@ -1247,6 +1262,48 @@ public sealed class AssetManager : IDisposable
         {
             texture.Dispose();
         }
+    }
+
+    /// <summary>
+    /// 先頭のバイト列で、登録されたデコーダーを順に判定し、最初に判定が通ったものでデコードします。
+    /// </summary>
+    /// <remarks>
+    /// デコーダーに渡したストリームは、閉じる責任がデコーダーに移るため、ここでは閉じません。
+    /// 判定やデコードが例外になった場合と、どのデコーダーも判定が通らなかった場合は、呼び出し元の <see cref="ReadWith{T}"/> がストリームを閉じます。
+    /// </remarks>
+    /// <param name="normalized">正規化した論理パス。</param>
+    /// <param name="stream">先頭に位置したストリーム。</param>
+    /// <returns>デコードした音声。</returns>
+    /// <exception cref="NotSupportedException">どのデコーダーも判定が通らなかった場合。</exception>
+    private IAudioSource DecodeAudio(string normalized, Stream stream)
+    {
+        var header = new byte[AudioHeaderLength];
+        var length = 0;
+        while (length < header.Length)
+        {
+            var read = stream.Read(header, length, header.Length - length);
+            if (read == 0)
+            {
+                break;
+            }
+
+            length += read;
+        }
+
+        stream.Seek(0, SeekOrigin.Begin);
+
+        var headerSpan = header.AsSpan(0, length);
+        foreach (var decoder in _audioDecoders)
+        {
+            if (decoder.CanDecode(normalized, headerSpan))
+            {
+                return decoder.Decode(stream);
+            }
+        }
+
+        throw new NotSupportedException(
+            $"この形式の音声をデコードできるデコーダーがありません: '{normalized}'"
+        );
     }
 
     /// <summary>
