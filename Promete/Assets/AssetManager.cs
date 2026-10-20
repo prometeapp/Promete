@@ -43,7 +43,10 @@ public sealed class AssetManager : IDisposable
             {
                 FileSystem.Dispose();
             }
-            catch { }
+            catch
+            {
+                // Dispose 側の例外は捨てる。元の例外を優先して再スローする
+            }
 
             throw;
         }
