@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 
 namespace Promete.Assets;
@@ -18,17 +17,30 @@ public class AssetPathCaseMismatchException : FileNotFoundException
     /// <param name="requestedPath">要求した論理パス。</param>
     /// <param name="actualPath">大文字・小文字を無視すると一致する、実際の論理パス。</param>
     public AssetPathCaseMismatchException(string requestedPath, string actualPath)
+        : base(CreateMessage(requestedPath, actualPath), requestedPath)
     {
-        throw new NotImplementedException();
+        RequestedPath = requestedPath;
+        ActualPath = actualPath;
     }
 
     /// <summary>
     /// 要求した論理パスを取得します。
     /// </summary>
-    public string RequestedPath => throw new NotImplementedException();
+    public string RequestedPath { get; }
 
     /// <summary>
     /// 大文字・小文字を無視すると一致する、実際の論理パスを取得します。
     /// </summary>
-    public string ActualPath => throw new NotImplementedException();
+    public string ActualPath { get; }
+
+    /// <summary>
+    /// 利用者向けのエラーメッセージを組み立てます。
+    /// </summary>
+    /// <param name="requestedPath">要求した論理パス。</param>
+    /// <param name="actualPath">実際の論理パス。</param>
+    /// <returns>エラーメッセージ。</returns>
+    private static string CreateMessage(string requestedPath, string actualPath)
+    {
+        return $"'{requestedPath}' が見つかりません。'{actualPath}' はあります。アセットのパスは大文字・小文字を区別します。";
+    }
 }
