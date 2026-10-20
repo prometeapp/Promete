@@ -19,7 +19,17 @@ namespace Promete.Assets;
 /// &lt;EmbeddedResource Include="assets\x.png" LogicalName="assets/x.png" /&gt;
 /// </code>
 /// <para>
-/// 論理パスとして正しくない名前 (<c>\</c> を含むもの、正規化すると変わるもの) のリソースは無視します。
+/// 接頭辞はディレクトリとして扱います。<c>"pre"</c> と <c>"pre/"</c> と <c>"/pre/"</c> は同じ意味で、
+/// <c>"pre"</c> は <c>"prefix2/a.txt"</c> には一致しません。
+/// </para>
+/// <para>
+/// リソース名の先頭の <c>/</c> と <c>./</c> は取り除いてから照合します。接頭辞の後ろの部分は
+/// <see cref="AssetPath"/> の規則で正規化します (NFD は NFC になります)。正規化すると空になるものは無視します。
+/// 開くときは元のリソース名を使います。
+/// </para>
+/// <para>
+/// 接頭辞に一致するリソース名に <c>\</c> が含まれる場合や、正規化すると同じ論理パスになるリソースが複数ある場合は
+/// 構築時に <see cref="ArgumentException"/> を投げます。
 /// </para>
 /// </remarks>
 public sealed class EmbeddedResourceAssetSource : IAssetSource
@@ -35,10 +45,13 @@ public sealed class EmbeddedResourceAssetSource : IAssetSource
     /// <see cref="EmbeddedResourceAssetSource"/> の新しいインスタンスを初期化します。
     /// </summary>
     /// <param name="assembly">リソースを読み出すアセンブリ。</param>
-    /// <param name="resourcePrefix">対象にするリソース名の接頭辞。この接頭辞で始まるリソースだけを対象にし、接頭辞を取り除いた残りを論理パスにします。</param>
+    /// <param name="resourcePrefix">対象にするリソース名の接頭辞 (ディレクトリとして扱います)。この接頭辞で始まるリソースだけを対象にし、接頭辞を取り除いた残りを論理パスにします。</param>
     /// <param name="mountPoint">論理パスの前に付ける接頭辞。</param>
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
-    /// <exception cref="ArgumentException"><paramref name="mountPoint"/> が <c>\</c> を含む場合。</exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="resourcePrefix"/> または <paramref name="mountPoint"/> が <c>\</c> を含む場合。
+    /// 接頭辞に一致するリソース名に <c>\</c> が含まれる場合。正規化すると同じ論理パスになるリソースが複数ある場合。
+    /// </exception>
     public EmbeddedResourceAssetSource(
         Assembly assembly,
         string resourcePrefix = "",
@@ -49,25 +62,39 @@ public sealed class EmbeddedResourceAssetSource : IAssetSource
         ArgumentNullException.ThrowIfNull(resourcePrefix);
 
         _assembly = assembly;
+        var prefix = ToDirectoryPrefix(resourcePrefix);
         var normalizedMountPoint = AssetPath.NormalizeDirectory(mountPoint);
 
         foreach (var resourceName in assembly.GetManifestResourceNames())
         {
-            if (!resourceName.StartsWith(resourcePrefix, StringComparison.Ordinal))
+            var name = AssetPath.NormalizeUnicode(TrimLeadingDotSlash(resourceName));
+            if (!name.StartsWith(prefix, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            var rest = resourceName[resourcePrefix.Length..];
-            if (!TryNormalizeResourcePath(rest, out var logicalRest))
+            if (name.Contains('\\'))
+            {
+                throw new ArgumentException(
+                    $"リソース名 '{resourceName}' に \\ が含まれています。LogicalName では / を使ってください (Windows の %(RelativeDir) は \\ 区切りです)。"
+                );
+            }
+
+            var rest = AssetPath.NormalizeDirectory(name[prefix.Length..]);
+            if (rest.Length == 0)
             {
                 continue;
             }
 
             var logicalPath =
-                normalizedMountPoint.Length == 0
-                    ? logicalRest
-                    : normalizedMountPoint + "/" + logicalRest;
+                normalizedMountPoint.Length == 0 ? rest : normalizedMountPoint + "/" + rest;
+            if (_resources.TryGetValue(logicalPath, out var existing))
+            {
+                throw new ArgumentException(
+                    $"リソース '{existing}' と '{resourceName}' は正規化すると同じ論理パス '{logicalPath}' になります。"
+                );
+            }
+
             _resources[logicalPath] = resourceName;
         }
     }
@@ -136,23 +163,40 @@ public sealed class EmbeddedResourceAssetSource : IAssetSource
     }
 
     /// <summary>
-    /// リソース名の接頭辞を取り除いた部分が、正規化しても変わらない有効な論理パスかどうかを判定します。
+    /// 接頭辞を論理パスのディレクトリ形式 (末尾に <c>/</c> を付けたもの、空の場合は空文字列) に変換します。
     /// </summary>
-    /// <param name="rest">接頭辞を取り除いたリソース名。</param>
-    /// <param name="normalized">有効な場合の正規化済みパス。</param>
-    /// <returns>有効な場合は <see langword="true"/>。</returns>
-    private static bool TryNormalizeResourcePath(string rest, out string normalized)
+    /// <param name="resourcePrefix">リソース名の接頭辞。</param>
+    /// <returns>照合に使う接頭辞。</returns>
+    private static string ToDirectoryPrefix(string resourcePrefix)
     {
-        try
+        var normalized = AssetPath.NormalizeDirectory(resourcePrefix);
+        return normalized.Length == 0 ? string.Empty : normalized + "/";
+    }
+
+    /// <summary>
+    /// リソース名の先頭にある <c>/</c> と <c>./</c> を取り除きます。
+    /// </summary>
+    /// <param name="resourceName">リソース名。</param>
+    /// <returns>取り除いた後の名前。</returns>
+    private static string TrimLeadingDotSlash(string resourceName)
+    {
+        var start = 0;
+        while (start < resourceName.Length)
         {
-            normalized = AssetPath.Normalize(rest);
-        }
-        catch (ArgumentException)
-        {
-            normalized = string.Empty;
-            return false;
+            if (resourceName[start] == '/')
+            {
+                start++;
+            }
+            else if (string.CompareOrdinal(resourceName, start, "./", 0, 2) == 0)
+            {
+                start += 2;
+            }
+            else
+            {
+                break;
+            }
         }
 
-        return normalized == rest;
+        return resourceName[start..];
     }
 }
