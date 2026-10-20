@@ -312,4 +312,26 @@ public sealed class UseAssetsTests : IDisposable
         fs.Sources.Should().Equal(source);
         fs.Exists("a.txt").Should().BeTrue();
     }
+
+    [Fact]
+    public void MountFailure_WhenRollbackDisposeThrows_ShouldRethrowOriginalException()
+    {
+        var throwing = new DelegateAssetSource
+        {
+            OnDispose = () => throw new IOException("rollback failure"),
+        };
+        var missing = Path.Combine(_dir.Path, "missing");
+        using var app = PrometeApp
+            .Create()
+            .UseAssets(TestAssembly, o => o.Mount(throwing).MountFolder(missing))
+            .BuildWithHeadless();
+
+        var act = () => app.GetPlugin<AssetManager>();
+
+        act.Should()
+            .Throw<DirectoryNotFoundException>(
+                "ロールバックの Dispose の例外で、元の例外を隠さないはず"
+            );
+        throwing.DisposeCount.Should().Be(1);
+    }
 }

@@ -119,4 +119,28 @@ public class EmbeddedResourceAssetSourceNamingTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Theory]
+    [InlineData(@"pre\a.txt")]
+    [InlineData(@"pre\sub\a.txt")]
+    [InlineData(@"/pre\a.txt")]
+    public void NameWithBackslashRightAfterPrefix_ShouldThrow(string resourceName)
+    {
+        // %(RelativeDir) を使うと、接頭辞の直後の区切りも \ になる。接頭辞の照合で落とさず、例外にするはず
+        var assembly = new FakeResourceAssembly((resourceName, "a"));
+
+        var act = () => new EmbeddedResourceAssetSource(assembly, "pre");
+
+        act.Should().Throw<ArgumentException>().Which.Message.Should().Contain(resourceName);
+    }
+
+    [Fact]
+    public void NameWithBackslash_SimilarButDifferentPrefix_ShouldBeIgnored()
+    {
+        var assembly = new FakeResourceAssembly(("pre/a.txt", "a"), (@"prefix\b.txt", "b"));
+
+        var act = () => new EmbeddedResourceAssetSource(assembly, "pre");
+
+        act.Should().NotThrow(@"\ を / に読み替えても接頭辞 pre/ に一致しない名前は対象外のはず");
+    }
 }
