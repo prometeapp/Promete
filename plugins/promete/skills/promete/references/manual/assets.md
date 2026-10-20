@@ -190,7 +190,7 @@ o.MountFolder("mod_a", "assets")  // 先に書く
 `Include` はファイルの場所なので、`\` のままで構いません。一方、`LogicalName` の区切りは必ず `/` にしてください。
 
 :::caution
-`LogicalName` に `%(RelativeDir)` や `%(RecursiveDir)` をそのまま使うと、Windows では区切りが `\` になります。接頭辞に一致する名前に `\` が含まれていると、`MountEmbeddedResources` を使ったときに `ArgumentException` が発生します。`LogicalName` は、`/` で書いた名前を指定してください。
+`LogicalName` に `%(RelativeDir)` や `%(RecursiveDir)` をそのまま使うと、Windows では区切りが `\` になります。接頭辞に一致する名前に `\` が含まれていると、`MountEmbeddedResources` を使ったときに `ArgumentException` が発生します。接頭辞の直後が `\` の名前（たとえば `assets\x.png`）も、接頭辞に一致するので同じく `ArgumentException` になります。`LogicalName` は、`/` で書いた名前を指定してください。
 :::
 
 次に、アプリの作成時にマウントします。
@@ -208,6 +208,10 @@ var app = PrometeApp.Create()
 ```
 
 `resourcePrefix` で始まるリソース名だけを対象にし、その接頭辞を取り除いた残りを、`mountPoint` の下に置きます。上の例では、リソース `assets/x.png` が論理パス `assets/x.png` になります。
+
+:::tip
+`resourcePrefix` は指定することをおすすめします。空のままにすると、アセンブリ内のすべてのリソースが対象になります。そのため、無関係なリソースの名前に `\` が1つでも含まれていると、そのリソースも対象になって `ArgumentException` が発生し、マウント全体が失敗します。
+:::
 
 接頭辞は、フォルダとして扱います。`"assets"` と `"assets/"` は同じ意味で、`"assets"` は `assets2/x.png` には一致しません。
 
