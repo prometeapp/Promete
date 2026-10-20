@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Promete.Assets;
 
@@ -30,7 +32,13 @@ public static class AssetPath
     /// <exception cref="ArgumentException"><paramref name="path"/> が <c>\</c> を含む場合や、正規化した結果が空になる場合。</exception>
     public static string Normalize(string path)
     {
-        throw new NotImplementedException();
+        var normalized = NormalizeDirectory(path);
+        if (normalized.Length == 0)
+        {
+            throw new ArgumentException("ファイルのパスは空にできません。", nameof(path));
+        }
+
+        return normalized;
     }
 
     /// <summary>
@@ -42,7 +50,37 @@ public static class AssetPath
     /// <exception cref="ArgumentException"><paramref name="path"/> が <c>\</c> を含む場合。</exception>
     public static string NormalizeDirectory(string path)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(path);
+        if (path.Contains('\\'))
+        {
+            throw new ArgumentException(
+                "論理パスの区切り文字は '/' のみ使えます。'\\' は使えません。",
+                nameof(path)
+            );
+        }
+
+        var segments = new List<string>();
+        foreach (var segment in NormalizeUnicode(path).Split('/'))
+        {
+            if (segment.Length == 0 || segment == ".")
+            {
+                continue;
+            }
+
+            if (segment == "..")
+            {
+                if (segments.Count > 0)
+                {
+                    segments.RemoveAt(segments.Count - 1);
+                }
+
+                continue;
+            }
+
+            segments.Add(segment);
+        }
+
+        return string.Join('/', segments);
     }
 
     /// <summary>
@@ -55,6 +93,83 @@ public static class AssetPath
     /// <exception cref="ArgumentException"><paramref name="pattern"/> が <c>/</c> または <c>\</c> を含む場合。</exception>
     public static bool IsMatch(string fileName, string pattern)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(fileName);
+        ArgumentNullException.ThrowIfNull(pattern);
+        if (pattern.Contains('/') || pattern.Contains('\\'))
+        {
+            throw new ArgumentException(
+                "パターンに区切り文字 '/' や '\\' は使えません。",
+                nameof(pattern)
+            );
+        }
+
+        return WildcardMatch(NormalizeUnicode(fileName), NormalizeUnicode(pattern));
+    }
+
+    /// <summary>
+    /// 文字列を NFC に正規化します。ASCII だけの文字列は走査を省きそのまま返します。
+    /// </summary>
+    /// <param name="value">正規化する文字列。</param>
+    /// <returns>NFC に正規化された文字列。</returns>
+    internal static string NormalizeUnicode(string value)
+    {
+        var isAscii = true;
+        foreach (var c in value)
+        {
+            if (c > 0x7F)
+            {
+                isAscii = false;
+                break;
+            }
+        }
+
+        return isAscii ? value : value.Normalize(NormalizationForm.FormC);
+    }
+
+    /// <summary>
+    /// <c>*</c> と <c>?</c> を含むパターンと、序数比較で文字列を照合します。
+    /// </summary>
+    /// <param name="name">照合する文字列。</param>
+    /// <param name="pattern">パターン。</param>
+    /// <returns>一致する場合は <see langword="true"/>。</returns>
+    private static bool WildcardMatch(string name, string pattern)
+    {
+        var n = 0;
+        var p = 0;
+        var starP = -1;
+        var starN = 0;
+
+        while (n < name.Length)
+        {
+            if (
+                p < pattern.Length
+                && (pattern[p] == '?' || (pattern[p] != '*' && pattern[p] == name[n]))
+            )
+            {
+                n++;
+                p++;
+            }
+            else if (p < pattern.Length && pattern[p] == '*')
+            {
+                starP = p++;
+                starN = n;
+            }
+            else if (starP >= 0)
+            {
+                p = starP + 1;
+                n = ++starN;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        while (p < pattern.Length && pattern[p] == '*')
+        {
+            p++;
+        }
+
+        return p == pattern.Length;
     }
 }
