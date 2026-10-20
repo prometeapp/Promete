@@ -42,6 +42,10 @@ public sealed class AssetManager : IDisposable
     private readonly PrometeApp _app;
     private readonly IAudioDecoder[] _audioDecoders;
     private readonly ConcurrentQueue<Action> _pendingReleases = new();
+    private readonly Stack<SceneScope> _constructingScopes = new();
+    private readonly Dictionary<Scene, SceneScope> _sceneScopes = new(
+        ReferenceEqualityComparer.Instance
+    );
     private int _disposed;
     private int _flushScheduled;
 
@@ -90,6 +94,9 @@ public sealed class AssetManager : IDisposable
 
             throw;
         }
+
+        // シーンの生成と破棄を受け取り、シーンのスコープを作る
+        app.AddSceneLifecycleHook(new SceneScopeHook(this));
     }
 
     /// <summary>
@@ -969,22 +976,60 @@ public sealed class AssetManager : IDisposable
     }
 
     /// <summary>
-    /// スコープを、所有者を表すオブジェクトに変換します。<see cref="AssetScope.Scene"/> は後の変更で対応します。
+    /// スコープを、所有者を表すオブジェクトに変換します。
     /// </summary>
     /// <param name="scope">変換するスコープ。</param>
     /// <returns>所有者を表すオブジェクト。</returns>
-    /// <exception cref="InvalidOperationException"><see cref="AssetScope.Scene"/> を指定した場合 (未対応)。</exception>
+    /// <exception cref="InvalidOperationException"><see cref="AssetScope.Scene"/> を、メインスレッド以外から、またはシーンが無いときに指定した場合。</exception>
     /// <exception cref="ArgumentOutOfRangeException">未知の <see cref="AssetScope"/> の値の場合。</exception>
     private object ResolveOwner(AssetScope scope)
     {
         return scope switch
         {
             AssetScope.Global => _globalOwner,
-            AssetScope.Scene => throw new InvalidOperationException(
-                "AssetScope.Scene は、まだ対応していません。"
-            ),
+            AssetScope.Scene => ResolveSceneOwner(),
             _ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null),
         };
+    }
+
+    /// <summary>
+    /// <see cref="AssetScope.Scene"/> の所有者を求めます。生成中のシーンがあればそれを、無ければ現在のシーンを指します。
+    /// </summary>
+    /// <remarks>
+    /// 生成中のシーンを優先するのは、コンストラクタ (フィールド初期化子や DI の解決を含む) で読んだものを、生成中のシーンに帰属させるためです。
+    /// 遷移の途中では現在のシーンが古いことがあるため、生成中のものが無いときだけ現在のシーンを見ます。
+    /// </remarks>
+    /// <returns>所有者を表すオブジェクト。</returns>
+    /// <exception cref="InvalidOperationException">メインスレッド以外から呼んだ場合、またはシーンが無い (スコープが解放済み) 場合。</exception>
+    private object ResolveSceneOwner()
+    {
+        if (!_app.IsMainThread())
+        {
+            throw new InvalidOperationException(
+                "AssetScope.Scene はメインスレッドからしか指定できません。"
+            );
+        }
+
+        object? owner = null;
+        lock (_lock)
+        {
+            if (_constructingScopes.TryPeek(out var constructing))
+            {
+                owner = constructing;
+            }
+            else if (
+                _app.CurrentScene is { } current
+                && _sceneScopes.TryGetValue(current, out var scope)
+            )
+            {
+                owner = scope;
+            }
+        }
+
+        return owner
+            ?? throw new InvalidOperationException(
+                "シーンが無いときに AssetScope.Scene は指定できません。シーンに関係しないアセットには AssetScope.Global を使ってください。"
+            );
     }
 
     /// <summary>
@@ -1232,6 +1277,78 @@ public sealed class AssetManager : IDisposable
     /// キャッシュのキーです。(種類, 正規化した論理パス, オプション) の組で同一性を決めます。
     /// </summary>
     private readonly record struct CacheKey(CacheKind Kind, string Path, object? Options);
+
+    /// <summary>
+    /// シーンのスコープです。中身は持たず、参照の同一性だけで所有者を表します。
+    /// </summary>
+    private sealed class SceneScope { }
+
+    /// <summary>
+    /// シーンの生成と破棄を受け取り、シーンごとの <see cref="SceneScope"/> を作って解放するフックです。
+    /// </summary>
+    private sealed class SceneScopeHook(AssetManager manager) : ISceneLifecycleHook
+    {
+        /// <summary>
+        /// 生成を始めるシーンのスコープを、生成中のスタックに積みます。
+        /// </summary>
+        public void OnSceneConstructing()
+        {
+            lock (manager._lock)
+            {
+                manager._constructingScopes.Push(new SceneScope());
+            }
+        }
+
+        /// <summary>
+        /// 生成が終わったシーンに、生成中のスコープを結び付けます。
+        /// </summary>
+        /// <param name="scene">生成されたシーン。</param>
+        public void OnSceneConstructed(Scene scene)
+        {
+            lock (manager._lock)
+            {
+                if (manager._constructingScopes.TryPop(out var scope))
+                {
+                    manager._sceneScopes[scene] = scope;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 生成に失敗したシーンのスコープを、その場で解放します。
+        /// </summary>
+        public void OnSceneConstructionFailed()
+        {
+            List<Entry> released = [];
+            lock (manager._lock)
+            {
+                if (manager._constructingScopes.TryPop(out var scope))
+                {
+                    manager.DetachOwners(_ => true, scope, released);
+                }
+            }
+
+            manager.ReleaseEntries(released);
+        }
+
+        /// <summary>
+        /// 使われなくなったシーンのスコープを外し、そのスコープだけが所有していたアセットを解放します。
+        /// </summary>
+        /// <param name="scene">使われなくなったシーン。</param>
+        public void OnSceneReleased(Scene scene)
+        {
+            List<Entry> released = [];
+            lock (manager._lock)
+            {
+                if (manager._sceneScopes.Remove(scene, out var scope))
+                {
+                    manager.DetachOwners(_ => true, scope, released);
+                }
+            }
+
+            manager.ReleaseEntries(released);
+        }
+    }
 
     /// <summary>
     /// 矩形の並びとオプションのキーです。矩形は順序と各要素の値 (左上と大きさ) で比べます。
