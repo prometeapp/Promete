@@ -859,6 +859,32 @@ public sealed class PrometeApp : IDisposable
         }
 
         /// <summary>
+        /// ファクトリを使ってプラグインを追加します。アセンブリ内部の拡張メソッドから使います。
+        /// </summary>
+        /// <typeparam name="T">プラグインの型。<see cref="IDisposable"/> などを実装していれば、アプリの開始・破棄の対象になります。</typeparam>
+        /// <param name="factory">インスタンスを作る処理。</param>
+        /// <returns>このビルダーインスタンス。</returns>
+        internal PrometeAppBuilder UseFactory<T>(Func<IServiceProvider, T> factory)
+            where T : class
+        {
+            ArgumentNullException.ThrowIfNull(factory);
+
+            _services.AddSingleton(factory);
+            CheckAndAddPluginTypes(typeof(T));
+            return this;
+        }
+
+        /// <summary>
+        /// 指定した型のサービスが既に登録されているかどうかを返します。
+        /// </summary>
+        /// <typeparam name="T">確認する型。</typeparam>
+        /// <returns>登録されていれば <see langword="true"/>。</returns>
+        internal bool IsRegistered<T>()
+        {
+            return _services.Any(descriptor => descriptor.ServiceType == typeof(T));
+        }
+
+        /// <summary>
         /// プラグインが特殊なインターフェイスを実装しているかどうかを確認し、そうであればリストに追加します。
         /// </summary>
         private void CheckAndAddPluginTypes(Type t)

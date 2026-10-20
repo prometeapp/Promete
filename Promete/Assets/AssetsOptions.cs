@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Promete.Assets;
@@ -12,6 +13,13 @@ namespace Promete.Assets;
 /// </remarks>
 public sealed class AssetsOptions
 {
+    private readonly List<(Func<IAssetSource> Factory, int Priority)> _mounts = [];
+
+    /// <summary>
+    /// 指定された順に並んだ、マウントの要求。ソースの作成は <see cref="AssetManager"/> が行います。
+    /// </summary>
+    internal IReadOnlyList<(Func<IAssetSource> Factory, int Priority)> Mounts => _mounts;
+
     /// <summary>
     /// 実際のフォルダをマウントします。
     /// </summary>
@@ -23,7 +31,11 @@ public sealed class AssetsOptions
     /// <remarks>フォルダが存在しない場合は、マウントする時点で <see cref="System.IO.DirectoryNotFoundException"/> がスローされます。</remarks>
     public AssetsOptions MountFolder(string physicalPath, string mountPoint = "", int priority = 0)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(physicalPath);
+        ArgumentNullException.ThrowIfNull(mountPoint);
+
+        _mounts.Add((() => new FolderAssetSource(physicalPath, mountPoint), priority));
+        return this;
     }
 
     /// <summary>
@@ -42,7 +54,14 @@ public sealed class AssetsOptions
         int priority = 0
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentNullException.ThrowIfNull(resourcePrefix);
+        ArgumentNullException.ThrowIfNull(mountPoint);
+
+        _mounts.Add(
+            (() => new EmbeddedResourceAssetSource(assembly, resourcePrefix, mountPoint), priority)
+        );
+        return this;
     }
 
     /// <summary>
@@ -54,6 +73,9 @@ public sealed class AssetsOptions
     /// <exception cref="ArgumentNullException"><paramref name="source"/> が <see langword="null"/> の場合。</exception>
     public AssetsOptions Mount(IAssetSource source, int priority = 0)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(source);
+
+        _mounts.Add((() => source, priority));
+        return this;
     }
 }

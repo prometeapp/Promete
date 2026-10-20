@@ -29,7 +29,7 @@ public static class AssetsAppBuilderExtension
         Action<AssetsOptions>? configure = null
     )
     {
-        throw new NotImplementedException();
+        return builder.UseAssetsWithEntryAssembly(Assembly.GetEntryAssembly, configure);
     }
 
     /// <summary>
@@ -47,7 +47,9 @@ public static class AssetsAppBuilderExtension
         Action<AssetsOptions>? configure = null
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(assembly);
+
+        return Register(builder, assembly, configure);
     }
 
     /// <summary>
@@ -59,6 +61,37 @@ public static class AssetsAppBuilderExtension
         Action<AssetsOptions>? configure
     )
     {
-        throw new NotImplementedException();
+        // アセンブリを総当たりで探すと、別の実行プロジェクトの属性を拾ってしまうため、エントリアセンブリだけを見る
+        var entryAssembly = getEntryAssembly();
+        if (entryAssembly is null)
+        {
+            throw new InvalidOperationException(
+                "エントリアセンブリを取得できません。UseAssets(Assembly) で、Assets の属性を持つアセンブリを指定してください。"
+            );
+        }
+
+        return Register(builder, entryAssembly, configure);
+    }
+
+    /// <summary>
+    /// <see cref="AssetManager"/> をビルダーに登録します。2 回目の呼び出しは例外にします。
+    /// </summary>
+    private static PrometeApp.PrometeAppBuilder Register(
+        PrometeApp.PrometeAppBuilder builder,
+        Assembly assembly,
+        Action<AssetsOptions>? configure
+    )
+    {
+        if (builder.IsRegistered<AssetManager>())
+        {
+            throw new InvalidOperationException(
+                "UseAssets は 1 つのアプリに対して 1 回だけ呼び出せます。"
+            );
+        }
+
+        var options = new AssetsOptions();
+        configure?.Invoke(options);
+
+        return builder.UseFactory(_ => new AssetManager(assembly, options));
     }
 }

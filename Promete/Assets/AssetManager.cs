@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 
 namespace Promete.Assets;
 
@@ -14,6 +15,8 @@ namespace Promete.Assets;
 /// </remarks>
 public sealed class AssetManager : IDisposable
 {
+    private int _disposed;
+
     /// <summary>
     /// <see cref="AssetManager"/> の新しいインスタンスを初期化し、設定に従ってソースをマウントします。
     /// </summary>
@@ -22,19 +25,40 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="DirectoryNotFoundException">マウントするフォルダが存在しない場合。</exception>
     internal AssetManager(Assembly? assembly, AssetsOptions options)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(options);
+
+        // assembly は Phase 4 で属性を読むために使う。Phase 1 では属性がまだ無いので参照しない
+        FileSystem = new AssetFileSystem();
+        try
+        {
+            foreach (var (factory, priority) in options.Mounts)
+            {
+                FileSystem.Mount(factory(), priority);
+            }
+        }
+        catch
+        {
+            FileSystem.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
     /// アセットを読み出す仮想ファイルシステムを取得します。
     /// </summary>
-    public AssetFileSystem FileSystem => throw new NotImplementedException();
+    public AssetFileSystem FileSystem { get; }
 
     /// <summary>
     /// <see cref="FileSystem"/> を破棄します。2 回目以降の呼び出しは何もしません。
     /// </summary>
     public void Dispose()
     {
-        throw new NotImplementedException();
+        // アプリの Dispose とDI コンテナの破棄の両方から呼ばれるため、1 回だけ実行する
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        FileSystem.Dispose();
     }
 }
