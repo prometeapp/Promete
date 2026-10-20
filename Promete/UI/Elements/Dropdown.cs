@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Drawing;
 using Promete.Nodes;
 using Promete.UI.Styles;
@@ -18,7 +20,7 @@ public class Dropdown : UIElement
 {
     private const int ListPadding = 2;
 
-    private readonly List<string> _items = [];
+    private readonly ObservableCollection<string> _items = [];
     private readonly Text _label;
     private IUIStyle<Dropdown> _style;
     private string _placeholder;
@@ -38,12 +40,17 @@ public class Dropdown : UIElement
         Add(_label);
         Size = (200, 36);
         Clicked += Open;
+        _items.CollectionChanged += OnItemsChanged;
     }
 
     /// <summary>選択された項目が変わったときに発火します。引数は新しい選択位置です (未選択は -1)。</summary>
     public event Action<int>? SelectionChanged;
 
-    /// <summary>項目の一覧。開いている間に変更しても、開いている一覧には反映されません。</summary>
+    /// <summary>
+    /// 項目の一覧。開いている間に変更すると、一覧は閉じます (行の位置と項目がずれて、別の項目が選ばれるのを防ぐため)。
+    /// 項目を挿入・削除して位置がずれても、選択中の項目はそのまま選ばれたままです (選択位置は追従します)。
+    /// 選択中の項目を取り除くと、未選択になります。
+    /// </summary>
     public IList<string> Items => _items;
 
     /// <summary>選択されている項目の位置を取得または設定します。未選択は -1 で、範囲外の値は -1 になります。</summary>
@@ -266,6 +273,22 @@ public class Dropdown : UIElement
     {
         SelectedIndex = index;
         Close();
+    }
+
+    private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        // 開いている一覧の行は、開いた時点の位置を覚えているので、項目が変わったら閉じる
+        Close();
+
+        // 挿入・削除で選択位置がずれても、同じ項目を選んだままにする。選択中の項目が取り除かれた場合は未選択に戻す
+        var previous = _selectedIndex;
+        _selectedIndex = SelectionAdjuster.Adjust(_selectedIndex, e);
+        if (_selectedIndex == previous)
+            return;
+
+        NotifyStyleDirty();
+        if (_selectedIndex < 0)
+            SelectionChanged?.Invoke(-1);
     }
 
     private void OnPopupClosed()

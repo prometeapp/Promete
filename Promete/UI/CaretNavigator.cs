@@ -1,3 +1,4 @@
+using System;
 using Promete.Graphics.Fonts;
 
 namespace Promete.UI;
@@ -102,6 +103,9 @@ internal static class CaretNavigator
             return index;
 
         var line = layout.Lines[target];
-        return layout.HitTest(new Vector(desiredX, line.Top + line.Height / 2f));
+        var hit = layout.HitTest(new Vector(desiredX, line.Top + line.Height / 2f));
+
+        // 行末より右を指した場合に、折り返しで続く次の行の先頭へ入ってしまわないよう、行末で止める
+        return Math.Min(hit, LineEnd(layout, target));
     }
 }

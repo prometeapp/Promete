@@ -346,10 +346,10 @@ popup.ShowAt(uiManager, mouse.Position);
 | `Show(UIManager, UIElement)` | アンカーの近くに表示 |
 | `ShowAt(UIManager, Vector)` | 画面上の位置を基準に表示 |
 | `Close()` | 閉じる |
-| `Opened` / `Closed` | 表示された / 閉じられたときに発火 |
+| `Opened` / `Closed` | 表示された / 閉じられたときに発火（シーンの切り替えで閉じられた場合は、`Closed` は発火しない） |
 
 :::note
-中身が `AvailableSize` を超える場合、画面からはみ出します。項目が多い場合は、[`ScrollView`](#scrollview) で包んで高さを制限してください。
+中身が `AvailableSize` を超える場合、ポップアップは画面内に収まるようにずらして表示されるため、アンカーに重なります。項目が多い場合は、[`ScrollView`](#scrollview) で包んで高さを制限してください。
 :::
 
 :::note
@@ -387,7 +387,7 @@ Root.Add(language);
 
 | プロパティ | 型 | 説明 |
 |---|---|---|
-| `Items` | `IList<string>` | 項目の一覧（`AddItem` でも追加できる） |
+| `Items` | `IList<string>` | 項目の一覧（`AddItem` でも追加できる）。開いている間に変更すると、一覧は閉じる。選択中の項目より前に挿入・削除しても、選択は同じ項目に追従し、選択中の項目を取り除くと未選択になる |
 | `SelectedIndex` | `int` | 選択中の項目の位置。未選択は `-1` |
 | `SelectedItem` | `string?` | 選択中の項目。未選択は `null` |
 | `Placeholder` | `string` | 未選択のときに表示する文字列 |

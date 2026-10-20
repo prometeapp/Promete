@@ -96,6 +96,12 @@ public class ProgressBar : UIElement
         }
     }
 
+    /// <summary>
+    /// 表示専用の要素なので、常に false を返し、クリックやホバーの対象になりません。
+    /// 重なっている下の要素への操作も、遮りません。
+    /// </summary>
+    public override bool HitTest(VectorInt point) => false;
+
     protected override void ApplyStyle(UIElementState state)
     {
         _style.Apply(this, state);

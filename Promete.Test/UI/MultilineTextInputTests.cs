@@ -291,6 +291,24 @@ public class MultilineTextInputTests : IDisposable
     }
 
     [Fact]
+    public void Up_ShouldReachTheFirstLine_FromTheEndOfAWrappedText()
+    {
+        // 2 行ともちょうど満杯になる長さ。2 行目の右端から上へ行くと、1 行目の右端を指す
+        var length = LongLength - 7 + (LongLength - 7);
+        _input.Text = new string('a', length);
+        _input.CursorPosition = length;
+        _h.Frame(2);
+        _input.TextNode.Layout.Lines.Count.Should().Be(2);
+        _input.CaretLocation.Y.Should().Be(6 + H);
+
+        _h.PressKey(KeyCode.Up);
+
+        // 行末で止まって 1 行目に入る (2 行目の先頭に入ってしまうと、もう上へ行けない)
+        _input.CaretLocation.Y.Should().Be(6);
+        _input.CursorPosition.Should().BeLessThan(length / 2);
+    }
+
+    [Fact]
     public void SingleLine_CaretShouldUseGlyphPositions_AndKeepItsVerticalMargins()
     {
         var input = new TextInput { Text = "abc" };

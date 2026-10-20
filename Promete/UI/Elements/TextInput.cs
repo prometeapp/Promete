@@ -24,6 +24,13 @@ public class TextInput : UIElement
     private readonly Text _textNode;
     private readonly Text _placeholderNode;
     private readonly Container _viewport = new();
+    private readonly KeyRepeater _backSpaceRepeater = new();
+    private readonly KeyRepeater _deleteRepeater = new();
+    private readonly KeyRepeater _leftRepeater = new();
+    private readonly KeyRepeater _rightRepeater = new();
+    private readonly KeyRepeater _upRepeater = new();
+    private readonly KeyRepeater _downRepeater = new();
+    private readonly KeyRepeater _enterRepeater = new();
     private string _text = "";
     private string _placeholder = "";
     private int _cursorPosition;
@@ -37,14 +44,6 @@ public class TextInput : UIElement
     private KinsokuMode _kinsokuMode = KinsokuMode.Standard;
     private VectorInt _lastSize;
     private IUIStyle<TextInput> _style;
-
-    private readonly KeyRepeater _backSpaceRepeater = new();
-    private readonly KeyRepeater _deleteRepeater = new();
-    private readonly KeyRepeater _leftRepeater = new();
-    private readonly KeyRepeater _rightRepeater = new();
-    private readonly KeyRepeater _upRepeater = new();
-    private readonly KeyRepeater _downRepeater = new();
-    private readonly KeyRepeater _enterRepeater = new();
 
     /// <summary>
     /// TextInput の新しいインスタンスを初期化します。

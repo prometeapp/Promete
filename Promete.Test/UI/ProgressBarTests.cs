@@ -21,6 +21,24 @@ public class ProgressBarTests
     }
 
     [Fact]
+    public void ProgressBar_ShouldNotBeHitTestable_AndNotBlockTheElementBelow()
+    {
+        using var h = new UITestHarness();
+        var below = new Button("below").Location(100, 100).Size(100, 30);
+        var clicks = 0;
+        below.Clicked += () => clicks++;
+        var bar = new ProgressBar().Location(100, 100).Size(100, 30);
+        bar.HitTest((110, 110)).Should().BeFalse();
+        h.App.GlobalForeground.Add(below);
+        h.App.GlobalForeground.Add(bar);
+        h.Frame(2);
+
+        h.Click(110, 110);
+
+        clicks.Should().Be(1);
+    }
+
+    [Fact]
     public void Value_ShouldBeClampedToRange()
     {
         var bar = new ProgressBar(0, 10);

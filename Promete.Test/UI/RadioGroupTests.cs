@@ -202,7 +202,40 @@ public class RadioGroupTests : IDisposable
     }
 
     [Fact]
-    public void RemovingEarlierItem_ShouldKeepSelectionIndexInRange()
+    public void InsertingOrRemovingBeforeTheSelection_ShouldKeepTheSameItemSelected()
+    {
+        _group.SelectedIndex = 1;
+        var raised = new List<int>();
+        _group.SelectionChanged += raised.Add;
+
+        _group.Items.Insert(0, "X");
+        _group.SelectedItem.Should().Be("中");
+        _group.SelectedIndex.Should().Be(2);
+        _group.GetRadioItem(2).IsSelected.Should().BeTrue();
+
+        _group.Items.RemoveAt(0);
+        _group.SelectedItem.Should().Be("中");
+        _group.SelectedIndex.Should().Be(1);
+        _group.GetRadioItem(1).IsSelected.Should().BeTrue();
+
+        raised.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ClearingItems_ShouldClearSelectionAndRaiseEvent()
+    {
+        _group.SelectedIndex = 1;
+        var raised = new List<int>();
+        _group.SelectionChanged += raised.Add;
+
+        _group.Items.Clear();
+
+        _group.SelectedIndex.Should().Be(-1);
+        raised.Should().Equal(-1);
+    }
+
+    [Fact]
+    public void RemovingALaterItem_ShouldKeepTheSelection()
     {
         _group.SelectedIndex = 0;
 

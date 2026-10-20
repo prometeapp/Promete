@@ -55,7 +55,11 @@ public class RadioGroup : UIElement
     /// <summary>選択された項目が変わったときに発火します。引数は新しい選択位置です (未選択は -1)。</summary>
     public event Action<int>? SelectionChanged;
 
-    /// <summary>項目の一覧。変更すると、項目の表示も更新されます。</summary>
+    /// <summary>
+    /// 項目の一覧。変更すると、項目の表示も更新されます。
+    /// 項目を挿入・削除して位置がずれても、選択中の項目はそのまま選ばれたままです (選択位置は追従します)。
+    /// 選択中の項目を取り除くと、未選択になります。
+    /// </summary>
     public IList<string> Items => _items;
 
     /// <summary>項目を並べる方向を取得または設定します。</summary>
@@ -154,15 +158,12 @@ public class RadioGroup : UIElement
 
     private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        // 挿入・削除で選択位置がずれても、同じ項目を選んだままにする。選択中の項目が取り除かれた場合は未選択に戻す
         var previous = _selectedIndex;
+        _selectedIndex = SelectionAdjuster.Adjust(_selectedIndex, e);
         RebuildItems();
-
-        // 項目が減って選択位置が範囲外になった場合は、未選択に戻す
-        if (_selectedIndex >= _items.Count)
-            _selectedIndex = -1;
-        SyncSelection();
-        if (_selectedIndex != previous)
-            SelectionChanged?.Invoke(_selectedIndex);
+        if (_selectedIndex < 0 && previous >= 0)
+            SelectionChanged?.Invoke(-1);
     }
 
     private void RebuildItems()

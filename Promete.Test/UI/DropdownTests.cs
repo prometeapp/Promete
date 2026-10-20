@@ -43,6 +43,91 @@ public class DropdownTests : IDisposable
     }
 
     [Fact]
+    public void ChangingItemsWhileOpen_ShouldCloseTheList_SoNoWrongItemIsPicked()
+    {
+        OpenByClick();
+        _dropdown.IsOpen.Should().BeTrue();
+
+        _dropdown.Items.Insert(0, "X");
+
+        _dropdown.IsOpen.Should().BeFalse();
+        _dropdown.SelectedIndex.Should().Be(-1);
+
+        // 開き直すと、新しい項目の並びで選べる
+        OpenByClick();
+        var (x, y) = RowCenter(1);
+        _h.Click(x, y);
+        _dropdown.SelectedItem.Should().Be("A");
+    }
+
+    [Fact]
+    public void RemovingTheSelectedItem_ShouldClearSelection_AndStillBeOpenable()
+    {
+        var raised = new List<int>();
+        _dropdown.SelectedIndex = 2;
+        _dropdown.SelectionChanged += raised.Add;
+
+        _dropdown.Items.RemoveAt(2);
+
+        _dropdown.SelectedIndex.Should().Be(-1);
+        _dropdown.SelectedItem.Should().BeNull();
+        raised.Should().Equal(-1);
+
+        OpenByClick();
+        _dropdown.IsOpen.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RemovingAnItemBeforeTheSelection_ShouldKeepTheSameItemSelected()
+    {
+        var raised = new List<int>();
+        _dropdown.SelectedIndex = 2;
+        _dropdown.SelectionChanged += raised.Add;
+
+        _dropdown.Items.RemoveAt(0);
+
+        // 選択中の項目 (C) はそのままで、位置だけが前にずれる
+        _dropdown.SelectedItem.Should().Be("C");
+        _dropdown.SelectedIndex.Should().Be(1);
+        raised.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void InsertingAnItemBeforeTheSelection_ShouldKeepTheSameItemSelected()
+    {
+        _dropdown.SelectedIndex = 1;
+
+        _dropdown.Items.Insert(0, "X");
+
+        _dropdown.SelectedItem.Should().Be("B");
+        _dropdown.SelectedIndex.Should().Be(2);
+    }
+
+    [Fact]
+    public void InsertingAnItemAfterTheSelection_ShouldNotMoveIt()
+    {
+        _dropdown.SelectedIndex = 0;
+
+        _dropdown.Items.Insert(2, "X");
+
+        _dropdown.SelectedItem.Should().Be("A");
+        _dropdown.SelectedIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public void ClearingItems_ShouldClearSelectionAndRaiseEvent()
+    {
+        var raised = new List<int>();
+        _dropdown.SelectedIndex = 1;
+        _dropdown.SelectionChanged += raised.Add;
+
+        _dropdown.Items.Clear();
+
+        _dropdown.SelectedIndex.Should().Be(-1);
+        raised.Should().Equal(-1);
+    }
+
+    [Fact]
     public void Constructor_ShouldSetDefaults()
     {
         var dropdown = new Dropdown();

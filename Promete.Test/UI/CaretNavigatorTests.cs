@@ -175,6 +175,31 @@ public class CaretNavigatorTests
     }
 
     [Fact]
+    public void MoveVertically_ShouldStopAtTheEndOfASoftWrappedLine_NotEnterTheNextLine()
+    {
+        var layout = Layout("aaaaaaaaaa", FiveChars);
+
+        // 末尾 (2行目の右端) から上へ。1行目の右端を指しても、2行目の先頭 (5) に入らない
+        var up = CaretNavigator.MoveVertically(layout, 10, CaretNavigator.GetX(layout, 10), -1);
+        up.Should().Be(4);
+        CaretNavigator.FindLine(layout, up).Should().Be(0);
+    }
+
+    [Fact]
+    public void MoveVertically_ShouldBeAbleToLeaveASoftWrappedLineRepeatedly()
+    {
+        var layout = Layout("aaaaaaaaaaaaaaa", FiveChars);
+        var x = CaretNavigator.GetX(layout, 15);
+
+        // 3 行を、下から順に上がっていける
+        var first = CaretNavigator.MoveVertically(layout, 15, x, -1);
+        var second = CaretNavigator.MoveVertically(layout, first, x, -1);
+
+        CaretNavigator.FindLine(layout, first).Should().Be(1);
+        CaretNavigator.FindLine(layout, second).Should().Be(0);
+    }
+
+    [Fact]
     public void MoveVertically_ShouldDoNothing_ForEmptyText()
     {
         CaretNavigator.MoveVertically(Layout(""), 0, 0, 1).Should().Be(0);

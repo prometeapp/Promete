@@ -215,4 +215,10 @@ public class UIDemoScene(Keyboard keyboard, UIManager uiManager, ConsoleLayer co
         if (keyboard.Escape.IsKeyDown && !uiManager.IsCancelConsumed)
             App.LoadScene<MainScene>();
     }
+
+    public override void OnDestroy()
+    {
+        // UIManager は他のシーンと共有されるので、このデモで変えた設定を戻す
+        uiManager.SpatialNavigation = false;
+    }
 }
