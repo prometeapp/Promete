@@ -958,6 +958,9 @@ public sealed class PrometeApp : IDisposable
         {
             // 描画ループはコマンドキューを前提とするため、バックエンドを問わず登録する
             _services.TryAddSingleton<RenderCommandQueue>();
+            // 利用者の IAudioDecoder は Build より前に登録されるため、列挙では標準のものより先に並ぶ
+            _services.AddSingleton<IAudioDecoder, WaveAudioDecoder>();
+            _services.AddSingleton<IAudioDecoder, VorbisAudioDecoder>();
             var app = new PrometeApp(_services, _pluginTypes, _sceneAssemblies);
             app.RegisterBackend(new T(), opts ?? WindowOptions.Default);
             return app;

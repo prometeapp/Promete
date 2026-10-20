@@ -16,7 +16,9 @@ public sealed class WaveAudioDecoder : IAudioDecoder
     /// <returns>デコードできる場合は <see langword="true"/>。</returns>
     public bool CanDecode(string path, ReadOnlySpan<byte> header)
     {
-        throw new NotImplementedException();
+        return header.Length >= 12
+            && header[..4].SequenceEqual("RIFF"u8)
+            && header.Slice(8, 4).SequenceEqual("WAVE"u8);
     }
 
     /// <summary>
@@ -26,6 +28,6 @@ public sealed class WaveAudioDecoder : IAudioDecoder
     /// <returns>デコードした音声。</returns>
     public IAudioSource Decode(Stream stream)
     {
-        throw new NotImplementedException();
+        return new WaveAudioSource(stream);
     }
 }

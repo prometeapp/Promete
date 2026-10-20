@@ -16,7 +16,7 @@ public sealed class VorbisAudioDecoder : IAudioDecoder
     /// <returns>デコードできる場合は <see langword="true"/>。</returns>
     public bool CanDecode(string path, ReadOnlySpan<byte> header)
     {
-        throw new NotImplementedException();
+        return header.Length >= 4 && header[..4].SequenceEqual("OggS"u8);
     }
 
     /// <summary>
@@ -27,6 +27,6 @@ public sealed class VorbisAudioDecoder : IAudioDecoder
     /// <returns>デコードした音声。</returns>
     public IAudioSource Decode(Stream stream)
     {
-        throw new NotImplementedException();
+        return new VorbisAudioSource(stream);
     }
 }
