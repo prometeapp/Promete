@@ -68,7 +68,10 @@ public sealed class EmbeddedResourceAssetSource : IAssetSource
         foreach (var resourceName in assembly.GetManifestResourceNames())
         {
             var name = AssetPath.NormalizeUnicode(TrimLeadingDotSlash(resourceName));
-            if (!name.StartsWith(prefix, StringComparison.Ordinal))
+
+            // 接頭辞の照合は \ を / に読み替えて行う。接頭辞の直後が \ でも対象に含めて、下の検査で例外にするため
+            var slashed = name.Replace('\\', '/');
+            if (!slashed.StartsWith(prefix, StringComparison.Ordinal))
             {
                 continue;
             }
