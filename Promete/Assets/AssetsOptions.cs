@@ -28,11 +28,16 @@ public sealed class AssetsOptions
     /// <param name="priority">優先度。大きいほど優先されます。</param>
     /// <returns>このインスタンス。</returns>
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
-    /// <remarks>フォルダが存在しない場合は、マウントする時点で <see cref="System.IO.DirectoryNotFoundException"/> がスローされます。</remarks>
+    /// <exception cref="ArgumentException"><paramref name="mountPoint"/> が <c>\</c> を含む場合。</exception>
+    /// <remarks>
+    /// フォルダが存在しない場合は、マウントする時点 (アプリの開始時) で <see cref="System.IO.DirectoryNotFoundException"/> がスローされます。
+    /// <paramref name="mountPoint"/> の誤りは、この呼び出し (構成時) で検出されます。
+    /// </remarks>
     public AssetsOptions MountFolder(string physicalPath, string mountPoint = "", int priority = 0)
     {
         ArgumentNullException.ThrowIfNull(physicalPath);
         ArgumentNullException.ThrowIfNull(mountPoint);
+        AssetPath.NormalizeDirectory(mountPoint);
 
         _mounts.Add((() => new FolderAssetSource(physicalPath, mountPoint), priority));
         return this;
@@ -47,6 +52,7 @@ public sealed class AssetsOptions
     /// <param name="priority">優先度。大きいほど優先されます。</param>
     /// <returns>このインスタンス。</returns>
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
+    /// <exception cref="ArgumentException"><paramref name="resourcePrefix"/> または <paramref name="mountPoint"/> が <c>\</c> を含む場合。</exception>
     public AssetsOptions MountEmbeddedResources(
         Assembly assembly,
         string resourcePrefix = "",
@@ -57,6 +63,8 @@ public sealed class AssetsOptions
         ArgumentNullException.ThrowIfNull(assembly);
         ArgumentNullException.ThrowIfNull(resourcePrefix);
         ArgumentNullException.ThrowIfNull(mountPoint);
+        AssetPath.NormalizeDirectory(resourcePrefix);
+        AssetPath.NormalizeDirectory(mountPoint);
 
         _mounts.Add(
             (() => new EmbeddedResourceAssetSource(assembly, resourcePrefix, mountPoint), priority)
