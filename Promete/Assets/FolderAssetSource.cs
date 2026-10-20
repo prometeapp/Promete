@@ -228,6 +228,24 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
     }
 
     /// <summary>
+    /// 一覧から、序数比較で一致し、かつ種類 (ディレクトリ / ファイル) も同じ要素を探します。
+    /// </summary>
+    /// <param name="listing">名前の一覧。</param>
+    /// <param name="segment">照合する名前 (NFC)。</param>
+    /// <param name="wantDirectory">ディレクトリを期待する場合は <see langword="true"/>。</param>
+    /// <param name="entry">見つかった要素。</param>
+    /// <returns>見つかった場合は <see langword="true"/>。</returns>
+    private static bool TryGetSameKind(
+        Dictionary<string, DirectoryEntry> listing,
+        string segment,
+        bool wantDirectory,
+        out DirectoryEntry entry
+    )
+    {
+        return listing.TryGetValue(segment, out entry) && entry.IsDirectory == wantDirectory;
+    }
+
+    /// <summary>
     /// 論理パス (正規化済み) を解決し、見つかったものが実在することを確かめます。
     /// </summary>
     /// <param name="normalizedPath">正規化済みの論理パス。</param>
@@ -304,24 +322,6 @@ public sealed class FolderAssetSource : IFileBackedAssetSource
         return caseMismatch
             ? new(ResolveStatus.CaseMismatch, current, string.Join('/', actualSegments))
             : new(ResolveStatus.Found, current, string.Empty);
-    }
-
-    /// <summary>
-    /// 一覧から、序数比較で一致し、かつ種類 (ディレクトリ / ファイル) も同じ要素を探します。
-    /// </summary>
-    /// <param name="listing">名前の一覧。</param>
-    /// <param name="segment">照合する名前 (NFC)。</param>
-    /// <param name="wantDirectory">ディレクトリを期待する場合は <see langword="true"/>。</param>
-    /// <param name="entry">見つかった要素。</param>
-    /// <returns>見つかった場合は <see langword="true"/>。</returns>
-    private static bool TryGetSameKind(
-        Dictionary<string, DirectoryEntry> listing,
-        string segment,
-        bool wantDirectory,
-        out DirectoryEntry entry
-    )
-    {
-        return listing.TryGetValue(segment, out entry) && entry.IsDirectory == wantDirectory;
     }
 
     /// <summary>
