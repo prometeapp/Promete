@@ -17,7 +17,21 @@ sidebar:
 
 ## 最初の一歩 `v2.4~`
 
-まずは、アプリの作成時に `UseAssets` を呼び、`assets` フォルダをマウントします。
+まずは、プロジェクトの直下に `assets` フォルダを作り、その中にファイルを置きます。そして、csproj に次の設定を足して、ビルド時に `assets` フォルダを出力先へコピーするようにします。
+
+```xml title="MyPrometeGame.csproj"
+<ItemGroup>
+    <None Update="assets\**" CopyToOutputDirectory="PreserveNewest" />
+</ItemGroup>
+```
+
+この設定が無いと、実行ファイルの隣に `assets` フォルダがないため、アプリの起動時に `DirectoryNotFoundException` が発生します。
+
+:::note
+この csproj の設定は、将来の MSBuild 統合 (`PrometeAsset`) で置き換わる予定です。それまでは、上の設定を足してください。
+:::
+
+次に、アプリの作成時に `UseAssets` を呼び、`assets` フォルダをマウントします。
 
 ```csharp title="Program.cs"
 using Promete;
@@ -39,12 +53,15 @@ return app.Run<MainScene>();
 次に、シーンで `AssetManager` を受け取り、ファイルを読みます。`AssetManager` は、コンストラクタ注入で受け取れます。
 
 ```csharp title="MainScene.cs"
+using Promete;
 using Promete.Assets;
-using Promete.Nodes;
 using Promete.Graphics;
+using Promete.Nodes;
 
 public class MainScene(AssetManager assets) : Scene
 {
+    private Texture2D? _texture;
+
     public override void OnStart()
     {
         // ファイルがあるかどうかを確認する
@@ -55,9 +72,15 @@ public class MainScene(AssetManager assets) : Scene
 
         // ストリームとして開き、テクスチャを作る
         using var stream = assets.FileSystem.OpenRead("assets/x.png");
-        var texture = App.TextureFactory.Load(stream);
+        _texture = App.TextureFactory.Load(stream);
 
-        Root.Add(new Sprite(texture).Location(100, 100));
+        Root.Add(new Sprite(_texture).Location(100, 100));
+    }
+
+    public override void OnDestroy()
+    {
+        // 読み込んだテクスチャは、自分で Dispose する
+        _texture?.Dispose();
     }
 }
 ```
@@ -65,6 +88,8 @@ public class MainScene(AssetManager assets) : Scene
 `OpenRead` が返すストリームは、常に `Seek` できます。そのため、`TextureFactory.Load(Stream)` などの、既存の `Stream` を受け取るAPIにそのまま渡せます。
 
 `using` で囲んでストリームを閉じるのを忘れないでください。ストリームは使い終わったら閉じます。
+
+テクスチャは `IDisposable` です。`Load` で作ったテクスチャは、シーンを離れるとき (`OnDestroy`) に `Dispose` してください。
 
 ## ファイルを探す `v2.4~`
 
@@ -94,6 +119,8 @@ foreach (var path in assets.FileSystem.Enumerate("assets/images", "*.png", recur
 
 指定したフォルダが存在しないと、アプリの起動時（プラグインの `OnStart` より前）に `DirectoryNotFoundException` が発生します。ファイルを読んでから気づくのではなく、起動時に早く気づけるようになっています。
 
+フォルダの物理パス（`MountFolder` の1つ目の引数）は、OS のファイルシステムの規則に従います。そのため、Windows や macOS では、大文字・小文字を区別せずに見つかります。大文字・小文字を厳密に区別するのは、論理パスの側だけです（次の「パスの規則」を参照）。
+
 ## パスの規則 `v2.4~`
 
 論理パスには、次の規則があります。
@@ -106,7 +133,7 @@ foreach (var path in assets.FileSystem.Enumerate("assets/images", "*.png", recur
 
 - **先頭の `/` と `./` は無視されます。** `"/assets/x.png"` と `"assets/x.png"` は同じファイルです。
 - **`..` は1つ上のフォルダへ移動します。** ただし、ルートより上には出られません。`"../../secret.txt"` は、ルートの `secret.txt` として扱われます。読み込み元の外にあるファイルは読めません。
-- **大文字・小文字を区別します。** Windows や macOS でも区別します。`"assets/X.png"` は、`assets/x.png` があっても見つかりません。
+- **大文字・小文字を区別します。** Windows や macOS でも区別します。`"assets/X.png"` は、`assets/x.png` があっても見つかりません。（論理パスの話です。フォルダの物理パスは、OS の規則に従います。前の「相対パスの基準」を参照してください。）
 
   大文字・小文字だけが違う場合は、`AssetPathCaseMismatchException` が発生し、正しい名前を教えてくれます。
 
@@ -152,13 +179,19 @@ o.MountFolder("mod_a", "assets")  // 先に書く
 
 ファイルを実行ファイルに埋め込んで配布したいときは、`MountEmbeddedResources` を使います。
 
-まず、csproj でファイルを埋め込み、`LogicalName` で論理パスに近い名前を付けます。`LogicalName` の区切りは `/` にしてください。
+まず、csproj でファイルを埋め込み、`LogicalName` で論理パスを付けます。
 
 ```xml title="Game.csproj"
 <ItemGroup>
   <EmbeddedResource Include="assets\x.png" LogicalName="assets/x.png" />
 </ItemGroup>
 ```
+
+`Include` はファイルの場所なので、`\` のままで構いません。一方、`LogicalName` の区切りは必ず `/` にしてください。
+
+:::caution
+`LogicalName` に `%(RelativeDir)` や `%(RecursiveDir)` をそのまま使うと、Windows では区切りが `\` になります。接頭辞に一致する名前に `\` が含まれていると、`MountEmbeddedResources` を使ったときに `ArgumentException` が発生します。`LogicalName` は、`/` で書いた名前を指定してください。
+:::
 
 次に、アプリの作成時にマウントします。
 
@@ -175,6 +208,12 @@ var app = PrometeApp.Create()
 ```
 
 `resourcePrefix` で始まるリソース名だけを対象にし、その接頭辞を取り除いた残りを、`mountPoint` の下に置きます。上の例では、リソース `assets/x.png` が論理パス `assets/x.png` になります。
+
+接頭辞は、フォルダとして扱います。`"assets"` と `"assets/"` は同じ意味で、`"assets"` は `assets2/x.png` には一致しません。
+
+:::note
+同じ論理パスになる名前が複数あると、ソースを作る時点（アプリの開始時）で `ArgumentException` になります。たとえば `assets/x.png` と `assets/./x.png` は、正規化すると同じ `assets/x.png` になるので、どちらか一方だけを埋め込んでください。`resourcePrefix` や `mountPoint` に `\` を書いた場合は、`UseAssets` の中で `ArgumentException` になります。
+:::
 
 埋め込みリソースも、フォルダと同じように `OpenRead` や `Exists` で読めます。埋め込みリソースは読み取り専用です。
 
