@@ -197,9 +197,13 @@ public sealed class AssetFileSystem : IDisposable
             {
                 stream = entry.Source.OpenRead(normalized);
             }
-            catch (ObjectDisposedException)
+            catch (AssetPathCaseMismatchException)
             {
-                // Exists と OpenRead の間に破棄されたソースは無いものとして次へ進む
+                throw;
+            }
+            catch (Exception e) when (IsMissingError(e))
+            {
+                // Exists と OpenRead の間に消えた、または破棄されたソースは無いものとして次へ進む
                 continue;
             }
 
@@ -218,14 +222,9 @@ public sealed class AssetFileSystem : IDisposable
             {
                 throw;
             }
-            catch (FileNotFoundException)
+            catch (Exception e) when (IsMissingError(e))
             {
                 // 他のソースを試す
-                continue;
-            }
-            catch (ObjectDisposedException)
-            {
-                // 破棄されたソースは無いものとして次へ進む
                 continue;
             }
 
@@ -329,6 +328,7 @@ public sealed class AssetFileSystem : IDisposable
     /// すべてのソースをアンマウントし、<see cref="IDisposable"/> を実装したソースを破棄します。2 回目以降の呼び出しは何もしません。
     /// </summary>
     /// <remarks>既に開いたストリームは、閉じられるまで有効のまま残ります。</remarks>
+    /// <exception cref="AggregateException">いずれかのソースの破棄が例外を投げた場合。残りのソースは全て破棄したうえで、集めた例外をまとめてスローします。</exception>
     public void Dispose()
     {
         MountEntry[] previous;
@@ -344,12 +344,29 @@ public sealed class AssetFileSystem : IDisposable
             Publish([]);
         }
 
+        // 1 つが失敗しても残りを破棄し、最後にまとめて投げる
+        List<Exception>? errors = null;
         foreach (var entry in previous)
         {
-            if (entry.Source is IDisposable disposable)
+            if (entry.Source is not IDisposable disposable)
+            {
+                continue;
+            }
+
+            try
             {
                 disposable.Dispose();
             }
+            catch (Exception e)
+            {
+                errors ??= [];
+                errors.Add(e);
+            }
+        }
+
+        if (errors is not null)
+        {
+            throw new AggregateException(errors);
         }
     }
 
@@ -375,6 +392,14 @@ public sealed class AssetFileSystem : IDisposable
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// <see cref="IAssetSource.OpenRead"/> が投げた例外が、そのソースには無いことを示すものかどうかを判定します。
+    /// </summary>
+    private static bool IsMissingError(Exception e)
+    {
+        return e is FileNotFoundException or DirectoryNotFoundException or ObjectDisposedException;
     }
 
     /// <summary>
