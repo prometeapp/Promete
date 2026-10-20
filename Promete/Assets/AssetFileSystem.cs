@@ -21,11 +21,23 @@ namespace Promete.Assets;
 /// </remarks>
 public sealed class AssetFileSystem : IDisposable
 {
+    private readonly object _gate = new();
+    private MountEntry[] _mounts = [];
+    private long _nextSequence;
+    private bool _disposed;
+
     /// <summary>
     /// マウントしているソースを、優先される順 (優先度の高い順。同じ優先度では後からマウントした順) に取得します。
     /// </summary>
     /// <remarks>呼び出した時点のスナップショットを返します。</remarks>
-    public IReadOnlyList<IAssetSource> Sources => throw new NotImplementedException();
+    public IReadOnlyList<IAssetSource> Sources
+    {
+        get
+        {
+            var mounts = Snapshot();
+            return Array.ConvertAll(mounts, entry => entry.Source);
+        }
+    }
 
     /// <summary>
     /// ソースをマウントします。
@@ -37,7 +49,21 @@ public sealed class AssetFileSystem : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public void Mount(IAssetSource source, int priority = 0)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(source);
+
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (Array.Exists(_mounts, entry => ReferenceEquals(entry.Source, source)))
+            {
+                throw new InvalidOperationException("同じソースは既にマウントされています。");
+            }
+
+            var next = new MountEntry[_mounts.Length + 1];
+            _mounts.CopyTo(next, 0);
+            next[^1] = new MountEntry(source, priority, ++_nextSequence);
+            Publish(next);
+        }
     }
 
     /// <summary>
@@ -49,13 +75,32 @@ public sealed class AssetFileSystem : IDisposable
     /// <returns>マウントしたソース。<see cref="Unmount"/> に渡せます。</returns>
     /// <exception cref="ArgumentNullException"><paramref name="sourceFactory"/> が <see langword="null"/> の場合。</exception>
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。作成中に破棄された場合は、作成したソースを破棄してからスローします。</exception>
-    public Task<IAssetSource> MountAsync(
+    public async Task<IAssetSource> MountAsync(
         Func<CancellationToken, Task<IAssetSource>> sourceFactory,
         int priority = 0,
         CancellationToken cancellationToken = default
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(sourceFactory);
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed), this);
+
+        var source = await sourceFactory(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            Mount(source, priority);
+        }
+        catch (ObjectDisposedException)
+        {
+            // 作成中に破棄された場合、マウントされなかったソースはここで後始末する
+            if (source is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            throw;
+        }
+
+        return source;
     }
 
     /// <summary>
@@ -68,7 +113,30 @@ public sealed class AssetFileSystem : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public bool Unmount(IAssetSource source)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(source);
+
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            var index = Array.FindIndex(_mounts, entry => ReferenceEquals(entry.Source, source));
+            if (index < 0)
+            {
+                return false;
+            }
+
+            var next = new MountEntry[_mounts.Length - 1];
+            Array.Copy(_mounts, 0, next, 0, index);
+            Array.Copy(_mounts, index + 1, next, index, _mounts.Length - index - 1);
+            Publish(next);
+        }
+
+        // ロックの外で破棄する (破棄処理が他のメンバーを待たせないように)
+        if (source is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -80,7 +148,18 @@ public sealed class AssetFileSystem : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public bool Exists(string path)
     {
-        throw new NotImplementedException();
+        var mounts = Snapshot();
+        var normalized = AssetPath.Normalize(path);
+
+        foreach (var entry in mounts)
+        {
+            if (entry.Source.Exists(normalized))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -94,7 +173,44 @@ public sealed class AssetFileSystem : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public Stream OpenRead(string path)
     {
-        throw new NotImplementedException();
+        var mounts = Snapshot();
+        var normalized = AssetPath.Normalize(path);
+
+        if (mounts.Length == 0)
+        {
+            throw new FileNotFoundException(
+                $"アセット '{normalized}' が見つかりません。ソースが 1 つもマウントされていません。",
+                normalized
+            );
+        }
+
+        // 1. 完全一致するソースのうち、優先度の最も高いものを読む
+        foreach (var entry in mounts)
+        {
+            if (entry.Source.Exists(normalized))
+            {
+                return EnsureSeekable(entry.Source.OpenRead(normalized));
+            }
+        }
+
+        // 2. 無ければ、大文字・小文字だけ違うヒントを伝えるため各ソースに開かせる
+        foreach (var entry in mounts)
+        {
+            try
+            {
+                return EnsureSeekable(entry.Source.OpenRead(normalized));
+            }
+            catch (AssetPathCaseMismatchException)
+            {
+                throw;
+            }
+            catch (FileNotFoundException)
+            {
+                // 他のソースを試す
+            }
+        }
+
+        throw new FileNotFoundException($"アセット '{normalized}' が見つかりません。", normalized);
     }
 
     /// <summary>
@@ -112,7 +228,24 @@ public sealed class AssetFileSystem : IDisposable
         bool recursive = false
     )
     {
-        throw new NotImplementedException();
+        var mounts = Snapshot();
+        var normalizedDirectory = AssetPath.NormalizeDirectory(directory);
+
+        // パターンの不正 (区切り文字を含むなど) をここで例外にする
+        _ = AssetPath.IsMatch(string.Empty, pattern);
+
+        var results = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var entry in mounts)
+        {
+            foreach (var path in entry.Source.Enumerate(normalizedDirectory, pattern, recursive))
+            {
+                results.Add(path);
+            }
+        }
+
+        var array = new string[results.Count];
+        results.CopyTo(array);
+        return array;
     }
 
     /// <summary>
@@ -127,7 +260,28 @@ public sealed class AssetFileSystem : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public bool TryGetFilePath(string path, [NotNullWhen(true)] out string? fullPath)
     {
-        throw new NotImplementedException();
+        var mounts = Snapshot();
+        var normalized = AssetPath.Normalize(path);
+
+        foreach (var entry in mounts)
+        {
+            if (!entry.Source.Exists(normalized))
+            {
+                continue;
+            }
+
+            // 優先度で勝ったソースだけを見る。下のソースには落ちない
+            if (entry.Source is IFileBackedAssetSource fileBacked)
+            {
+                return fileBacked.TryGetFilePath(normalized, out fullPath);
+            }
+
+            fullPath = null;
+            return false;
+        }
+
+        fullPath = null;
+        return false;
     }
 
     /// <summary>
@@ -136,6 +290,77 @@ public sealed class AssetFileSystem : IDisposable
     /// <remarks>既に開いたストリームは、閉じられるまで有効のまま残ります。</remarks>
     public void Dispose()
     {
-        throw new NotImplementedException();
+        MountEntry[] previous;
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            Volatile.Write(ref _disposed, true);
+            previous = _mounts;
+            Publish([]);
+        }
+
+        foreach (var entry in previous)
+        {
+            if (entry.Source is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
     }
+
+    /// <summary>
+    /// 優先度の高い順 (同じ優先度では後からマウントした順) に並べる比較です。
+    /// </summary>
+    private static int CompareEntries(MountEntry a, MountEntry b)
+    {
+        var byPriority = b.Priority.CompareTo(a.Priority);
+        return byPriority != 0 ? byPriority : b.Sequence.CompareTo(a.Sequence);
+    }
+
+    /// <summary>
+    /// 返されたストリームが seek できない場合に、内容を全部メモリにコピーして seek できるストリームにします。
+    /// </summary>
+    private static Stream EnsureSeekable(Stream stream)
+    {
+        if (stream.CanSeek)
+        {
+            return stream;
+        }
+
+        using (stream)
+        {
+            var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            buffer.Position = 0;
+            return buffer;
+        }
+    }
+
+    /// <summary>
+    /// 現在のマウント一覧のスナップショットを返します。破棄済みなら例外をスローします。
+    /// </summary>
+    private MountEntry[] Snapshot()
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed), this);
+        return Volatile.Read(ref _mounts);
+    }
+
+    /// <summary>
+    /// 新しいマウント一覧を並べ替えて公開します。呼び出し側はロックを保持している必要があります。
+    /// </summary>
+    /// <param name="entries">公開する一覧。公開後は変更しないこと。</param>
+    private void Publish(MountEntry[] entries)
+    {
+        Array.Sort(entries, CompareEntries);
+        Volatile.Write(ref _mounts, entries);
+    }
+
+    /// <summary>
+    /// マウントの 1 件。優先度と、マウント順を表す連番を持ちます。
+    /// </summary>
+    private sealed record MountEntry(IAssetSource Source, int Priority, long Sequence);
 }
