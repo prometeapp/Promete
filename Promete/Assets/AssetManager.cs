@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,17 +36,36 @@ namespace Promete.Assets;
 /// </remarks>
 public sealed class AssetManager : IDisposable
 {
+    private readonly object _lock = new();
+    private readonly Dictionary<CacheKey, Entry> _cache = new();
+    private readonly object _globalOwner = new();
+    private readonly PrometeApp _app;
+    private readonly IAudioDecoder[] _audioDecoders;
+    private readonly ConcurrentQueue<Action> _pendingReleases = new();
     private int _disposed;
+    private int _flushScheduled;
 
     /// <summary>
     /// <see cref="AssetManager"/> の新しいインスタンスを初期化し、設定に従ってソースをマウントします。
     /// </summary>
     /// <param name="assembly">Assets の属性を探すアセンブリ。無い場合は <see langword="null"/>。</param>
     /// <param name="options">明示的なマウントの設定。</param>
+    /// <param name="app">メインスレッドの判定と、解放の予約に使うアプリ。</param>
+    /// <param name="audioDecoders">音声の判定に使うデコーダー。登録された順に判定します。</param>
     /// <exception cref="DirectoryNotFoundException">マウントするフォルダが存在しない場合。</exception>
-    internal AssetManager(Assembly? assembly, AssetsOptions options)
+    internal AssetManager(
+        Assembly? assembly,
+        AssetsOptions options,
+        PrometeApp app,
+        IAudioDecoder[] audioDecoders
+    )
     {
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(app);
+        ArgumentNullException.ThrowIfNull(audioDecoders);
+
+        _app = app;
+        _audioDecoders = audioDecoders;
 
         // assembly は Phase 4 で属性を読むために使う。Phase 1 では属性がまだ無いので参照しない
         FileSystem = new AssetFileSystem();
@@ -69,6 +90,20 @@ public sealed class AssetManager : IDisposable
 
             throw;
         }
+    }
+
+    /// <summary>
+    /// キャッシュのエントリの種類です。同じパスでも種類が違えば、別のエントリになります。
+    /// </summary>
+    private enum CacheKind
+    {
+        Texture,
+        SpriteGrid,
+        SpriteRects,
+        NineSlice,
+        FontSource,
+        Audio,
+        Custom,
     }
 
     /// <summary>
@@ -381,7 +416,7 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public T Load<T>(string path, string key, Func<Stream, T> factory, AssetScope scope)
     {
-        throw new NotImplementedException();
+        return Load(path, key, factory, scope, leaveOpen: false);
     }
 
     /// <summary>
@@ -414,7 +449,20 @@ public sealed class AssetManager : IDisposable
         bool leaveOpen
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(factory);
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        // 型を含めるので、型付きの読み込みとはキャッシュを共有しない
+        var cacheKey = new CacheKey(CacheKind.Custom, normalized, (key, typeof(T)));
+        return GetOrLoad(
+            cacheKey,
+            owner,
+            () => ReadWith(normalized, factory, leaveOpen),
+            ReleaseDisposable
+        );
     }
 
     /// <summary>
@@ -806,6 +854,227 @@ public sealed class AssetManager : IDisposable
             return;
         }
 
+        // 破棄済みになったので、ここからの解放はスレッドに関係なくその場で行われる
+        List<Entry> entries = [];
+        lock (_lock)
+        {
+            entries.AddRange(_cache.Values.Where(entry => entry.HasValue));
+            _cache.Clear();
+        }
+
+        foreach (var entry in entries)
+        {
+            ReleaseValue(entry.Release, entry.Value);
+        }
+
+        FlushPendingReleases();
         FileSystem.Dispose();
+    }
+
+    /// <summary>
+    /// スコープを、所有者を表すオブジェクトに変換します。<see cref="AssetScope.Scene"/> は後の変更で対応します。
+    /// </summary>
+    /// <param name="scope">変換するスコープ。</param>
+    /// <returns>所有者を表すオブジェクト。</returns>
+    /// <exception cref="InvalidOperationException"><see cref="AssetScope.Scene"/> を指定した場合 (未対応)。</exception>
+    /// <exception cref="ArgumentOutOfRangeException">未知の <see cref="AssetScope"/> の値の場合。</exception>
+    private object ResolveOwner(AssetScope scope)
+    {
+        return scope switch
+        {
+            AssetScope.Global => _globalOwner,
+            AssetScope.Scene => throw new InvalidOperationException(
+                "AssetScope.Scene は、まだ対応していません。"
+            ),
+            _ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null),
+        };
+    }
+
+    /// <summary>
+    /// 破棄されていれば <see cref="ObjectDisposedException"/> をスローします。
+    /// </summary>
+    private void ThrowIfDisposed()
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+    }
+
+    /// <summary>
+    /// キャッシュから値を取り出します。無ければ <paramref name="load"/> で読み込み、キャッシュに入れます。所有者は <paramref name="owner"/> に加わります。
+    /// </summary>
+    /// <remarks>
+    /// 読み込みはロックの外で行います。同時に読み込んだ結果が複数あれば、先に入った値を使い、残りは解放します。
+    /// </remarks>
+    /// <typeparam name="T">値の型。</typeparam>
+    /// <param name="key">キャッシュのキー。</param>
+    /// <param name="owner">所有者。</param>
+    /// <param name="load">値を読み込む処理。</param>
+    /// <param name="release">値を解放する処理。</param>
+    /// <returns>キャッシュされた値。</returns>
+    private T GetOrLoad<T>(CacheKey key, object owner, Func<T> load, Action<object?> release)
+    {
+        lock (_lock)
+        {
+            if (_cache.TryGetValue(key, out var existing) && existing.HasValue)
+            {
+                existing.Owners.Add(owner);
+                return (T)existing.Value!;
+            }
+        }
+
+        var value = load();
+
+        var disposed = false;
+        var discard = false;
+        var winner = value;
+        lock (_lock)
+        {
+            if (Volatile.Read(ref _disposed) != 0)
+            {
+                disposed = true;
+            }
+            else
+            {
+                if (!_cache.TryGetValue(key, out var entry))
+                {
+                    entry = new Entry(release);
+                    _cache.Add(key, entry);
+                }
+
+                entry.Owners.Add(owner);
+                if (entry.HasValue)
+                {
+                    // 別のスレッドが先に入れた値を使う
+                    winner = (T)entry.Value!;
+                    discard = true;
+                }
+                else
+                {
+                    entry.Value = value;
+                    entry.HasValue = true;
+                }
+            }
+        }
+
+        if (disposed)
+        {
+            ReleaseValue(release, value);
+            throw new ObjectDisposedException(nameof(AssetManager));
+        }
+
+        if (discard)
+        {
+            ReleaseValue(release, value);
+        }
+
+        return winner;
+    }
+
+    /// <summary>
+    /// ストリームを開き、<paramref name="factory"/> で読み込みます。ストリームは、例外のときと <paramref name="leaveOpen"/> が <see langword="false"/> のときに閉じます。
+    /// </summary>
+    /// <typeparam name="T">値の型。</typeparam>
+    /// <param name="path">正規化した論理パス。</param>
+    /// <param name="factory">ストリームから値を作る処理。</param>
+    /// <param name="leaveOpen">正常に戻った後もストリームを閉じないなら <see langword="true"/>。</param>
+    /// <returns>読み込んだ値。</returns>
+    private T ReadWith<T>(string path, Func<Stream, T> factory, bool leaveOpen)
+    {
+        var stream = FileSystem.OpenRead(path);
+        T value;
+        try
+        {
+            value = factory(stream);
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+
+        if (!leaveOpen)
+        {
+            stream.Dispose();
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// 値を解放します。メインスレッドならその場で、それ以外では次のフレームにメインスレッドで行います。破棄された後は、スレッドに関係なくその場で行います。
+    /// </summary>
+    /// <param name="release">値を解放する処理。</param>
+    /// <param name="value">解放する値。</param>
+    private void ReleaseValue(Action<object?> release, object? value)
+    {
+        if (Volatile.Read(ref _disposed) != 0 || _app.IsMainThread())
+        {
+            release(value);
+            return;
+        }
+
+        _pendingReleases.Enqueue(() => release(value));
+
+        // 予約は 1 フレームに 1 回だけ入れる
+        if (Interlocked.Exchange(ref _flushScheduled, 1) == 0)
+        {
+            _app.NextFrame(FlushPendingReleases);
+        }
+    }
+
+    /// <summary>
+    /// 予約された解放を、メインスレッドで順に実行します。
+    /// </summary>
+    private void FlushPendingReleases()
+    {
+        Interlocked.Exchange(ref _flushScheduled, 0);
+        while (_pendingReleases.TryDequeue(out var release))
+        {
+            release();
+        }
+    }
+
+    /// <summary>
+    /// <see cref="IDisposable"/> を実装している値を Dispose します。
+    /// </summary>
+    /// <param name="value">解放する値。</param>
+    private static void ReleaseDisposable(object? value)
+    {
+        (value as IDisposable)?.Dispose();
+    }
+
+    /// <summary>
+    /// キャッシュのキーです。(種類, 正規化した論理パス, オプション) の組で同一性を決めます。
+    /// </summary>
+    private readonly record struct CacheKey(CacheKind Kind, string Path, object? Options);
+
+    /// <summary>
+    /// キャッシュの 1 件です。値と、それを所有するスコープの集合を持ちます。
+    /// </summary>
+    private sealed class Entry(Action<object?> release)
+    {
+        /// <summary>
+        /// 値を所有しているスコープの集合です。参照の同一性で比べます。
+        /// </summary>
+        public HashSet<object> Owners { get; } = new(ReferenceEqualityComparer.Instance);
+
+        /// <summary>
+        /// 値が入っているかどうかを表します。
+        /// </summary>
+        public bool HasValue { get; set; }
+
+        /// <summary>
+        /// 読み込んだ値です。<see cref="HasValue"/> が <see langword="true"/> のときだけ有効です。
+        /// </summary>
+        public object? Value { get; set; }
+
+        /// <summary>
+        /// 実行中の非同期の読み込みです。値が入るまで設定されます。
+        /// </summary>
+        public Task? Pending { get; set; }
+
+        /// <summary>
+        /// 値を解放する処理です。
+        /// </summary>
+        public Action<object?> Release { get; } = release;
     }
 }

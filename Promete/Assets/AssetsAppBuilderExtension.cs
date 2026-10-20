@@ -1,5 +1,8 @@
 using System;
+using System.Linq;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using Promete.Audio;
 
 namespace Promete.Assets;
 
@@ -94,6 +97,11 @@ public static class AssetsAppBuilderExtension
         var options = new AssetsOptions();
         configure?.Invoke(options);
 
-        return builder.UseFactory(_ => new AssetManager(assembly, options));
+        return builder.UseFactory(sp => new AssetManager(
+            assembly,
+            options,
+            sp.GetRequiredService<PrometeApp>(),
+            sp.GetServices<IAudioDecoder>().ToArray()
+        ));
     }
 }
