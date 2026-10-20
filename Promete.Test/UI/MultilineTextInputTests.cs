@@ -9,10 +9,17 @@ namespace Promete.Test.UI;
 
 /// <summary>
 /// 複数行の TextInput (Rows &gt; 1) の挙動と、1行の TextInput が変わっていないことを検証します。
-/// フォントは等幅で、1文字の幅を 8px、1行の高さを 16px として扱います。
+/// 既定のフォント (等幅) の寸法は実行環境によって違うので、<see cref="TestFont"/> で測った値を使います。
+/// 以下では、1文字の幅を W、1行の高さを H として表します。
 /// </summary>
 public class MultilineTextInputTests : IDisposable
 {
+    private static readonly int W = TestFont.CharWidth;
+    private static readonly int H = TestFont.LineHeight;
+
+    /// <summary>幅 200 の入力欄 (内側の幅 188px) で、ちょうど 2 行になる長さの文字数。</summary>
+    private static readonly int LongLength = (200 - 12) / W + 7;
+
     private readonly UITestHarness _h = new();
     private readonly TextInput _input;
     private readonly Button _below;
@@ -50,9 +57,9 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void Rows_ShouldDetermineHeight_WhenMultiline()
     {
-        // 3 行 × 16px + 上下の余白 6px × 2
+        // 3 行 × H + 上下の余白 6px × 2
         _input.IsMultiline.Should().BeTrue();
-        _input.Size.Y.Should().Be(3 * 16 + 12);
+        _input.Size.Y.Should().Be(3 * H + 12);
     }
 
     [Fact]
@@ -61,7 +68,7 @@ public class MultilineTextInputTests : IDisposable
         // 幅だけを指定する書き方 (高さに 0 を渡しても、Rows から決まる)
         var input = new TextInput { Rows = 4 }.Size(300, 0);
 
-        input.Size.Should().Be(new VectorInt(300, 4 * 16 + 12));
+        input.Size.Should().Be(new VectorInt(300, 4 * H + 12));
         input.HitTest((10, 30)).Should().BeTrue();
     }
 
@@ -74,7 +81,7 @@ public class MultilineTextInputTests : IDisposable
         input.Size.Y.Should().Be(100);
 
         input.Size = (200, 0);
-        input.Size.Y.Should().Be(3 * 16 + 12);
+        input.Size.Y.Should().Be(3 * H + 12);
     }
 
     [Fact]
@@ -272,15 +279,15 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void LongLine_ShouldWrapToWidth_AndCaretFollowsToSecondLine()
     {
-        // 幅 200 - 左右の余白 6 × 2 = 188px。8px の文字が 23 文字で折り返す
-        _input.Text = new string('a', 30);
-        _input.CursorPosition = 30;
+        // 幅 200 - 左右の余白 6 × 2 = 188px に入る文字数で折り返し、あふれた 7 文字が 2 行目に入る
+        _input.Text = new string('a', LongLength);
+        _input.CursorPosition = LongLength;
         _h.Frame(2);
 
         var caret = _input.CaretLocation;
-        caret.X.Should().Be(6 + 7 * 8);
-        caret.Y.Should().Be(6 + 16);
-        _input.CaretHeight.Should().Be(16);
+        caret.X.Should().Be(6 + 7 * W);
+        caret.Y.Should().Be(6 + H);
+        _input.CaretHeight.Should().Be(H);
     }
 
     [Fact]
@@ -289,21 +296,21 @@ public class MultilineTextInputTests : IDisposable
         var input = new TextInput { Text = "abc" };
         input.CursorPosition = 2;
 
-        input.CaretLocation.Should().Be(new Vector(6 + 16, 4));
+        input.CaretLocation.Should().Be(new Vector(6 + 2 * W, 4));
         input.CaretHeight.Should().Be(input.Size.Y - 8);
     }
 
     [Fact]
     public void Scrolling_ShouldFollowCaret_WhenLinesExceedRows()
     {
-        // 2 行分の表示範囲 (32px) に、5 行 (80px) のテキスト
+        // 2 行分の表示範囲 (2H) に、5 行 (5H) のテキスト
         _input.Rows = 2;
         _input.Text = "l0\nl1\nl2\nl3\nl4";
         _input.CursorPosition = _input.Text.Length;
         _h.Frame(2);
 
-        _input.ScrollOffset.Should().Be(80 - 32);
-        _input.TextNode.Location.Y.Should().Be(-(80 - 32));
+        _input.ScrollOffset.Should().Be(3 * H);
+        _input.TextNode.Location.Y.Should().Be(-(3 * H));
 
         // 先頭の行までキャレットを戻すと、スクロールも戻る
         for (var i = 0; i < 4; i++)
@@ -323,11 +330,11 @@ public class MultilineTextInputTests : IDisposable
 
         // 見えている範囲 (3・4 行目) の中で動かしてもスクロールしない
         _h.PressKey(KeyCode.Up);
-        _input.ScrollOffset.Should().Be(48);
+        _input.ScrollOffset.Should().Be(3 * H);
 
         // 範囲の外 (2 行目) に出ると、その行が見えるまでスクロールする
         _h.PressKey(KeyCode.Up);
-        _input.ScrollOffset.Should().Be(32);
+        _input.ScrollOffset.Should().Be(2 * H);
     }
 
     [Fact]
@@ -375,7 +382,7 @@ public class MultilineTextInputTests : IDisposable
 
         viewport.IsTrimmable.Should().BeTrue();
         viewport.Location.Should().Be(new Vector(6, 6));
-        viewport.Size.Should().Be(new VectorInt(200 - 12, 3 * 16));
+        viewport.Size.Should().Be(new VectorInt(200 - 12, 3 * H));
         _input.TextNode.IsVisible.Should().BeTrue();
     }
 
@@ -393,7 +400,7 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void BackToSingleLine_ShouldStopClippingAndWrapping()
     {
-        Type(new string('a', 30));
+        Type(new string('a', LongLength));
         _input.TextNode.Layout.Lines.Count.Should().Be(2);
 
         _input.Rows = 1;
@@ -407,7 +414,7 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void Multiline_ShouldWrapTheTextNodeToTheInnerWidth()
     {
-        Type(new string('a', 30));
+        Type(new string('a', LongLength));
 
         _input.TextNode.WrapMode.Should().Be(WrapMode.Mixed);
         _input.TextNode.PreferredSize.X.Should().Be(200 - 12);
@@ -417,8 +424,8 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void WrapMode_ShouldChangeWhereLinesBreak()
     {
-        // 内側の幅は 40px (5 文字分)
-        _input.Size = (52, _input.Size.Y);
+        // 内側の幅は 5 文字分
+        _input.Size = (5 * W + 12, _input.Size.Y);
         _input.Text = "aaa bbbbb";
         _h.Frame(2);
 
@@ -440,7 +447,7 @@ public class MultilineTextInputTests : IDisposable
     {
         _input.WrapMode = WrapMode.None;
         _input.KinsokuMode = KinsokuMode.None;
-        Type(new string('a', 30));
+        Type(new string('a', LongLength));
 
         _input.TextNode.Layout.Lines.Count.Should().Be(1);
         _input.TextNode.KinsokuMode.Should().Be(KinsokuMode.None);
@@ -462,6 +469,6 @@ public class MultilineTextInputTests : IDisposable
 
         var caret = _input.CaretLocation;
         cursor.Vertices[0].Should().Be(new VectorInt((int)caret.X, (int)caret.Y));
-        caret.Y.Should().Be(6 + 16);
+        caret.Y.Should().Be(6 + H);
     }
 }
