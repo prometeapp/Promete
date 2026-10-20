@@ -291,6 +291,280 @@ PrometeApp.Create().UseAssets(typeof(Program).Assembly, o => o.MountFolder("asse
 `MountFolder` で指定したフォルダが存在しない場合は、この時点で `DirectoryNotFoundException` が発生します。
 :::
 
+## 画像・フォント・音声を読む `v2.4~`
+
+ここまでは、`OpenRead` でストリームを開いて、自分でテクスチャなどを作る方法でした。`AssetManager` には、画像・フォント・音声をそのまま読む方法もあります。
+
+次の例では、シーンのフィールドで読み込んでいます。
+
+```csharp title="MainScene.cs"
+using System.Drawing;
+using Promete.Assets;
+using Promete.Graphics;
+using Promete.Graphics.Fonts;
+using Promete.Nodes;
+
+public class MainScene(AssetManager assets) : Scene
+{
+    // シーンのフィールドで読む。このシーンが使われている間は、読み込んだものが残る
+    private readonly Texture2D _ichigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
+    private readonly Font _font = assets.LoadFont("assets/Koruri.ttf", 24, AssetScope.Global);
+
+    public override void OnStart()
+    {
+        Root.Add(new Sprite(_ichigo).Location(100, 100));
+        Root.Add(new Text("こんにちは", _font, Color.White).Location(100, 200));
+    }
+}
+```
+
+読み込みのメソッドは、次のとおりです。どれも最後の引数に `AssetScope` を指定します。
+
+| メソッド | 読むもの | 返す値 |
+| --- | --- | --- |
+| `LoadTexture(path, scope)` | 画像 | `Texture2D` |
+| `LoadSpriteSheet(path, 横の数, 縦の数, サイズ, scope)` | 格子状に並んだ画像 | `Texture2D[]` |
+| `LoadSpriteSheet(path, scope, rects)` | 指定した矩形で切り抜いた画像 | `Texture2D[]` |
+| `Load9Sliced(path, left, top, right, bottom, scope)` | 9 スライス用の画像 | `Texture9Sliced` |
+| `LoadFont(path, size, scope)` | フォント | `Font` |
+| `LoadAudio(path, scope)` | 音声 | `IAudioSource` |
+
+たとえば、32×32 のセルが横に4つ、縦に2つ並んだ画像は、次のように切り分けられます。
+
+```csharp
+var frames = assets.LoadSpriteSheet("assets/chara.png", 4, 2, new VectorInt(32, 32), AssetScope.Scene);
+```
+
+音声は、`AudioPlayer` で鳴らします。
+
+```csharp
+private readonly IAudioSource _sfx = assets.LoadAudio("assets/lineclear.wav", AssetScope.Scene);
+private readonly AudioPlayer _player = new();
+
+public override void OnUpdate()
+{
+    _player.PlayOneShot(_sfx);
+}
+```
+
+テクスチャのサンプリングの設定 (`TextureOptions`) を変えたいときは、`LoadTexture(path, options, scope)` のように、オプションを追加した書き方を使います。省略した場合は、既定の設定が使われます。
+
+:::note
+フォントは、サイズが違っても、同じファイルのデータを 1 つだけ読みます。たとえば、同じ `Koruri.ttf` を 16 と 32 の 2 つのサイズで読んでも、ファイルは 1 回しか読まれません。
+:::
+
+:::note
+Web (WebAssembly) では、フォントをストリームから読めません。そのため、フォルダにあるフォントは、ファイルのパスから読みます。この場合、フォントは実行環境の側でキャッシュされるため、`AssetScope.Scene` で読んでもシーンが終わっても解放されません（実質的に `Global` と同じです）。埋め込みリソースのフォントは Web では読めず、`NotSupportedException` が発生します。
+:::
+
+## 返されたリソースを Dispose しない `v2.4~`
+
+:::caution
+`AssetManager` が返したリソースは、**自分で `Dispose` しないでください**。解放は Assets API が、スコープの規則に従って行います。
+:::
+
+理由は、`Texture2D.Dispose` が2回呼ばれることを想定していないためです。利用者とスコープの両方が `Dispose` すると、同じテクスチャを別の場所で使っているものまで壊れることがあります。
+
+解放したいときは、`Unload` を使います（「明示的に解放する」の節を参照してください）。
+
+:::note
+前の節の `App.TextureFactory.Load(stream)` で自分で作ったテクスチャは、これまでどおり自分で `Dispose` してください。`AssetManager` の読み込みと混ぜないようにしましょう。
+:::
+
+## スコープ `v2.4~`
+
+読み込んだアセットは、**スコープ** (`AssetScope`) に所有されます。スコープは、アセットをいつ解放するかを決めます。
+
+| スコープ | 所有者 | 解放されるとき |
+| --- | --- | --- |
+| `AssetScope.Global` | アプリ全体 | アプリの終了時、または `Unload` で明示的に解放したとき |
+| `AssetScope.Scene` | 読んだシーン | そのシーンが使われなくなったとき |
+
+`AssetScope.Scene` の場合、解放のタイミングは次のとおりです。
+
+- **`LoadScene` で別のシーンに移るとき**: 新しいシーンの `OnStart` が終わった後に、前のシーンのものを解放します。新しいシーンが同じものを読んでいれば、解放されずに、そのまま使われます（読み直しはしません）。
+- **`PopScene` で前のシーンに戻るとき**: 上にあったシーンのものだけを解放します。
+- **`PushScene` で別のシーンを重ねるとき**: 何も解放しません。下にあるシーンのものは、残ります。
+- **アプリが終わるとき**: 各シーンの `OnDestroy` の後に解放します。
+
+`OnDestroy` の中では、まだ読み込んだものを使えます。
+
+### どのシーンのものになるか
+
+シーンのコンストラクタ（フィールドの初期化を含みます）で読んだものは、そのシーンのものになります。`OnStart` や `OnUpdate` の中で読んだものは、その時点で動いている、今のシーンのものになります。
+
+```csharp
+public class MainScene(AssetManager assets) : Scene
+{
+    // コンストラクタで読んだので、この MainScene のもの
+    private readonly Texture2D _ichigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
+
+    public override void OnStart()
+    {
+        // OnStart で読んだので、そのときの今のシーン (この MainScene) のもの
+        var icon = assets.LoadTexture("assets/icon.png", AssetScope.Scene);
+    }
+}
+```
+
+:::caution
+DI が初めてシーンを解決する途中で作られるプラグイン（シングルトン）のコンストラクタで `AssetScope.Scene` を指定すると、そのものは**そのとき生成中のシーン**のものになります。そのプラグインが後のシーンでも使われるなら、そのシーンが終わったときに解放されてしまいます。プラグインのコンストラクタで読むものは、`AssetScope.Global` を使ってください。
+:::
+
+### Scene を指定できない場面
+
+次の場面では、`AssetScope.Scene` を指定すると `InvalidOperationException` が発生します。
+
+- シーンが1つもないとき（アプリの組み立て中や、プラグインの `OnStart` の中など）
+- メインスレッド以外（ワーカースレッド）から呼ぶとき
+
+これらの場面では、`AssetScope.Global` を使ってください。ワーカースレッドから `Global` で読むことはできます。
+
+## 同じアセットの扱い `v2.4~`
+
+読み込んだアセットは、**種類・論理パス・オプション**の組をキーにしてキャッシュされます。同じキーで読むと、ファイルを読み直さず、同じものを返します。
+
+- `./assets/ichigo.png` と `assets/ichigo.png` は同じ論理パスなので、同じものになります。先頭の `/` も無視されます。
+- 大文字・小文字は区別されます。`assets/Ichigo.png` は別のファイルとして扱われます。
+- `TextureOptions` が違えば、同じファイルでも別のテクスチャになります。
+- `LoadTexture` と `LoadSpriteSheet` で同じファイルを読んだときも、別のものになります。
+- フォントは、サイズや `FontStyle` が違っても、データは共有されます。
+- `LoadSpriteSheet` は、呼ぶたびに新しい配列を返します。配列の中身（テクスチャ）は共有されるので、配列の要素を並べ替えても、キャッシュには影響しません。
+
+## 非同期で読む `v2.4~`
+
+大きなファイルを読むと、その間ゲームが止まることがあります。そこで、`...Async` という名前のメソッドを使うと、読み込みをスレッドプールで行い、`Task` を返します。
+
+`Task` の結果は、コルーチンの `WaitForTask` で待つか、`await` で受け取ります。次の例は、コルーチンで待つ方法です。
+
+```csharp title="MainScene.cs"
+using System.Collections;
+using Promete.Coroutines;
+using Promete.Assets;
+using Promete.Graphics;
+using Promete.Nodes;
+
+public class MainScene(AssetManager assets, CoroutineManager coroutine) : Scene
+{
+    public override void OnStart()
+    {
+        coroutine.Start(LoadIconAsync());
+    }
+
+    private IEnumerator LoadIconAsync()
+    {
+        var task = assets.LoadTextureAsync("assets/icons.png", AssetScope.Scene);
+        yield return new WaitForTask(task);
+
+        Root.Add(new Sprite(task.Result).Location(256, 96));
+    }
+}
+```
+
+非同期版には、次の性質があります。
+
+- **同じものを同時に読むと、1 回にまとめられます。** 読み込みの途中で同じ `LoadTextureAsync` を呼ぶと、同じ読み込みの結果を共有します。同期版の `LoadTexture` と同じキャッシュを使うので、先に同期版で読んであれば、非同期版はそれを返します。
+- **引数やスコープの間違いは、呼んだ瞬間に例外になります。** 読み込みの途中で起きたエラー（ファイルが無いなど）は、`Task` の中の例外になります。
+- **`CancellationToken` は、待つのをやめるためだけに使います。** キャンセルしても、読み込み自体は止まりません。読み終わった結果は、同じスコープに残ります。
+- **読み終わる前にシーンが終わった場合、結果は読み終わった時点で解放されます。** そのときの `Task` の結果は、使わないでください。
+
+## 明示的に解放する `v2.4~`
+
+スコープの規則を待たずに、解放したいときは `Unload` を使います。
+
+```csharp
+// 同じパスのアセットを、Global の所有から外す (ほかのスコープが持っていれば残る)
+assets.Unload("assets/bg.png", AssetScope.Global);
+
+// 同じパスのアセットを、所有しているスコープに関係なく解放する
+assets.Unload("assets/bg.png");
+
+// 指定したスコープの所有を、すべてのアセットから外す
+assets.Unload(AssetScope.Global);
+```
+
+- `Unload(path, scope)` は、そのスコープの所有だけを外します。ほかのスコープがまだ持っていれば、残ります。
+- `Unload(path)` は、同じパスのものを、所有者に関係なく解放します。
+- `Unload(scope)` は、指定したスコープの所有を、すべてのアセットから外します。スコープ自体は残るので、この後も同じスコープで読めます。
+
+:::caution
+解放したテクスチャを使っている `Sprite` は、表示が壊れます。解放する前に、その `Sprite` を `Root` から外すなどして、使わないようにしてください。
+:::
+
+## 自前の形式を読む `v2.4~`
+
+画像や音声以外の形式（設定ファイルなど）は、`Load<T>` で読めます。ストリームから `T` を作る処理を渡します。
+
+```csharp
+using System.Text.Json;
+
+// キーは「どう読んだか」を表す名前。同じパスでも、キーが違えば別のものになる
+var settings = assets.Load(
+    "assets/settings.json",
+    "settings",
+    stream => JsonSerializer.Deserialize<GameSettings>(stream)!,
+    AssetScope.Global
+);
+```
+
+- `key` は、キャッシュのキーの一部です。同じパスを別の方法で読むときは、別のキーを付けてください。大文字・小文字は区別されます。
+- 処理に渡されたストリームは、処理が戻ったあとに閉じられます。
+- 結果が `IDisposable` を実装していれば、スコープが解放されるときに `Dispose` されます。
+
+ストリームを閉じずに持ち出したいときは、`leaveOpen: true` を指定します。このとき、ストリームを閉じる責任は結果に移ります。
+
+```csharp
+// BinaryReader が Dispose されるとき、元のストリームも閉じられる
+var reader = assets.Load(
+    "assets/data.bin",
+    "reader",
+    stream => new BinaryReader(stream),
+    AssetScope.Scene,
+    leaveOpen: true
+);
+```
+
+非同期版の `LoadAsync` も同じ書き方です。処理は `Func<Stream, Task<T>>` を渡します。
+
+## 音声の形式を増やす `v2.4~`
+
+wav と ogg 以外の音声形式を読めるようにするには、`IAudioDecoder` を実装して登録します。
+
+```csharp title="MyAudioDecoder.cs"
+using System;
+using System.IO;
+using Promete.Audio;
+
+public class MyAudioDecoder : IAudioDecoder
+{
+    public bool CanDecode(string path, ReadOnlySpan<byte> header)
+    {
+        // 拡張子ではなく、先頭のマジックで判定する
+        return header.Length >= 4 && header[..4].SequenceEqual("MYAU"u8);
+    }
+
+    public IAudioSource Decode(Stream stream)
+    {
+        // stream はデコーダーのものになる。閉じるのはこのデコーダーの責任
+        return new MyAudioSource(stream);
+    }
+}
+```
+
+`MyAudioSource` は、自分で実装した `IAudioSource` です。登録は、アプリを作るときに行います。
+
+```csharp title="Program.cs"
+var app = PrometeApp.Create()
+    .UseAssets(o => o.MountFolder("assets", "assets"))
+    .Use<IAudioDecoder, MyAudioDecoder>()
+    .BuildWithOpenGLDesktop();
+```
+
+- 登録したデコーダーは、標準のデコーダー（wav / ogg）より**先に**、登録した順に判定されます。
+- `header` は、ファイルの先頭の最大 64 バイトです。短いファイルでは、それより短くなります。
+- どのデコーダーも判定できなければ、`NotSupportedException` が発生します。
+- 結果の `IAudioSource` は、キャッシュされて複数の呼び出し元で共有されます。そのため、再生位置などを呼び出し元ごとに持たないでください。`FillSamples` は、複数のスレッドから同時に呼ばれても安全である必要があります。
+
 ## まとめ
 
 - `UseAssets` で、`MountFolder` や `MountEmbeddedResources` を指定する。
@@ -298,3 +572,8 @@ PrometeApp.Create().UseAssets(typeof(Program).Assembly, o => o.MountFolder("asse
 - 読むときは `OpenRead`、確認するときは `Exists`、探すときは `Enumerate` を使う。
 - 相対パスの基準は実行ファイルのフォルダで、パスは大文字・小文字を区別する。
 - 同じパスは、優先度が高いもの（同じなら後に書いたもの）が勝つ。
+- `LoadTexture` / `LoadFont` / `LoadAudio` などで、画像・フォント・音声を直接読める。どれも `AssetScope` を指定する。
+- 読んだものは自分で `Dispose` せず、`Unload` かスコープに解放を任せる。
+- `AssetScope.Global` はアプリが終わるまで残る。`AssetScope.Scene` はそのシーンが使われなくなったときに解放される。
+- `...Async` は読み込みをスレッドプールで行い、`Task` を返す。同じものの同時の読み込みは 1 回にまとまる。
+- 形式を増やすには `IAudioDecoder` を実装し、`Use<IAudioDecoder, T>()` で登録する。
