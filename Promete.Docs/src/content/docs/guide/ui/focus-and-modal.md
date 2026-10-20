@@ -1,0 +1,194 @@
+---
+title: フォーカスとモーダル
+description: UIManagerによるフォーカスナビゲーション、FocusGroup、モーダルダイアログの使い方を解説します。
+sidebar:
+  order: 4
+---
+
+`UIManager` は、フォーカスナビゲーションとモーダルダイアログの管理を提供します。
+
+## フォーカスナビゲーション
+
+### Tab キーによる移動
+
+`IsFocusable = true`（デフォルト）のUI要素は、Tab / Shift+Tab キーでフォーカスを順番に移動できます。移動順序は `NavigationOrder` プロパティで制御します。
+
+```csharp
+var nameInput = new TextInput("名前")
+    .NavigationOrder(1);
+
+var emailInput = new TextInput("メール")
+    .NavigationOrder(2);
+
+var submitButton = new Button("送信")
+    .NavigationOrder(3);
+```
+
+### 方向キーによる移動
+
+方向キーでもフォーカスを移動できます。動作は `UIManager.SpatialNavigation` で切り替えます。
+
+- `false`（デフォルト）: 上キーで前の要素、下キーで次の要素へ移動します（`NavigationOrder` 順）。左右キーでは移動しません。
+- `true`: 押した方向にある、最も近い要素へ移動します。要素の中心同士の位置関係で判定し、進行方向の距離に加えて、直交方向のずれが大きいほど不利になります。その方向に要素がなければ移動しません。
+
+```csharp
+uiManager.SpatialNavigation = true;
+```
+
+:::note
+`TextInput` や `Slider` にフォーカスがある間は、左右キーを要素自身の操作（カーソル移動・値の変更）に使うため、フォーカスは移動しません。上下キーは通常どおり移動に使われますが、複数行の `TextInput`（`Rows` が 2 以上）にフォーカスがある間は、カーソルの移動に使われるため、フォーカスは移動しません。
+:::
+
+### プログラムからのフォーカス制御
+
+```csharp
+// 特定の要素にフォーカスを設定
+uiManager.SetFocus(nameInput);
+
+// フォーカスを解除
+uiManager.SetFocus(null);
+
+// 次の要素 / 前の要素へ移動
+uiManager.MoveFocusNext();
+uiManager.MoveFocusPrevious();
+```
+
+### フォーカス状態の取得
+
+```csharp
+// UIManager から現在のフォーカス要素を取得
+var focused = uiManager.FocusedElement;
+
+// 各要素で自身のフォーカス状態を確認
+if (button.IsFocused) { ... }
+```
+
+### キーボードによるアクティベーション
+
+フォーカス中のUI要素は、Enter / Space キーで `Clicked` イベントが発火します。これにより、マウスを使わずにボタンやチェックボックスを操作できます。
+
+:::note
+`TextInput` にフォーカスがある場合、Enter は `Submitted` イベントの発火に使われ（複数行では改行になり、Ctrl+Enter が `Submitted` の発火になります）、Space は通常の文字入力として処理されます。`Slider` にフォーカスがある場合は、左右キーで値を変更できます。
+:::
+
+## FocusGroup
+
+`FocusGroup` を使うと、フォーカスナビゲーションのスコープを分離できます。同じグループ内の要素だけが Tab キーで巡回されます。
+
+```csharp
+var menuGroup = new FocusGroup("menu");
+var settingsGroup = new FocusGroup("settings");
+
+// メニューグループ
+var newGameButton = new Button("New Game")
+    .NavigationOrder(1)
+    .InFocusGroup(menuGroup);
+
+var loadGameButton = new Button("Load Game")
+    .NavigationOrder(2)
+    .InFocusGroup(menuGroup);
+
+// 設定グループ（別のフォーカススコープ）
+var volumeSlider = new Slider(0, 100, 50)
+    .NavigationOrder(1)
+    .InFocusGroup(settingsGroup);
+```
+
+グループに属さない要素はグローバルスコープに属します。フォーカスがグループ内の要素にある場合、Tab キーはそのグループ内でのみ巡回します。
+
+## モーダルダイアログ
+
+モーダルダイアログは、表示中にモーダル外の要素への操作をブロックします。
+
+### 基本的な使い方
+
+```csharp
+var modal = new Modal((300, 180));
+modal.Size = View.Size;  // オーバーレイを画面全体に
+
+// モーダル本体に要素を追加
+var message = new Text("変更を保存しますか？", color: Color.White)
+    .Location(20, 30);
+modal.Body.Add(message);
+
+var yesButton = new Button("はい")
+    .Location(20, 120)
+    .Size(120, 40)
+    .OnClick(() => {
+        Save();
+        modal.Close();
+    });
+modal.Body.Add(yesButton);
+
+var noButton = new Button("いいえ")
+    .Location(160, 120)
+    .Size(120, 40)
+    .OnClick(() => modal.Close());
+modal.Body.Add(noButton);
+
+// 表示
+modal.Show(uiManager, Root);
+```
+
+### モーダルスタック
+
+モーダルは内部的にスタックで管理されます。複数のモーダルを重ねて表示でき、最上位のモーダルのみが操作を受け付けます。
+
+```csharp
+// 現在の最上位モーダルを取得
+var current = uiManager.CurrentModal;
+```
+
+### オーバーレイクリックによるクローズ
+
+`CloseOnOverlayClick = true`（デフォルト）の場合、モーダルの外側（オーバーレイ部分）をクリックすると自動的に閉じます。確認ダイアログなどで意図しないクローズを防ぎたい場合は `false` に設定してください。
+
+```csharp
+var modal = new Modal((300, 200))
+{
+    CloseOnOverlayClick = false,  // 明示的に閉じるボタンが必要
+};
+```
+
+### フォーカスの扱い
+
+モーダルを開くと、モーダルの外の要素からフォーカスが外れます。キー入力（Enter / Space や、`TextInput` への文字入力）も、モーダルの外の要素には届きません。
+モーダルを閉じると、開く前にフォーカスしていた要素にフォーカスが戻ります。
+
+### シーンを切り替えたとき
+
+シーンを切り替える（`LoadScene` / `PushScene` / `PopScene`）と、開いているモーダルやポップアップは自動で閉じられ、フォーカスなども解除されます。
+`PushScene` で別のシーンを重ねた場合も同じで、`PopScene` で戻っても、閉じたモーダルは復元されません。
+
+:::caution
+この方法で閉じたときは、`Closed` イベントは**発火しません**。シーンの切り替えの途中で、`Closed` のハンドラが別のシーンを読み込むなどして、切り替えの処理が入れ子にならないようにするためです。
+後片付けが必要な場合は、`Closed` ではなく、シーンの `OnDestroy`（`PushScene` で重ねる場合は `OnPause`）で行ってください。
+:::
+
+### Closed イベント
+
+モーダルが閉じられたとき（`Close()` 呼び出し時、またはオーバーレイクリック時）に発火します。
+
+```csharp
+modal.Closed += () =>
+{
+    Console.WriteLine("モーダルが閉じられた");
+};
+```
+
+## ポップアップ
+
+ドロップダウンのように、アンカーの近くに出る要素には [`Popup`](/guide/ui/elements/#popup) を使います。モーダルと同じく、表示中はポップアップの内側だけが入力とフォーカスを受け取ります。
+
+モーダルとの違いは、次のとおりです。
+
+| | モーダル | ポップアップ |
+|---|---|---|
+| 外側のクリック | `CloseOnOverlayClick` が `true` なら閉じる | 既定で閉じる |
+| Esc | 何も起きない | 既定で閉じる |
+| 閉じたときのフォーカス | 表示前の要素に戻る | 表示前の要素に戻る |
+| 位置 | 自分で決める | アンカー基準で画面内に自動配置 |
+
+ポップアップはモーダルの上にも表示できます。モーダルの中のドロップダウンも、モーダルを閉じずに操作できます。
+
+どちらも外側のクリックは、下にある要素には届きません。
