@@ -36,6 +36,11 @@ namespace Promete.Assets;
 /// </remarks>
 public sealed class AssetManager : IDisposable
 {
+    /// <summary>
+    /// グリフソースだけを作るときに渡すフォントサイズ。グリフソースはサイズに依存しないため、値は使われません。
+    /// </summary>
+    private const float GlyphSourceProbeSize = 16;
+
     private readonly object _lock = new();
     private readonly Dictionary<CacheKey, Entry> _cache = new();
     private readonly object _globalOwner = new();
@@ -392,7 +397,7 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public Font LoadFont(string path, float size, AssetScope scope)
     {
-        throw new NotImplementedException();
+        return LoadFont(path, size, FontStyle.Normal, true, scope);
     }
 
     /// <summary>
@@ -411,7 +416,7 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public Font LoadFont(string path, float size, FontStyle style, AssetScope scope)
     {
-        throw new NotImplementedException();
+        return LoadFont(path, size, style, true, scope);
     }
 
     /// <summary>
@@ -437,7 +442,12 @@ public sealed class AssetManager : IDisposable
         AssetScope scope
     )
     {
-        throw new NotImplementedException();
+        var normalized = AssetPath.Normalize(path);
+        ThrowIfDisposed();
+        var owner = ResolveOwner(scope);
+
+        var source = GetOrLoadGlyphSource(normalized, owner);
+        return Font.FromGlyphSource(source, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -1240,6 +1250,86 @@ public sealed class AssetManager : IDisposable
     }
 
     /// <summary>
+    /// フォントのグリフソースを、キャッシュを通して読み込みます。パスごとに 1 つだけ読み、サイズやスタイルが違っても共有します。
+    /// </summary>
+    /// <param name="normalized">正規化した論理パス。</param>
+    /// <param name="owner">所有者。</param>
+    /// <returns>グリフソース。</returns>
+    private IGlyphSource GetOrLoadGlyphSource(string normalized, object owner)
+    {
+        var key = new CacheKey(CacheKind.FontSource, normalized, null);
+        var loaded = GetOrLoad(
+            key,
+            owner,
+            () =>
+                ReadWith(
+                    normalized,
+                    stream => CreateGlyphSource(normalized, stream),
+                    leaveOpen: false
+                ),
+            ReleaseGlyphSource
+        );
+        return loaded.Source;
+    }
+
+    /// <summary>
+    /// ストリームからグリフソースを作ります。ストリームから読めない環境では、ファイルのパスから読みます。
+    /// </summary>
+    /// <remarks>
+    /// ファイルのパスから読んだグリフソースは provider がキャッシュしているため、解放の対象にしません。
+    /// サイズは、グリフソースだけを作るために使うので、既定の値を渡します。
+    /// </remarks>
+    /// <param name="normalized">正規化した論理パス。</param>
+    /// <param name="stream">フォントのデータを含むストリーム。</param>
+    /// <returns>グリフソースと、解放の対象かどうか。</returns>
+    /// <exception cref="NotSupportedException">ストリームからもファイルのパスからも読めない場合。</exception>
+    private GlyphSourceValue CreateGlyphSource(string normalized, Stream stream)
+    {
+        try
+        {
+            var font = _app.FontProvider.FromStream(
+                stream,
+                GlyphSourceProbeSize,
+                FontStyle.Normal,
+                true
+            );
+            return new GlyphSourceValue(font.Source, IsOwned: true);
+        }
+        catch (NotSupportedException ex)
+        {
+            if (!FileSystem.TryGetFilePath(normalized, out var fullPath))
+            {
+                throw new NotSupportedException(
+                    $"フォント '{normalized}' はストリームからもファイルのパスからも読めません。",
+                    ex
+                );
+            }
+
+            var font = _app.FontProvider.FromFile(
+                fullPath,
+                GlyphSourceProbeSize,
+                FontStyle.Normal,
+                true,
+                0
+            );
+            return new GlyphSourceValue(font.Source, IsOwned: false);
+        }
+    }
+
+    /// <summary>
+    /// グリフソースの値を解放します。自分で作ったものだけを Dispose します。
+    /// </summary>
+    /// <param name="value">解放する <see cref="GlyphSourceValue"/>。</param>
+    private static void ReleaseGlyphSource(object? value)
+    {
+        var loaded = (GlyphSourceValue)value!;
+        if (loaded.IsOwned)
+        {
+            loaded.Source.Dispose();
+        }
+    }
+
+    /// <summary>
     /// 矩形の並びで切り抜いたテクスチャを、キャッシュを通して読み込みます。呼び出し元が渡した配列のコピーを使います。
     /// </summary>
     /// <param name="path">画像ファイルの論理パス。</param>
@@ -1277,6 +1367,13 @@ public sealed class AssetManager : IDisposable
     /// キャッシュのキーです。(種類, 正規化した論理パス, オプション) の組で同一性を決めます。
     /// </summary>
     private readonly record struct CacheKey(CacheKind Kind, string Path, object? Options);
+
+    /// <summary>
+    /// フォントのグリフソースの値です。自分で作ったものかどうかを持ちます。
+    /// </summary>
+    /// <param name="Source">グリフソース。</param>
+    /// <param name="IsOwned">解放の対象なら <see langword="true"/>。provider がキャッシュしているものは <see langword="false"/>。</param>
+    private sealed record GlyphSourceValue(IGlyphSource Source, bool IsOwned);
 
     /// <summary>
     /// シーンのスコープです。中身は持たず、参照の同一性だけで所有者を表します。
