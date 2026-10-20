@@ -648,7 +648,11 @@ public sealed class UIManager(PrometeApp app, Mouse mouse, Keyboard keyboard)
 
     private static void CollectUIElements(Node node, List<UIElement> results)
     {
-        if (node is UIElement element && element.IsVisible)
+        // 非表示のノードは、子孫も含めて入力とフォーカスの対象にしない
+        if (!node.IsVisible)
+            return;
+
+        if (node is UIElement element)
         {
             results.Add(element);
         }
