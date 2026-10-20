@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Promete.Graphics.Fonts;
 using Promete.Input;
 using Promete.Nodes;
 using Promete.UI;
@@ -246,20 +247,38 @@ public class MultilineTextInputTests : IDisposable
     [Fact]
     public void Scrolling_ShouldFollowCaret_WhenLinesExceedRows()
     {
+        // 2 行分の表示範囲 (32px) に、5 行 (80px) のテキスト
         _input.Rows = 2;
         _input.Text = "l0\nl1\nl2\nl3\nl4";
         _input.CursorPosition = _input.Text.Length;
         _h.Frame(2);
 
-        _input.ScrollLine.Should().Be(3);
-        _input.VisibleLines.Should().Equal("l3", "l4");
+        _input.ScrollOffset.Should().Be(80 - 32);
+        _input.TextNode.Location.Y.Should().Be(-(80 - 32));
 
         // 先頭の行までキャレットを戻すと、スクロールも戻る
         for (var i = 0; i < 4; i++)
             _h.PressKey(KeyCode.Up);
 
-        _input.ScrollLine.Should().Be(0);
-        _input.VisibleLines.Should().Equal("l0", "l1");
+        _input.ScrollOffset.Should().Be(0);
+        _input.TextNode.Location.Y.Should().Be(0);
+    }
+
+    [Fact]
+    public void Scrolling_ShouldOnlyMoveWhenCaretLeavesTheView()
+    {
+        _input.Rows = 2;
+        _input.Text = "l0\nl1\nl2\nl3\nl4";
+        _input.CursorPosition = _input.Text.Length;
+        _h.Frame(2);
+
+        // 見えている範囲 (3・4 行目) の中で動かしてもスクロールしない
+        _h.PressKey(KeyCode.Up);
+        _input.ScrollOffset.Should().Be(48);
+
+        // 範囲の外 (2 行目) に出ると、その行が見えるまでスクロールする
+        _h.PressKey(KeyCode.Up);
+        _input.ScrollOffset.Should().Be(32);
     }
 
     [Fact]
@@ -277,36 +296,105 @@ public class MultilineTextInputTests : IDisposable
     }
 
     [Fact]
-    public void ShortText_ShouldNotScroll_AndShowAllLines()
+    public void ShortText_ShouldNotScroll()
     {
         _input.Text = "a\nb";
         _input.CursorPosition = 3;
         _h.Frame(2);
 
-        _input.ScrollLine.Should().Be(0);
-        _input.VisibleLines.Should().Equal("a", "b");
+        _input.ScrollOffset.Should().Be(0);
     }
 
     [Fact]
-    public void Multiline_ShouldHideTextNodeButKeepItsContent()
+    public void Scroll_ShouldComeBack_WhenTextBecomesShorter()
     {
-        Type("ab");
+        _input.Rows = 2;
+        _input.Text = "l0\nl1\nl2\nl3\nl4";
+        _input.CursorPosition = _input.Text.Length;
         _h.Frame(2);
 
-        _input.TextNode.IsVisible.Should().BeFalse();
-        _input.TextNode.Content.Should().Be("ab");
-        _input.VisibleLines.Should().Equal("ab");
+        _input.Text = "l0";
+        _h.Frame(2);
+
+        _input.ScrollOffset.Should().Be(0);
     }
 
     [Fact]
-    public void BackToSingleLine_ShouldShowTextNodeAgain()
+    public void Multiline_ShouldClipTextToTheBox_WithATrimmableContainer()
     {
-        Type("ab");
+        var viewport = (Container)_input.TextNode.Parent!;
+
+        viewport.IsTrimmable.Should().BeTrue();
+        viewport.Location.Should().Be(new Vector(6, 6));
+        viewport.Size.Should().Be(new VectorInt(200 - 12, 3 * 16));
+        _input.TextNode.IsVisible.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SingleLine_ShouldNotClipText()
+    {
+        var input = new TextInput();
+        _h.App.GlobalForeground.Add(input);
+        _h.Frame(2);
+
+        var viewport = (Container)input.TextNode.Parent!;
+        viewport.IsTrimmable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void BackToSingleLine_ShouldStopClippingAndWrapping()
+    {
+        Type(new string('a', 30));
+        _input.TextNode.Layout.Lines.Count.Should().Be(2);
+
         _input.Rows = 1;
         _h.Frame(2);
 
-        _input.TextNode.IsVisible.Should().BeTrue();
-        _input.VisibleLines.Should().BeEmpty();
+        ((Container)_input.TextNode.Parent!).IsTrimmable.Should().BeFalse();
+        _input.TextNode.Layout.Lines.Count.Should().Be(1);
+        _input.TextNode.WrapMode.Should().Be(WrapMode.None);
+    }
+
+    [Fact]
+    public void Multiline_ShouldWrapTheTextNodeToTheInnerWidth()
+    {
+        Type(new string('a', 30));
+
+        _input.TextNode.WrapMode.Should().Be(WrapMode.Mixed);
+        _input.TextNode.PreferredSize.X.Should().Be(200 - 12);
+        _input.TextNode.Layout.Lines.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void WrapMode_ShouldChangeWhereLinesBreak()
+    {
+        // 内側の幅は 40px (5 文字分)
+        _input.Size = (52, _input.Size.Y);
+        _input.Text = "aaa bbbbb";
+        _h.Frame(2);
+
+        string FirstLine() =>
+            _input.Text.Substring(
+                _input.TextNode.Layout.Lines[0].StartIndex,
+                _input.TextNode.Layout.Lines[0].Length
+            );
+
+        _input.WrapMode = WrapMode.Character;
+        FirstLine().Should().Contain("b");
+
+        _input.WrapMode = WrapMode.Word;
+        FirstLine().Should().NotContain("b");
+    }
+
+    [Fact]
+    public void WrapModeNone_ShouldNotWrap_AndKinsokuModeShouldBeForwarded()
+    {
+        _input.WrapMode = WrapMode.None;
+        _input.KinsokuMode = KinsokuMode.None;
+        Type(new string('a', 30));
+
+        _input.TextNode.Layout.Lines.Count.Should().Be(1);
+        _input.TextNode.KinsokuMode.Should().Be(KinsokuMode.None);
     }
 
     [Fact]

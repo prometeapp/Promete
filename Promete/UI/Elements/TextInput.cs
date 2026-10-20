@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Promete.Graphics.Fonts;
 using Promete.Input;
 using Promete.Nodes;
@@ -14,7 +13,8 @@ namespace Promete.UI.Elements;
 /// <remarks>
 /// <see cref="Rows"/> を 2 以上にすると、複数行の入力欄になります。
 /// 複数行では、Enter で改行し、Ctrl+Enter で <see cref="Submitted"/> を発火します。
-/// 長い行は幅に合わせて折り返され、行数が <see cref="Rows"/> を超えるとキャレットに合わせて縦にスクロールします。
+/// 長い行は幅に合わせて折り返され (<see cref="WrapMode"/>, <see cref="KinsokuMode"/>)、
+/// 行数が <see cref="Rows"/> を超えるとキャレットに合わせて縦にスクロールします。
 /// </remarks>
 public class TextInput : UIElement
 {
@@ -22,28 +22,20 @@ public class TextInput : UIElement
 
     private readonly Text _textNode;
     private readonly Text _placeholderNode;
-    private readonly Container _lineContainer = new();
-    private readonly List<Text> _lineNodes = [];
+    private readonly Container _viewport = new();
     private string _text = "";
     private string _placeholder = "";
     private int _cursorPosition;
     private int _desiredCaretX = -1;
     private int _rows = 1;
-    private int _scrollLine;
+    private int _scrollY;
     private float _cursorBlinkTimer;
     private bool _cursorVisible;
     private bool _needsBufferFlush;
-    private bool _linesDirty = true;
-    private IUIStyle<TextInput> _style;
-
-    private TextLayout? _layout;
-    private string? _layoutText;
-    private int _layoutWidth;
-    private Font? _layoutFont;
-    private float _layoutLetterSpacing;
-
+    private WrapMode _wrapMode = WrapMode.Mixed;
+    private KinsokuMode _kinsokuMode = KinsokuMode.Standard;
     private VectorInt _lastSize;
-    private System.Drawing.Color _lastLineColor;
+    private IUIStyle<TextInput> _style;
 
     /// <summary>
     /// TextInput の新しいインスタンスを初期化します。
@@ -56,9 +48,9 @@ public class TextInput : UIElement
         _placeholder = placeholder;
         _placeholderNode = new Text(placeholder);
         _textNode = new Text("");
+        _viewport.Add(_textNode);
         Add(_placeholderNode);
-        Add(_textNode);
-        Add(_lineContainer);
+        Add(_viewport);
         Size = (200, 32);
         IsFocusable = true;
         _needsBufferFlush = true;
@@ -125,7 +117,7 @@ public class TextInput : UIElement
             if (IsMultiline)
                 Size = (Size.X, rows * GetLineHeight() + PaddingTop * 2);
 
-            _scrollLine = 0;
+            _scrollY = 0;
             _desiredCaretX = -1;
             OnContentChanged();
         }
@@ -133,6 +125,33 @@ public class TextInput : UIElement
 
     /// <summary>複数行の入力欄かどうか。</summary>
     public bool IsMultiline => _rows > 1;
+
+    /// <summary>
+    /// 複数行のときに、行を折り返す方法を取得または設定します。デフォルトは <see cref="WrapMode.Mixed"/> です。
+    /// 1行の入力欄では折り返しません。
+    /// </summary>
+    public WrapMode WrapMode
+    {
+        get => _wrapMode;
+        set
+        {
+            _wrapMode = value;
+            OnContentChanged();
+        }
+    }
+
+    /// <summary>
+    /// 複数行のときに、折り返しで行頭・行末に置けない文字を扱う方法 (禁則処理) を取得または設定します。
+    /// </summary>
+    public KinsokuMode KinsokuMode
+    {
+        get => _kinsokuMode;
+        set
+        {
+            _kinsokuMode = value;
+            OnContentChanged();
+        }
+    }
 
     /// <summary>カーソル位置を取得します。</summary>
     public int CursorPosition
@@ -146,7 +165,10 @@ public class TextInput : UIElement
         }
     }
 
-    /// <summary>テキスト表示用の Text ノード。</summary>
+    /// <summary>
+    /// テキスト表示用の Text ノード。
+    /// 複数行のときは、表示範囲で切り抜かれるコンテナの中に置かれ、縦にスクロールされます。
+    /// </summary>
     public Text TextNode => _textNode;
 
     /// <summary>プレースホルダー表示用の Text ノード。</summary>
@@ -177,12 +199,13 @@ public class TextInput : UIElement
             if (!IsMultiline)
                 return new Vector(x, SingleLineCaretMargin);
 
-            return new Vector(x, PaddingTop + CaretTop(layout) - ScrollTop(layout));
+            return new Vector(x, PaddingTop + CaretLine(layout).Top - _scrollY);
         }
     }
 
     /// <summary>キャレットの高さを取得します。</summary>
-    public int CaretHeight => IsMultiline ? GetLineHeight() : Size.Y - SingleLineCaretMargin * 2;
+    public int CaretHeight =>
+        IsMultiline ? CaretLine(GetLayout()).Height : Size.Y - SingleLineCaretMargin * 2;
 
     /// <summary>スタイルを取得または設定します。</summary>
     public IUIStyle<TextInput> Style
@@ -195,27 +218,8 @@ public class TextInput : UIElement
         }
     }
 
-    /// <summary>先頭に表示している行のインデックス。</summary>
-    internal int ScrollLine => _scrollLine;
-
-    /// <summary>複数行のとき、現在表示されている行の内容。</summary>
-    internal IReadOnlyList<string> VisibleLines
-    {
-        get
-        {
-            var result = new List<string>();
-            if (!IsMultiline)
-                return result;
-
-            foreach (var node in _lineNodes)
-            {
-                if (node.IsVisible)
-                    result.Add(node.Content);
-            }
-
-            return result;
-        }
-    }
+    /// <summary>縦にスクロールしている量 (ピクセル)。</summary>
+    internal int ScrollOffset => _scrollY;
 
     /// <summary>
     /// フォーカス中にキーボード入力を処理します。
@@ -280,13 +284,17 @@ public class TextInput : UIElement
 
         if (keyboard.Home.IsKeyDown)
         {
-            var home = IsMultiline ? LineStartOfCaret() : 0;
+            var layout = GetLayout();
+            var home = IsMultiline ? CaretNavigator.LineStart(layout, CaretLineIndex(layout)) : 0;
             MoveCaretTo(home, keepColumn: false);
         }
 
         if (keyboard.End.IsKeyDown)
         {
-            var end = IsMultiline ? LineEndOfCaret() : _text.Length;
+            var layout = GetLayout();
+            var end = IsMultiline
+                ? CaretNavigator.LineEnd(layout, CaretLineIndex(layout))
+                : _text.Length;
             MoveCaretTo(end, keepColumn: false);
         }
 
@@ -315,7 +323,6 @@ public class TextInput : UIElement
         if (!size.Equals(_lastSize))
         {
             _lastSize = size;
-            _linesDirty = true;
             if (IsMultiline)
                 EnsureCaretVisible();
         }
@@ -323,150 +330,83 @@ public class TextInput : UIElement
         // プレースホルダーの表示切り替え
         _placeholderNode.IsVisible = string.IsNullOrEmpty(_text) && !IsFocused;
 
+        ConfigureTextNode();
         if (IsMultiline)
-            UpdateMultiline();
+            LayoutMultiline();
         else
-            UpdateSingleLine();
+            LayoutSingleLine();
     }
 
-    private void UpdateSingleLine()
+    /// <summary>
+    /// 1行のときは、テキストを上下中央に置きます。
+    /// </summary>
+    private void LayoutSingleLine()
     {
-        _textNode.IsVisible = true;
-        _lineContainer.IsVisible = false;
+        Place(_viewport, trim: false, Vector.Zero, default);
 
-        // テキストとプレースホルダーの位置
         var textY = (Size.Y - _textNode.Size.Y) / 2f;
         if (_textNode.Size.Y > 0)
-            _textNode.Location = new Vector(PaddingLeft, textY);
+            Place(_textNode, new Vector(PaddingLeft, textY));
         if (_placeholderNode.Size.Y > 0)
-            _placeholderNode.Location = new Vector(PaddingLeft, textY);
-    }
-
-    private void UpdateMultiline()
-    {
-        // 表示は行ごとの Text で行うので、全体の Text ノードは隠す (スタイルが色を決める窓口として残す)
-        _textNode.IsVisible = false;
-        _lineContainer.IsVisible = true;
-
-        if (_placeholderNode.Size.Y > 0)
-            _placeholderNode.Location = new Vector(PaddingLeft, PaddingTop);
-
-        if (_linesDirty || _lastLineColor != _textNode.Color)
-            RefreshLineNodes();
+            Place(_placeholderNode, new Vector(PaddingLeft, textY));
     }
 
     /// <summary>
-    /// 見える行ごとに Text ノードを作り直します。
-    /// 行単位でスクロールするため、見切れる行は作りません。
+    /// 複数行のときは、上下の余白の内側を表示範囲にして切り抜き、スクロールした分だけテキストをずらします。
     /// </summary>
-    private void RefreshLineNodes()
+    private void LayoutMultiline()
     {
-        _linesDirty = false;
-        _lastLineColor = _textNode.Color;
-
-        var layout = GetLayout();
-        var scrollTop = ScrollTop(layout);
-        var viewHeight = ViewHeight();
-
-        var visible = 0;
-        for (var i = _scrollLine; i < layout.Lines.Count; i++)
-        {
-            var line = layout.Lines[i];
-
-            // 最低でも1行は表示する (高さが1行に満たない場合の保険)
-            if (visible > 0 && line.Top + line.Height - scrollTop > viewHeight)
-                break;
-
-            if (visible >= _lineNodes.Count)
-            {
-                var node = new Text("");
-                _lineNodes.Add(node);
-                _lineContainer.Add(node);
-            }
-
-            var lineNode = _lineNodes[visible];
-            lineNode.Font = _textNode.Font;
-            lineNode.Color = _textNode.Color;
-            lineNode.LetterSpacing = _textNode.LetterSpacing;
-            lineNode.Content = _text.Substring(line.StartIndex, line.Length);
-            lineNode.Location = new Vector(PaddingLeft, PaddingTop + line.Top - scrollTop);
-            lineNode.IsVisible = true;
-            visible++;
-        }
-
-        for (var i = visible; i < _lineNodes.Count; i++)
-            _lineNodes[i].IsVisible = false;
+        var width = Math.Max(1, Size.X - PaddingLeft * 2);
+        Place(_viewport, trim: true, new Vector(PaddingLeft, PaddingTop), (width, ViewHeight()));
+        Place(_textNode, new Vector(0, -_scrollY));
+        Place(_placeholderNode, new Vector(PaddingLeft, PaddingTop));
     }
 
     /// <summary>
-    /// 現在のテキストと幅に対するレイアウトを取得します。同じ条件の間は、計算結果を使い回します。
+    /// 現在のモードに合わせて、Text ノードの折り返しの設定を整えます。
+    /// 複数行では入力欄の幅で折り返し、1行では折り返しません。
+    /// </summary>
+    private void ConfigureTextNode()
+    {
+        if (IsMultiline)
+        {
+            _textNode.PreferredSize = (Math.Max(1, Size.X - PaddingLeft * 2), 0);
+            _textNode.WrapMode = _wrapMode;
+            _textNode.KinsokuMode = _kinsokuMode;
+        }
+        else
+        {
+            _textNode.PreferredSize = (0, 0);
+            _textNode.WrapMode = WrapMode.None;
+        }
+    }
+
+    /// <summary>
+    /// 設定を整えたうえで、現在のテキストのレイアウトを取得します。
     /// </summary>
     private TextLayout GetLayout()
     {
-        var width = IsMultiline ? Math.Max(1, Size.X - PaddingLeft * 2) : 0;
-        var font = _textNode.Font;
-        var letterSpacing = _textNode.LetterSpacing;
+        ConfigureTextNode();
 
-        if (
-            _layout != null
-            && ReferenceEquals(_layoutText, _text)
-            && _layoutWidth == width
-            && _layoutFont == font
-            && _layoutLetterSpacing == letterSpacing
-        )
-        {
-            return _layout;
-        }
-
-        var options = (TextRenderingOptions)_textNode.Options.Clone();
-        options.Size = (width, 0);
-        options.WrapMode = width > 0 ? WrapMode.Character : WrapMode.None;
-        options.LetterSpacing = letterSpacing;
-
-        _layout = TextLayoutEngine.Layout(_text, font, options);
-        _layoutText = _text;
-        _layoutWidth = width;
-        _layoutFont = font;
-        _layoutLetterSpacing = letterSpacing;
-        _linesDirty = true;
-        return _layout;
+        // Text のレイアウトは Size を読むと更新される
+        _ = _textNode.Size;
+        return _textNode.Layout;
     }
 
-    private int GetLineHeight()
-    {
-        var layout = _layout;
-        if (layout is { Lines.Count: > 0 })
-            return layout.Lines[0].Height;
-
-        return (int)MathF.Ceiling(_textNode.Font.Metrics.LineHeight * _textNode.LineSpacing);
-    }
+    private int GetLineHeight() =>
+        (int)MathF.Ceiling(_textNode.Font.Metrics.LineHeight * _textNode.LineSpacing);
 
     /// <summary>テキストを表示できる領域の高さ。</summary>
     private int ViewHeight() => Math.Max(1, Size.Y - PaddingTop * 2);
 
-    /// <summary>スクロールによって隠れている部分の高さ。</summary>
-    private int ScrollTop(TextLayout layout) =>
+    private int CaretLineIndex(TextLayout layout) =>
+        CaretNavigator.FindLine(layout, _cursorPosition);
+
+    /// <summary>キャレットがある行。テキストが空で行がない場合は、1行分の既定値。</summary>
+    private TextLine CaretLine(TextLayout layout) =>
         layout.Lines.Count == 0
-            ? 0
-            : layout.Lines[Math.Min(_scrollLine, layout.Lines.Count - 1)].Top;
-
-    /// <summary>キャレットがある行の上端の、テキスト全体の上端からの距離。</summary>
-    private int CaretTop(TextLayout layout) =>
-        layout.Lines.Count == 0
-            ? 0
-            : layout.Lines[CaretNavigator.FindLine(layout, _cursorPosition)].Top;
-
-    private int LineStartOfCaret()
-    {
-        var layout = GetLayout();
-        return CaretNavigator.LineStart(layout, CaretNavigator.FindLine(layout, _cursorPosition));
-    }
-
-    private int LineEndOfCaret()
-    {
-        var layout = GetLayout();
-        return CaretNavigator.LineEnd(layout, CaretNavigator.FindLine(layout, _cursorPosition));
-    }
+            ? new TextLine(0, 0, 0, 0, GetLineHeight(), 0)
+            : layout.Lines[CaretLineIndex(layout)];
 
     /// <summary>
     /// キャレットの位置に文字列を挿入します。
@@ -516,7 +456,6 @@ public class TextInput : UIElement
 
     private void OnContentChanged()
     {
-        _linesDirty = true;
         if (IsMultiline)
             EnsureCaretVisible();
 
@@ -534,52 +473,40 @@ public class TextInput : UIElement
     }
 
     /// <summary>
-    /// キャレットのある行が見える範囲に入るよう、先頭に表示する行を調整します。
+    /// キャレットのある行が表示範囲に入るよう、スクロール量を調整します。
     /// </summary>
     private void EnsureCaretVisible()
     {
         var layout = GetLayout();
-        var lines = layout.Lines;
-        if (lines.Count == 0)
-        {
-            _scrollLine = 0;
-            return;
-        }
-
+        var line = CaretLine(layout);
         var viewHeight = ViewHeight();
-        var caretLine = CaretNavigator.FindLine(layout, _cursorPosition);
-        var previous = _scrollLine;
 
-        _scrollLine = Math.Min(_scrollLine, lines.Count - 1);
-        if (caretLine < _scrollLine)
-        {
-            _scrollLine = caretLine;
-        }
-        else
-        {
-            // キャレットの行の下端が収まるまで、先頭の行を送る
-            while (
-                _scrollLine < caretLine
-                && lines[caretLine].Top + lines[caretLine].Height - lines[_scrollLine].Top
-                    > viewHeight
-            )
-            {
-                _scrollLine++;
-            }
-        }
+        if (line.Top < _scrollY)
+            _scrollY = line.Top;
+        else if (line.Top + line.Height > _scrollY + viewHeight)
+            _scrollY = line.Top + line.Height - viewHeight;
 
-        // 末尾に余白ができる (全体がもっと上から収まる) 場合は、スクロールを戻す
-        var lastBottom = lines[^1].Top + lines[^1].Height;
-        while (_scrollLine > 0 && lastBottom - lines[_scrollLine - 1].Top <= viewHeight)
-            _scrollLine--;
-
-        if (_scrollLine != previous)
-            _linesDirty = true;
+        // 末尾に余白ができないように、スクロール量を範囲内に収める
+        _scrollY = Math.Clamp(_scrollY, 0, Math.Max(0, layout.Size.Y - viewHeight));
     }
 
     private void ResetCursorBlink()
     {
         _cursorVisible = true;
         _cursorBlinkTimer = 0;
+    }
+
+    private static void Place(Node node, Vector location)
+    {
+        if (node.Location != location)
+            node.Location = location;
+    }
+
+    private static void Place(Container viewport, bool trim, Vector location, VectorInt size)
+    {
+        viewport.IsTrimmable = trim;
+        Place(viewport, location);
+        if (trim && !viewport.Size.Equals(size))
+            viewport.Size = size;
     }
 }
