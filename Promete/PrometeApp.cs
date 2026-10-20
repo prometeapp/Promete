@@ -33,6 +33,7 @@ public sealed class PrometeApp : IDisposable
 
     private readonly List<Type> _pluginTypes;
     private readonly Stack<Scene> _sceneStack = new();
+    private readonly List<ISceneLifecycleHook> _sceneLifecycleHooks = [];
 
     private readonly ServiceCollection _services;
     private readonly List<IUpdatable> _updatablePlugins = [];
@@ -191,7 +192,7 @@ public sealed class PrometeApp : IDisposable
     /// <remarks>
     /// 遷移の途中では、<c>OnDestroy</c> を呼んだ後のシーンや、<c>OnStart</c> を呼ぶ前のシーンを返すことがあります。
     /// </remarks>
-    internal Scene? CurrentScene => throw new NotImplementedException();
+    internal Scene? CurrentScene => _currentScene;
 
     /// <summary>
     /// Promete アプリケーションを作成します。
@@ -311,7 +312,8 @@ public sealed class PrometeApp : IDisposable
     /// <exception cref="ArgumentNullException"><paramref name="hook"/> が <see langword="null"/> の場合。</exception>
     internal void AddSceneLifecycleHook(ISceneLifecycleHook hook)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(hook);
+        _sceneLifecycleHooks.Add(hook);
     }
 
     /// <summary>
@@ -416,19 +418,28 @@ public sealed class PrometeApp : IDisposable
         _currentScene?.OnDestroy();
         try
         {
-            _currentScene = GetScene(typeScene);
+            _currentScene = CreateScene(typeScene);
         }
         catch
         {
             // 破棄済みのシーンを現在のシーンとして残すと、次の遷移で二重に破棄してしまう
             _currentScene = null;
+            ReleaseScene(previous);
             throw;
         }
 
-        SceneWillChange?.Invoke(
-            new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
-        );
-        _currentScene.OnStart();
+        // 新しいシーンの OnStart の後に、前のシーンを解放する (OnStart が例外でも解放する)
+        try
+        {
+            SceneWillChange?.Invoke(
+                new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
+            );
+            _currentScene.OnStart();
+        }
+        finally
+        {
+            ReleaseScene(previous);
+        }
     }
 
     /// <summary>
@@ -457,7 +468,7 @@ public sealed class PrometeApp : IDisposable
 
         try
         {
-            _currentScene = GetScene(typeScene);
+            _currentScene = CreateScene(typeScene);
         }
         catch
         {
@@ -489,10 +500,20 @@ public sealed class PrometeApp : IDisposable
         var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = _sceneStack.Pop();
-        SceneWillChange?.Invoke(
-            new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene)
-        );
-        _currentScene.OnResume();
+
+        // 下のシーンの OnResume の後に、破棄したシーンを解放する (OnResume が例外でも解放する)
+        try
+        {
+            SceneWillChange?.Invoke(
+                new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene)
+            );
+            _currentScene.OnResume();
+        }
+        finally
+        {
+            ReleaseScene(previous);
+        }
+
         return true;
     }
 
@@ -503,7 +524,14 @@ public sealed class PrometeApp : IDisposable
     {
         while (_sceneStack.TryPop(out var scene))
         {
-            scene.OnDestroy();
+            try
+            {
+                scene.OnDestroy();
+            }
+            finally
+            {
+                ReleaseScene(scene);
+            }
         }
     }
 
@@ -652,7 +680,16 @@ public sealed class PrometeApp : IDisposable
     /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnDestroy()
     {
-        _currentScene?.OnDestroy();
+        var current = _currentScene;
+        try
+        {
+            current?.OnDestroy();
+        }
+        finally
+        {
+            ReleaseScene(current);
+        }
+
         ClearSceneStack();
 
         Dispose();
@@ -745,6 +782,56 @@ public sealed class PrometeApp : IDisposable
     {
         return _provider.GetService(scene) as Scene
             ?? throw new ArgumentException($"The scene \"{scene.Name}\" is not registered.");
+    }
+
+    /// <summary>
+    /// シーンを生成し、フックに生成の開始・成功・失敗を知らせます。
+    /// </summary>
+    /// <param name="typeScene">生成するシーンの型。</param>
+    /// <returns>生成されたシーン。</returns>
+    private Scene CreateScene(Type typeScene)
+    {
+        foreach (var hook in _sceneLifecycleHooks)
+        {
+            hook.OnSceneConstructing();
+        }
+
+        Scene scene;
+        try
+        {
+            scene = GetScene(typeScene);
+        }
+        catch
+        {
+            foreach (var hook in _sceneLifecycleHooks)
+            {
+                hook.OnSceneConstructionFailed();
+            }
+
+            throw;
+        }
+
+        foreach (var hook in _sceneLifecycleHooks)
+        {
+            hook.OnSceneConstructed(scene);
+        }
+
+        return scene;
+    }
+
+    /// <summary>
+    /// フックに、シーンが使われなくなったことを知らせます。<see langword="null"/> の場合は何もしません。
+    /// </summary>
+    /// <param name="scene">使われなくなったシーン。</param>
+    private void ReleaseScene(Scene? scene)
+    {
+        if (scene is null)
+            return;
+
+        foreach (var hook in _sceneLifecycleHooks)
+        {
+            hook.OnSceneReleased(scene);
+        }
     }
 
     /// <summary>
