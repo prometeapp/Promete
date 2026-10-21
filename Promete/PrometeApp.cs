@@ -979,15 +979,6 @@ public sealed class PrometeApp : IDisposable
         }
 
         /// <summary>
-        /// 指定したインターフェースと実装型のプラグインを追加します。
-        /// </summary>
-        /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
-        /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
-        /// <returns>このビルダーインスタンス。</returns>
-        /// <remarks>
-        /// <inheritdoc cref="Use{T}" path="/remarks" />
-        /// </remarks>
-        /// <summary>
         /// 生成済みのプラグインを追加します。
         /// </summary>
         /// <typeparam name="TPlugin">プラグインとして公開する型。</typeparam>
@@ -1008,6 +999,15 @@ public sealed class PrometeApp : IDisposable
             return this;
         }
 
+        /// <summary>
+        /// 指定したインターフェースと実装型のプラグインを追加します。
+        /// </summary>
+        /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
+        /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
+        /// <returns>このビルダーインスタンス。</returns>
+        /// <remarks>
+        /// <inheritdoc cref="Use{T}()" path="/remarks" />
+        /// </remarks>
         public PrometeAppBuilder Use<
             TPlugin,
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImpl
@@ -1025,6 +1025,7 @@ public sealed class PrometeApp : IDisposable
         {
             // 描画ループはコマンドキューを前提とするため、バックエンドを問わず登録する
             _services.TryAddSingleton<RenderCommandQueue>();
+
             // 利用者の IAudioDecoder は Build より前に登録されるため、列挙では標準のものより先に並ぶ
             _services.AddSingleton<IAudioDecoder, WaveAudioDecoder>();
             _services.AddSingleton<IAudioDecoder, VorbisAudioDecoder>();

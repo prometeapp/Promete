@@ -33,6 +33,15 @@ namespace Promete.Assets;
 /// <para>
 /// リソースの Dispose は、常にメインスレッドで行います。メインスレッド以外で解放が決まった場合は、次のフレームに行います。
 /// </para>
+/// <para>
+/// テクスチャの同期の読み込み (<see cref="LoadTexture(string, AssetScope)"/> など) は、バックエンドによってはメインスレッドからしか呼べません
+/// (GL / Vulkan では、メインスレッド以外から呼ぶと <see cref="InvalidOperationException"/> になります)。
+/// ワーカースレッドでテクスチャを読むときは、<c>...Async</c> のメソッド (<see cref="LoadTextureAsync(string, AssetScope, CancellationToken)"/> など) を使ってください。
+/// 非同期版は、ファイルの読み込みと画像のデコードをスレッドプールで行い、GPU への転送だけをメインスレッドで行います。
+/// </para>
+/// <para>
+/// 汎用の <see cref="Load{T}(string, string, Func{Stream, T}, AssetScope)"/>、音声、フォントは、ワーカースレッドから <see cref="AssetScope.Global"/> で読めます。
+/// </para>
 /// </remarks>
 public sealed class AssetManager : IDisposable
 {
@@ -469,7 +478,7 @@ public sealed class AssetManager : IDisposable
     /// </remarks>
     /// <param name="path">音声ファイルの論理パス。</param>
     /// <param name="scope">アセットを所有させるスコープ。</param>
-    /// <returns>読み込んだ音声。</returns>
+    /// <returns>読み込んだ音声。Dispose しないでください (解放は Unload かスコープに任せます)。</returns>
     /// <exception cref="ArgumentException"><paramref name="path"/> が論理パスとして正しくない場合。</exception>
     /// <exception cref="FileNotFoundException">ファイルが見つからない場合。</exception>
     /// <exception cref="NotSupportedException">デコードできるデコーダーが無い場合。</exception>
@@ -509,7 +518,7 @@ public sealed class AssetManager : IDisposable
     /// <param name="key">読み方を区別するキー。</param>
     /// <param name="factory">ストリームからアセットを作る処理。</param>
     /// <param name="scope">アセットを所有させるスコープ。</param>
-    /// <returns>読み込んだアセット。</returns>
+    /// <returns>読み込んだアセット。Dispose しないでください (解放は Unload かスコープに任せます)。</returns>
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
     /// <exception cref="ArgumentException"><paramref name="path"/> が論理パスとして正しくない場合。</exception>
     /// <exception cref="FileNotFoundException">ファイルが見つからない場合。</exception>
@@ -536,7 +545,7 @@ public sealed class AssetManager : IDisposable
     /// <param name="factory">ストリームからアセットを作る処理。</param>
     /// <param name="scope">アセットを所有させるスコープ。</param>
     /// <param name="leaveOpen"><see langword="true"/> なら、<paramref name="factory"/> が戻った後もストリームを閉じません。</param>
-    /// <returns>読み込んだアセット。</returns>
+    /// <returns>読み込んだアセット。Dispose しないでください (解放は Unload かスコープに任せます)。</returns>
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
     /// <exception cref="ArgumentException"><paramref name="path"/> が論理パスとして正しくない場合。</exception>
     /// <exception cref="FileNotFoundException">ファイルが見つからない場合。</exception>
@@ -572,7 +581,9 @@ public sealed class AssetManager : IDisposable
     /// <remarks>
     /// <para>
     /// 同じキーの読み込みが実行中なら、それを共有します。スコープは呼び出した時点で決まり、その時点で所有者に加わります。
-    /// 完了する前にスコープが解放されて所有者がいなくなった場合、結果は完了した時点で解放されます (返された値は使えません)。
+    /// 完了する前にスコープが解放されて所有者がいなくなった場合、結果は完了した時点で解放され、返す <see cref="Task"/> は <see cref="OperationCanceledException"/> で失敗します
+    /// (<see cref="AssetManager"/> が破棄された場合は <see cref="ObjectDisposedException"/>)。待っている全員が、同じ例外で失敗します。
+    /// ただし、同じ読み込みを別のスコープも待っていれば、解放されず、結果をそのスコープに返します。
     /// </para>
     /// <para>
     /// <paramref name="cancellationToken"/> は、呼び出し元が待つのをやめるためのものです。共有している読み込み自体は止まらず、結果はスコープに残ります。
@@ -580,6 +591,7 @@ public sealed class AssetManager : IDisposable
     /// <para>
     /// 引数とスコープの誤り (<see cref="ArgumentException"/>、<see cref="InvalidOperationException"/>、<see cref="ObjectDisposedException"/>) は、
     /// 返す <see cref="Task"/> ではなく、この呼び出しで例外になります。
+    /// キャンセル済みのトークンは例外にせず、キャンセル済みの <see cref="Task"/> を返します (読み込みは始めません)。
     /// </para>
     /// </remarks>
     /// <param name="path">画像ファイルの論理パス。</param>
@@ -947,7 +959,7 @@ public sealed class AssetManager : IDisposable
     /// <param name="path">音声ファイルの論理パス。</param>
     /// <param name="scope">アセットを所有させるスコープ。</param>
     /// <param name="cancellationToken">待つのをやめるためのトークン。</param>
-    /// <returns>読み込んだ音声。</returns>
+    /// <returns>読み込んだ音声。Dispose しないでください (解放は Unload かスコープに任せます)。</returns>
     public Task<IAudioSource> LoadAudioAsync(
         string path,
         AssetScope scope,
@@ -985,7 +997,7 @@ public sealed class AssetManager : IDisposable
     /// <param name="factory">ストリームからアセットを作る処理。スレッドプールで呼ばれます。</param>
     /// <param name="scope">アセットを所有させるスコープ。</param>
     /// <param name="cancellationToken">待つのをやめるためのトークン。</param>
-    /// <returns>読み込んだアセット。</returns>
+    /// <returns>読み込んだアセット。Dispose しないでください (解放は Unload かスコープに任せます)。</returns>
     public Task<T> LoadAsync<T>(
         string path,
         string key,
@@ -1011,7 +1023,7 @@ public sealed class AssetManager : IDisposable
     /// <param name="scope">アセットを所有させるスコープ。</param>
     /// <param name="leaveOpen"><see langword="true"/> なら、<paramref name="factory"/> が完了した後もストリームを閉じません。</param>
     /// <param name="cancellationToken">待つのをやめるためのトークン。</param>
-    /// <returns>読み込んだアセット。</returns>
+    /// <returns>読み込んだアセット。Dispose しないでください (解放は Unload かスコープに任せます)。</returns>
     public Task<T> LoadAsync<T>(
         string path,
         string key,
@@ -1051,6 +1063,7 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ArgumentException"><paramref name="path"/> が論理パスとして正しくない場合。</exception>
     /// <exception cref="InvalidOperationException"><see cref="AssetScope.Scene"/> を、メインスレッド以外から、またはシーンが無いときに指定した場合。</exception>
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
+    /// <exception cref="AggregateException">解放の途中で例外が出た場合。残りのアセットは解放したうえで、例外をまとめて投げます。</exception>
     public void Unload(string path, AssetScope scope)
     {
         var normalized = AssetPath.Normalize(path);
@@ -1074,6 +1087,7 @@ public sealed class AssetManager : IDisposable
     /// <exception cref="ArgumentNullException"><paramref name="path"/> が <see langword="null"/> の場合。</exception>
     /// <exception cref="ArgumentException"><paramref name="path"/> が論理パスとして正しくない場合。</exception>
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
+    /// <exception cref="AggregateException">解放の途中で例外が出た場合。残りのアセットは解放したうえで、例外をまとめて投げます。</exception>
     public void Unload(string path)
     {
         var normalized = AssetPath.Normalize(path);
@@ -1097,6 +1111,7 @@ public sealed class AssetManager : IDisposable
     /// <param name="scope">外すスコープ。<see cref="AssetScope.Scene"/> は現在のシーンを指します。</param>
     /// <exception cref="InvalidOperationException"><see cref="AssetScope.Scene"/> を、メインスレッド以外から、またはシーンが無いときに指定した場合。</exception>
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
+    /// <exception cref="AggregateException">解放の途中で例外が出た場合。残りのアセットは解放したうえで、例外をまとめて投げます。</exception>
     public void Unload(AssetScope scope)
     {
         ThrowIfDisposed();
@@ -1116,7 +1131,9 @@ public sealed class AssetManager : IDisposable
     /// </summary>
     /// <remarks>
     /// アプリの終了時に呼ばれます。アプリの Dispose と DI コンテナの破棄の両方から呼ばれるため、冪等です。
+    /// 解放の途中で例外が出ても、残りのアセットと <see cref="FileSystem"/> は解放します。
     /// </remarks>
+    /// <exception cref="AggregateException">解放の途中で例外が出た場合。すべての解放を終えてから、例外をまとめて投げます。</exception>
     public void Dispose()
     {
         // アプリの Dispose と DI コンテナの破棄の両方から呼ばれるため、1 回だけ実行する
@@ -1160,6 +1177,100 @@ public sealed class AssetManager : IDisposable
         }
 
         ThrowIfAny(errors);
+    }
+
+    /// <summary>
+    /// 解放の処理を 1 件実行します。例外は <paramref name="errors"/> に集めて、呼び出し元を止めません。
+    /// </summary>
+    /// <param name="release">解放の処理。</param>
+    /// <param name="errors">例外を集めるリスト。</param>
+    private static void TryRelease(Action release, List<Exception> errors)
+    {
+        try
+        {
+            release();
+        }
+        catch (Exception e)
+        {
+            errors.Add(e);
+        }
+    }
+
+    /// <summary>
+    /// 集めた例外が 1 つでもあれば、<see cref="AggregateException"/> にまとめて投げます。
+    /// </summary>
+    /// <param name="errors">集めた例外。</param>
+    /// <exception cref="AggregateException"><paramref name="errors"/> に例外がある場合。</exception>
+    private static void ThrowIfAny(List<Exception> errors)
+    {
+        if (errors.Count > 0)
+        {
+            throw new AggregateException(errors);
+        }
+    }
+
+    /// <summary>
+    /// <see cref="IDisposable"/> を実装している値を Dispose します。
+    /// </summary>
+    /// <param name="value">解放する値。</param>
+    private static void ReleaseDisposable(object? value)
+    {
+        (value as IDisposable)?.Dispose();
+    }
+
+    /// <summary>
+    /// テクスチャの配列の要素をすべて Dispose します。
+    /// </summary>
+    /// <param name="value">解放する <see cref="Texture2D"/> の配列。</param>
+    private static void ReleaseTextureArray(object? value)
+    {
+        foreach (var texture in (Texture2D[])value!)
+        {
+            texture.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// グリフソースの値を解放します。自分で作ったものだけを Dispose します。
+    /// </summary>
+    /// <param name="value">解放する <see cref="GlyphSourceValue"/>。</param>
+    private static void ReleaseGlyphSource(object? value)
+    {
+        var loaded = (GlyphSourceValue)value!;
+        if (loaded.IsOwned)
+        {
+            loaded.Source.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// 読み込みの完了を待ち、キャッシュの配列をコピーして返します。
+    /// </summary>
+    /// <param name="cells">読み込んだテクスチャの配列を返す Task。</param>
+    /// <returns>コピーしたテクスチャの配列。</returns>
+    private static async Task<Texture2D[]> CloneCellsAsync(Task<Texture2D[]> cells)
+    {
+        var loaded = await cells.ConfigureAwait(false);
+        return (Texture2D[])loaded.Clone();
+    }
+
+    /// <summary>
+    /// グリフソースの読み込みの完了を待ち、サイズとスタイルを付けたフォントを返します。
+    /// </summary>
+    /// <param name="glyphs">グリフソースを返す Task。</param>
+    /// <param name="size">フォントサイズ。</param>
+    /// <param name="style">フォントスタイル。</param>
+    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
+    /// <returns>読み込んだフォント。</returns>
+    private static async Task<Font> CreateFontAsync(
+        Task<GlyphSourceValue> glyphs,
+        float size,
+        FontStyle style,
+        bool isAntialiased
+    )
+    {
+        var loaded = await glyphs.ConfigureAwait(false);
+        return Font.FromGlyphSource(loaded.Source, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -1551,36 +1662,6 @@ public sealed class AssetManager : IDisposable
     }
 
     /// <summary>
-    /// 解放の処理を 1 件実行します。例外は <paramref name="errors"/> に集めて、呼び出し元を止めません。
-    /// </summary>
-    /// <param name="release">解放の処理。</param>
-    /// <param name="errors">例外を集めるリスト。</param>
-    private static void TryRelease(Action release, List<Exception> errors)
-    {
-        try
-        {
-            release();
-        }
-        catch (Exception e)
-        {
-            errors.Add(e);
-        }
-    }
-
-    /// <summary>
-    /// 集めた例外が 1 つでもあれば、<see cref="AggregateException"/> にまとめて投げます。
-    /// </summary>
-    /// <param name="errors">集めた例外。</param>
-    /// <exception cref="AggregateException"><paramref name="errors"/> に例外がある場合。</exception>
-    private static void ThrowIfAny(List<Exception> errors)
-    {
-        if (errors.Count > 0)
-        {
-            throw new AggregateException(errors);
-        }
-    }
-
-    /// <summary>
     /// ストリームを開き、<paramref name="factory"/> で読み込みます。ストリームは、例外のときと <paramref name="leaveOpen"/> が <see langword="false"/> のときに閉じます。
     /// </summary>
     /// <typeparam name="T">値の型。</typeparam>
@@ -1682,27 +1763,6 @@ public sealed class AssetManager : IDisposable
         }
 
         ThrowIfAny(errors);
-    }
-
-    /// <summary>
-    /// <see cref="IDisposable"/> を実装している値を Dispose します。
-    /// </summary>
-    /// <param name="value">解放する値。</param>
-    private static void ReleaseDisposable(object? value)
-    {
-        (value as IDisposable)?.Dispose();
-    }
-
-    /// <summary>
-    /// テクスチャの配列の要素をすべて Dispose します。
-    /// </summary>
-    /// <param name="value">解放する <see cref="Texture2D"/> の配列。</param>
-    private static void ReleaseTextureArray(object? value)
-    {
-        foreach (var texture in (Texture2D[])value!)
-        {
-            texture.Dispose();
-        }
     }
 
     /// <summary>
@@ -1815,19 +1875,6 @@ public sealed class AssetManager : IDisposable
     }
 
     /// <summary>
-    /// グリフソースの値を解放します。自分で作ったものだけを Dispose します。
-    /// </summary>
-    /// <param name="value">解放する <see cref="GlyphSourceValue"/>。</param>
-    private static void ReleaseGlyphSource(object? value)
-    {
-        var loaded = (GlyphSourceValue)value!;
-        if (loaded.IsOwned)
-        {
-            loaded.Source.Dispose();
-        }
-    }
-
-    /// <summary>
     /// 矩形の並びで切り抜いたテクスチャを、キャッシュを通して読み込みます。呼び出し元が渡した配列のコピーを使います。
     /// </summary>
     /// <param name="path">画像ファイルの論理パス。</param>
@@ -1903,36 +1950,6 @@ public sealed class AssetManager : IDisposable
                 cancellationToken
             )
         );
-    }
-
-    /// <summary>
-    /// 読み込みの完了を待ち、キャッシュの配列をコピーして返します。
-    /// </summary>
-    /// <param name="cells">読み込んだテクスチャの配列を返す Task。</param>
-    /// <returns>コピーしたテクスチャの配列。</returns>
-    private static async Task<Texture2D[]> CloneCellsAsync(Task<Texture2D[]> cells)
-    {
-        var loaded = await cells.ConfigureAwait(false);
-        return (Texture2D[])loaded.Clone();
-    }
-
-    /// <summary>
-    /// グリフソースの読み込みの完了を待ち、サイズとスタイルを付けたフォントを返します。
-    /// </summary>
-    /// <param name="glyphs">グリフソースを返す Task。</param>
-    /// <param name="size">フォントサイズ。</param>
-    /// <param name="style">フォントスタイル。</param>
-    /// <param name="isAntialiased">アンチエイリアスの有効/無効。</param>
-    /// <returns>読み込んだフォント。</returns>
-    private static async Task<Font> CreateFontAsync(
-        Task<GlyphSourceValue> glyphs,
-        float size,
-        FontStyle style,
-        bool isAntialiased
-    )
-    {
-        var loaded = await glyphs.ConfigureAwait(false);
-        return Font.FromGlyphSource(loaded.Source, size, style, isAntialiased);
     }
 
     /// <summary>
@@ -2070,7 +2087,7 @@ public sealed class AssetManager : IDisposable
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            var hash = new HashCode();
+            var hash = default(HashCode);
             hash.Add(_options);
             foreach (var rect in _rects)
             {

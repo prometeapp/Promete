@@ -418,7 +418,9 @@ DI が初めてシーンを解決する途中で作られるプラグイン（�
 - シーンが1つもないとき（アプリの組み立て中や、プラグインの `OnStart` の中など）
 - メインスレッド以外（ワーカースレッド）から呼ぶとき
 
-これらの場面では、`AssetScope.Global` を使ってください。ワーカースレッドから `Global` で読むことはできます。
+これらの場面では、`AssetScope.Global` を使ってください。
+
+ただし、テクスチャをワーカースレッドで読むときは、同期の `LoadTexture` ではなく `LoadTextureAsync` などの `...Async` を使ってください。GL では、テクスチャの転送をメインスレッドでしか行えないためです。汎用の `Load`、音声、フォントは、ワーカースレッドから `Global` で読めます。
 
 ## 同じアセットの扱い `v2.4~`
 
@@ -456,6 +458,10 @@ public class MainScene(AssetManager assets, CoroutineManager coroutine) : Scene
         var task = assets.LoadTextureAsync("assets/icons.png", AssetScope.Scene);
         yield return new WaitForTask(task);
 
+        // 読み込みが失敗した (途中で所有が外れた) 場合は、Result を読むと例外になるので、ここで止める
+        if (!task.IsCompletedSuccessfully)
+            yield break;
+
         Root.Add(new Sprite(task.Result).Location(256, 96));
     }
 }
@@ -465,8 +471,10 @@ public class MainScene(AssetManager assets, CoroutineManager coroutine) : Scene
 
 - **同じものを同時に読むと、1 回にまとめられます。** 読み込みの途中で同じ `LoadTextureAsync` を呼ぶと、同じ読み込みの結果を共有します。同期版の `LoadTexture` と同じキャッシュを使うので、先に同期版で読んであれば、非同期版はそれを返します。
 - **引数やスコープの間違いは、呼んだ瞬間に例外になります。** 読み込みの途中で起きたエラー（ファイルが無いなど）は、`Task` の中の例外になります。
-- **`CancellationToken` は、待つのをやめるためだけに使います。** キャンセルしても、読み込み自体は止まりません。読み終わった結果は、同じスコープに残ります。
-- **読み終わる前にシーンが終わった場合、結果は読み終わった時点で解放されます。** そのときの `Task` の結果は、使わないでください。
+- **`CancellationToken` は、待つのをやめるためだけに使います。** キャンセルしても、読み込み自体は止まりません。読み終わった結果は、同じスコープに残ります。すでにキャンセルされたトークンを渡すと、読み込みは始めずに、キャンセルされた `Task` を返します。
+- **読み終わる前にシーンが終わった場合、結果は読み終わった時点で解放され、`Task` は `OperationCanceledException` で失敗します。** (アプリが終わる場合は `ObjectDisposedException` です。) 同じ読み込みを別のスコープも待っていれば、失敗せず、結果を返します。
+
+シーンが終わると、そのシーンで動かしているコルーチンも止まるので、上の例の `Root.Add` は実行されません。ただし、読み込みの途中で所有が外れて `Task` が失敗することもあります。`Task` は失敗しても完了するので、`WaitForTask` の後は `task.Result` を読む前に `task.IsCompletedSuccessfully` を確かめてください。
 
 ## 明示的に解放する `v2.4~`
 
@@ -486,6 +494,7 @@ assets.Unload(AssetScope.Global);
 - `Unload(path, scope)` は、そのスコープの所有だけを外します。ほかのスコープがまだ持っていれば、残ります。
 - `Unload(path)` は、同じパスのものを、所有者に関係なく解放します。
 - `Unload(scope)` は、指定したスコープの所有を、すべてのアセットから外します。スコープ自体は残るので、この後も同じスコープで読めます。
+- 解放の途中で例外が出ても、残りのアセットは解放されます。例外はすべて `AggregateException` にまとめて投げられます。
 
 :::caution
 解放したテクスチャを使っている `Sprite` は、表示が壊れます。解放する前に、その `Sprite` を `Root` から外すなどして、使わないようにしてください。

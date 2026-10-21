@@ -79,6 +79,10 @@ public class ScopeScene(
         var task = manager.LoadTextureAsync("assets/icons.png", AssetScope.Scene);
         yield return new WaitForTask(task);
 
+        // 読み込みが失敗した (途中で所有が外れた) 場合は、Result を読むと例外になるので、ここで止める
+        if (!task.IsCompletedSuccessfully)
+            yield break;
+
         Root.Add(new Sprite(task.Result).Location(256, 96));
     }
 }
