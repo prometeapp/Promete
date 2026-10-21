@@ -30,11 +30,11 @@ internal sealed class StreamPackageStorage : PackageStorage
         _stream = stream;
         _leaveOpen = leaveOpen;
         _origin = stream.Position;
-        _length = stream.Length - _origin;
+        _length = Math.Max(0L, stream.Length - _origin);
     }
 
     /// <inheritdoc />
-    /// <remarks>構築した時点の位置から末尾までの長さです。</remarks>
+    /// <remarks>構築した時点の位置から末尾までの長さです。位置が末尾より後ろなら 0 です。</remarks>
     public override long Length => _length;
 
     /// <inheritdoc />
