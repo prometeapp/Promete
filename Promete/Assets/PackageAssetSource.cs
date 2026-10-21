@@ -501,7 +501,7 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
             if (
                 compressed
                 && storedSize <= (ulong.MaxValue - MaxDeflateRatioSlack) / MaxDeflateRatio
-                && originalSize > storedSize * MaxDeflateRatio + MaxDeflateRatioSlack
+                && originalSize > (storedSize * MaxDeflateRatio) + MaxDeflateRatioSlack
             )
             {
                 throw new InvalidDataException(
