@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Promete.AssetPacker;
 
@@ -28,6 +30,45 @@ public static class AssetPackagePath
     /// <exception cref="ArgumentException"><paramref name="path"/> が <c>\</c> を含む場合や、正規化した結果が空になる場合。</exception>
     public static string Normalize(string path)
     {
-        throw new NotImplementedException();
+        if (path is null)
+        {
+            throw new ArgumentNullException(nameof(path));
+        }
+
+        if (path.IndexOf('\\') >= 0)
+        {
+            throw new ArgumentException(
+                "論理パスの区切り文字は '/' のみ使えます。'\\' は使えません。",
+                nameof(path)
+            );
+        }
+
+        var segments = new List<string>();
+        foreach (var segment in path.Normalize(NormalizationForm.FormC).Split('/'))
+        {
+            if (segment.Length == 0 || segment == ".")
+            {
+                continue;
+            }
+
+            if (segment == "..")
+            {
+                if (segments.Count > 0)
+                {
+                    segments.RemoveAt(segments.Count - 1);
+                }
+
+                continue;
+            }
+
+            segments.Add(segment);
+        }
+
+        if (segments.Count == 0)
+        {
+            throw new ArgumentException("ファイルのパスは空にできません。", nameof(path));
+        }
+
+        return string.Join("/", segments);
     }
 }
