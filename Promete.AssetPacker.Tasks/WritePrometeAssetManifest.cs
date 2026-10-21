@@ -1,4 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -40,6 +45,125 @@ public sealed class WritePrometeAssetManifest : Task
     /// <inheritdoc />
     public override bool Execute()
     {
-        throw new NotImplementedException();
+        Written = false;
+        var outputPath = Path.GetFullPath(OutputFile);
+        try
+        {
+            var bytes = BuildManifest();
+            if (File.Exists(outputPath) && IsSameContent(outputPath, bytes))
+            {
+                return true;
+            }
+
+            var directory = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllBytes(outputPath, bytes);
+            Written = true;
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        {
+            LogError(
+                ErrorCodes.ManifestWriteFailed,
+                $"マニフェストを書き出せません '{outputPath}': {ex.Message}"
+            );
+            return false;
+        }
     }
+
+    /// <summary>
+    /// 文字列を JSON の文字列リテラルにします。<c>"</c>、<c>\</c>、0x20 未満の文字をエスケープします。
+    /// </summary>
+    /// <param name="value">エスケープする文字列。</param>
+    /// <returns>引用符で囲まれた JSON の文字列。</returns>
+    private static string EscapeJson(string value)
+    {
+        var builder = new StringBuilder(value.Length + 2);
+        builder.Append('"');
+        foreach (var c in value)
+        {
+            if (c == '"')
+            {
+                builder.Append("\\\"");
+            }
+            else if (c == '\\')
+            {
+                builder.Append("\\\\");
+            }
+            else if (c < 0x20)
+            {
+                builder.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                builder.Append(c);
+            }
+        }
+
+        builder.Append('"');
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// 既存のファイルの中身が、書こうとしている内容と同じかを取得します。
+    /// </summary>
+    /// <param name="path">既存のファイルのフルパス。</param>
+    /// <param name="bytes">書こうとしているバイト列。</param>
+    /// <returns>同じなら <see langword="true"/>。</returns>
+    private static bool IsSameContent(string path, byte[] bytes) =>
+        File.ReadAllBytes(path).SequenceEqual(bytes);
+
+    /// <summary>
+    /// <see cref="Assets"/> から、論理パスの序数順に並べたマニフェストの UTF-8 (BOM なし) のバイト列を作ります。
+    /// </summary>
+    /// <returns>マニフェストのバイト列。</returns>
+    private byte[] BuildManifest()
+    {
+        var entries = new List<KeyValuePair<string, string>>(Assets.Length);
+        foreach (var item in Assets)
+        {
+            entries.Add(
+                new KeyValuePair<string, string>(
+                    item.GetMetadata("LogicalPath"),
+                    Path.GetFullPath(item.ItemSpec)
+                )
+            );
+        }
+
+        // 入力の順序に依存しないよう、論理パス、実ファイルのパスの順に並べる
+        entries.Sort(
+            (a, b) =>
+            {
+                var byKey = string.CompareOrdinal(a.Key, b.Key);
+                return byKey != 0 ? byKey : string.CompareOrdinal(a.Value, b.Value);
+            }
+        );
+
+        var builder = new StringBuilder();
+        builder.Append("{\n  \"version\": 1,\n  \"files\": {");
+        for (var i = 0; i < entries.Count; i++)
+        {
+            builder.Append(i == 0 ? "\n" : ",\n");
+            builder
+                .Append("    ")
+                .Append(EscapeJson(entries[i].Key))
+                .Append(": ")
+                .Append(EscapeJson(entries[i].Value));
+        }
+
+        builder.Append(entries.Count == 0 ? "}\n}\n" : "\n  }\n}\n");
+        return new UTF8Encoding(false).GetBytes(builder.ToString());
+    }
+
+    /// <summary>
+    /// エラーを報告します。メッセージは書式として扱われないように <c>{0}</c> の引数で渡します。
+    /// </summary>
+    /// <param name="code">エラーのコード (<see cref="ErrorCodes"/>)。</param>
+    /// <param name="message">メッセージ。</param>
+    private void LogError(string code, string message) =>
+        Log.LogError(null, code, null, null, 0, 0, 0, 0, "{0}", message);
 }
