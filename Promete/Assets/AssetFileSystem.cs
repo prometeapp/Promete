@@ -186,10 +186,14 @@ public sealed class AssetFileSystem : IDisposable
 
         if (mounts.Length == 0)
         {
-            throw new FileNotFoundException(
-                $"アセット '{normalized}' が見つかりません。ソースが 1 つもマウントされていません。",
-                normalized
-            );
+            var message =
+                $"アセット '{normalized}' が見つかりません。ソースが 1 つもマウントされていません。";
+            if (EmptyHint is not null)
+            {
+                message += " " + EmptyHint;
+            }
+
+            throw new FileNotFoundException(message, normalized);
         }
 
         // 1. 完全一致するソースのうち、優先度の最も高いものを読む

@@ -98,13 +98,25 @@ public sealed class AssetManager : IDisposable
         _app = app;
         _audioDecoders = audioDecoders;
 
-        // TODO(Assets Phase 4): assembly の属性を manifestLoader で読み、明示的なマウントより先にマウントする
         FileSystem = new AssetFileSystem();
         try
         {
+            // 属性によるマウントは、明示的なマウントより低い優先度で先に行う
+            var attributes =
+                assembly?.GetCustomAttributes<PrometeAssetSourceAttribute>().ToArray() ?? [];
+            foreach (var attribute in attributes)
+            {
+                FileSystem.Mount(manifestLoader.CreateSource(assembly!, attribute), int.MinValue);
+            }
+
             foreach (var (factory, priority) in options.Mounts)
             {
                 FileSystem.Mount(factory(), priority);
+            }
+
+            if (attributes.Length == 0 && options.Mounts.Count == 0)
+            {
+                FileSystem.EmptyHint = CreateEmptyHint(assembly);
             }
         }
         catch
@@ -1279,6 +1291,22 @@ public sealed class AssetManager : IDisposable
     {
         var loaded = await glyphs.ConfigureAwait(false);
         return Font.FromGlyphSource(loaded.Source, size, style, isAntialiased);
+    }
+
+    /// <summary>
+    /// 何もマウントされなかったときに、<see cref="AssetFileSystem.OpenRead"/> の例外に添える原因と対処を作ります。
+    /// </summary>
+    /// <param name="assembly">属性を探したアセンブリ。無い場合は <see langword="null"/>。</param>
+    /// <returns>説明の文字列。</returns>
+    private static string CreateEmptyHint(Assembly? assembly)
+    {
+        var name = assembly is null ? "(なし)" : $"'{assembly.GetName().Name}'";
+
+        return $"アセンブリ {name} に Assets の属性が無く、明示的なマウントもありません。"
+            + "ビルド時に csproj で PrometeAsset を宣言すると、属性が書き込まれて自動でマウントされます。"
+            + "別のアセンブリのアセットを読むなら UseAssets(typeof(<そのアセンブリの型>).Assembly) を使ってください。"
+            + "Promete.Web 2.4 より前と組み合わせる場合は、"
+            + "UseAssets(typeof(Program).Assembly, o => o.MountFolder(\"assets\", \"assets\")) を使ってください。";
     }
 
     /// <summary>
