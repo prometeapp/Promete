@@ -900,15 +900,15 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
-    /// 集めた例外を投げます。1 つならそのまま、複数なら <see cref="AggregateException"/> にまとめます。何も無ければ何もしません。
+    /// 集めた例外を投げます。1 つで <see cref="AggregateException"/> でなければそのまま、それ以外は <see cref="AggregateException"/> にまとめて平らにします。何も無ければ何もしません。
     /// </summary>
     /// <param name="errors">集めた例外の一覧。</param>
     private void ThrowCollected(List<Exception> errors)
     {
-        if (errors.Count == 1)
+        if (errors.Count == 1 && errors[0] is not AggregateException)
             ExceptionDispatchInfo.Capture(errors[0]).Throw();
-        else if (errors.Count > 1)
-            throw new AggregateException(errors);
+        else if (errors.Count > 0)
+            throw new AggregateException(errors).Flatten();
     }
 
     /// <summary>
