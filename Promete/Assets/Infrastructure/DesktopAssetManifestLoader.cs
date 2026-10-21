@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Reflection;
 
 namespace Promete.Assets.Infrastructure;
@@ -45,6 +46,69 @@ internal sealed class DesktopAssetManifestLoader : IAssetManifestLoader
     /// <exception cref="NotSupportedException"><see cref="PrometeAssetSourceAttribute.Kind"/> を知らない場合。</exception>
     public IAssetSource CreateSource(Assembly assembly, PrometeAssetSourceAttribute attribute)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentNullException.ThrowIfNull(attribute);
+
+        if (attribute.Environment != PrometeAssetSourceAttribute.EnvironmentDesktop)
+        {
+            throw new InvalidOperationException(
+                $"アセンブリ '{assembly.GetName().Name}' は環境 '{attribute.Environment}' 向けにビルドされたアセットを持っています。"
+                    + "デスクトップの実行プロジェクトで PrometeAsset を宣言してください。"
+            );
+        }
+
+        return attribute.Kind switch
+        {
+            PrometeAssetSourceAttribute.KindManifest => CreateManifestSource(attribute.Location),
+            PrometeAssetSourceAttribute.KindPackage => CreatePackageSource(attribute.Location),
+            PrometeAssetSourceAttribute.KindEmbeddedPackage =>
+                PackageAssetSource.FromEmbeddedResource(assembly, attribute.Location),
+            _ => throw new NotSupportedException(
+                $"未対応の読み込み元の種類 '{attribute.Kind}' です ('{attribute.Location}')。"
+                    + "新しい版の Promete でビルドされたアセンブリの可能性があります。"
+            ),
+        };
+    }
+
+    /// <summary>
+    /// 出力先のマニフェストを読み、<see cref="ManifestAssetSource"/> を作ります。
+    /// </summary>
+    /// <param name="location">出力先からの相対ファイル名。</param>
+    /// <returns>マニフェストのソース。</returns>
+    /// <exception cref="FileNotFoundException">マニフェストが無い場合。</exception>
+    private ManifestAssetSource CreateManifestSource(string location)
+    {
+        var path = Path.Combine(BaseDirectory, location);
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                $"マニフェスト '{location}' が '{BaseDirectory}' にありません。"
+                    + "Folder モードのマニフェストはビルドした出力先にだけ置かれ、publish には載りません。"
+                    + "出力先から実行するか、Package モードでビルドしてください。",
+                path
+            );
+        }
+
+        return new ManifestAssetSource(DesktopAssetManifest.Read(path), $"'{location}'");
+    }
+
+    /// <summary>
+    /// 出力先のパッケージを開き、<see cref="PackageAssetSource"/> を作ります。
+    /// </summary>
+    /// <param name="location">出力先からの相対ファイル名。</param>
+    /// <returns>パッケージのソース。</returns>
+    /// <exception cref="FileNotFoundException">パッケージが無い場合。</exception>
+    private PackageAssetSource CreatePackageSource(string location)
+    {
+        var path = Path.Combine(BaseDirectory, location);
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                $"パッケージ '{location}' が '{BaseDirectory}' にありません。",
+                path
+            );
+        }
+
+        return new PackageAssetSource(path);
     }
 }
