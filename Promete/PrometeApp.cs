@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -424,11 +425,11 @@ public sealed class PrometeApp : IDisposable
         {
             // 破棄済みのシーンを現在のシーンとして残すと、次の遷移で二重に破棄してしまう
             _currentScene = null;
-            ReleaseScene(previous);
+            ReleaseSceneQuietly(previous);
             throw;
         }
 
-        // 新しいシーンの OnStart の後に、前のシーンを解放する (OnStart が例外でも解放する)
+        // 新しいシーンの OnStart の後に、前のシーンを解放する
         try
         {
             SceneWillChange?.Invoke(
@@ -436,10 +437,14 @@ public sealed class PrometeApp : IDisposable
             );
             _currentScene.OnStart();
         }
-        finally
+        catch
         {
-            ReleaseScene(previous);
+            // 元の例外を優先し、解放の例外は捨てる
+            ReleaseSceneQuietly(previous);
+            throw;
         }
+
+        ReleaseScene(previous);
     }
 
     /// <summary>
@@ -501,7 +506,7 @@ public sealed class PrometeApp : IDisposable
         _currentScene?.OnDestroy();
         _currentScene = _sceneStack.Pop();
 
-        // 下のシーンの OnResume の後に、破棄したシーンを解放する (OnResume が例外でも解放する)
+        // 下のシーンの OnResume の後に、破棄したシーンを解放する
         try
         {
             SceneWillChange?.Invoke(
@@ -509,30 +514,30 @@ public sealed class PrometeApp : IDisposable
             );
             _currentScene.OnResume();
         }
-        finally
+        catch
         {
-            ReleaseScene(previous);
+            // 元の例外を優先し、解放の例外は捨てる
+            ReleaseSceneQuietly(previous);
+            throw;
         }
 
+        ReleaseScene(previous);
         return true;
     }
 
     /// <summary>
-    /// スタックにある全てのシーンを破棄します。
+    /// スタックにある全てのシーンを破棄します。1 つのシーンで例外が出ても残りを処理し、最後に例外をまとめて投げます。
     /// </summary>
     public void ClearSceneStack()
     {
+        List<Exception> errors = [];
         while (_sceneStack.TryPop(out var scene))
         {
-            try
-            {
-                scene.OnDestroy();
-            }
-            finally
-            {
-                ReleaseScene(scene);
-            }
+            CollectErrors(errors, scene.OnDestroy);
+            CollectErrors(errors, () => ReleaseScene(scene));
         }
+
+        ThrowCollected(errors);
     }
 
     /// <summary>
@@ -680,20 +685,16 @@ public sealed class PrometeApp : IDisposable
     /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnDestroy()
     {
+        // 途中の例外で後続の終了処理を止めず、最後に例外をまとめて投げる
+        List<Exception> errors = [];
         var current = _currentScene;
-        try
-        {
-            current?.OnDestroy();
-        }
-        finally
-        {
-            ReleaseScene(current);
-        }
+        CollectErrors(errors, () => current?.OnDestroy());
+        CollectErrors(errors, () => ReleaseScene(current));
+        CollectErrors(errors, ClearSceneStack);
+        CollectErrors(errors, Dispose);
+        CollectErrors(errors, () => Destroy?.Invoke());
 
-        ClearSceneStack();
-
-        Dispose();
-        Destroy?.Invoke();
+        ThrowCollected(errors);
     }
 
     private void RegisterBackend(BackendBase backend, WindowOptions opts)
@@ -803,11 +804,8 @@ public sealed class PrometeApp : IDisposable
         }
         catch
         {
-            foreach (var hook in _sceneLifecycleHooks)
-            {
-                hook.OnSceneConstructionFailed();
-            }
-
+            // 元の生成の例外を優先し、フックの例外は捨てる
+            InvokeHooksQuietly(hook => hook.OnSceneConstructionFailed());
             throw;
         }
 
@@ -828,10 +826,79 @@ public sealed class PrometeApp : IDisposable
         if (scene is null)
             return;
 
+        InvokeHooks(hook => hook.OnSceneReleased(scene));
+    }
+
+    /// <summary>
+    /// 元の例外を優先する場面で、フックに解放を知らせ、フックの例外は捨てます。<see langword="null"/> の場合は何もしません。
+    /// </summary>
+    /// <param name="scene">使われなくなったシーン。</param>
+    private void ReleaseSceneQuietly(Scene? scene)
+    {
+        if (scene is null)
+            return;
+
+        InvokeHooksQuietly(hook => hook.OnSceneReleased(scene));
+    }
+
+    /// <summary>
+    /// 全てのフックに通知します。1 つのフックが例外を投げても残りのフックを呼び、最後に例外をまとめて投げます。
+    /// </summary>
+    /// <param name="call">各フックに対して行う通知。</param>
+    private void InvokeHooks(Action<ISceneLifecycleHook> call)
+    {
+        List<Exception> errors = [];
         foreach (var hook in _sceneLifecycleHooks)
         {
-            hook.OnSceneReleased(scene);
+            CollectErrors(errors, () => call(hook));
         }
+
+        ThrowCollected(errors);
+    }
+
+    /// <summary>
+    /// <see cref="InvokeHooks"/> を行い、そこで投げられた例外を捨てます。元の例外を優先する場面でだけ使います。
+    /// </summary>
+    /// <param name="call">各フックに対して行う通知。</param>
+    private void InvokeHooksQuietly(Action<ISceneLifecycleHook> call)
+    {
+        try
+        {
+            InvokeHooks(call);
+        }
+        catch
+        {
+            // 呼び出し元が投げる元の例外を優先するため、ここでは何もしない
+        }
+    }
+
+    /// <summary>
+    /// 処理を実行し、投げられた例外を <paramref name="errors"/> に追加します。
+    /// </summary>
+    /// <param name="errors">集めた例外の一覧。</param>
+    /// <param name="action">実行する処理。</param>
+    private void CollectErrors(List<Exception> errors, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
+    }
+
+    /// <summary>
+    /// 集めた例外を投げます。1 つならそのまま、複数なら <see cref="AggregateException"/> にまとめます。何も無ければ何もしません。
+    /// </summary>
+    /// <param name="errors">集めた例外の一覧。</param>
+    private void ThrowCollected(List<Exception> errors)
+    {
+        if (errors.Count == 1)
+            ExceptionDispatchInfo.Capture(errors[0]).Throw();
+        else if (errors.Count > 1)
+            throw new AggregateException(errors);
     }
 
     /// <summary>
