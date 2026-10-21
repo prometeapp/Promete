@@ -1342,7 +1342,7 @@ public sealed class AssetManager : IDisposable
     /// <remarks>
     /// <para>
     /// 成功時、既に値が入っていれば (同期の読み込みが先に入れた) 自分の結果を解放して、その値を返します。
-    /// 所有者がいなくなった場合や破棄された後に完了した場合は、キャッシュに入れずに解放して、解放済みの結果を返します。
+    /// 所有者がいなくなった場合や破棄された後に完了した場合は、キャッシュに入れずに解放し、待っている全員を例外で失敗させます (破棄が原因なら <see cref="ObjectDisposedException"/>、それ以外は <see cref="OperationCanceledException"/>)。
     /// </para>
     /// <para>
     /// 失敗時、値が入っていればその値を返し、無ければキャッシュから外して例外を投げ直します。
@@ -1394,6 +1394,7 @@ public sealed class AssetManager : IDisposable
 
         object? winner = value;
         var shouldRelease = false;
+        Exception? orphanFailure = null;
         lock (_lock)
         {
             entry.Pending = null;
@@ -1414,15 +1415,26 @@ public sealed class AssetManager : IDisposable
             }
             else
             {
-                // 所有者がいない、または破棄された後の完了。キャッシュに入れずに解放する
+                // 所有者がいない、または破棄された後の完了。キャッシュに入れずに解放し、待っている全員を失敗させる
                 RemoveIfCurrent(key, entry);
                 shouldRelease = true;
+                orphanFailure =
+                    Volatile.Read(ref _disposed) != 0
+                        ? new ObjectDisposedException(nameof(AssetManager))
+                        : new OperationCanceledException(
+                            "読み込みの完了前に、所有するスコープがすべて解放されたため、結果を返せません。"
+                        );
             }
         }
 
         if (shouldRelease)
         {
             ReleaseValue(release, value);
+        }
+
+        if (orphanFailure is not null)
+        {
+            throw orphanFailure;
         }
 
         return winner;
