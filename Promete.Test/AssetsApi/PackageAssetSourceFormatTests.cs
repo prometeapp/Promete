@@ -383,7 +383,7 @@ public class PackageAssetSourceFormatTests
     public void DeflatedRatioLimit_ShouldBe1032TimesStoredSizePlus64()
     {
         var stored = (ulong)RawPackageLayout.Deflate("AAAA"u8.ToArray()).Length;
-        var limit = stored * 1032 + 64;
+        var limit = (stored * 1032) + 64;
         var atLimit = new RawPackageBuilder().Deflated(
             "a.txt",
             "AAAA",
@@ -402,9 +402,11 @@ public class PackageAssetSourceFormatTests
     }
 
     [Fact]
-    public void DeflatedRatioLimit_ShouldNotOverflowWithHugeStoredSize()
+    public void HugeStoredSize_ShouldBeRejectedAsOutOfRangeWithoutOverflowException()
     {
-        // storedSize * 1032 が ulong で桁あふれしても、範囲外のデータとして InvalidData になる
+        // storedSize * 1032 が ulong で桁あふれする大きさでも、比率の検査より先に範囲の検査 (storedSize > length - offset) で
+        // InvalidData になり、OverflowException などが外に出ないこと。
+        // 比率の検査の桁あふれ対策そのものは、このテストでは確かめられない (効くのは約 16 PB を超えるパッケージだけで、実際には到達しない)
         var builder = new RawPackageBuilder().Deflated(
             "a.txt",
             "AAAA",
