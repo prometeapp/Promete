@@ -6,6 +6,8 @@
         <LangVersion>14</LangVersion>
         <NoWarn>CS1591</NoWarn>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!-- tasks/ の DLL はライブラリとして参照させないため、NU5100 (lib 以外のアセンブリ) を抑止する -->
+        <NoWarn>CS1591;NU5100</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -34,6 +36,19 @@
             Include="../Promete.SceneGen/bin/$(Configuration)/netstandard2.0/Promete.SceneGen.dll"
             Pack="true"
             PackagePath="analyzers/dotnet/cs"
+            Visible="false"
+        />
+        <!-- PrometeAsset のビルドで使う MSBuild Task (netstandard2.0)。Promete.targets が tasks/ から読む -->
+        <None
+            Include="../Promete.AssetPacker.Tasks/bin/$(Configuration)/netstandard2.0/Promete.AssetPacker.Tasks.dll"
+            Pack="true"
+            PackagePath="tasks/netstandard2.0"
+            Visible="false"
+        />
+        <None
+            Include="../Promete.AssetPacker.Tasks/bin/$(Configuration)/netstandard2.0/Promete.AssetPacker.dll"
+            Pack="true"
+            PackagePath="tasks/netstandard2.0"
             Visible="false"
         />
         <None Include="build/Promete.props" Pack="true" PackagePath="build" Visible="false" />
