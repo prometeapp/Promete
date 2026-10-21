@@ -209,13 +209,23 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public void Dispose()
     {
-        foreach (var plugin in _disposablePlugins)
-            plugin.Dispose();
-        _provider.Dispose();
+        var errors = new List<Exception>();
+        try
+        {
+            // 1 つの破棄で例外が出ても、残りのプラグインとサービスプロバイダの破棄は続ける
+            foreach (var plugin in _disposablePlugins)
+                CollectErrors(errors, plugin.Dispose);
+            CollectErrors(errors, _provider.Dispose);
+        }
+        finally
+        {
+            // 破棄済みのインスタンスが Current として参照され続けないようにする。
+            // getter は null のとき例外を投げるため、フィールドを直接比べる
+            if (_current == this)
+                _current = null;
+        }
 
-        // 破棄済みのインスタンスが Current として参照され続けないようにする
-        if (Current == this)
-            Current = null!;
+        ThrowCollected(errors);
     }
 
     /// <summary>
