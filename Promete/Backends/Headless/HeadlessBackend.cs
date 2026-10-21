@@ -14,6 +14,11 @@ namespace Promete.Backends.Headless;
 /// <remarks>
 /// 更新は <see cref="PrometeApp.Run()"/> を呼んだスレッドで行います。
 /// そのため、<c>OnUpdate</c> からのシーン遷移や <c>AssetScope.Scene</c> の指定は、Run を呼んだスレッドで動きます。
+/// <para>
+/// アプリを組み立てたスレッド (<c>BuildWithHeadless</c> を呼んだスレッド) で <see cref="PrometeApp.Run()"/> を呼んでください。
+/// <see cref="PrometeApp.IsMainThread()"/> はそのスレッドと比べるので、別のスレッドで Run すると、
+/// 更新の処理がメインスレッドとみなされず、<c>AssetScope.Scene</c> の指定などメインスレッドを前提とする処理が例外になります。
+/// </para>
 /// </remarks>
 public class HeadlessBackend : BackendBase
 {
