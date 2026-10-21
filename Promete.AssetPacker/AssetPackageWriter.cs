@@ -108,12 +108,12 @@ public sealed class AssetPackageWriter
     /// <summary>
     /// メモリ上のバイト列をエントリとして足します。
     /// </summary>
-    /// <param name="path">論理パス。<see cref="AssetPackagePath.Normalize"/> で正規化して格納します。</param>
+    /// <param name="path">論理パス。<see cref="AssetPackagePath.Normalize(string)"/> で正規化して格納します。</param>
     /// <param name="content">中身。配列はコピーせずに保持するので、書き出すまで変更しないでください。</param>
     /// <param name="compression">圧縮の方法。</param>
     /// <exception cref="ArgumentNullException"><paramref name="path"/> または <paramref name="content"/> が <see langword="null"/> の場合。</exception>
     /// <exception cref="ArgumentException">
-    /// <paramref name="path"/> が論理パスとして正しくない場合 (<see cref="AssetPackagePath.Normalize"/>)。
+    /// <paramref name="path"/> が論理パスとして正しくない場合 (<see cref="AssetPackagePath.Normalize(string)"/>)。
     /// 正規化したパスの UTF-8 が 65535 バイトを超える場合。正規化すると既に足したエントリと同じパスになる場合。
     /// <paramref name="compression"/> が定義されていない値の場合。
     /// </exception>
@@ -182,7 +182,7 @@ public sealed class AssetPackageWriter
     /// <summary>
     /// ファイルをエントリとして足します。ファイルの中身は書き出すときに読みます。
     /// </summary>
-    /// <param name="path">論理パス。<see cref="AssetPackagePath.Normalize"/> で正規化して格納します。</param>
+    /// <param name="path">論理パス。<see cref="AssetPackagePath.Normalize(string)"/> で正規化して格納します。</param>
     /// <param name="sourceFilePath">中身のファイルのパス。相対パスはカレントディレクトリを基準に解決します。</param>
     /// <param name="compression">圧縮の方法。</param>
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
