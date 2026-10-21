@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Promete.Assets;
 
 namespace Promete.Web.Assets;
@@ -13,6 +14,10 @@ namespace Promete.Web.Assets;
 /// </remarks>
 internal sealed class WebPackageAssetSource : IFileBackedAssetSource, IDisposable
 {
+    private readonly IAssetSource _package;
+    private readonly string _fontDirectory;
+    private int _disposed;
+
     /// <summary>
     /// <see cref="WebPackageAssetSource"/> の新しいインスタンスを初期化します。
     /// </summary>
@@ -21,31 +26,44 @@ internal sealed class WebPackageAssetSource : IFileBackedAssetSource, IDisposabl
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
     public WebPackageAssetSource(IAssetSource package, string fontDirectory)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentNullException.ThrowIfNull(fontDirectory);
+
+        _package = package;
+        _fontDirectory = fontDirectory;
     }
 
     /// <inheritdoc />
-    public bool Exists(string path)
-    {
-        throw new NotImplementedException();
-    }
+    public bool Exists(string path) => _package.Exists(path);
 
     /// <inheritdoc />
-    public Stream OpenRead(string path)
-    {
-        throw new NotImplementedException();
-    }
+    public Stream OpenRead(string path) => _package.OpenRead(path);
 
     /// <inheritdoc />
-    public IEnumerable<string> Enumerate(string directory, string pattern, bool recursive)
-    {
-        throw new NotImplementedException();
-    }
+    public IEnumerable<string> Enumerate(string directory, string pattern, bool recursive) =>
+        _package.Enumerate(directory, pattern, recursive);
 
     /// <inheritdoc />
     public bool TryGetFilePath(string path, [NotNullWhen(true)] out string? fullPath)
     {
-        throw new NotImplementedException();
+        fullPath = null;
+
+        var logicalPath = AssetPath.Normalize(path);
+        if (!WebPackageFonts.IsFont(logicalPath) || !_package.Exists(logicalPath))
+        {
+            return false;
+        }
+
+        var candidate = Path.GetFullPath(
+            Path.Combine(_fontDirectory, Path.Combine(logicalPath.Split('/')))
+        );
+        if (!File.Exists(candidate))
+        {
+            return false;
+        }
+
+        fullPath = candidate;
+        return true;
     }
 
     /// <summary>
@@ -53,6 +71,9 @@ internal sealed class WebPackageAssetSource : IFileBackedAssetSource, IDisposabl
     /// </summary>
     public void Dispose()
     {
-        throw new NotImplementedException();
+        if (Interlocked.Exchange(ref _disposed, 1) == 0 && _package is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System.Linq;
 using Promete.Assets;
 
 namespace Promete.Web.Assets;
@@ -19,6 +20,11 @@ namespace Promete.Web.Assets;
 internal static class WebPackageFonts
 {
     /// <summary>
+    /// フォントとみなす拡張子 (小文字)。
+    /// </summary>
+    private static readonly string[] FontExtensions = [".ttf", ".otf", ".woff", ".woff2"];
+
+    /// <summary>
     /// パッケージのフォントを取り出すディレクトリを求めます。
     /// </summary>
     /// <param name="rootDirectory">仮想ファイルシステムのルート (ブラウザでは <c>/</c>)。</param>
@@ -27,7 +33,10 @@ internal static class WebPackageFonts
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
     public static string GetFontDirectory(string rootDirectory, string location)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(rootDirectory);
+        ArgumentNullException.ThrowIfNull(location);
+
+        return Path.Combine(rootDirectory, ".promete", "fonts", location);
     }
 
     /// <summary>
@@ -38,7 +47,17 @@ internal static class WebPackageFonts
     /// <exception cref="ArgumentNullException"><paramref name="logicalPath"/> が <see langword="null"/> の場合。</exception>
     public static bool IsFont(string logicalPath)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(logicalPath);
+
+        foreach (var extension in FontExtensions)
+        {
+            if (logicalPath.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -50,6 +69,52 @@ internal static class WebPackageFonts
     /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
     public static string[] Extract(IAssetSource package, string fontDirectory)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(package);
+        ArgumentNullException.ThrowIfNull(fontDirectory);
+
+        var fontPaths = package
+            .Enumerate("", "*", true)
+            .Where(IsFont)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToArray();
+
+        var extracted = new string[fontPaths.Length];
+        for (var i = 0; i < fontPaths.Length; i++)
+        {
+            extracted[i] = ExtractOne(package, fontPaths[i], fontDirectory);
+        }
+
+        return extracted;
+    }
+
+    /// <summary>
+    /// 1 つのフォントを、取り出し先の下に書き出します。
+    /// </summary>
+    /// <param name="package">パッケージのソース。</param>
+    /// <param name="logicalPath">フォントの論理パス。</param>
+    /// <param name="fontDirectory">取り出し先のディレクトリ。</param>
+    /// <returns>書き出したファイルの絶対パス。</returns>
+    private static string ExtractOne(IAssetSource package, string logicalPath, string fontDirectory)
+    {
+        var rootFullPath = Path.GetFullPath(fontDirectory);
+        var fullPath = Path.GetFullPath(
+            Path.Combine(rootFullPath, Path.Combine(logicalPath.Split('/')))
+        );
+        var rootPrefix =
+            rootFullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(rootPrefix, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                $"フォント '{logicalPath}' の取り出し先がディレクトリの外です。"
+            );
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        using var input = package.OpenRead(logicalPath);
+        using var output = File.Create(fullPath);
+        input.CopyTo(output);
+
+        return fullPath;
     }
 }

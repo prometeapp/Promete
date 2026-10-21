@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Promete.Web.Assets;
 
 /// <summary>
@@ -64,6 +66,221 @@ internal static class WebAssetManifest
         string description
     )
     {
-        throw new NotImplementedException();
+        if (json.Length >= 3 && json[0] == 0xEF && json[1] == 0xBB && json[2] == 0xBF)
+        {
+            json = json.Slice(3);
+        }
+
+        try
+        {
+            var reader = new Utf8JsonReader(json, isFinalBlock: true, state: default);
+            return ParseRoot(ref reader, description);
+        }
+        catch (JsonException e)
+        {
+            throw Invalid(description, "JSON として正しくありません", e);
+        }
     }
+
+    /// <summary>
+    /// 最上位のオブジェクトを読み、<c>version</c> を確かめて <c>entries</c> を取り出します。
+    /// </summary>
+    private static IReadOnlyList<WebAssetManifestEntry> ParseRoot(
+        ref Utf8JsonReader reader,
+        string description
+    )
+    {
+        Advance(ref reader, description);
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            throw Invalid(description, "最上位がオブジェクトではありません");
+        }
+
+        var hasVersion = false;
+        List<WebAssetManifestEntry>? entries = null;
+        while (true)
+        {
+            Advance(ref reader, description);
+            if (reader.TokenType == JsonTokenType.EndObject)
+            {
+                break;
+            }
+
+            var name = reader.GetString()!;
+            Advance(ref reader, description);
+            if (name == "version")
+            {
+                if (hasVersion)
+                {
+                    throw Invalid(description, "version が重複しています");
+                }
+
+                hasVersion = true;
+                ReadVersion(ref reader, description);
+            }
+            else if (name == "entries")
+            {
+                if (entries is not null)
+                {
+                    throw Invalid(description, "entries が重複しています");
+                }
+
+                entries = ReadEntries(ref reader, description);
+            }
+            else
+            {
+                reader.Skip();
+            }
+        }
+
+        if (!hasVersion)
+        {
+            throw Invalid(description, "version がありません");
+        }
+
+        if (entries is null)
+        {
+            throw Invalid(description, "entries がありません");
+        }
+
+        return entries;
+    }
+
+    /// <summary>
+    /// <c>version</c> の値を確かめます。1 以外なら <see cref="NotSupportedException"/> を投げます。
+    /// </summary>
+    private static void ReadVersion(ref Utf8JsonReader reader, string description)
+    {
+        if (reader.TokenType != JsonTokenType.Number || !reader.TryGetInt32(out var version))
+        {
+            throw Invalid(description, "version は整数である必要があります");
+        }
+
+        if (version != FormatVersion)
+        {
+            throw new NotSupportedException(
+                $"マニフェストの version {version} には対応していません ({description})。Promete を更新するか、ビルドし直してください。"
+            );
+        }
+    }
+
+    /// <summary>
+    /// <c>entries</c> の配列を読みます。現在のトークンは配列の開始を指している必要があります (読み終えると終了のトークン)。
+    /// </summary>
+    private static List<WebAssetManifestEntry> ReadEntries(
+        ref Utf8JsonReader reader,
+        string description
+    )
+    {
+        if (reader.TokenType != JsonTokenType.StartArray)
+        {
+            throw Invalid(description, "entries は配列である必要があります");
+        }
+
+        var entries = new List<WebAssetManifestEntry>();
+        while (true)
+        {
+            Advance(ref reader, description);
+            if (reader.TokenType == JsonTokenType.EndArray)
+            {
+                return entries;
+            }
+
+            if (reader.TokenType != JsonTokenType.StartObject)
+            {
+                throw Invalid(description, "entries の要素はオブジェクトである必要があります");
+            }
+
+            entries.Add(ReadEntry(ref reader, description));
+        }
+    }
+
+    /// <summary>
+    /// エントリのオブジェクトを読みます。現在のトークンはオブジェクトの開始を指している必要があります。
+    /// </summary>
+    private static WebAssetManifestEntry ReadEntry(ref Utf8JsonReader reader, string description)
+    {
+        string? kind = null;
+        string? path = null;
+        string? logicalPath = null;
+        string? package = null;
+        string? assembly = null;
+        string? resource = null;
+
+        while (true)
+        {
+            Advance(ref reader, description);
+            if (reader.TokenType == JsonTokenType.EndObject)
+            {
+                break;
+            }
+
+            var name = reader.GetString()!;
+            Advance(ref reader, description);
+            switch (name)
+            {
+                case "kind":
+                    kind = ReadString(ref reader, name, description);
+                    break;
+                case "path":
+                    path = ReadString(ref reader, name, description);
+                    break;
+                case "logicalPath":
+                    logicalPath = ReadString(ref reader, name, description);
+                    break;
+                case "package":
+                    package = ReadString(ref reader, name, description);
+                    break;
+                case "assembly":
+                    assembly = ReadString(ref reader, name, description);
+                    break;
+                case "resource":
+                    resource = ReadString(ref reader, name, description);
+                    break;
+                default:
+                    reader.Skip();
+                    break;
+            }
+        }
+
+        if (kind is null)
+        {
+            throw Invalid(description, "エントリに kind がありません");
+        }
+
+        return new WebAssetManifestEntry(kind, path, logicalPath, package, assembly, resource);
+    }
+
+    /// <summary>
+    /// 現在のトークンが文字列であることを確かめて、その値を返します。
+    /// </summary>
+    private static string ReadString(ref Utf8JsonReader reader, string name, string description)
+    {
+        if (reader.TokenType != JsonTokenType.String)
+        {
+            throw Invalid(description, $"'{name}' は文字列である必要があります");
+        }
+
+        return reader.GetString()!;
+    }
+
+    /// <summary>
+    /// 次のトークンに進みます。JSON が途中で終わっている場合は <see cref="InvalidDataException"/> を投げます。
+    /// </summary>
+    private static void Advance(ref Utf8JsonReader reader, string description)
+    {
+        if (!reader.Read())
+        {
+            throw Invalid(description, "途中で終わっています");
+        }
+    }
+
+    /// <summary>
+    /// 形式が正しくないことを表す <see cref="InvalidDataException"/> を作ります。
+    /// </summary>
+    private static InvalidDataException Invalid(
+        string description,
+        string detail,
+        Exception? inner = null
+    ) => new($"マニフェストの形式が正しくありません ({description}): {detail}", inner);
 }
