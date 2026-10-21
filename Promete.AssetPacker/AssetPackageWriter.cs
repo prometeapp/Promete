@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using Promete.Assets.Packaging;
 
 namespace Promete.AssetPacker;
 
@@ -30,9 +33,48 @@ public sealed class AssetPackageWriter
     public const int FormatMinorVersion = Promete.Assets.Packaging.AssetPackageFormat.MinorVersion;
 
     /// <summary>
+    /// 拡張子で圧縮を試みない形式 (既に圧縮されている形式と、seek して読みたい wav)。大文字・小文字は区別しません。
+    /// </summary>
+    private static readonly HashSet<string> NoAutoCompressionExtensions = new HashSet<string>(
+        new[]
+        {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".webp",
+            ".avif",
+            ".ogg",
+            ".oga",
+            ".opus",
+            ".mp3",
+            ".m4a",
+            ".aac",
+            ".flac",
+            ".wav",
+            ".mp4",
+            ".webm",
+            ".woff",
+            ".woff2",
+            ".zip",
+            ".gz",
+            ".7z",
+        },
+        StringComparer.OrdinalIgnoreCase
+    );
+
+    /// <summary>
+    /// 正規化した論理パスをキーにした、足したエントリ。序数比較なので、大文字・小文字だけ違うパスは別のエントリです。
+    /// </summary>
+    private readonly Dictionary<string, AssetPackageEntry> _entries = new Dictionary<
+        string,
+        AssetPackageEntry
+    >(StringComparer.Ordinal);
+
+    /// <summary>
     /// 足したエントリの数を取得します。
     /// </summary>
-    public int Count => throw new NotImplementedException();
+    public int Count => _entries.Count;
 
     /// <summary>
     /// <see cref="AssetCompression.Auto"/> のときに、圧縮を試みる対象かどうかを、拡張子で判定します。
@@ -47,7 +89,19 @@ public sealed class AssetPackageWriter
     /// <exception cref="ArgumentNullException"><paramref name="path"/> が <see langword="null"/> の場合。</exception>
     public static bool IsAutoCompressed(string path)
     {
-        throw new NotImplementedException();
+        if (path is null)
+        {
+            throw new ArgumentNullException(nameof(path));
+        }
+
+        var fileName = path.Substring(path.LastIndexOf('/') + 1);
+        var dotIndex = fileName.LastIndexOf('.');
+        if (dotIndex < 0)
+        {
+            return true;
+        }
+
+        return !NoAutoCompressionExtensions.Contains(fileName.Substring(dotIndex));
     }
 
     /// <summary>
@@ -68,7 +122,60 @@ public sealed class AssetPackageWriter
         AssetCompression compression = AssetCompression.Auto
     )
     {
-        throw new NotImplementedException();
+        if (path is null)
+        {
+            throw new ArgumentNullException(nameof(path));
+        }
+
+        if (content is null)
+        {
+            throw new ArgumentNullException(nameof(content));
+        }
+
+        AddEntry(path, compression, content, null);
+    }
+
+    /// <summary>
+    /// 検証してエントリを登録します。どこかで例外になった場合は何も登録しません。
+    /// </summary>
+    /// <param name="path">正規化する前の論理パス。</param>
+    /// <param name="compression">圧縮の方法。</param>
+    /// <param name="content">メモリ上の中身。ファイルから足す場合は <see langword="null"/>。</param>
+    /// <param name="sourceFilePath">中身のファイルのフルパス。メモリ上の中身の場合は <see langword="null"/>。</param>
+    /// <exception cref="ArgumentException">圧縮の方法、パス、重複のいずれかが不正な場合。</exception>
+    private void AddEntry(
+        string path,
+        AssetCompression compression,
+        byte[]? content,
+        string? sourceFilePath
+    )
+    {
+        if (!Enum.IsDefined(typeof(AssetCompression), compression))
+        {
+            throw new ArgumentException("未定義の圧縮の方法です。", nameof(compression));
+        }
+
+        var logicalPath = AssetPackagePath.Normalize(path);
+        if (Encoding.UTF8.GetByteCount(logicalPath) > AssetPackageFormat.MaxPathByteLength)
+        {
+            throw new ArgumentException(
+                $"論理パスの UTF-8 のバイト数が {AssetPackageFormat.MaxPathByteLength} を超えています: {path}",
+                nameof(path)
+            );
+        }
+
+        if (_entries.ContainsKey(logicalPath))
+        {
+            throw new ArgumentException(
+                $"同じ論理パスのエントリが既にあります。正規化したパス: {logicalPath} (指定されたパス: {path})",
+                nameof(path)
+            );
+        }
+
+        _entries.Add(
+            logicalPath,
+            new AssetPackageEntry(logicalPath, compression, content, sourceFilePath)
+        );
     }
 
     /// <summary>
@@ -89,7 +196,26 @@ public sealed class AssetPackageWriter
         AssetCompression compression = AssetCompression.Auto
     )
     {
-        throw new NotImplementedException();
+        if (path is null)
+        {
+            throw new ArgumentNullException(nameof(path));
+        }
+
+        if (sourceFilePath is null)
+        {
+            throw new ArgumentNullException(nameof(sourceFilePath));
+        }
+
+        var fullSourcePath = Path.GetFullPath(sourceFilePath);
+        if (!File.Exists(fullSourcePath))
+        {
+            throw new FileNotFoundException(
+                $"パッケージに足すファイルが見つかりません: {fullSourcePath}",
+                fullSourcePath
+            );
+        }
+
+        AddEntry(path, compression, null, fullSourcePath);
     }
 
     /// <summary>
