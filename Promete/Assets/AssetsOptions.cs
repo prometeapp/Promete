@@ -88,7 +88,12 @@ public sealed class AssetsOptions
     /// </remarks>
     public AssetsOptions MountPackage(string filePath, string mountPoint = "", int priority = 0)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(filePath);
+        ArgumentNullException.ThrowIfNull(mountPoint);
+        AssetPath.NormalizeDirectory(mountPoint);
+
+        _mounts.Add((() => new PackageAssetSource(filePath, mountPoint), priority));
+        return this;
     }
 
     /// <summary>
@@ -112,7 +117,18 @@ public sealed class AssetsOptions
         int priority = 0
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentNullException.ThrowIfNull(resourceName);
+        ArgumentNullException.ThrowIfNull(mountPoint);
+        AssetPath.NormalizeDirectory(mountPoint);
+
+        _mounts.Add(
+            (
+                () => PackageAssetSource.FromEmbeddedResource(assembly, resourceName, mountPoint),
+                priority
+            )
+        );
+        return this;
     }
 
     /// <summary>
