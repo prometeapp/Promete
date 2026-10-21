@@ -12,7 +12,7 @@ namespace Promete.Assets.Packaging;
 /// Windows では同期のハンドルへの I/O は直列化されるので (大きな読み込みの後ろで小さな読み込みが待たされる)、
 /// <see cref="FileOptions.Asynchronous"/> で開きます。ブラウザ (<see cref="OperatingSystem.IsBrowser"/>) では <see cref="FileOptions.None"/> で開きます。
 /// </para>
-/// <para>ファイルは <see cref="FileShare.Read"/> で開きます。参照カウントが 0 になったらハンドルを閉じます。</para>
+/// <para>ファイルは <see cref="FileShare.Read"/> と <see cref="FileShare.Delete"/> で開きます。ビルドがパッケージを一時ファイルから置き換えられるようにするためです (開いたハンドルは古い内容を読み続けます)。参照カウントが 0 になったらハンドルを閉じます。</para>
 /// </remarks>
 internal sealed class FilePackageStorage : PackageStorage
 {
@@ -34,7 +34,7 @@ internal sealed class FilePackageStorage : PackageStorage
             fullPath,
             FileMode.Open,
             FileAccess.Read,
-            FileShare.Read,
+            FileShare.Read | FileShare.Delete,
             FileOpenOptions
         );
 
