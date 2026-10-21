@@ -53,9 +53,7 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
     /// <exception cref="InvalidDataException">パッケージが壊れている場合。メッセージにファイルのパスを含みます。</exception>
     /// <exception cref="NotSupportedException">対応していない形式のバージョンや機能の場合。</exception>
     public PackageAssetSource(string filePath, string mountPoint = "")
-    {
-        throw new NotImplementedException();
-    }
+        : this(OpenFile(filePath, mountPoint)) { }
 
     /// <summary>
     /// ストリームからパッケージを開きます。ストリームの現在位置を、パッケージの先頭として扱います。
@@ -76,6 +74,13 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
     /// <exception cref="NotSupportedException">対応していない形式のバージョンや機能の場合。</exception>
     public PackageAssetSource(Stream stream, bool leaveOpen = false, string mountPoint = "")
         : this(CreateStreamStorage(stream, leaveOpen), mountPoint, "(ストリーム)") { }
+
+    /// <summary>
+    /// 検証済みのファイルを、読み出し元と合わせてこのソースに渡します。
+    /// </summary>
+    /// <param name="file">開いたファイルの情報。</param>
+    private PackageAssetSource(OpenedFile file)
+        : this(file.Storage, file.MountPoint, file.Description) { }
 
     /// <summary>
     /// 読み出し元からパッケージを開きます。読み出し元の参照は、このソースが引き受けます (失敗したら返します)。
@@ -133,7 +138,49 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
         string mountPoint = ""
     )
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentNullException.ThrowIfNull(resourceName);
+        var normalizedMountPoint = AssetPath.NormalizeDirectory(mountPoint);
+
+        var stream =
+            assembly.GetManifestResourceStream(resourceName)
+            ?? throw new FileNotFoundException(
+                $"埋め込みリソース '{resourceName}' がアセンブリ '{assembly.GetName().Name}' に見つかりません。",
+                resourceName
+            );
+
+        return new PackageAssetSource(
+            CreateStreamStorage(stream, leaveOpen: false),
+            normalizedMountPoint,
+            $"埋め込みリソース '{resourceName}'"
+        );
+    }
+
+    /// <summary>
+    /// ファイルのパッケージを開く前の検証をし、読み出し元を作ります。
+    /// </summary>
+    /// <param name="filePath">パッケージのファイルのパス。</param>
+    /// <param name="mountPoint">論理パスの前に付ける接頭辞。</param>
+    /// <returns>開いたファイルの情報。</returns>
+    private static OpenedFile OpenFile(string filePath, string mountPoint)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+        var normalizedMountPoint = AssetPath.NormalizeDirectory(mountPoint);
+
+        var fullPath = Path.GetFullPath(filePath, AppContext.BaseDirectory);
+        if (!File.Exists(fullPath))
+        {
+            throw new FileNotFoundException(
+                $"アセットパッケージ '{fullPath}' が見つかりません。",
+                fullPath
+            );
+        }
+
+        return new OpenedFile(
+            new FilePackageStorage(fullPath),
+            normalizedMountPoint,
+            $"'{fullPath}'"
+        );
     }
 
     /// <inheritdoc />
@@ -630,6 +677,18 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
     /// </summary>
     private void ThrowIfDisposed() =>
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+
+    /// <summary>
+    /// ファイルを検証して開いた結果です。
+    /// </summary>
+    /// <param name="Storage">ファイルの読み出し元。</param>
+    /// <param name="MountPoint">正規化済みの接頭辞。</param>
+    /// <param name="Description">例外のメッセージに使う、ファイルの説明。</param>
+    private readonly record struct OpenedFile(
+        FilePackageStorage Storage,
+        string MountPoint,
+        string Description
+    );
 
     /// <summary>
     /// 目次の 1 件分の情報です。
