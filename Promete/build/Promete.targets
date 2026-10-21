@@ -100,6 +100,22 @@
     </ItemGroup>
 
     <!--
+        デスクトップの Folder モードのマニフェストを出力先に置く item。評価時に宣言するのは、
+        参照元 (テスト → ゲーム) の GetCopyToOutputDirectoryItems に確実に載せるため。
+        出力先のファイル名にアセンブリ名が入るので、参照元の自分のマニフェストとぶつからない。
+        publish には載せない (開発機の絶対パスを含むため)。
+    -->
+    <ItemGroup Condition="'$(_PrometeAssetsSupported)' == 'true' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true' and '@(PrometeAsset)' != '' and '$(_PrometeAssetIsWeb)' != 'true' and '$(PrometeAssetMode)' == 'Folder'">
+        <None
+            Include="$(IntermediateOutputPath)$(AssemblyName)$(_PrometeAssetManifestSuffix)"
+            Link="$(AssemblyName)$(_PrometeAssetManifestSuffix)"
+            CopyToOutputDirectory="PreserveNewest"
+            CopyToPublishDirectory="Never"
+            Visible="false"
+        />
+    </ItemGroup>
+
+    <!--
         外側のターゲットは条件を持たず、依存先で状態を立ててから内側のターゲットの条件を判定する
         (ターゲットの Condition は DependsOnTargets より前に評価されるため)。
     -->
@@ -255,9 +271,40 @@
         DependsOnTargets="PrometePackAssets;PrometeWriteAssetManifest"
     />
 
-    <!-- 出力の契約。中身は後の作業で足す (Folder のマニフェスト、Package のパッケージ) -->
+    <!-- 出力の契約。Package のパッケージは後の作業で足す -->
     <Target Name="PrometePackAssets" DependsOnTargets="PrometeResolveAssets" />
-    <Target Name="PrometeWriteAssetManifest" DependsOnTargets="PrometeResolveAssets" />
+
+    <!-- デスクトップの Folder のマニフェストを obj/ に書く。内容が同じなら書き換えない (Task が判断する) -->
+    <Target
+        Name="PrometeWriteAssetManifest"
+        DependsOnTargets="PrometeResolveAssets;_PrometeWriteAssetManifestCore"
+    />
+
+    <Target
+        Name="_PrometeWriteAssetManifestCore"
+        Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Folder' and '$(_PrometeAssetEnvironment)' == 'Desktop'"
+    >
+        <WritePrometeAssetManifest
+            Assets="@(_PrometeResolvedAsset)"
+            OutputFile="$(_PrometeAssetDesktopManifest)"
+        />
+        <ItemGroup>
+            <FileWrites Include="$(_PrometeAssetDesktopManifest)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Folder のマニフェストは開発機の絶対パスを含み、出力先では読めないので publish に載せない (警告する) -->
+    <Target
+        Name="_PrometeWarnFolderPublish"
+        BeforeTargets="PrepareForPublish"
+        DependsOnTargets="_PrometeCheckAssets"
+    >
+        <Warning
+            Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Folder' and '$(_PrometeAssetEnvironment)' == 'Desktop'"
+            Code="PROMETE1011"
+            Text="PrometeAssetMode=Folder のまま publish しました。Folder のマニフェストは開発機のパスを含むため publish には載せず、出力先では読めません。配布するには PrometeAssetMode=Package にしてください。"
+        />
+    </Target>
 
     <!-- MoltenVK の静的ライブラリ除去 -->
     <!-- Silk.NET.MoltenVK.Native は iOS / tvOS / Mac Catalyst 向けの静的ライブラリ (.a) も
