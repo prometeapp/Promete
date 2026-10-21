@@ -73,9 +73,10 @@ entry[entryCount]
 | 2〜31 | | 予約 (0) |
 
 - パスは `AssetPath.Normalize` で正規化した形 (`/` 区切り、先頭の `/` なし、`.` / `..` / 空の要素なし、`\` なし、NFC)。大文字・小文字は区別する。重複は不可。
-- ライターはエントリをパスの序数順 (`StringComparer.Ordinal`) に並べる。同じ入力からは同じバイト列になる。
+- ライターはエントリをパスの序数順 (`StringComparer.Ordinal`) に並べる。同じ実行環境 (圧縮の実装) では、同じ入力から同じバイト列になる。Deflate の出力は実行環境 (.NET Framework 版の MSBuild と .NET など) で異なりうるので、実行環境が違えば、圧縮したエントリのバイト列は変わりうる。
 - 無圧縮のエントリは `storedSize == originalSize`。
 - Phase 5 で暗号化と圧縮を併用するときは、圧縮してから暗号化する (`storedSize` は暗号化後の大きさ)。
+- nonce (Phase 5) は、パス・エントリのフラグ・暗号化する直前のバイト列 (圧縮したエントリは圧縮後のもの) のハッシュから決める (DESIGN_PLAN.md §5)。元のファイルのバイト列から決めると、実行環境で Deflate の出力が変わったときに、同じ nonce で別の平文を暗号化しうるため。
 
 ## バージョンと互換性
 
@@ -88,10 +89,11 @@ entry[entryCount]
 
 開く時点 (ヘッダと目次) で検証し、壊れていれば `InvalidDataException` にする。メッセージには、ファイルのパスか埋め込みリソースの名前を含める。
 
-- ヘッダより短い、magic が違う、`headerSize < 64`。
+- ヘッダより短い (ストリームの位置が末尾より後ろにある場合も含む)、magic が違う、`headerSize < 64`、`headerSize` が全体の長さを超える。
 - 目次が範囲外 (`tocOffset < headerSize`、末尾を超える)。目次が途中で切れている、`entryCount` が目次に収まらない。
 - パスが UTF-8 として不正、正規化されていない、重複している。
 - データが範囲外 (`offset < headerSize`、末尾を超える)。無圧縮で `storedSize != originalSize`。圧縮で `originalSize` が配列の最大長を超える。
+- 圧縮で `originalSize > storedSize * 1032 + 64`。Deflate の圧縮率は最大でも約 1032 倍なので、これを超える元のサイズは壊れている (小さな悪意のあるパッケージで巨大なメモリを確保させないため)。
 
 圧縮したデータの破損 (展開に失敗した、展開した大きさが `originalSize` と違う) は、そのエントリを開いた時点で `InvalidDataException` にする。
 
