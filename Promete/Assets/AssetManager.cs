@@ -1324,7 +1324,11 @@ public sealed class AssetManager : IDisposable
         CancellationToken cancellationToken
     )
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<T>(cancellationToken);
+        }
 
         Task<object?> pending;
         lock (_lock)
