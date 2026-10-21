@@ -26,6 +26,12 @@ internal abstract class ScriptedScene : Scene
             Load(path);
     }
 
+    public override void OnResume()
+    {
+        foreach (var path in Script.ResumeLoads.GetValueOrDefault(GetType(), []))
+            Load(path);
+    }
+
     /// <summary>
     /// このシーンで読んだテクスチャが、OnDestroy の時点でまだ破棄されていないかを記録する。
     /// </summary>
@@ -59,6 +65,9 @@ internal abstract class ScriptedScene : Scene
         /// <summary>OnStart で読むパス。</summary>
         public static Dictionary<Type, string[]> StartLoads { get; } = [];
 
+        /// <summary>OnResume で読むパス。</summary>
+        public static Dictionary<Type, string[]> ResumeLoads { get; } = [];
+
         /// <summary>最後に読んだときのハンドル (パスごと)。</summary>
         public static Dictionary<string, int> Handles { get; } = [];
 
@@ -69,6 +78,7 @@ internal abstract class ScriptedScene : Scene
         {
             CtorLoads.Clear();
             StartLoads.Clear();
+            ResumeLoads.Clear();
             Handles.Clear();
             UsableAtDestroy.Clear();
         }
@@ -107,6 +117,18 @@ internal sealed class ScriptedThrowingOnStartScene(AssetManager assets) : Script
     {
         base.OnStart();
         throw new InvalidOperationException("OnStart で失敗しました。");
+    }
+}
+
+/// <summary>
+/// OnResume で読んだ後に、例外を投げるシーン。
+/// </summary>
+internal sealed class ScriptedThrowingOnResumeScene(AssetManager assets) : ScriptedScene(assets)
+{
+    public override void OnResume()
+    {
+        base.OnResume();
+        throw new InvalidOperationException("OnResume で失敗しました。");
     }
 }
 

@@ -283,26 +283,54 @@ public sealed class AssetManagerAsyncTests : IDisposable
     }
 
     [Fact]
-    public void LoadAsync_AlreadyCanceledToken_ShouldNotStartLoading()
+    public void LoadAsync_AlreadyCanceledToken_ShouldReturnCanceledTaskWithoutLoading()
     {
         using var cts = new CancellationTokenSource();
         cts.Cancel();
+        Task<TrackedDisposable>? task = null;
 
-        var act = () =>
-            Assets
-                .LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Global, cts.Token)
-                .GetAwaiter()
-                .GetResult();
+        var call = () =>
+        {
+            task = Assets.LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Global, cts.Token);
+        };
 
-        act.Should().Throw<OperationCanceledException>();
+        call.Should().NotThrow("キャンセルは呼び出しで投げず、キャンセル済みの Task で返すはず");
+        task!.IsCanceled.Should().BeTrue();
         _source.OpenCount("data/a.txt").Should().Be(0);
         _factoryCalls.Should().Be(0);
     }
 
     [Fact]
-    public void LoadAsync_SceneReleasedBeforeCompletion_ShouldDisposeResultOnMainThread()
+    public void LoadAsync_AlreadyCanceledToken_ShouldReturnCanceledTaskEvenIfCached()
     {
-        TrackedDisposable? result = null;
+        Assets.Load("data/a.txt", "k", Read, AssetScope.Global);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var task = Assets.LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Global, cts.Token);
+
+        task.IsCanceled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void LoadAsync_AlreadyCanceledToken_ArgumentErrorsShouldStillThrowSynchronously()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Action invalidPath = () =>
+            _ = Assets.LoadAsync(@"data\a.txt", "k", ReadAsync, AssetScope.Global, cts.Token);
+        Action sceneWithoutScene = () =>
+            _ = Assets.LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Scene, cts.Token);
+
+        invalidPath.Should().Throw<ArgumentException>();
+        sceneWithoutScene.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void LoadAsync_SceneReleasedBeforeCompletion_ShouldFailWithCanceledAndDisposeResultOnMainThread()
+    {
+        Exception? thrown = null;
         var disposedBeforePump = true;
 
         _app.RunWith<ScriptedSceneA>(() =>
@@ -313,21 +341,52 @@ public sealed class AssetManagerAsyncTests : IDisposable
 
             LoadEmptyScene();
             gate.Release();
-            result = task.GetAwaiter().GetResult();
-            disposedBeforePump = result.IsDisposed;
+            thrown = Catch(() => task.GetAwaiter().GetResult());
+            disposedBeforePump = _created.Single().IsDisposed;
             _app.PumpFrame();
         });
 
+        thrown
+            .Should()
+            .BeAssignableTo<OperationCanceledException>(
+                "所有者がいなくなった結果は、解放済みの値を返さずに例外で失敗させるはず"
+            );
         disposedBeforePump
             .Should()
             .BeFalse("完了はスレッドプールで起きるので、解放は次のフレームに回るはず");
-        result!
+        _created
+            .Single()
             .DisposeCount.Should()
             .Be(1, "所有するスコープが無くなっていたので、完了した時点で解放するはず");
         Assets
             .Load("data/a.txt", "k", Read, AssetScope.Global)
             .Should()
-            .NotBeSameAs(result, "解放したものはキャッシュに残らないはず");
+            .NotBeSameAs(_created[0], "解放したものはキャッシュに残らないはず");
+    }
+
+    [Fact]
+    public void LoadAsync_SceneReleasedBeforeCompletion_ShouldFailAllWaitersOfThatScope()
+    {
+        Exception? first = null;
+        Exception? second = null;
+
+        _app.RunWith<ScriptedSceneA>(() =>
+        {
+            var gate = _source.BlockNextOpen("data/a.txt");
+            var task1 = Assets.LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Scene);
+            var task2 = Assets.LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Scene);
+            gate.WaitEntered();
+
+            LoadEmptyScene();
+            gate.Release();
+            first = Catch(() => task1.GetAwaiter().GetResult());
+            second = Catch(() => task2.GetAwaiter().GetResult());
+            _app.PumpFrame();
+        });
+
+        first.Should().BeAssignableTo<OperationCanceledException>();
+        second.Should().BeAssignableTo<OperationCanceledException>();
+        _created.Should().ContainSingle().Which.DisposeCount.Should().Be(1);
     }
 
     [Fact]
@@ -355,7 +414,7 @@ public sealed class AssetManagerAsyncTests : IDisposable
     }
 
     [Fact]
-    public void LoadAsync_UnloadBeforeCompletion_ShouldDisposeResultOnCompletion()
+    public void LoadAsync_UnloadBeforeCompletion_ShouldFailWithCanceledAndDisposeResult()
     {
         var gate = _source.BlockNextOpen("data/a.txt");
         var task = Assets.LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Global);
@@ -363,11 +422,15 @@ public sealed class AssetManagerAsyncTests : IDisposable
 
         Assets.Unload("data/a.txt");
         gate.Release();
-        var result = task.GetAwaiter().GetResult();
+        var thrown = Catch(() => task.GetAwaiter().GetResult());
         _app.PumpFrame();
 
-        result.DisposeCount.Should().Be(1);
-        Assets.Load("data/a.txt", "k", Read, AssetScope.Global).Should().NotBeSameAs(result);
+        thrown.Should().BeAssignableTo<OperationCanceledException>();
+        _created.Should().ContainSingle().Which.DisposeCount.Should().Be(1);
+        Assets
+            .Load("data/a.txt", "k", Read, AssetScope.Global)
+            .Should()
+            .NotBeSameAs(_created[0], "解放したものはキャッシュに残らないはず");
     }
 
     [Fact]
@@ -393,7 +456,7 @@ public sealed class AssetManagerAsyncTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_WhileAsyncIsPending_ShouldDisposeResultOnCompletion()
+    public void Dispose_WhileAsyncIsPending_ShouldFailWithObjectDisposedAndDisposeResult()
     {
         var gate = _source.BlockNextOpen("data/a.txt");
         var task = Assets.LoadAsync("data/a.txt", "k", ReadAsync, AssetScope.Global);
@@ -401,9 +464,31 @@ public sealed class AssetManagerAsyncTests : IDisposable
 
         Assets.Dispose();
         gate.Release();
-        var result = task.GetAwaiter().GetResult();
+        var thrown = Catch(() => task.GetAwaiter().GetResult());
 
-        result.DisposeCount.Should().Be(1, "破棄した後に完了したものは、その場で解放するはず");
+        thrown
+            .Should()
+            .BeOfType<ObjectDisposedException>(
+                "原因が AssetManager の破棄なら ObjectDisposedException のはず"
+            );
+        _created
+            .Should()
+            .ContainSingle()
+            .Which.DisposeCount.Should()
+            .Be(1, "破棄した後に完了したものは、その場で解放するはず");
+    }
+
+    private static Exception? Catch(Action action)
+    {
+        try
+        {
+            action();
+            return null;
+        }
+        catch (Exception e)
+        {
+            return e;
+        }
     }
 
     private void LoadEmptyScene() => _app.LoadScene<ScriptedEmptyScene>();

@@ -256,9 +256,9 @@ public sealed class AssetManagerTypedAsyncTests : IDisposable
     }
 
     [Fact]
-    public void LoadTextureAsync_SceneReleasedBeforeCompletion_ShouldDestroyTextureOnMainThread()
+    public void LoadTextureAsync_SceneReleasedBeforeCompletion_ShouldFailAndDestroyTextureOnMainThread()
     {
-        var handle = 0;
+        Exception? thrown = null;
 
         _app.RunWith<ScriptedSceneA>(() =>
         {
@@ -268,11 +268,23 @@ public sealed class AssetManagerTypedAsyncTests : IDisposable
 
             _app.LoadScene<ScriptedEmptyScene>();
             gate.Release();
-            handle = task.GetAwaiter().GetResult().Handle;
+            try
+            {
+                task.GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                thrown = e;
+            }
+
             _app.PumpFrame();
         });
 
-        Factory.DisposedHandlesSnapshot().Should().Equal(handle);
+        thrown
+            .Should()
+            .BeAssignableTo<OperationCanceledException>("解放済みのテクスチャを返さないはず");
+        Factory.CreatedCount.Should().Be(1);
+        Factory.DisposedHandlesSnapshot().Should().ContainSingle();
         Factory
             .OffMainThreadDestroyCount.Should()
             .Be(0, "GL はメインスレッド以外でテクスチャを破棄できないため");
@@ -296,6 +308,34 @@ public sealed class AssetManagerTypedAsyncTests : IDisposable
         });
 
         Factory.DisposedHandlesSnapshot().Should().Equal(handle);
+    }
+
+    [Fact]
+    public void TypedAsync_AlreadyCanceledToken_ShouldReturnCanceledTasks()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var token = cts.Token;
+
+        Task[] tasks =
+        [
+            Assets.LoadTextureAsync("img/a.png", AssetScope.Global, token),
+            Assets.LoadTextureAsync("img/a.png", Linear, AssetScope.Global, token),
+            Assets.LoadSpriteSheetAsync("img/tiles.png", 2, 1, (4, 4), AssetScope.Global, token),
+            Assets.LoadSpriteSheetAsync(
+                "img/tiles.png",
+                AssetScope.Global,
+                [new RectInt(0, 0, 4, 4)],
+                token
+            ),
+            Assets.Load9SlicedAsync("img/frame.png", 3, 3, 3, 3, AssetScope.Global, token),
+            Assets.LoadFontAsync("fonts/ui.ttf", 16, AssetScope.Global, token),
+            Assets.LoadAudioAsync("sfx/se.wav", AssetScope.Global, token),
+        ];
+
+        tasks.Should().AllSatisfy(t => t.IsCanceled.Should().BeTrue());
+        Factory.CreatedCount.Should().Be(0);
+        _source.Streams.Should().BeEmpty("キャンセル済みなら読み込みを始めないはず");
     }
 
     [Fact]

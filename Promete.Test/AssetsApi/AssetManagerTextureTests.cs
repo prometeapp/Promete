@@ -95,12 +95,12 @@ public sealed class AssetManagerTextureTests : IDisposable
     {
         var act = () => Assets.LoadTexture("img/broken.png", AssetScope.Global);
 
+        act.Should().Throw<Exception>("PNG ではないのでデコードに失敗するはず");
+        _source.OpenCount("img/broken.png").Should().Be(1);
+
+        // 失敗した読み込みはキャッシュに残らないので、もう一度呼ぶと開き直す
         act.Should().Throw<Exception>();
-        act.Should().Throw<Exception>();
-        _source
-            .OpenCount("img/broken.png")
-            .Should()
-            .Be(2, "失敗した読み込みはキャッシュに残らないはず");
+        _source.OpenCount("img/broken.png").Should().Be(2);
         _source
             .StreamsOf("img/broken.png")
             .Should()

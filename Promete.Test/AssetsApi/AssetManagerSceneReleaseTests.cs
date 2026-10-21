@@ -199,12 +199,66 @@ public sealed class AssetManagerSceneReleaseTests
 
         app.OnDestroy();
 
+        // 順序で、シーンの分がフック (各シーンの OnDestroy の直後) で解放されたことを確かめる。
+        // フックが無くても AssetManager の Dispose で全部解放されるので、集合だけでは区別できない
         textures
             .DisposedHandlesSnapshot()
             .Should()
-            .BeEquivalentTo([Handles["a.png"], Handles["b.png"], global]);
-        textures.DisposedHandlesSnapshot().Should().OnlyHaveUniqueItems();
+            .Equal(
+                [Handles["b.png"], Handles["a.png"], global],
+                "今のシーン → スタックのシーン → Global (AssetManager の Dispose) の順のはず"
+            );
         UsableAtDestroy.Should().Equal("ScriptedSceneB:b.png=True", "ScriptedSceneA:a.png=True");
+    }
+
+    [Fact]
+    public void PopScene_LowerSceneLoadingSameAssetInOnResume_ShouldNotReload()
+    {
+        ScriptedScene.Script.StartLoads[typeof(ScriptedSceneB)] = ["a.png", "b.png"];
+        ScriptedScene.Script.ResumeLoads[typeof(ScriptedSceneA)] = ["a.png"];
+        using var app = AssetsTestApp.Build(_source);
+
+        app.RunWith<ScriptedSceneA>(() =>
+        {
+            app.PushScene<ScriptedSceneB>();
+            var a = Handles["a.png"];
+
+            app.PopScene();
+
+            Handles["a.png"]
+                .Should()
+                .Be(a, "解放は下のシーンの OnResume の後なので、読み直さないはず");
+            app.Textures().CreatedCount.Should().Be(2);
+            app.Textures().DisposedHandlesSnapshot().Should().Equal(Handles["b.png"]);
+            _source.OpenCount("a.png").Should().Be(1);
+        });
+    }
+
+    [Fact]
+    public void PopScene_OnResumeThrowsAfterLoadingSameAsset_ShouldReleaseTopButKeepSharedAsset()
+    {
+        ScriptedScene.Script.StartLoads[typeof(ScriptedSceneB)] = ["a.png", "b.png"];
+        ScriptedScene.Script.ResumeLoads[typeof(ScriptedThrowingOnResumeScene)] = ["a.png"];
+        using var app = AssetsTestApp.Build(_source);
+
+        app.RunWith<ScriptedThrowingOnResumeScene>(() =>
+        {
+            app.PushScene<ScriptedSceneB>();
+
+            var act = () => app.PopScene();
+
+            act.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage("OnResume で失敗しました。");
+            app.Textures()
+                .DisposedHandlesSnapshot()
+                .Should()
+                .Equal(
+                    [Handles["b.png"]],
+                    "OnResume が例外でも上のシーンは解放し、下のシーンが読んだ分は残るはず"
+                );
+            app.Textures().CreatedCount.Should().Be(2);
+        });
     }
 
     [Fact]
