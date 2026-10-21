@@ -35,6 +35,16 @@ namespace Promete.Assets;
 /// </remarks>
 public sealed class PackageAssetSource : IAssetSource, IDisposable
 {
+    /// <summary>
+    /// Deflate で圧縮したエントリの、格納サイズに対する元のサイズの上限の倍率。
+    /// </summary>
+    private const ulong MaxDeflateRatio = 1032;
+
+    /// <summary>
+    /// Deflate で圧縮したエントリの、元のサイズの上限に足す余裕 (バイト)。
+    /// </summary>
+    private const ulong MaxDeflateRatioSlack = 64;
+
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
     private readonly PackageStorage _storage;
@@ -483,6 +493,19 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
             {
                 throw new InvalidDataException(
                     $"パス '{path}' は無圧縮ですが、格納サイズと元のサイズが違います。"
+                );
+            }
+
+            // Deflate の圧縮率には上限があるので、格納サイズからあり得ない元のサイズを開く時点で拒否する
+            // (storedSize * 上限 が ulong で桁あふれする場合は、上限を計算できないが、元のサイズがそれを超えることはない)
+            if (
+                compressed
+                && storedSize <= (ulong.MaxValue - MaxDeflateRatioSlack) / MaxDeflateRatio
+                && originalSize > storedSize * MaxDeflateRatio + MaxDeflateRatioSlack
+            )
+            {
+                throw new InvalidDataException(
+                    $"パス '{path}' の元のサイズ {originalSize} が、格納サイズ {storedSize} に対して大きすぎます。"
                 );
             }
 
