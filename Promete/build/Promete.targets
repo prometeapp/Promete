@@ -116,6 +116,39 @@
     </ItemGroup>
 
     <!--
+        デスクトップの Package モードのパッケージを出力先に置く item。評価時に宣言するのは、参照元 (テスト → ゲーム) の
+        GetCopyToOutputDirectoryItems に載せるため。名前は _PrometeResolveAssetsCore の _PrometeAssetPackageFile と同じ規則で作る。
+        Embed のときは出力先に置かず、EmbeddedResource としてアセンブリに入れる (コンパイル前に作るのは PrometeAssetsBuild)。
+        変換で作った item は元の PrometeAsset のメタデータを引き継ぐので、TargetPath と Link を明示する。
+        WithCulture=false は、パッケージ名が ja などのときに AssignCulture がサテライトのリソースとして扱うのを防ぐ。
+    -->
+    <ItemGroup Condition="'$(_PrometeAssetsSupported)' == 'true' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true' and '@(PrometeAsset)' != '' and '$(_PrometeAssetIsWeb)' != 'true' and '$(PrometeAssetMode)' == 'Package'">
+        <_PrometeAssetDeclaredPackage Include="@(PrometeAsset->'%(Package)'->Distinct())" />
+
+        <None
+            Condition="'$(PrometeAssetEmbed)' != 'true'"
+            Include="@(_PrometeAssetDeclaredPackage->'$(IntermediateOutputPath)$(AssemblyName).%(Identity)$(_PrometeAssetPackageExtension)')"
+            Link="%(Filename)%(Extension)"
+            TargetPath="%(Filename)%(Extension)"
+            CopyToOutputDirectory="PreserveNewest"
+            CopyToPublishDirectory="PreserveNewest"
+            ExcludeFromSingleFile="true"
+            Visible="false"
+        />
+        <EmbeddedResource
+            Condition="'$(PrometeAssetEmbed)' == 'true'"
+            Include="@(_PrometeAssetDeclaredPackage->'$(IntermediateOutputPath)$(AssemblyName).%(Identity)$(_PrometeAssetPackageExtension)')"
+            LogicalName="%(Filename)%(Extension)"
+            TargetPath="%(Filename)%(Extension)"
+            Culture=""
+            DependentUpon=""
+            WithCulture="false"
+            Type="Non-Resx"
+            Visible="false"
+        />
+    </ItemGroup>
+
+    <!--
         外側のターゲットは条件を持たず、依存先で状態を立ててから内側のターゲットの条件を判定する
         (ターゲットの Condition は DependsOnTargets より前に評価されるため)。
     -->
@@ -271,8 +304,30 @@
         DependsOnTargets="PrometePackAssets;PrometeWriteAssetManifest"
     />
 
-    <!-- 出力の契約。Package のパッケージは後の作業で足す -->
-    <Target Name="PrometePackAssets" DependsOnTargets="PrometeResolveAssets" />
+    <!-- 出力の契約。Package のパッケージを obj/ に作り、FileWrites に足す (Clean の対象) -->
+    <Target Name="PrometePackAssets" DependsOnTargets="PrometeResolveAssets;_PrometePackAssetsCore">
+        <ItemGroup Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Package'">
+            <FileWrites Include="@(_PrometeAssetPackageFile)" />
+        </ItemGroup>
+    </Target>
+
+    <!--
+        パッケージを作る。Inputs は asset と指紋 (item の削除・メタデータ・Promete の版の変化は指紋に出る)、
+        Outputs はパッケージなので、どれかが新しくなったときだけ全パッケージを作り直す。
+    -->
+    <Target
+        Name="_PrometePackAssetsCore"
+        Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Package'"
+        Inputs="@(_PrometeResolvedAsset);$(_PrometeAssetFingerprint)"
+        Outputs="@(_PrometeAssetPackageFile)"
+    >
+        <PackPrometeAssets
+            Assets="@(_PrometeResolvedAsset)"
+            OutputDirectory="$(_PrometeAssetIntermediateDir)"
+            FileNamePrefix="$(AssemblyName)."
+            FileExtension="$(_PrometeAssetPackageExtension)"
+        />
+    </Target>
 
     <!-- デスクトップの Folder のマニフェストを obj/ に書く。内容が同じなら書き換えない (Task が判断する) -->
     <Target
