@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using Promete.Assets.Packaging;
 
@@ -230,7 +231,53 @@ public sealed class AssetPackageWriter
     /// <exception cref="FileNotFoundException"><see cref="AddFile"/> で足したファイルが、書き出す時点で存在しない場合。</exception>
     public void WriteTo(Stream output)
     {
-        throw new NotImplementedException();
+        if (output is null)
+        {
+            throw new ArgumentNullException(nameof(output));
+        }
+
+        if (!output.CanWrite || !output.CanSeek)
+        {
+            throw new ArgumentException(
+                "書き込みと seek ができるストリームが必要です。",
+                nameof(output)
+            );
+        }
+
+        var start = output.Position;
+        output.Write(new byte[AssetPackageFormat.HeaderSize], 0, AssetPackageFormat.HeaderSize);
+
+        var keys = new List<string>(_entries.Keys);
+        keys.Sort(StringComparer.Ordinal);
+
+        var records = new List<TocRecord>(keys.Count);
+        foreach (var key in keys)
+        {
+            var entry = _entries[key];
+            var content = entry.Content ?? File.ReadAllBytes(entry.SourceFilePath!);
+            var (stored, flags) = Encode(entry, content);
+
+            records.Add(
+                new TocRecord(
+                    Encoding.UTF8.GetBytes(entry.LogicalPath),
+                    flags,
+                    (ulong)(output.Position - start),
+                    (ulong)stored.Length,
+                    (ulong)content.Length
+                )
+            );
+            output.Write(stored, 0, stored.Length);
+        }
+
+        var toc = BuildToc(records);
+        var tocOffset = (ulong)(output.Position - start);
+        output.Write(toc, 0, toc.Length);
+        var end = output.Position;
+
+        var header = BuildHeader(tocOffset, (ulong)toc.Length);
+        output.Position = start;
+        output.Write(header, 0, header.Length);
+        output.Position = end;
     }
 
     /// <summary>
@@ -244,6 +291,236 @@ public sealed class AssetPackageWriter
     /// <exception cref="FileNotFoundException"><see cref="AddFile"/> で足したファイルが、書き出す時点で存在しない場合。</exception>
     public void WriteTo(string outputPath)
     {
-        throw new NotImplementedException();
+        if (outputPath is null)
+        {
+            throw new ArgumentNullException(nameof(outputPath));
+        }
+
+        var fullPath = Path.GetFullPath(outputPath);
+        var tempPath = fullPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            using (var file = new FileStream(tempPath, FileMode.CreateNew, FileAccess.ReadWrite))
+            {
+                WriteTo(file);
+            }
+
+            if (File.Exists(fullPath))
+            {
+                File.Replace(tempPath, fullPath, null);
+            }
+            else
+            {
+                File.Move(tempPath, fullPath);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 中身を圧縮の方法に従って符号化します。圧縮した場合は、格納するバイト列とフラグを返します。
+    /// </summary>
+    /// <param name="entry">エントリ。</param>
+    /// <param name="content">元の中身。</param>
+    /// <returns>格納するバイト列と、エントリのフラグ。</returns>
+    private static (byte[] Stored, uint Flags) Encode(AssetPackageEntry entry, byte[] content)
+    {
+        switch (entry.Compression)
+        {
+            case AssetCompression.Always:
+                return (Deflate(content), AssetPackageFormat.EntryFlagDeflate);
+
+            case AssetCompression.Auto when IsAutoCompressed(entry.LogicalPath):
+                var deflated = Deflate(content);
+                if (deflated.Length < content.Length)
+                {
+                    return (deflated, AssetPackageFormat.EntryFlagDeflate);
+                }
+
+                return (content, 0);
+
+            default:
+                return (content, 0);
+        }
+    }
+
+    /// <summary>
+    /// バイト列を raw Deflate で圧縮します。
+    /// </summary>
+    /// <param name="content">圧縮するバイト列。</param>
+    /// <returns>圧縮したバイト列。</returns>
+    private static byte[] Deflate(byte[] content)
+    {
+        using var compressed = new MemoryStream();
+        using (
+            var deflate = new DeflateStream(compressed, CompressionLevel.Optimal, leaveOpen: true)
+        )
+        {
+            deflate.Write(content, 0, content.Length);
+        }
+
+        return compressed.ToArray();
+    }
+
+    /// <summary>
+    /// 目次のバイト列を組み立てます。エントリは渡された順に並べます。
+    /// </summary>
+    /// <param name="records">目次の各エントリ。</param>
+    /// <returns>目次のバイト列 (エントリ数の 4 バイトを含む)。拡張領域と目次の余りはありません。</returns>
+    private static byte[] BuildToc(List<TocRecord> records)
+    {
+        var size = 4;
+        foreach (var record in records)
+        {
+            size += AssetPackageFormat.TocEntryFixedSize + record.PathBytes.Length;
+        }
+
+        var toc = new byte[size];
+        WriteUInt32(toc, 0, (uint)records.Count);
+
+        var position = 4;
+        foreach (var record in records)
+        {
+            WriteUInt16(toc, position, (ushort)record.PathBytes.Length);
+            position += 2;
+            Array.Copy(record.PathBytes, 0, toc, position, record.PathBytes.Length);
+            position += record.PathBytes.Length;
+            WriteUInt32(toc, position, record.Flags);
+            position += 4;
+            WriteUInt64(toc, position, record.Offset);
+            position += 8;
+            WriteUInt64(toc, position, record.StoredSize);
+            position += 8;
+            WriteUInt64(toc, position, record.OriginalSize);
+            position += 8;
+
+            // nonce (12 バイト) は 0 のまま。extraLength も 0 のまま。
+            position += AssetPackageFormat.NonceSize + 2;
+        }
+
+        return toc;
+    }
+
+    /// <summary>
+    /// ヘッダのバイト列を組み立てます。暗号化はせず、予約の領域は 0 のままです。
+    /// </summary>
+    /// <param name="tocOffset">目次の位置 (パッケージの先頭からの相対値)。</param>
+    /// <param name="tocSize">目次の大きさ。</param>
+    /// <returns>ヘッダのバイト列 (<see cref="AssetPackageFormat.HeaderSize"/> バイト)。</returns>
+    private static byte[] BuildHeader(ulong tocOffset, ulong tocSize)
+    {
+        var header = new byte[AssetPackageFormat.HeaderSize];
+        Array.Copy(AssetPackageFormat.GetMagic(), 0, header, AssetPackageFormat.MagicOffset, 8);
+        WriteUInt16(header, AssetPackageFormat.MajorVersionOffset, AssetPackageFormat.MajorVersion);
+        WriteUInt16(header, AssetPackageFormat.MinorVersionOffset, AssetPackageFormat.MinorVersion);
+        WriteUInt32(
+            header,
+            AssetPackageFormat.HeaderSizeOffset,
+            (uint)AssetPackageFormat.HeaderSize
+        );
+        WriteUInt32(header, AssetPackageFormat.HeaderFlagsOffset, 0);
+        WriteUInt64(header, AssetPackageFormat.TocOffsetOffset, tocOffset);
+        WriteUInt64(header, AssetPackageFormat.TocSizeOffset, tocSize);
+        return header;
+    }
+
+    /// <summary>
+    /// 2 バイトの値をリトルエンディアンで書き込みます。
+    /// </summary>
+    /// <param name="buffer">書き込み先。</param>
+    /// <param name="offset">書き込み位置。</param>
+    /// <param name="value">値。</param>
+    private static void WriteUInt16(byte[] buffer, int offset, ushort value)
+    {
+        buffer[offset] = (byte)value;
+        buffer[offset + 1] = (byte)(value >> 8);
+    }
+
+    /// <summary>
+    /// 4 バイトの値をリトルエンディアンで書き込みます。
+    /// </summary>
+    /// <param name="buffer">書き込み先。</param>
+    /// <param name="offset">書き込み位置。</param>
+    /// <param name="value">値。</param>
+    private static void WriteUInt32(byte[] buffer, int offset, uint value)
+    {
+        for (var i = 0; i < 4; i++)
+        {
+            buffer[offset + i] = (byte)(value >> (8 * i));
+        }
+    }
+
+    /// <summary>
+    /// 8 バイトの値をリトルエンディアンで書き込みます。
+    /// </summary>
+    /// <param name="buffer">書き込み先。</param>
+    /// <param name="offset">書き込み位置。</param>
+    /// <param name="value">値。</param>
+    private static void WriteUInt64(byte[] buffer, int offset, ulong value)
+    {
+        for (var i = 0; i < 8; i++)
+        {
+            buffer[offset + i] = (byte)(value >> (8 * i));
+        }
+    }
+
+    /// <summary>
+    /// 目次に書く、エントリ 1 件分の情報。
+    /// </summary>
+    private sealed class TocRecord
+    {
+        /// <summary>
+        /// 初期化します。
+        /// </summary>
+        /// <param name="pathBytes">論理パスの UTF-8 のバイト列。</param>
+        /// <param name="flags">エントリのフラグ。</param>
+        /// <param name="offset">データの位置 (パッケージの先頭からの相対値)。</param>
+        /// <param name="storedSize">格納しているバイト数。</param>
+        /// <param name="originalSize">元のバイト数。</param>
+        public TocRecord(
+            byte[] pathBytes,
+            uint flags,
+            ulong offset,
+            ulong storedSize,
+            ulong originalSize
+        )
+        {
+            PathBytes = pathBytes;
+            Flags = flags;
+            Offset = offset;
+            StoredSize = storedSize;
+            OriginalSize = originalSize;
+        }
+
+        /// <summary>
+        /// 論理パスの UTF-8 のバイト列を取得します。
+        /// </summary>
+        public byte[] PathBytes { get; }
+
+        /// <summary>
+        /// エントリのフラグを取得します。
+        /// </summary>
+        public uint Flags { get; }
+
+        /// <summary>
+        /// データの位置を取得します。
+        /// </summary>
+        public ulong Offset { get; }
+
+        /// <summary>
+        /// 格納しているバイト数を取得します。
+        /// </summary>
+        public ulong StoredSize { get; }
+
+        /// <summary>
+        /// 元のバイト数を取得します。
+        /// </summary>
+        public ulong OriginalSize { get; }
     }
 }
