@@ -17,6 +17,19 @@ internal sealed class FakeResourceAssembly : Assembly
             _resources[name] = Encoding.UTF8.GetBytes(content);
     }
 
+    /// <summary>
+    /// バイト列のリソースを持つアセンブリを作る (埋め込んだアセットパッケージのテスト用)。
+    /// </summary>
+    public static FakeResourceAssembly WithBinary(params (string Name, byte[] Content)[] resources)
+    {
+        var assembly = new FakeResourceAssembly();
+        foreach (var (name, content) in resources)
+            assembly._resources[name] = content;
+        return assembly;
+    }
+
+    public override AssemblyName GetName() => new("FakeResourceAssembly");
+
     public override string[] GetManifestResourceNames() => [.. _resources.Keys];
 
     public override Stream? GetManifestResourceStream(string name) =>

@@ -37,6 +37,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Promete\Promete.csproj" />
+        <!-- アセットパッケージのラウンドトリップのテストで、ライターを使う -->
+        <ProjectReference Include="..\Promete.AssetPacker\Promete.AssetPacker.csproj" />
     </ItemGroup>
 
     <!-- アナライザーのテスト用に SceneGen をライブラリとして参照する。プロジェクト参照は
@@ -58,6 +60,14 @@
         <EmbeddedResource
             Include="assets\embedded-other\ignored.txt"
             LogicalName="other/ignored.txt"
+        />
+    </ItemGroup>
+
+    <!-- PackageAssetSource の互換性のテスト用。形式 1.0 で書いたパッケージを、ファイルと埋め込みリソースの両方から読む -->
+    <ItemGroup>
+        <EmbeddedResource
+            Include="assets\package-format\golden-v1.0.pak"
+            LogicalName="package-format/golden-v1.0.pak"
         />
     </ItemGroup>
 

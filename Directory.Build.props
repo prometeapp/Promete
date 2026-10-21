@@ -14,8 +14,9 @@
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     </PropertyGroup>
     <!-- アナライザは ProjectReference では推移しないため、リポジトリ内では全 C#
-         プロジェクトに配る。外部には Promete パッケージ経由で届く。 -->
-    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(MSBuildProjectName)' != 'Promete.SceneGen'">
+         プロジェクトに配る。外部には Promete パッケージ経由で届く。
+         netstandard2.0 のビルド用ライブラリ (SceneGen 自身と AssetPacker) は Promete を使わないので除く。 -->
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(MSBuildProjectName)' != 'Promete.SceneGen' and '$(MSBuildProjectName)' != 'Promete.AssetPacker'">
         <ProjectReference
             Include="$(MSBuildThisFileDirectory)Promete.SceneGen/Promete.SceneGen.csproj"
             OutputItemType="Analyzer"

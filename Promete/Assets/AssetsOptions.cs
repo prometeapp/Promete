@@ -73,6 +73,49 @@ public sealed class AssetsOptions
     }
 
     /// <summary>
+    /// アセットパッケージのファイルをマウントします (<see cref="PackageAssetSource"/>)。
+    /// </summary>
+    /// <param name="filePath">パッケージのファイルのパス。相対パスは <see cref="AppContext.BaseDirectory"/> を基準に解決します。</param>
+    /// <param name="mountPoint">論理パスの接頭辞。</param>
+    /// <param name="priority">優先度。大きいほど優先されます。</param>
+    /// <returns>このインスタンス。</returns>
+    /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
+    /// <exception cref="ArgumentException"><paramref name="mountPoint"/> が <c>\</c> を含む場合。</exception>
+    /// <remarks>
+    /// ファイルが存在しない場合や壊れている場合は、マウントする時点 (アプリの開始時) で
+    /// <see cref="System.IO.FileNotFoundException"/> や <see cref="System.IO.InvalidDataException"/> がスローされます。
+    /// <paramref name="mountPoint"/> の誤りは、この呼び出し (構成時) で検出されます。
+    /// </remarks>
+    public AssetsOptions MountPackage(string filePath, string mountPoint = "", int priority = 0)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// アセンブリに埋め込んだアセットパッケージをマウントします (<see cref="PackageAssetSource.FromEmbeddedResource"/>)。
+    /// </summary>
+    /// <param name="assembly">リソースを持つアセンブリ。</param>
+    /// <param name="resourceName">パッケージのリソースの名前 (<c>LogicalName</c>)。</param>
+    /// <param name="mountPoint">論理パスの接頭辞。</param>
+    /// <param name="priority">優先度。大きいほど優先されます。</param>
+    /// <returns>このインスタンス。</returns>
+    /// <exception cref="ArgumentNullException">引数が <see langword="null"/> の場合。</exception>
+    /// <exception cref="ArgumentException"><paramref name="mountPoint"/> が <c>\</c> を含む場合。</exception>
+    /// <remarks>
+    /// リソースが見つからない場合や壊れている場合は、マウントする時点 (アプリの開始時) で
+    /// <see cref="System.IO.FileNotFoundException"/> や <see cref="System.IO.InvalidDataException"/> がスローされます。
+    /// </remarks>
+    public AssetsOptions MountEmbeddedPackage(
+        Assembly assembly,
+        string resourceName,
+        string mountPoint = "",
+        int priority = 0
+    )
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
     /// 任意のソースをマウントします。
     /// </summary>
     /// <param name="source">マウントするソース。<see cref="IDisposable"/> を実装している場合、所有権は <see cref="AssetManager"/> に移ります。</param>
