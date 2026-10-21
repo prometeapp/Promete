@@ -1133,13 +1133,33 @@ public sealed class AssetManager : IDisposable
             _cache.Clear();
         }
 
-        foreach (var entry in entries)
+        List<Exception> errors = [];
+        try
         {
-            ReleaseValue(entry.Release, entry.Value);
+            try
+            {
+                ReleaseEntries(entries);
+            }
+            catch (AggregateException e)
+            {
+                errors.AddRange(e.InnerExceptions);
+            }
+
+            try
+            {
+                FlushPendingReleases();
+            }
+            catch (AggregateException e)
+            {
+                errors.AddRange(e.InnerExceptions);
+            }
+        }
+        finally
+        {
+            TryRelease(() => FileSystem.Dispose(), errors);
         }
 
-        FlushPendingReleases();
-        FileSystem.Dispose();
+        ThrowIfAny(errors);
     }
 
     /// <summary>
@@ -1517,9 +1537,42 @@ public sealed class AssetManager : IDisposable
     /// <param name="entries">解放するエントリ。</param>
     private void ReleaseEntries(List<Entry> entries)
     {
+        List<Exception> errors = [];
         foreach (var entry in entries)
         {
-            ReleaseValue(entry.Release, entry.Value);
+            TryRelease(() => ReleaseValue(entry.Release, entry.Value), errors);
+        }
+
+        ThrowIfAny(errors);
+    }
+
+    /// <summary>
+    /// 解放の処理を 1 件実行します。例外は <paramref name="errors"/> に集めて、呼び出し元を止めません。
+    /// </summary>
+    /// <param name="release">解放の処理。</param>
+    /// <param name="errors">例外を集めるリスト。</param>
+    private static void TryRelease(Action release, List<Exception> errors)
+    {
+        try
+        {
+            release();
+        }
+        catch (Exception e)
+        {
+            errors.Add(e);
+        }
+    }
+
+    /// <summary>
+    /// 集めた例外が 1 つでもあれば、<see cref="AggregateException"/> にまとめて投げます。
+    /// </summary>
+    /// <param name="errors">集めた例外。</param>
+    /// <exception cref="AggregateException"><paramref name="errors"/> に例外がある場合。</exception>
+    private static void ThrowIfAny(List<Exception> errors)
+    {
+        if (errors.Count > 0)
+        {
+            throw new AggregateException(errors);
         }
     }
 
@@ -1618,10 +1671,13 @@ public sealed class AssetManager : IDisposable
     private void FlushPendingReleases()
     {
         Interlocked.Exchange(ref _flushScheduled, 0);
+        List<Exception> errors = [];
         while (_pendingReleases.TryDequeue(out var release))
         {
-            release();
+            TryRelease(release, errors);
         }
+
+        ThrowIfAny(errors);
     }
 
     /// <summary>
