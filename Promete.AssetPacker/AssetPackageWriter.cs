@@ -137,49 +137,6 @@ public sealed class AssetPackageWriter
     }
 
     /// <summary>
-    /// 検証してエントリを登録します。どこかで例外になった場合は何も登録しません。
-    /// </summary>
-    /// <param name="path">正規化する前の論理パス。</param>
-    /// <param name="compression">圧縮の方法。</param>
-    /// <param name="content">メモリ上の中身。ファイルから足す場合は <see langword="null"/>。</param>
-    /// <param name="sourceFilePath">中身のファイルのフルパス。メモリ上の中身の場合は <see langword="null"/>。</param>
-    /// <exception cref="ArgumentException">圧縮の方法、パス、重複のいずれかが不正な場合。</exception>
-    private void AddEntry(
-        string path,
-        AssetCompression compression,
-        byte[]? content,
-        string? sourceFilePath
-    )
-    {
-        if (!Enum.IsDefined(typeof(AssetCompression), compression))
-        {
-            throw new ArgumentException("未定義の圧縮の方法です。", nameof(compression));
-        }
-
-        var logicalPath = AssetPackagePath.Normalize(path);
-        if (Encoding.UTF8.GetByteCount(logicalPath) > AssetPackageFormat.MaxPathByteLength)
-        {
-            throw new ArgumentException(
-                $"論理パスの UTF-8 のバイト数が {AssetPackageFormat.MaxPathByteLength} を超えています: {path}",
-                nameof(path)
-            );
-        }
-
-        if (_entries.ContainsKey(logicalPath))
-        {
-            throw new ArgumentException(
-                $"同じ論理パスのエントリが既にあります。正規化したパス: {logicalPath} (指定されたパス: {path})",
-                nameof(path)
-            );
-        }
-
-        _entries.Add(
-            logicalPath,
-            new AssetPackageEntry(logicalPath, compression, content, sourceFilePath)
-        );
-    }
-
-    /// <summary>
     /// ファイルをエントリとして足します。ファイルの中身は書き出すときに読みます。
     /// </summary>
     /// <param name="path">論理パス。<see cref="AssetPackagePath.Normalize(string)"/> で正規化して格納します。</param>
@@ -468,6 +425,49 @@ public sealed class AssetPackageWriter
         {
             buffer[offset + i] = (byte)(value >> (8 * i));
         }
+    }
+
+    /// <summary>
+    /// 検証してエントリを登録します。どこかで例外になった場合は何も登録しません。
+    /// </summary>
+    /// <param name="path">正規化する前の論理パス。</param>
+    /// <param name="compression">圧縮の方法。</param>
+    /// <param name="content">メモリ上の中身。ファイルから足す場合は <see langword="null"/>。</param>
+    /// <param name="sourceFilePath">中身のファイルのフルパス。メモリ上の中身の場合は <see langword="null"/>。</param>
+    /// <exception cref="ArgumentException">圧縮の方法、パス、重複のいずれかが不正な場合。</exception>
+    private void AddEntry(
+        string path,
+        AssetCompression compression,
+        byte[]? content,
+        string? sourceFilePath
+    )
+    {
+        if (!Enum.IsDefined(typeof(AssetCompression), compression))
+        {
+            throw new ArgumentException("未定義の圧縮の方法です。", nameof(compression));
+        }
+
+        var logicalPath = AssetPackagePath.Normalize(path);
+        if (Encoding.UTF8.GetByteCount(logicalPath) > AssetPackageFormat.MaxPathByteLength)
+        {
+            throw new ArgumentException(
+                $"論理パスの UTF-8 のバイト数が {AssetPackageFormat.MaxPathByteLength} を超えています: {path}",
+                nameof(path)
+            );
+        }
+
+        if (_entries.ContainsKey(logicalPath))
+        {
+            throw new ArgumentException(
+                $"同じ論理パスのエントリが既にあります。正規化したパス: {logicalPath} (指定されたパス: {path})",
+                nameof(path)
+            );
+        }
+
+        _entries.Add(
+            logicalPath,
+            new AssetPackageEntry(logicalPath, compression, content, sourceFilePath)
+        );
     }
 
     /// <summary>

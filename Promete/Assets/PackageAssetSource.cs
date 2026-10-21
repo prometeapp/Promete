@@ -166,33 +166,6 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
         );
     }
 
-    /// <summary>
-    /// ファイルのパッケージを開く前の検証をし、読み出し元を作ります。
-    /// </summary>
-    /// <param name="filePath">パッケージのファイルのパス。</param>
-    /// <param name="mountPoint">論理パスの前に付ける接頭辞。</param>
-    /// <returns>開いたファイルの情報。</returns>
-    private static OpenedFile OpenFile(string filePath, string mountPoint)
-    {
-        ArgumentNullException.ThrowIfNull(filePath);
-        var normalizedMountPoint = AssetPath.NormalizeDirectory(mountPoint);
-
-        var fullPath = Path.GetFullPath(filePath, AppContext.BaseDirectory);
-        if (!File.Exists(fullPath))
-        {
-            throw new FileNotFoundException(
-                $"アセットパッケージ '{fullPath}' が見つかりません。",
-                fullPath
-            );
-        }
-
-        return new OpenedFile(
-            new FilePackageStorage(fullPath),
-            normalizedMountPoint,
-            $"'{fullPath}'"
-        );
-    }
-
     /// <inheritdoc />
     /// <exception cref="ObjectDisposedException">破棄された後に呼び出した場合。</exception>
     public bool Exists(string path)
@@ -274,6 +247,33 @@ public sealed class PackageAssetSource : IAssetSource, IDisposable
         {
             _storage.Release();
         }
+    }
+
+    /// <summary>
+    /// ファイルのパッケージを開く前の検証をし、読み出し元を作ります。
+    /// </summary>
+    /// <param name="filePath">パッケージのファイルのパス。</param>
+    /// <param name="mountPoint">論理パスの前に付ける接頭辞。</param>
+    /// <returns>開いたファイルの情報。</returns>
+    private static OpenedFile OpenFile(string filePath, string mountPoint)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+        var normalizedMountPoint = AssetPath.NormalizeDirectory(mountPoint);
+
+        var fullPath = Path.GetFullPath(filePath, AppContext.BaseDirectory);
+        if (!File.Exists(fullPath))
+        {
+            throw new FileNotFoundException(
+                $"アセットパッケージ '{fullPath}' が見つかりません。",
+                fullPath
+            );
+        }
+
+        return new OpenedFile(
+            new FilePackageStorage(fullPath),
+            normalizedMountPoint,
+            $"'{fullPath}'"
+        );
     }
 
     /// <summary>
