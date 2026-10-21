@@ -221,6 +221,72 @@ var app = PrometeApp.Create()
 
 埋め込みリソースも、フォルダと同じように `OpenRead` や `Exists` で読めます。埋め込みリソースは読み取り専用です。
 
+## パッケージから読む `v2.4~`
+
+複数のファイルを1つにまとめたものを、**パッケージ**と呼びます。パッケージも、フォルダと同じように論理パスで読めます。ファイルの数が多いときや、配布するファイルを1つにまとめたいときに便利です。
+
+ファイルのパッケージは、`MountPackage` でマウントします。
+
+```csharp title="Program.cs"
+var app = PrometeApp.Create()
+    .UseAssets(o => o.MountPackage("game.main.pak", "assets"))
+    .BuildWithOpenGLDesktop();
+```
+
+`"game.main.pak"` は、実行ファイルのフォルダにあるパッケージです。相対パスの基準は、フォルダの場合と同じく実行ファイルのフォルダ（`AppContext.BaseDirectory`）になります。
+
+パッケージを実行ファイルに埋め込んだ場合は、`MountEmbeddedPackage` を使います。先に csproj で、パッケージを埋め込みます。
+
+```xml title="Game.csproj"
+<ItemGroup>
+  <EmbeddedResource Include="Packages\game.main.pak" LogicalName="game.main.pak" />
+</ItemGroup>
+```
+
+```csharp title="Program.cs"
+var app = PrometeApp.Create()
+    .UseAssets(o => o.MountEmbeddedPackage(typeof(Program).Assembly, "game.main.pak", "assets"))
+    .BuildWithOpenGLDesktop();
+```
+
+`MountEmbeddedPackage` の2つ目の引数は、埋め込みリソースの名前（`LogicalName`）です。3つ目の引数は、論理パスの接頭辞です。
+
+マウントした後は、フォルダや埋め込みリソースと同じように読めます。
+
+```csharp
+using var stream = assets.FileSystem.OpenRead("assets/x.png");
+```
+
+パッケージには、次の性質があります。
+
+- **必要な部分だけを読みます。** 開くときに読むのは、パッケージの目次だけです。ファイルを読むときも、そのファイルの部分だけを読むので、パッケージ全体をメモリに読み込むことはありません。圧縮されたファイルだけは、そのファイル1つ分を展開してメモリに置きます。
+- **複数のファイルを同時に読めます。** 別々のファイルを、別々のスレッドから同時に読めます。
+- **読み取り専用です。** パッケージの中身は書き換えられません。
+- **アプリがパッケージを閉じても、開いたストリームは使えます。** 開いたストリームは、自分で閉じるまで読み続けられます。
+
+パッケージも、ほかの読み込み元と同じように `priority` で重ねられます。たとえば、パッケージの上にフォルダを重ねると、一部のファイルだけを差し替えられます。
+
+```csharp title="Program.cs"
+var app = PrometeApp.Create()
+    .UseAssets(o => o
+        .MountPackage("game.main.pak", "assets")                 // 基本のアセット (priority = 0)
+        .MountFolder("patch/assets", "assets", priority: 10)     // パッチ: 同じ論理パスを上書きする
+    )
+    .BuildWithOpenGLDesktop();
+```
+
+:::caution
+パッケージのファイルが無い、または壊れている場合は、`UseAssets` の呼び出しではなく、アプリを開始したとき（マウントするとき）に例外が発生します。例外は、次のとおりです。
+
+- ファイルが無い場合: `FileNotFoundException`
+- ファイルが壊れている場合: `InvalidDataException`
+- 新しい形式のパッケージ（メジャーバージョンが対応していないもの）の場合: `NotSupportedException`
+
+例外のメッセージには、ファイルのパスや埋め込みリソースの名前が入るので、どのパッケージで問題が起きたかが分かります。
+:::
+
+<!-- TODO(Assets Phase 4): PrometeAsset (MSBuild) でパッケージを作る方法へのリンクを足す -->
+
 ## 自前の読み込み元を作る `v2.4~`
 
 フォルダや埋め込みリソース以外から読みたいときは、`IAssetSource` を実装して `Mount` します。たとえば、暗号化されたアーカイブから読むような場合です。
@@ -576,7 +642,7 @@ var app = PrometeApp.Create()
 
 ## まとめ
 
-- `UseAssets` で、`MountFolder` や `MountEmbeddedResources` を指定する。
+- `UseAssets` で、`MountFolder` や `MountEmbeddedResources`、`MountPackage` を指定する。
 - シーンやプラグインでは、`AssetManager` をコンストラクタで受け取り、`assets.FileSystem` を使う。
 - 読むときは `OpenRead`、確認するときは `Exists`、探すときは `Enumerate` を使う。
 - 相対パスの基準は実行ファイルのフォルダで、パスは大文字・小文字を区別する。
