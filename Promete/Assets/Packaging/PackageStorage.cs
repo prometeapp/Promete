@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 
 namespace Promete.Assets.Packaging;
 
@@ -15,6 +16,8 @@ namespace Promete.Assets.Packaging;
 /// </remarks>
 internal abstract class PackageStorage
 {
+    private int _refCount = 1;
+
     /// <summary>
     /// 読み出し元の全体の長さ (バイト)。
     /// </summary>
@@ -26,7 +29,15 @@ internal abstract class PackageStorage
     /// <returns>増やせた場合は <see langword="true"/>。</returns>
     public bool TryAddRef()
     {
-        throw new NotImplementedException();
+        while (true)
+        {
+            var current = Volatile.Read(ref _refCount);
+            if (current <= 0)
+                return false;
+
+            if (Interlocked.CompareExchange(ref _refCount, current + 1, current) == current)
+                return true;
+        }
     }
 
     /// <summary>
@@ -34,7 +45,8 @@ internal abstract class PackageStorage
     /// </summary>
     public void Release()
     {
-        throw new NotImplementedException();
+        if (Interlocked.Decrement(ref _refCount) == 0)
+            DisposeCore();
     }
 
     /// <summary>
@@ -53,7 +65,15 @@ internal abstract class PackageStorage
     /// <exception cref="EndOfStreamException">末尾に達して、<paramref name="buffer"/> を埋められなかった場合。</exception>
     public void ReadExactlyAt(long position, Span<byte> buffer)
     {
-        throw new NotImplementedException();
+        var total = 0;
+        while (total < buffer.Length)
+        {
+            var read = ReadAt(position + total, buffer[total..]);
+            if (read == 0)
+                throw new EndOfStreamException();
+
+            total += read;
+        }
     }
 
     /// <summary>

@@ -12,6 +12,12 @@ namespace Promete.Assets.Packaging;
 /// </remarks>
 internal sealed class StreamPackageStorage : PackageStorage
 {
+    private readonly Stream _stream;
+    private readonly bool _leaveOpen;
+    private readonly long _origin;
+    private readonly long _length;
+    private readonly object _gate = new();
+
     /// <summary>
     /// ストリームを読み出し元にします。
     /// </summary>
@@ -19,22 +25,32 @@ internal sealed class StreamPackageStorage : PackageStorage
     /// <param name="leaveOpen"><see langword="true"/> なら、参照カウントが 0 になってもストリームを閉じません。</param>
     public StreamPackageStorage(Stream stream, bool leaveOpen)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(stream);
+
+        _stream = stream;
+        _leaveOpen = leaveOpen;
+        _origin = stream.Position;
+        _length = stream.Length - _origin;
     }
 
     /// <inheritdoc />
     /// <remarks>構築した時点の位置から末尾までの長さです。</remarks>
-    public override long Length => throw new NotImplementedException();
+    public override long Length => _length;
 
     /// <inheritdoc />
     public override int ReadAt(long position, Span<byte> buffer)
     {
-        throw new NotImplementedException();
+        lock (_gate)
+        {
+            _stream.Position = _origin + position;
+            return _stream.Read(buffer);
+        }
     }
 
     /// <inheritdoc />
     protected override void DisposeCore()
     {
-        throw new NotImplementedException();
+        if (!_leaveOpen)
+            _stream.Dispose();
     }
 }

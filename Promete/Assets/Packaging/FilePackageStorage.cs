@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Microsoft.Win32.SafeHandles;
 
 namespace Promete.Assets.Packaging;
 
@@ -15,6 +16,13 @@ namespace Promete.Assets.Packaging;
 /// </remarks>
 internal sealed class FilePackageStorage : PackageStorage
 {
+    private static readonly FileOptions FileOpenOptions = OperatingSystem.IsBrowser()
+        ? FileOptions.None
+        : FileOptions.Asynchronous;
+
+    private readonly SafeFileHandle _handle;
+    private readonly long _length;
+
     /// <summary>
     /// ファイルを開きます。
     /// </summary>
@@ -22,21 +30,34 @@ internal sealed class FilePackageStorage : PackageStorage
     /// <exception cref="FileNotFoundException">ファイルが存在しない場合。</exception>
     public FilePackageStorage(string fullPath)
     {
-        throw new NotImplementedException();
+        var handle = File.OpenHandle(
+            fullPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            FileOpenOptions
+        );
+
+        try
+        {
+            _length = RandomAccess.GetLength(handle);
+        }
+        catch
+        {
+            handle.Dispose();
+            throw;
+        }
+
+        _handle = handle;
     }
 
     /// <inheritdoc />
-    public override long Length => throw new NotImplementedException();
+    public override long Length => _length;
 
     /// <inheritdoc />
-    public override int ReadAt(long position, Span<byte> buffer)
-    {
-        throw new NotImplementedException();
-    }
+    public override int ReadAt(long position, Span<byte> buffer) =>
+        RandomAccess.Read(_handle, buffer, position);
 
     /// <inheritdoc />
-    protected override void DisposeCore()
-    {
-        throw new NotImplementedException();
-    }
+    protected override void DisposeCore() => _handle.Dispose();
 }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 
 namespace Promete.Assets.Packaging;
 
@@ -19,6 +20,12 @@ namespace Promete.Assets.Packaging;
 /// </remarks>
 internal sealed class PackageEntryStream : Stream
 {
+    private readonly PackageStorage _storage;
+    private readonly long _start;
+    private readonly long _length;
+    private long _position;
+    private int _disposed;
+
     /// <summary>
     /// エントリを読むストリームを作ります。
     /// </summary>
@@ -27,44 +34,94 @@ internal sealed class PackageEntryStream : Stream
     /// <param name="length">エントリの長さ。</param>
     public PackageEntryStream(PackageStorage storage, long start, long length)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(storage);
+
+        _storage = storage;
+        _start = start;
+        _length = length;
     }
 
     /// <inheritdoc />
-    public override bool CanRead => throw new NotImplementedException();
+    public override bool CanRead => Volatile.Read(ref _disposed) == 0;
 
     /// <inheritdoc />
-    public override bool CanSeek => throw new NotImplementedException();
+    public override bool CanSeek => CanRead;
 
     /// <inheritdoc />
     public override bool CanWrite => false;
 
     /// <inheritdoc />
-    public override long Length => throw new NotImplementedException();
+    public override long Length
+    {
+        get
+        {
+            ThrowIfDisposed();
+            return _length;
+        }
+    }
 
     /// <inheritdoc />
     public override long Position
     {
-        get => throw new NotImplementedException();
-        set => throw new NotImplementedException();
+        get
+        {
+            ThrowIfDisposed();
+            return _position;
+        }
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            ThrowIfDisposed();
+            _position = value;
+        }
     }
 
     /// <inheritdoc />
     public override int Read(byte[] buffer, int offset, int count)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(buffer);
+        ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+        if (buffer.Length - offset < count)
+            throw new ArgumentException("オフセットと数が配列の範囲を超えています。");
+
+        return Read(buffer.AsSpan(offset, count));
     }
 
     /// <inheritdoc />
     public override int Read(Span<byte> buffer)
     {
-        throw new NotImplementedException();
+        ThrowIfDisposed();
+
+        var remaining = _length - _position;
+        if (remaining <= 0 || buffer.IsEmpty)
+            return 0;
+
+        // エントリの末尾を越えて読まないように切り詰める
+        var target = buffer.Length > remaining ? buffer[..(int)remaining] : buffer;
+        var read = _storage.ReadAt(_start + _position, target);
+        _position += read;
+        return read;
     }
 
     /// <inheritdoc />
     public override long Seek(long offset, SeekOrigin origin)
     {
-        throw new NotImplementedException();
+        ThrowIfDisposed();
+
+        var target = origin switch
+        {
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => _position + offset,
+            SeekOrigin.End => _length + offset,
+            _ => throw new ArgumentOutOfRangeException(nameof(origin)),
+        };
+
+        if (target < 0)
+            throw new IOException("先頭より前には移動できません。");
+
+        _position = target;
+        return target;
     }
 
     /// <inheritdoc />
@@ -85,6 +142,16 @@ internal sealed class PackageEntryStream : Stream
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
-        throw new NotImplementedException();
+        // 参照を返すのは 1 回だけ
+        if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            _storage.Release();
+
+        base.Dispose(disposing);
     }
+
+    /// <summary>
+    /// 閉じられていたら <see cref="ObjectDisposedException"/> をスローします。
+    /// </summary>
+    private void ThrowIfDisposed() =>
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
 }
