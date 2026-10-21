@@ -1,26 +1,30 @@
+using System;
+using System.Diagnostics;
 using System.Threading;
-using System.Timers;
 using Promete.Backends.SilkNetCommon;
 using Promete.Graphics;
 using Promete.Windowing;
 using Promete.Windowing.Headless;
-using Timer = System.Timers.Timer;
 
 namespace Promete.Backends.Headless;
 
+/// <summary>
+/// グラフィックスを描画しないヘッドレスのバックエンド。
+/// </summary>
+/// <remarks>
+/// 更新は <see cref="PrometeApp.Run()"/> を呼んだスレッドで行います。
+/// そのため、<c>OnUpdate</c> からのシーン遷移や <c>AssetScope.Scene</c> の指定は、Run を呼んだスレッドで動きます。
+/// </remarks>
 public class HeadlessBackend : BackendBase
 {
     private HeadlessTimeProvider _time = null!;
     private HeadlessGameView _gameView = null!;
     private HeadlessRenderTextureProvider _renderTextureProvider = null!;
     private HeadlessScreenBlitter _screenBlitter = null!;
-    private PrometeApp _app = null!;
-    private bool _isExitRequested;
-    private Timer? _timer;
+    private volatile bool _isExitRequested;
 
     public override void OnInitialize(PrometeApp app, WindowOptions opts)
     {
-        _app = app;
         _gameView = new HeadlessGameView
         {
             Location = opts.Location,
@@ -54,29 +58,44 @@ public class HeadlessBackend : BackendBase
 
     public override IShaderFactory SetupShaderFactory() => new HeadlessShaderFactory();
 
+    /// <summary>
+    /// 終了が要求されるまで、<see cref="PrometeApp.OnUpdate"/> を <c>TargetUps</c> の間隔で呼び続けます。
+    /// 更新は呼び出したスレッドで同期的に行われ、更新の例外はそのまま呼び出し元へ伝わります。
+    /// </summary>
     public override void OnStart(PrometeApp app)
     {
-        var interval = 1000.0 / _time.TargetUps;
-        _timer = new Timer(interval);
-        _timer.Elapsed += OnTimerElapsed;
+        if (_time.TargetUps <= 0)
+            throw new ArgumentOutOfRangeException(
+                "TargetUps",
+                "TargetUps は 1 以上を指定してください。"
+            );
+
+        var delta = 1.0 / _time.TargetUps;
+        var interval = TimeSpan.FromSeconds(delta);
         app.OnStart();
-        _timer.Start();
+
+        var stopwatch = Stopwatch.StartNew();
+        var nextUpdate = TimeSpan.Zero;
         while (!_isExitRequested)
-            Thread.Sleep(1000);
-        _timer.Stop();
+        {
+            var wait = nextUpdate - stopwatch.Elapsed;
+            if (wait > TimeSpan.Zero)
+                Thread.Sleep(wait);
+            if (_isExitRequested)
+                break;
+
+            _time.Tick(delta);
+            app.OnUpdate();
+
+            nextUpdate += interval;
+            var now = stopwatch.Elapsed;
+            if (nextUpdate < now)
+                nextUpdate = now;
+        }
     }
 
     public override void OnExit(PrometeApp app)
     {
         _isExitRequested = true;
-    }
-
-    private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
-    {
-        var delta = 1.0 / _time.TargetUps;
-        _time.Tick(delta);
-        _app.OnUpdate();
-        if (_isExitRequested)
-            _timer?.Stop();
     }
 }
