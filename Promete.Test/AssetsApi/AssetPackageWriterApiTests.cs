@@ -34,7 +34,7 @@ public sealed class AssetPackageWriterApiTests : IDisposable
     [Theory]
     [InlineData("a.txt", "/a.txt")]
     [InlineData("dir/a.txt", "dir/./x/../a.txt")]
-    [InlineData("が.txt", "が.txt")]
+    [InlineData("が.txt", "\u304B\u3099.txt")]
     public void Add_DuplicateAfterNormalization_ShouldThrow(string first, string second)
     {
         var writer = new AssetPackageWriter();

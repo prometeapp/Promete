@@ -10,7 +10,7 @@ namespace Promete.Test.AssetsApi;
 public class AssetPackagePathTests
 {
     private const string NfcGa = "が"; // が (NFC)
-    private const string NfdGa = "が"; // が (NFD)
+    private const string NfdGa = "\u304B\u3099"; // が (NFD)
 
     public static TheoryData<string> EquivalenceInputs =>
         new()
@@ -88,5 +88,59 @@ public class AssetPackagePathTests
         var act = () => AssetPackagePath.Normalize(null!);
 
         act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void IsUnicodeNormalizationSupported_ShouldBeTrueInTestEnvironment()
+    {
+        // テストは InvariantGlobalization を有効にしていない
+        AssetPackagePath.IsUnicodeNormalizationSupported.Should().BeTrue();
+    }
+
+    [Theory]
+    [MemberData(nameof(EquivalenceInputs))]
+    public void Normalize_WhenSupported_ShouldMatchPublicNormalize(string input)
+    {
+        AssetPackagePath.Normalize(input, true).Should().Be(AssetPackagePath.Normalize(input));
+    }
+
+    [Theory]
+    [InlineData("/a/./b.png", "a/b.png")]
+    [InlineData("Assets/x/../Player.PNG", "Assets/Player.PNG")]
+    [InlineData(" space /x y.txt", " space /x y.txt")]
+    public void Normalize_WhenUnsupported_AsciiPath_ShouldStillNormalize(
+        string input,
+        string expected
+    )
+    {
+        AssetPackagePath.Normalize(input, false).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("が.png")]
+    [InlineData("dir/が.png")]
+    [InlineData("café/a.txt")]
+    public void Normalize_WhenUnsupported_NonAsciiPath_ShouldThrowWithReason(string input)
+    {
+        // 正規化が効かない環境で黙って書き出すと、NFD のパスがそのまま入り、通常の環境のリーダーがパッケージ全体を開けなくなる
+        var act = () => AssetPackagePath.Normalize(input, false);
+
+        act.Should().Throw<ArgumentException>().WithMessage("*InvariantGlobalization*");
+    }
+
+    [Fact]
+    public void Normalize_WhenUnsupported_InvalidArguments_ShouldThrowAsUsual()
+    {
+        ((Action)(() => AssetPackagePath.Normalize(null!, false)))
+            .Should()
+            .Throw<ArgumentNullException>();
+        ((Action)(() => AssetPackagePath.Normalize("a\\b.png", false)))
+            .Should()
+            .Throw<ArgumentException>()
+            .Which.Message.Should()
+            .NotContain("InvariantGlobalization");
+        ((Action)(() => AssetPackagePath.Normalize("a/..", false)))
+            .Should()
+            .Throw<ArgumentException>();
     }
 }

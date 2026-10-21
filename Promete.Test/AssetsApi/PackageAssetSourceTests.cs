@@ -11,7 +11,7 @@ namespace Promete.Test.AssetsApi;
 public class PackageAssetSourceTests
 {
     private const string NfcGa = "が";
-    private const string NfdGa = "が";
+    private const string NfdGa = "\u304B\u3099";
 
     private static readonly byte[] Binary = RawPackageLayout.RandomBytes(300, 5);
     private static readonly byte[] Compressible = RawPackageLayout.CompressibleText();

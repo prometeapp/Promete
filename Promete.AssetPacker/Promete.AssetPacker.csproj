@@ -10,6 +10,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- 正規化が効かない環境 (InvariantGlobalization) の挙動を、テストから internal の口で確かめる -->
+        <InternalsVisibleTo Include="Promete.Test" />
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- 形式の定数はリーダー (Promete) と同じソースを使う -->
         <Compile
             Include="../Promete/Assets/Packaging/AssetPackageFormat.cs"

@@ -70,12 +70,12 @@ public sealed class AssetPackageRoundTripTests : IDisposable
     public void RoundTrip_NfdPathWrittenAndRead_ShouldMatchEitherForm()
     {
         var writer = new AssetPackageWriter();
-        writer.Add("フォルダ/が.txt", Encoding.UTF8.GetBytes("nfd"));
+        writer.Add("フォルダ/\u304B\u3099.txt", Encoding.UTF8.GetBytes("nfd"));
 
         using var source = Open(writer, "stream");
 
         source.Exists("フォルダ/が.txt").Should().BeTrue();
-        source.Exists("フォルダ/が.txt").Should().BeTrue();
+        source.Exists("フォルダ/\u304B\u3099.txt").Should().BeTrue();
         source.Enumerate("フォルダ", "*", false).Should().Equal("フォルダ/が.txt");
     }
 

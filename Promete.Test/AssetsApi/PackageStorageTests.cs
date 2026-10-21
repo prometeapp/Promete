@@ -66,6 +66,18 @@ public sealed class PackageStorageTests : IDisposable
     }
 
     [Fact]
+    public void StreamStorage_PositionBeyondEnd_ShouldHaveZeroLength()
+    {
+        var stream = new MemoryStream(Data, false);
+        stream.Position = Data.Length + 10;
+        var storage = new StreamPackageStorage(stream, false);
+
+        storage.Length.Should().Be(0);
+        storage.ReadAt(0, new byte[10]).Should().Be(0);
+        storage.Release();
+    }
+
+    [Fact]
     public void StreamStorage_ShouldTreatInitialPositionAsOrigin()
     {
         var bytes = new byte[] { 0xEE, 0xEE, 0xEE }

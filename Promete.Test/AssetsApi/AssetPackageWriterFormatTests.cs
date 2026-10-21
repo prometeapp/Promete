@@ -236,7 +236,7 @@ public sealed class AssetPackageWriterFormatTests : IDisposable
     public void Paths_ShouldBeStoredNormalizedAsNfcUtf8()
     {
         var writer = new AssetPackageWriter();
-        writer.Add("/dir/./sub/../が.txt", [1]);
+        writer.Add("/dir/./sub/../\u304B\u3099.txt", [1]);
 
         var entry = RawPackage.Parse(Write(writer)).Entries.Single();
 

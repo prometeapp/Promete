@@ -266,7 +266,7 @@ public class PackageAssetSourceFormatTests
     [InlineData("a//b.txt")]
     [InlineData("./a.txt")]
     [InlineData("a\\b.txt")]
-    [InlineData("が.txt")]
+    [InlineData("\u304B\u3099.txt")]
     public void NonNormalizedPath_ShouldThrowInvalidData(string path)
     {
         var builder = new RawPackageBuilder().Stored(path, "A");
@@ -322,8 +322,9 @@ public class PackageAssetSourceFormatTests
         act.Should().Throw<InvalidDataException>();
     }
 
+    // 実際 (4600 バイト) より大きい・小さい場合。大きい方は、開く時点の圧縮率の上限 (storedSize * 1032 + 64) に収まる値にする
     [Theory]
-    [InlineData(100000UL)]
+    [InlineData(6000UL)]
     [InlineData(2UL)]
     public void DeflatedSizeMismatch_ShouldThrowInvalidDataOnOpenRead(ulong declared)
     {
@@ -363,5 +364,154 @@ public class PackageAssetSourceFormatTests
 
         act.Should().Throw<NotSupportedException>();
         stream.IsDisposed.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DeflatedEntryWithOriginalSizeAtArrayMaxLength_ShouldThrowInvalidDataOnOpen()
+    {
+        // 129 バイトほどの壊れたパッケージで 2 GiB を確保させないよう、開く時点 (OpenRead より前) で拒否する
+        var builder = new RawPackageBuilder().Deflated(
+            "a.txt",
+            "AAAA",
+            e => e.OriginalSize = (ulong)Array.MaxLength
+        );
+
+        OpenAction(builder.Build()).Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void DeflatedRatioLimit_ShouldBe1032TimesStoredSizePlus64()
+    {
+        var stored = (ulong)RawPackageLayout.Deflate("AAAA"u8.ToArray()).Length;
+        var limit = stored * 1032 + 64;
+        var atLimit = new RawPackageBuilder().Deflated(
+            "a.txt",
+            "AAAA",
+            e => e.OriginalSize = limit
+        );
+        var overLimit = new RawPackageBuilder().Deflated(
+            "a.txt",
+            "AAAA",
+            e => e.OriginalSize = limit + 1
+        );
+
+        OpenAction(atLimit.Build())
+            .Should()
+            .NotThrow("上限ちょうどは開ける (中身の破損は OpenRead で分かる)");
+        OpenAction(overLimit.Build()).Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void DeflatedRatioLimit_ShouldNotOverflowWithHugeStoredSize()
+    {
+        // storedSize * 1032 が ulong で桁あふれしても、範囲外のデータとして InvalidData になる
+        var builder = new RawPackageBuilder().Deflated(
+            "a.txt",
+            "AAAA",
+            e =>
+            {
+                e.StoredSizeOverride = ulong.MaxValue / 1000;
+                e.OriginalSize = 10;
+            }
+        );
+
+        OpenAction(builder.Build()).Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void HighlyCompressibleEntry_ShouldStillOpenAndRead()
+    {
+        var zeros = new byte[1024 * 1024];
+        var builder = new RawPackageBuilder().Deflated("zeros.bin", zeros);
+
+        using var source = Open(builder.Build());
+
+        using var stream = source.OpenRead("zeros.bin");
+        stream.Length.Should().Be(zeros.Length);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    public void StreamPositionedAtOrBeyondEnd_ShouldThrowInvalidData(int beyond)
+    {
+        var bytes = Valid().Build();
+        var stream = new MemoryStream(bytes, false);
+        stream.Position = bytes.Length + beyond;
+
+        var act = () => new PackageAssetSource(stream).Dispose();
+
+        act.Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void HeaderSizeLargerThanPackage_ShouldThrowInvalidData()
+    {
+        var bytes = Valid().Build();
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(
+            bytes.AsSpan(12),
+            (uint)bytes.Length + 1
+        );
+
+        OpenAction(bytes).Should().Throw<InvalidDataException>();
+    }
+
+    [Theory]
+    [InlineData("count")]
+    [InlineData("path")]
+    [InlineData("fixed")]
+    [InlineData("extra")]
+    public void TocCutInTheMiddleOfAnEntry_ShouldThrowInvalidData(string cutInside)
+    {
+        // 件数の事前検査 (1 件あたり 44 バイト以上) は通るが、エントリを読む途中で目次が尽きる
+        var builder = new RawPackageBuilder().Stored(
+            new string('p', 100),
+            "A",
+            e => e.Extra = new byte[20]
+        );
+        var tocSize = RawPackage.Parse(builder.Build()).TocSize;
+        builder.TocSizeOverride = cutInside switch
+        {
+            "count" => 2,
+            "path" => 4 + 2 + 50,
+            "fixed" => 4 + 2 + 100 + 10,
+            _ => tocSize - 3,
+        };
+
+        OpenAction(builder.Build()).Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void ExtendedHeader_EntryOffsetInsideExtendedHeader_ShouldThrowInvalidData()
+    {
+        // headerSize を延ばしたパッケージでは、64 ではなく headerSize と比べる
+        var builder = new RawPackageBuilder { HeaderSize = 96 }.Stored(
+            "a.txt",
+            "A",
+            e => e.OffsetOverride = 80
+        );
+
+        OpenAction(builder.Build()).Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void ExtendedHeader_TocOffsetInsideExtendedHeader_ShouldThrowInvalidData()
+    {
+        var builder = new RawPackageBuilder { HeaderSize = 96 };
+        builder.TocOffsetOverride = 80;
+        builder.TocSizeOverride = 4;
+
+        OpenAction(builder.Build()).Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void ExtendedHeader_EntryRightAfterHeader_ShouldOpen()
+    {
+        var builder = new RawPackageBuilder { HeaderSize = 96 }.Stored("a.txt", "A");
+
+        using var source = Open(builder.Build());
+
+        using var stream = source.OpenRead("a.txt");
+        stream.ReadAllText().Should().Be("A");
     }
 }

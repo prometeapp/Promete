@@ -22,6 +22,15 @@ namespace Promete.AssetPacker;
 public static class AssetPackagePath
 {
     /// <summary>
+    /// この実行環境で Unicode の正規化 (<see cref="string.Normalize(NormalizationForm)"/>) が効くかどうかを取得します。
+    /// </summary>
+    /// <remarks>
+    /// <c>InvariantGlobalization</c> が有効な環境では、<see cref="string.Normalize(NormalizationForm)"/> は何もせずに元の文字列を返します。
+    /// 判定は最初の 1 回だけ行い、結果を使い回します。
+    /// </remarks>
+    internal static bool IsUnicodeNormalizationSupported => throw new NotImplementedException();
+
+    /// <summary>
     /// ファイルの論理パスを正規化します。
     /// </summary>
     /// <param name="path">正規化するパス。</param>
@@ -70,5 +79,21 @@ public static class AssetPackagePath
         }
 
         return string.Join("/", segments);
+    }
+
+    /// <summary>
+    /// 正規化が効くかどうかを指定して、ファイルの論理パスを正規化します。<see cref="Normalize(string)"/> の本体で、テストから効かない環境を再現するために使います。
+    /// </summary>
+    /// <param name="path">正規化するパス。</param>
+    /// <param name="unicodeNormalizationSupported">Unicode の正規化が効く環境かどうか。</param>
+    /// <returns>正規化したパス。</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="path"/> が <see langword="null"/> の場合。</exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="path"/> が <c>\</c> を含む場合や、正規化した結果が空になる場合。
+    /// <paramref name="unicodeNormalizationSupported"/> が <see langword="false"/> で、<paramref name="path"/> が ASCII 以外の文字を含む場合 (NFC になっているか確かめられないため)。
+    /// </exception>
+    internal static string Normalize(string path, bool unicodeNormalizationSupported)
+    {
+        throw new NotImplementedException();
     }
 }
