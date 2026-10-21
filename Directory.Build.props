@@ -15,12 +15,20 @@
     </PropertyGroup>
     <!-- アナライザは ProjectReference では推移しないため、リポジトリ内では全 C#
          プロジェクトに配る。外部には Promete パッケージ経由で届く。
-         netstandard2.0 のビルド用ライブラリ (SceneGen 自身と AssetPacker) は Promete を使わないので除く。 -->
-    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(MSBuildProjectName)' != 'Promete.SceneGen' and '$(MSBuildProjectName)' != 'Promete.AssetPacker'">
+         netstandard2.0 のビルド用ライブラリ (SceneGen 自身と AssetPacker、その MSBuild Task) は Promete を使わないので除く。 -->
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(MSBuildProjectName)' != 'Promete.SceneGen' and '$(MSBuildProjectName)' != 'Promete.AssetPacker' and '$(MSBuildProjectName)' != 'Promete.AssetPacker.Tasks'">
         <ProjectReference
             Include="$(MSBuildThisFileDirectory)Promete.SceneGen/Promete.SceneGen.csproj"
             OutputItemType="Analyzer"
             ReferenceOutputAssembly="false"
+            UndefineProperties="TargetFramework;RuntimeIdentifier;SelfContained;PublishAot;PublishTrimmed;PublishSingleFile"
+        />
+        <!-- PrometeAsset のパックに使う MSBuild Task。Promete.targets が bin/ から読み込むので、先にビルドさせる。
+             参照はしない。SceneGen と同じく、netstandard2.0 に PublishAot などを伝えない (NETSDK1207) -->
+        <ProjectReference
+            Include="$(MSBuildThisFileDirectory)Promete.AssetPacker.Tasks/Promete.AssetPacker.Tasks.csproj"
+            ReferenceOutputAssembly="false"
+            Private="false"
             UndefineProperties="TargetFramework;RuntimeIdentifier;SelfContained;PublishAot;PublishTrimmed;PublishSingleFile"
         />
         <!-- ジェネレータが集約の有無を判断するために参照する -->

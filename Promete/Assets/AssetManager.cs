@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Promete.Assets.Infrastructure;
 using Promete.Audio;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -75,22 +76,29 @@ public sealed class AssetManager : IDisposable
     /// <param name="options">明示的なマウントの設定。</param>
     /// <param name="app">メインスレッドの判定と、解放の予約に使うアプリ。</param>
     /// <param name="audioDecoders">音声の判定に使うデコーダー。登録された順に判定します。</param>
+    /// <param name="manifestLoader">
+    /// <paramref name="assembly"/> の <see cref="PrometeAssetSourceAttribute"/> からソースを作る実装。
+    /// 属性によるマウントは、明示的なマウントより先に、優先度 <see cref="int.MinValue"/> で行います。
+    /// </param>
     /// <exception cref="DirectoryNotFoundException">マウントするフォルダが存在しない場合。</exception>
+    /// <exception cref="FileNotFoundException">属性が指すマニフェストやパッケージが見つからない場合。</exception>
     internal AssetManager(
         Assembly? assembly,
         AssetsOptions options,
         PrometeApp app,
-        IAudioDecoder[] audioDecoders
+        IAudioDecoder[] audioDecoders,
+        IAssetManifestLoader manifestLoader
     )
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(app);
         ArgumentNullException.ThrowIfNull(audioDecoders);
+        ArgumentNullException.ThrowIfNull(manifestLoader);
 
         _app = app;
         _audioDecoders = audioDecoders;
 
-        // assembly は Phase 4 で属性を読むために使う。Phase 1 では属性がまだ無いので参照しない
+        // TODO(Assets Phase 4): assembly の属性を manifestLoader で読み、明示的なマウントより先にマウントする
         FileSystem = new AssetFileSystem();
         try
         {

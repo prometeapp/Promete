@@ -39,6 +39,18 @@
         <ProjectReference Include="..\Promete\Promete.csproj" />
         <!-- アセットパッケージのラウンドトリップのテストで、ライターを使う -->
         <ProjectReference Include="..\Promete.AssetPacker\Promete.AssetPacker.csproj" />
+        <!-- Web のマニフェストの読み込みとフォントの取り出しを、デスクトップで単体テストする -->
+        <ProjectReference Include="..\Promete.Web\Promete.Web.csproj" />
+    </ItemGroup>
+
+    <!-- PrometeAsset の MSBuild Task の単体テスト用。プロジェクト参照は Directory.Build.props が
+         (アセンブリを参照しない形で) 追加済みで、ビルド順もそれで保証される。Task の実行に要る MSBuild の
+         アセンブリは、テストでは MSBuild の外で動かすので、パッケージから取る -->
+    <ItemGroup>
+        <Reference Include="Promete.AssetPacker.Tasks">
+            <HintPath>../Promete.AssetPacker.Tasks/bin/$(Configuration)/netstandard2.0/Promete.AssetPacker.Tasks.dll</HintPath>
+        </Reference>
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.28" />
     </ItemGroup>
 
     <!-- アナライザーのテスト用に SceneGen をライブラリとして参照する。プロジェクト参照は

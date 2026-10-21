@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Promete.Assets.Infrastructure;
 using Promete.Audio;
 using Promete.Backends;
 using Promete.Graphics;
@@ -1039,6 +1040,9 @@ public sealed class PrometeApp : IDisposable
             // 利用者の IAudioDecoder は Build より前に登録されるため、列挙では標準のものより先に並ぶ
             _services.AddSingleton<IAudioDecoder, WaveAudioDecoder>();
             _services.AddSingleton<IAudioDecoder, VorbisAudioDecoder>();
+
+            // 単一の解決で使うので TryAdd にする。バックエンド (Web) が Build より前に登録した実装を上書きしないため
+            _services.TryAddSingleton<IAssetManifestLoader, DesktopAssetManifestLoader>();
             var app = new PrometeApp(_services, _pluginTypes, _sceneAssemblies);
             app.RegisterBackend(new T(), opts ?? WindowOptions.Default);
             return app;

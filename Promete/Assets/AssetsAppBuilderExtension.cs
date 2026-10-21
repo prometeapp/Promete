@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Promete.Assets.Infrastructure;
 using Promete.Audio;
 
 namespace Promete.Assets;
@@ -101,7 +102,8 @@ public static class AssetsAppBuilderExtension
             assembly,
             options,
             sp.GetRequiredService<PrometeApp>(),
-            sp.GetServices<IAudioDecoder>().ToArray()
+            sp.GetServices<IAudioDecoder>().ToArray(),
+            sp.GetRequiredService<IAssetManifestLoader>()
         ));
     }
 }

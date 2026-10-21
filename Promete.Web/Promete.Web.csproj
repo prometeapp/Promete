@@ -18,6 +18,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- Web のマニフェストの読み込みとフォントの取り出しを、デスクトップで単体テストする -->
+        <InternalsVisibleTo Include="Promete.Test" />
+    </ItemGroup>
+
+    <ItemGroup>
         <!--
             利用者が Promete.Web だけを参照しても、コアの SceneGen (アナライザー) と buildTransitive が
             届くよう、パッケージの依存から資産を除外しない (既定では Build と Analyzers が除外される)。

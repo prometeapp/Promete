@@ -40,6 +40,14 @@ public sealed class AssetFileSystem : IDisposable
     }
 
     /// <summary>
+    /// ソースが 1 つもマウントされていないときに、<see cref="OpenRead"/> の例外のメッセージに添える説明を取得または設定します。
+    /// </summary>
+    /// <remarks>
+    /// <see cref="AssetManager"/> が、属性も明示的なマウントも無かったときに、原因 (属性が見つからないこと) と対処を伝えるために設定します。
+    /// </remarks>
+    internal string? EmptyHint { get; set; }
+
+    /// <summary>
     /// ソースをマウントします。
     /// </summary>
     /// <param name="source">マウントするソース。<see cref="IDisposable"/> を実装している場合、所有権はこのファイルシステムに移ります。</param>

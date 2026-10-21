@@ -9,6 +9,7 @@
         <Deploy Solution="*|Any CPU" />
     </Project>
     <Project Path="Promete.AssetPacker/Promete.AssetPacker.csproj" />
+    <Project Path="Promete.AssetPacker.Tasks/Promete.AssetPacker.Tasks.csproj" />
     <Project Path="Promete.Example/Promete.Example.csproj" />
     <Project Path="Promete.Experimental.Vulkan/Promete.Experimental.Vulkan.csproj" />
     <Project Path="Promete.HeadlessTest/Promete.HeadlessTest.csproj" />

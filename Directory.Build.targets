@@ -3,7 +3,7 @@
          ProjectReference なので自動 import されない。ここで明示的に取り込む。 -->
     <Import
         Project="$(MSBuildThisFileDirectory)Promete/build/Promete.targets"
-        Condition="'$(MSBuildProjectName)' != 'Promete.SceneGen' and '$(MSBuildProjectName)' != 'Promete.AssetPacker'"
+        Condition="'$(MSBuildProjectName)' != 'Promete.SceneGen' and '$(MSBuildProjectName)' != 'Promete.AssetPacker' and '$(MSBuildProjectName)' != 'Promete.AssetPacker.Tasks'"
     />
     <!-- git は clone しただけでは hook を有効にしないため、ビルドのついでに .githooks を
          hooksPath に設定する。git を一度だけ呼ぶよう Promete のビルド時に限り、CI では行わない。
