@@ -1,4 +1,7 @@
+using System.Reflection;
 using System.Runtime.InteropServices.JavaScript;
+using Promete.Assets;
+using Promete.Web.Assets;
 
 namespace Promete.Web;
 
@@ -69,7 +72,8 @@ public static partial class PrometeWeb
     [JSExport]
     internal static string[] PreparePackageFonts(string location)
     {
-        throw new NotImplementedException();
+        using var package = new PackageAssetSource(Path.Combine("/", location));
+        return WebPackageFonts.Extract(package, WebPackageFonts.GetFontDirectory("/", location));
     }
 
     /// <summary>
@@ -82,7 +86,12 @@ public static partial class PrometeWeb
     [JSExport]
     internal static string[] PrepareEmbeddedPackageFonts(string assemblyName, string resourceName)
     {
-        throw new NotImplementedException();
+        var assembly = Assembly.Load(assemblyName);
+        using var package = PackageAssetSource.FromEmbeddedResource(assembly, resourceName);
+        return WebPackageFonts.Extract(
+            package,
+            WebPackageFonts.GetFontDirectory("/", resourceName)
+        );
     }
 
     [JSImport("startLoop", MainModule)]

@@ -51,6 +51,109 @@ internal sealed class WebAssetManifestLoader : IAssetManifestLoader
     /// <exception cref="NotSupportedException"><see cref="PrometeAssetSourceAttribute.Kind"/> を知らない場合。</exception>
     public IAssetSource CreateSource(Assembly assembly, PrometeAssetSourceAttribute attribute)
     {
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentNullException.ThrowIfNull(attribute);
+
+        if (attribute.Environment != PrometeAssetSourceAttribute.EnvironmentWeb)
+        {
+            throw new InvalidOperationException(
+                $"アセンブリ '{assembly.GetName().Name}' はデスクトップ向けにビルドされているので Web では読めません。"
+                    + "Web の実行プロジェクトで PrometeAsset を宣言し、"
+                    + "UseAssets(typeof(Program).Assembly) で Web の実行プロジェクトのアセンブリを指定してください。"
+            );
+        }
+
+        return attribute.Kind switch
+        {
+            PrometeAssetSourceAttribute.KindManifest => CreateManifestSource(attribute.Location),
+            PrometeAssetSourceAttribute.KindPackage => CreatePackageSource(attribute.Location),
+            PrometeAssetSourceAttribute.KindEmbeddedPackage => CreateEmbeddedPackageSource(
+                assembly,
+                attribute.Location
+            ),
+            _ => throw new NotSupportedException(
+                $"未対応の読み込み元の種類 '{attribute.Kind}' です ('{attribute.Location}')。"
+                    + "新しい版の Promete でビルドされたアセンブリの可能性があります。"
+            ),
+        };
+    }
+
+    /// <summary>
+    /// 仮想ファイルシステムのマニフェストを読み、<c>file</c> と <c>font</c> のエントリだけを <see cref="ManifestAssetSource"/> にします。
+    /// </summary>
+    /// <param name="location">ルートからのマニフェストのファイル名。</param>
+    /// <returns>マニフェストのソース。</returns>
+    /// <exception cref="FileNotFoundException">マニフェストが仮想ファイルシステムに無い場合。</exception>
+    private ManifestAssetSource CreateManifestSource(string location)
+    {
+        var path = Path.Combine(RootDirectory, location);
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                $"マニフェスト '{location}' が '{RootDirectory}' にありません。"
+                    + "Promete.Web の startPromete で起動しているか確認してください。",
+                path
+            );
+        }
+
+        var entries = WebAssetManifest.Parse(File.ReadAllBytes(path), $"'{location}'");
+        var files = new List<KeyValuePair<string, string>>();
+        foreach (var entry in entries)
+        {
+            if (
+                entry.Kind is not (WebAssetManifest.KindFile or WebAssetManifest.KindFont)
+                || entry.LogicalPath is null
+                || entry.Path is null
+            )
+            {
+                continue;
+            }
+
+            var fullPath = Path.GetFullPath(Path.Combine(RootDirectory, entry.Path.TrimStart('/')));
+            files.Add(new KeyValuePair<string, string>(entry.LogicalPath, fullPath));
+        }
+
+        return new ManifestAssetSource(files, $"'{location}'");
+    }
+
+    /// <summary>
+    /// 仮想ファイルシステムに置かれたパッケージを開き、<see cref="WebPackageAssetSource"/> で包みます。
+    /// </summary>
+    /// <param name="location">ルートからのパッケージのファイル名。</param>
+    /// <returns>パッケージのソース。</returns>
+    /// <exception cref="FileNotFoundException">パッケージが仮想ファイルシステムに無い場合。</exception>
+    private WebPackageAssetSource CreatePackageSource(string location)
+    {
+        var path = Path.Combine(RootDirectory, location);
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException(
+                $"パッケージ '{location}' が '{RootDirectory}' にありません。",
+                path
+            );
+        }
+
+        return new WebPackageAssetSource(
+            new PackageAssetSource(path),
+            WebPackageFonts.GetFontDirectory(RootDirectory, location)
+        );
+    }
+
+    /// <summary>
+    /// 埋め込みリソースのパッケージを開き、<see cref="WebPackageAssetSource"/> で包みます。
+    /// </summary>
+    /// <param name="assembly">リソースを持つアセンブリ。</param>
+    /// <param name="resourceName">埋め込みリソースの名前。</param>
+    /// <returns>パッケージのソース。</returns>
+    /// <exception cref="FileNotFoundException">埋め込みリソースが無い場合。</exception>
+    private WebPackageAssetSource CreateEmbeddedPackageSource(
+        Assembly assembly,
+        string resourceName
+    )
+    {
+        return new WebPackageAssetSource(
+            PackageAssetSource.FromEmbeddedResource(assembly, resourceName),
+            WebPackageFonts.GetFontDirectory(RootDirectory, resourceName)
+        );
     }
 }
