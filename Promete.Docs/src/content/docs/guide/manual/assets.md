@@ -17,37 +17,38 @@ sidebar:
 
 ## 最初の一歩 `v2.4~`
 
-まずは、プロジェクトの直下に `assets` フォルダを作り、その中にファイルを置きます。そして、csproj に次の設定を足して、ビルド時に `assets` フォルダを出力先へコピーするようにします。
+まずは、プロジェクトの直下に `assets` フォルダを作り、その中にファイルを置きます。次に、csproj でそのファイルをアセットとして宣言します。
 
 ```xml title="MyPrometeGame.csproj"
 <ItemGroup>
-    <None Update="assets\**" CopyToOutputDirectory="PreserveNewest" />
+    <PrometeAsset Include="assets/**" />
 </ItemGroup>
 ```
 
-この設定が無いと、実行ファイルの隣に `assets` フォルダがないため、アプリの起動時に `DirectoryNotFoundException` が発生します。
+`PrometeAsset` で宣言したファイルは、ビルドのときに MSBuild が検査して、ゲームから読める形で出力します。`Include` には、読みたいファイルを `*` や `**` を使ったパターンで書きます。
 
-:::note
-この csproj の設定は、将来の MSBuild 統合 (`PrometeAsset`) で置き換わる予定です。それまでは、上の設定を足してください。
-:::
-
-次に、アプリの作成時に `UseAssets` を呼び、`assets` フォルダをマウントします。
+次に、アプリの作成時に、引数なしの `UseAssets` を呼びます。
 
 ```csharp title="Program.cs"
 using Promete;
 using Promete.Assets;
 
 var app = PrometeApp.Create()
-    .UseAssets(o => o.MountFolder("assets", "assets"))
+    .UseAssets()
     .BuildWithOpenGLDesktop();
 
 return app.Run<MainScene>();
 ```
 
-`MountFolder("assets", "assets")` は、「`assets` フォルダの中身を、論理パスの `assets/` の下に見せる」という意味です。たとえば、`assets/x.png` というファイルがあれば、論理パス `"assets/x.png"` で読めます。
+`UseAssets()` は、宣言されたアセットを読めるようにします。ファイルの場所を、コードに書く必要はありません。
 
 :::note
-`MountFolder` の1つ目の引数は実際のフォルダ、2つ目の引数は論理パスの接頭辞です。両方を `"assets"` にすると、フォルダの場所と論理パスが揃うので分かりやすくなります。
+`PrometeAsset` は、ビルドの種類によって次のどちらかの形で出力されます。どちらでも、ゲームのコードは同じです。
+
+- **Folder** (既定は Debug): 元のファイルをそのまま読みます。ファイルの中身を変えたときは、次に起動すると反映されます。
+- **Package** (既定は Debug 以外。Release など): ファイルを1つのパッケージにまとめます。配布に向いています。
+
+詳しくは、次の「csproj でアセットを宣言する」を参照してください。
 :::
 
 次に、シーンで `AssetManager` を受け取り、ファイルを読みます。`AssetManager` は、コンストラクタ注入で受け取れます。
@@ -90,6 +91,105 @@ public class MainScene(AssetManager assets) : Scene
 `using` で囲んでストリームを閉じるのを忘れないでください。ストリームは使い終わったら閉じます。
 
 テクスチャは `IDisposable` です。`Load` で作ったテクスチャは、シーンを離れるとき (`OnDestroy`) に `Dispose` してください。
+
+## csproj でアセットを宣言する `v2.4~`
+
+`PrometeAsset` は、csproj に書くアセットの宣言です。宣言したファイルは、ビルドのときに検査され、Folder か Package のどちらかの形で出力されます。
+
+### Folder と Package
+
+| モード | 既定の構成 | 出力されるもの | 向いている場面 |
+| --- | --- | --- | --- |
+| `Folder` | Debug | マニフェスト (`<AssemblyName>.promete-assets.json`)。ファイルはコピーしません | 開発中 |
+| `Package` | Debug 以外 (Release など) | パッケージ (`<AssemblyName>.<Package>.prmtpak`)。読み取り専用の1つのファイル | 配布 |
+
+Folder モードでは、マニフェストが元のファイルの場所を指すので、ファイルの中身を変えたら次の起動で反映されます。宣言するファイルを増やしたり減らしたりしたときは、ビルドし直してください。
+
+モードは csproj か、コマンドラインで指定できます。
+
+```xml title="MyPrometeGame.csproj"
+<PropertyGroup>
+    <PrometeAssetMode>Package</PrometeAssetMode>
+</PropertyGroup>
+```
+
+```sh
+dotnet publish -c Release -p:PrometeAssetMode=Package
+```
+
+:::caution
+宣言していないファイルは、Folder モードでも読めません。`Exists` は `false` を返し、`OpenRead` は `FileNotFoundException` を発生させます。
+:::
+
+### 論理パス (TargetPath)
+
+`Include` のパスは、プロジェクトのフォルダからの相対パスになり、そのまま論理パスになります。たとえば `assets/x.png` を宣言すると、論理パスは `assets/x.png` です。
+
+プロジェクトの外にあるファイルは、`TargetPath` で論理パスを指定します。
+
+```xml title="MyPrometeGame.csproj"
+<ItemGroup>
+    <PrometeAsset Include="..\Shared\assets\**">
+        <TargetPath>assets/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </PrometeAsset>
+</ItemGroup>
+```
+
+`TargetPath` には `..` を使えません。区切りは `/` で書きます (`\` で書いても、ビルドが `/` に直します)。
+
+### パッケージを分ける
+
+既定では、すべてのアセットは `main` という1つのパッケージに入ります。`Package` メタデータで分けられます。
+
+```xml title="MyPrometeGame.csproj"
+<ItemGroup>
+    <PrometeAsset Include="assets/**" Exclude="assets/bgm/**" />
+    <PrometeAsset Include="assets/bgm/**">
+        <Package>bgm</Package>
+    </PrometeAsset>
+</ItemGroup>
+```
+
+- パッケージの名前は、英数字 (ASCII)、`_`、`-` だけが使えます。
+- 同じ論理パスのファイルを複数のパッケージに入れると、ビルドが失敗します (PROMETE1003)。`Exclude` で重ならないようにしてください。
+- `Package` は Package モードのときだけ効きます。Folder モードでは無視されます。
+- 読むときは、すべてのパッケージが自動でマウントされます。
+
+### 圧縮 (Compress)
+
+```xml title="MyPrometeGame.csproj"
+<PrometeAsset Include="assets/**">
+    <Compress>true</Compress>
+</PrometeAsset>
+```
+
+- `auto` (既定): 拡張子で判断します。画像や音声など、すでに圧縮された形式は圧縮しません。それ以外は圧縮を試し、小さくならなければ圧縮しません。
+- `true`: 常に圧縮します。
+- `false`: 圧縮しません。
+
+`Compress` は Package モードのときだけ効きます。大文字・小文字は区別せず、前後の空白は無視されます。
+
+### 埋め込み (PrometeAssetEmbed)
+
+```xml title="MyPrometeGame.csproj"
+<PropertyGroup>
+    <PrometeAssetEmbed>true</PrometeAssetEmbed>
+</PropertyGroup>
+```
+
+`true` にすると、パッケージを実行ファイル (アセンブリ) の中に埋め込みます。出力先にパッケージのファイルが残らないので、配るファイルが1つで済みます。Package モードのときだけ効き、すべてのパッケージに同じように効きます。読むときのコードは変わりません。
+
+### 出力されるファイルと publish
+
+- **Folder**: 出力先に `<AssemblyName>.promete-assets.json` が置かれます。中身は元のファイルの絶対パスなので、publish には含まれません。
+- **Package**: 出力先に `<AssemblyName>.<Package>.prmtpak` が置かれ、publish にも含まれます。
+- **埋め込み**: 出力先にはパッケージのファイルが無く、アセンブリの中に入ります。
+
+配布するときは、Package モードで publish してください。Folder モードのまま publish すると、警告 (PROMETE1011) が出ます。
+
+:::note
+Package モードのアプリは、NativeAOT で publish しても、パッケージから読めます (Windows で確認済み)。`PublishAot` は csproj に書いてください。
+:::
 
 ## ファイルを探す `v2.4~`
 
@@ -156,13 +256,14 @@ foreach (var path in assets.FileSystem.Enumerate("assets/images", "*.png", recur
 ```csharp title="Program.cs"
 var app = PrometeApp.Create()
     .UseAssets(o => o
-        .MountFolder("assets", "assets")                  // 基本のアセット (priority = 0)
         .MountFolder("dlc/assets", "assets", priority: 10) // DLC: 同じ論理パスを上書きする
     )
     .BuildWithOpenGLDesktop();
 ```
 
 この例では、`dlc/assets/x.png` があれば、`"assets/x.png"` の読み込みは DLC 側が使われます。DLC にないファイルは、基本のアセットから読まれます。
+
+`PrometeAsset` で宣言したアセットは、どの明示的なマウントよりも低い優先度です。そのため、`UseAssets` で指定したフォルダやパッケージは、宣言したアセットの上に重なります。
 
 優先度が同じ場合は、**後に書いたものが優先されます**。
 
@@ -285,7 +386,9 @@ var app = PrometeApp.Create()
 例外のメッセージには、ファイルのパスや埋め込みリソースの名前が入るので、どのパッケージで問題が起きたかが分かります。
 :::
 
-<!-- TODO(Assets Phase 4): PrometeAsset (MSBuild) でパッケージを作る方法へのリンクを足す -->
+:::tip
+パッケージは、手で作る必要はありません。csproj で `PrometeAsset` を宣言すると、ビルドがパッケージを作り、`UseAssets()` で自動的に読み込まれます。詳しくは、前の「csproj でアセットを宣言する」を参照してください。
+:::
 
 ## 自前の読み込み元を作る `v2.4~`
 
@@ -332,18 +435,23 @@ o.Mount(new MyArchiveSource(), priority: 5);
 `UseAssets` には、2つの書き方があります。
 
 ```csharp
-// 1. 引数なし: エントリアセンブリを使う
-PrometeApp.Create().UseAssets(o => o.MountFolder("assets", "assets"));
+// 1. 引数なし: エントリアセンブリの PrometeAsset を読む
+PrometeApp.Create().UseAssets();
 
-// 2. アセンブリを指定する
-PrometeApp.Create().UseAssets(typeof(Program).Assembly, o => o.MountFolder("assets", "assets"));
+// 2. アセンブリを指定する (Web など、エントリアセンブリを取れない環境)
+PrometeApp.Create().UseAssets(typeof(Program).Assembly);
+
+// 3. 明示的なマウントを重ねる
+PrometeApp.Create().UseAssets(o => o.MountFolder("dlc/assets", "assets", priority: 10));
 ```
+
+`UseAssets` は、アセンブリに付いた `PrometeAsset` の情報を読んで、アセットをマウントします。宣言が無ければ、何もマウントしません。明示的なマウント (`MountFolder` など) は、宣言したアセットの上に重なります。
 
 引数なしの `UseAssets()` は、エントリアセンブリ（実行しているアプリ本体）を見ます。ただし、次の環境ではエントリアセンブリを取得できず、`InvalidOperationException` が発生します。
 
-- **Web（WebAssembly）**: エントリアセンブリが取れません。`UseAssets(typeof(Program).Assembly, ...)` のように、アセンブリを指定してください。
+- **Web（WebAssembly）**: エントリアセンブリが取れません。`UseAssets(typeof(Program).Assembly)` のように、アセンブリを指定してください。
 
-テストでは、`UseAssets(typeof(X).Assembly)` か、明示的なマウントを使ってください。テストホストのエントリアセンブリは、ゲームのアセンブリではないためです。
+テストでは、ゲームの実行プロジェクトを参照して `UseAssets(typeof(GameScene).Assembly)` を使ってください。テストホストのエントリアセンブリは、ゲームのアセンブリではないためです。
 
 :::note
 `UseAssets` は、アプリごとに1回だけ呼べます。2回呼ぶと `InvalidOperationException` が発生します。
@@ -351,7 +459,7 @@ PrometeApp.Create().UseAssets(typeof(Program).Assembly, o => o.MountFolder("asse
 
 ## マウントのタイミング `v2.4~`
 
-`UseAssets` で指定したマウントは、`AssetManager` が作られるとき（アプリの開始時）に、指定した順に行われます。プラグインの `OnStart` より前なので、どのプラグインの `OnStart` からでも、マウント済みのアセットを読めます。
+`UseAssets` で指定したマウントは、`AssetManager` が作られるとき（アプリの開始時）に、指定した順に行われます。`PrometeAsset` によるマウントも、このときに行われ、明示的なマウントより先に行われます。プラグインの `OnStart` より前なので、どのプラグインの `OnStart` からでも、マウント済みのアセットを読めます。
 
 :::note
 `MountFolder` で指定したフォルダが存在しない場合は、この時点で `DirectoryNotFoundException` が発生します。
@@ -420,7 +528,7 @@ public override void OnUpdate()
 :::
 
 :::note
-Web (WebAssembly) では、フォントをストリームから読めません。そのため、フォルダにあるフォントは、ファイルのパスから読みます。この場合、フォントは実行環境の側でキャッシュされるため、`AssetScope.Scene` で読んでもシーンが終わっても解放されません（実質的に `Global` と同じです）。埋め込みリソースのフォントは Web では読めず、`NotSupportedException` が発生します。
+Web (WebAssembly) では、フォントをストリームから読めません。そのため、フォルダにあるフォントは、ファイルのパスから読みます。この場合、フォントは実行環境の側でキャッシュされるため、`AssetScope.Scene` で読んでもシーンが終わっても解放されません（実質的に `Global` と同じです）。`MountEmbeddedResources` で埋め込んだフォントは Web では読めず、`NotSupportedException` が発生します。`PrometeAssetEmbed` で埋め込んだパッケージのフォントは、起動前に読み込まれるので、Web でも読めます。
 :::
 
 ## 返されたリソースを Dispose しない `v2.4~`
@@ -640,9 +748,38 @@ var app = PrometeApp.Create()
 - どのデコーダーも判定できなければ、`NotSupportedException` が発生します。
 - 結果の `IAudioSource` は、キャッシュされて複数の呼び出し元で共有されます。そのため、再生位置などを呼び出し元ごとに持たないでください。`FillSamples` は、複数のスレッドから同時に呼ばれても安全である必要があります。
 
+## 注意点 `v2.4~`
+
+- **ライブラリとテストプロジェクトの `PrometeAsset` は無視されます** (警告 PROMETE1012)。アセットは、ゲームの実行プロジェクトで宣言してください。テストからゲームのアセットを読むには、ゲームの実行プロジェクトを参照して `UseAssets(typeof(GameScene).Assembly)` を使います。
+- `GenerateAssemblyInfo` を `false` にすると、宣言の情報がアセンブリに書き込まれないので、`PrometeAsset` のアセットは自動では読めません。
+- Package モードのままゲームを起動していても、ビルドすればパッケージを作り直せます。ただし、起動中のゲームは古い内容を読み続けます。
+- `InvariantGlobalization=true` の環境では、NFC への正規化が行われません。ビルド時のファイル名は NFC になっているので、ASCII 以外のパスは、**最初から NFC で**渡してください。NFD のまま渡すと、見つかりません。
+
+### エラーと警告
+
+ビルドの出力に出る、Assets のコードの一覧です。
+
+| コード | 種類 | 意味 | 対処 |
+| --- | --- | --- | --- |
+| PROMETE1001 | エラー | `Include` が絶対パスか `..` を含むので、論理パスが決められない | `TargetPath` で論理パスを指定してください |
+| PROMETE1002 | エラー | `TargetPath` が正しくない (`..`、`:`、`//` で始まる、空、長すぎる) | `/` で区切った、正しい論理パスにしてください |
+| PROMETE1003 | エラー | 同じ論理パスのファイルが複数ある | どちらかの `TargetPath` を変えるか、`Exclude` で除いてください |
+| PROMETE1004 | エラー | `Compress` が `auto` / `true` / `false` のどれでもない | 3 つのどれかにしてください |
+| PROMETE1005 | エラー | `Package` の名前に、英数字・`_`・`-` 以外の文字がある | 使える文字だけにしてください |
+| PROMETE1006 | エラー | `Obfuscate` が `true` / `false` のどれでもない | `true` か `false` にしてください |
+| PROMETE1007 | エラー | 宣言したファイルが見つからない | `Include` のパスと、ファイル名の綴りを確認してください |
+| PROMETE1010 | エラー | `PrometeAssetMode` が `Folder` / `Package` のどちらでもない | `Folder` か `Package` にしてください |
+| PROMETE1011 | 警告 | Folder モードのまま publish した | `PrometeAssetMode=Package` で publish してください。Folder のマニフェストは publish に含まれません |
+| PROMETE1012 | 警告 | ライブラリやテストプロジェクトに `PrometeAsset` がある (無視されます) | ゲームの実行プロジェクトで宣言してください。テストは `UseAssets(typeof(GameScene).Assembly)` を使います |
+| PROMETE1013 | 警告 | 古い Promete.Web を使っているので、`PrometeAsset` を処理しなかった | Promete.Web を 2.4 以降に更新してください。更新できないときは、`UseAssets(typeof(Program).Assembly, o => o.MountFolder("assets", "assets"))` で従来どおり読めます |
+| PROMETE1014 | エラー | 古い Promete.Web で `PrometeAssetMode=Package` を指定した | Promete.Web を 2.4 以降に更新するか、`Package` の指定を外してください |
+| PROMETE1015 | エラー | `PrometeAssetEmbed` が `true` / `false` のどちらでもない | `true` か `false` にしてください |
+| PROMETE1020 | エラー | パッケージのファイルを書き出せなかった | 出力先の書き込み権限と、ほかのプロセスがファイルを開いていないかを確認してください |
+| PROMETE1021 | エラー | マニフェストを書き出せなかった | 出力先の書き込み権限と、ほかのプロセスがファイルを開いていないかを確認してください |
+
 ## まとめ
 
-- `UseAssets` で、`MountFolder` や `MountEmbeddedResources`、`MountPackage` を指定する。
+- csproj で `PrometeAsset` を宣言し、`UseAssets()` を呼ぶ。`MountFolder` などの明示的なマウントは、宣言したアセットの上に重なる。
 - シーンやプラグインでは、`AssetManager` をコンストラクタで受け取り、`assets.FileSystem` を使う。
 - 読むときは `OpenRead`、確認するときは `Exists`、探すときは `Enumerate` を使う。
 - 相対パスの基準は実行ファイルのフォルダで、パスは大文字・小文字を区別する。

@@ -8,8 +8,14 @@ namespace Promete.Assets;
 /// <see cref="AssetsAppBuilderExtension.UseAssets(PrometeApp.PrometeAppBuilder, Action{AssetsOptions}?)"/> で、明示的にマウントするソースを指定します。
 /// </summary>
 /// <remarks>
+/// <para>
 /// ここで指定したマウントは、<see cref="AssetManager"/> が作られる時点 (アプリの開始時。プラグインの <c>OnStart</c> より前) に、指定した順に行われます。
 /// 優先度が同じ場合は、後に指定したものが優先されます。
+/// </para>
+/// <para>
+/// アセンブリに付いた <c>PrometeAsset</c> の属性によるマウントは、ここで指定したマウントより先に、より低い優先度で行われます。
+/// そのため、ここで指定したマウントは、属性によるマウントの上に重なり、同じ論理パスのファイルを上書きします。
+/// </para>
 /// </remarks>
 public sealed class AssetsOptions
 {
