@@ -98,6 +98,27 @@ public sealed class AssetsBuildValidationTests : IDisposable
     }
 
     [Fact]
+    public void PackageNamesDifferingOnlyInCase_ShouldFailWithPROMETE1008()
+    {
+        // MSBuild の Distinct() は大文字・小文字を区別しないので、黙って同じパッケージに書かれ、片方のアセットが失われていた
+        _ws.Write("Game/assets/a.txt", "a");
+        _ws.Write("Game/assets/b.txt", "b");
+        var project = _ws.CreateDesktopProject(
+            "Game",
+            "<PrometeAssetMode>Package</PrometeAssetMode>",
+            """
+            <PrometeAsset Include="assets/a.txt" />
+            <PrometeAsset Include="assets/b.txt" Package="Main" />
+            """
+        );
+
+        var build = _ws.Build(project);
+
+        build.Succeeded.Should().BeFalse();
+        build.HasDiagnostic("PROMETE1008").Should().BeTrue(build.ToString());
+    }
+
+    [Fact]
     public void InvalidMetadata_ShouldFailWithTaskErrorCode()
     {
         _ws.Write("Game/assets/a.txt", "a");

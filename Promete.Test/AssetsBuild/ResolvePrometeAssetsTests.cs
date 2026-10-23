@@ -282,6 +282,62 @@ public sealed class ResolvePrometeAssetsTests : IDisposable
             .Equal("assets/B.png", "assets/a.png", "assets/b.png");
     }
 
+    [Theory]
+    [InlineData("Main", "")]
+    [InlineData("Main", "main")]
+    [InlineData("DLC", "dlc")]
+    public void PackageNamesDifferingOnlyInCase_ShouldReportPROMETE1008(string first, string second)
+    {
+        CreateFile("assets/a.png");
+        CreateFile("assets/b.png");
+
+        var (task, engine) = Run(
+            Item("assets/a.png", ("Package", first)),
+            Item("assets/b.png", ("Package", second))
+        );
+
+        task.Result.Should().BeFalse();
+        engine.ErrorCodes.Should().Equal("PROMETE1008");
+        var expectedSecond = second.Length == 0 ? "main" : second;
+        engine.Errors[0].Message.Should().Contain($"'{first}'").And.Contain($"'{expectedSecond}'");
+    }
+
+    [Fact]
+    public void PackageNamesDifferingOnlyInCase_ShouldBeReportedOnce()
+    {
+        CreateFile("assets/a.png");
+        CreateFile("assets/b.png");
+        CreateFile("assets/c.png");
+        CreateFile("assets/d.png");
+
+        var (task, engine) = Run(
+            Item("assets/a.png"),
+            Item("assets/b.png"),
+            Item("assets/c.png", ("Package", "Main")),
+            Item("assets/d.png", ("Package", "Main"))
+        );
+
+        task.Result.Should().BeFalse();
+        engine.ErrorCodes.Should().Equal("PROMETE1008");
+    }
+
+    [Fact]
+    public void DifferentPackageNames_ShouldResolve()
+    {
+        CreateFile("assets/a.png");
+        CreateFile("assets/b.png");
+
+        var (task, engine) = Run(
+            Item("assets/a.png", ("Package", "main")),
+            Item("assets/b.png", ("Package", "main-2"))
+        );
+
+        engine.Errors.Should().BeEmpty();
+        task.ResolvedAssets.Select(i => i.GetMetadata("Package"))
+            .Should()
+            .BeEquivalentTo(["main", "main-2"]);
+    }
+
     [Fact]
     public void Empty_ShouldSucceedWithNoOutput()
     {

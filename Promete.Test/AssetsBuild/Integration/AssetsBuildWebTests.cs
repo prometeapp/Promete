@@ -1,6 +1,8 @@
 // Promete.Web は browser 専用のアセンブリだが、ここではマニフェストの解析 (ブラウザに依存しない部分) だけを使う
 #pragma warning disable CA1416
 
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using FluentAssertions;
 using Promete.Web.Assets;
 
@@ -139,6 +141,16 @@ public sealed class AssetsBuildWebTests : IDisposable
                     "Web.main.prmtpak"
                 )
             );
+        EmbeddedResourceNames(Path.Combine(_ws.IntermediateDirectory("Web"), "Web.dll"))
+            .Should()
+            .Contain(
+                "Web.main.prmtpak",
+                "属性とマニフェストが指すパッケージが、実際にアセンブリに埋め込まれているはず"
+            );
+        Directory
+            .GetFiles(_ws.OutputDirectory("Web"), "*.prmtpak", SearchOption.AllDirectories)
+            .Should()
+            .BeEmpty("埋め込んだパッケージは出力先に置かない");
     }
 
     [Fact]
@@ -260,6 +272,85 @@ public sealed class AssetsBuildWebTests : IDisposable
         ReadWebManifest().Select(e => e.LogicalPath).Should().Equal("assets/web.txt");
     }
 
+    [Fact]
+    public void WebReferencingDesktopExecutable_ShouldNotPublishItsPackage()
+    {
+        // 参照先 (デスクトップの実行プロジェクト) が Package モードだと、そのパッケージは CopyToPublishDirectory 付きで伝播してくる。
+        // Web の publish の出力に、デスクトップ向けのパッケージやマニフェストを残さないこと (wwwroot の外も含む)
+        _ws.Write("Game/assets/game.txt", "game");
+        var game = _ws.CreateDesktopProject(
+            "Game",
+            "<PrometeAssetMode>Package</PrometeAssetMode>",
+            """<PrometeAsset Include="assets/**" />"""
+        );
+        _ws.Write("Web/assets/web.txt", "web");
+        var web = _ws.CreateWebProject(
+            "Web",
+            withPrometeWeb: true,
+            items: """
+            <ProjectReference Include="../Game/Game.csproj" />
+            <PrometeAsset Include="assets/**" />
+            """
+        );
+        _ws.Build(game).EnsureSucceeded();
+        File.Exists(Path.Combine(_ws.OutputDirectory("Game"), "Game.main.prmtpak"))
+            .Should()
+            .BeTrue("前提: 参照先は Package モードでパッケージを出力している");
+        var publish = _ws.FullPath("publish");
+
+        _ws.Publish(web, publish).EnsureSucceeded();
+
+        File.Exists(Path.Combine(publish, "wwwroot", "promete-assets.json"))
+            .Should()
+            .BeTrue("前提: Web 自身の publish はできている");
+        Directory
+            .GetFiles(publish, "Game.*.prmtpak", SearchOption.AllDirectories)
+            .Should()
+            .BeEmpty();
+        Directory
+            .GetFiles(publish, "Game.promete-assets.json", SearchOption.AllDirectories)
+            .Should()
+            .BeEmpty();
+    }
+
+    [Fact]
+    public void OwnPackageFileInProject_ShouldStayInOutputAndPublish()
+    {
+        // 参照先から伝播したものだけを外し、利用者自身がプロジェクトのフォルダに置いた .prmtpak は残す。
+        // 「プロジェクトのフォルダの中か」の判定は、パスの区切りに依存してはいけない (Linux / macOS では / になる)
+        _ws.Write("Game/assets/game.txt", "game");
+        var game = _ws.CreateDesktopProject(
+            "Game",
+            "<PrometeAssetMode>Package</PrometeAssetMode>",
+            """<PrometeAsset Include="assets/**" />"""
+        );
+        _ws.Write("Web/extra/mine.prmtpak", "not a real package");
+        var web = _ws.CreateWebProject(
+            "Web",
+            withPrometeWeb: true,
+            items: """
+            <ProjectReference Include="../Game/Game.csproj" />
+            <None Include="extra/mine.prmtpak" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+            """
+        );
+        _ws.Build(game).EnsureSucceeded();
+        var publish = _ws.FullPath("publish");
+
+        _ws.Build(web).EnsureSucceeded();
+        _ws.Publish(web, publish).EnsureSucceeded();
+
+        File.Exists(Path.Combine(_ws.OutputDirectory("Web"), "extra", "mine.prmtpak"))
+            .Should()
+            .BeTrue("利用者自身のファイルは出力に残るはず");
+        File.Exists(Path.Combine(publish, "extra", "mine.prmtpak"))
+            .Should()
+            .BeTrue("利用者自身のファイルは publish にも残るはず");
+        Directory
+            .GetFiles(publish, "Game.*.prmtpak", SearchOption.AllDirectories)
+            .Should()
+            .BeEmpty();
+    }
+
     /// <summary>
     /// assets/a.txt、assets/fonts/ui.ttf、プロジェクトの外の shared.txt (TargetPath を明示) を持つ Web のプロジェクトを作る。
     /// </summary>
@@ -277,6 +368,19 @@ public sealed class AssetsBuildWebTests : IDisposable
             <PrometeAsset Include="../shared/shared.txt" TargetPath="data/shared.txt" />
             """
         );
+    }
+
+    /// <summary>
+    /// アセンブリのマニフェストリソースの名前を読む (アセンブリを読み込まず、メタデータだけを見る)。
+    /// </summary>
+    private static string[] EmbeddedResourceNames(string assemblyPath)
+    {
+        using var stream = File.OpenRead(assemblyPath);
+        using var pe = new PEReader(stream);
+        var metadata = pe.GetMetadataReader();
+        return metadata
+            .ManifestResources.Select(h => metadata.GetString(metadata.GetManifestResource(h).Name))
+            .ToArray();
     }
 
     private IReadOnlyList<WebAssetManifestEntry> ReadWebManifest() =>

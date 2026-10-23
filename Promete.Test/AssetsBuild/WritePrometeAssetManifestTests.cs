@@ -119,6 +119,46 @@ public sealed class WritePrometeAssetManifestTests : IDisposable
     }
 
     [Fact]
+    public void DuplicateLogicalPath_ShouldReportPROMETE1021AndWriteNothing()
+    {
+        // 実行時のリーダーは重複したキーを不正とするので、壊れたマニフェストを書かない
+        var a = _dir.CreateFile("a.txt");
+        var b = _dir.CreateFile("b.txt");
+        var output = Path.Combine(_dir.Path, "m.json");
+
+        var (result, engine, written) = Run(output, Resolved(a, "x.txt"), Resolved(b, "x.txt"));
+
+        result.Should().BeFalse();
+        written.Should().BeFalse();
+        engine.ErrorCodes.Should().Equal("PROMETE1021");
+        engine.Errors[0].Message.Should().Contain("x.txt");
+        File.Exists(output).Should().BeFalse();
+    }
+
+    [Fact]
+    public void InvalidItemPath_ShouldReportPROMETE1021InsteadOfThrowing()
+    {
+        var output = Path.Combine(_dir.Path, "m.json");
+
+        var (result, engine, _) = Run(output, Resolved("bad\0path.txt", "x.txt"));
+
+        result.Should().BeFalse();
+        engine.ErrorCodes.Should().Equal("PROMETE1021");
+        File.Exists(output).Should().BeFalse();
+    }
+
+    [Fact]
+    public void InvalidOutputFile_ShouldReportPROMETE1021InsteadOfThrowing()
+    {
+        var a = _dir.CreateFile("a.txt");
+
+        var (result, engine, _) = Run("bad\0name.json", Resolved(a, "a.txt"));
+
+        result.Should().BeFalse();
+        engine.ErrorCodes.Should().Equal("PROMETE1021");
+    }
+
+    [Fact]
     public void Empty_ShouldWriteManifestWithNoFiles()
     {
         var output = Path.Combine(_dir.Path, "deep", "dir", "m.json");
