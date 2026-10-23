@@ -11,8 +11,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # ハングしたときに既定の 6 時間を使い切らないための上限
-    timeout-minutes: 15
+    # ハングしたときに既定の 6 時間を使い切らないための上限。統合テストは子プロセスで dotnet を何度も動かすので長い
+    timeout-minutes: 30
     permissions:
       contents: read
 
@@ -42,4 +42,9 @@ jobs:
       run: dotnet build Promete.Test/Promete.Test.csproj --no-restore --configuration Release
 
     - name: Test
-      run: dotnet test Promete.Test/Promete.Test.csproj --no-build --verbosity normal --configuration Release
+      run: dotnet test Promete.Test/Promete.Test.csproj --no-build --verbosity normal --configuration Release --filter "Category!=MSBuild"
+
+    # MSBuild の統合テスト (子プロセスで dotnet build / publish / pack を実行する)。
+    # Web の統合テストは wasm-tools のワークロードを前提にしないことを確かめていないので、web.yml で回す
+    - name: Test (MSBuild integration)
+      run: dotnet test Promete.Test/Promete.Test.csproj --no-build --verbosity normal --configuration Release --filter "Category=MSBuild&FullyQualifiedName!~AssetsBuildWebTests"
