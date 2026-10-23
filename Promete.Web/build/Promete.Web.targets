@@ -46,18 +46,10 @@
 
     <!--
         アセットのプリロード。
-        <PrometeAsset Include="assets/**" /> で宣言したファイルを、起動前にすべて取得して仮想ファイルシステムに置く。
-        仮想ファイルシステム上のパスは TargetPath (省略時はプロジェクトからの相対パス) で、
-        Load("assets/x.png") のような同期 API からそのまま読める。
+        <PrometeAsset Include="assets/**" /> の既定値 (TargetPath、Package) と正規化は、コアの Promete.targets が決める。
+        ここでは評価時に PrometeAsset を触らない (このファイルはコアの targets より先に読み込まれる)。
+        仮想ファイルシステム上のパスは TargetPath で、Load("assets/x.png") のような同期 API からそのまま読める。
     -->
-    <ItemGroup>
-        <PrometeAsset Update="@(PrometeAsset)">
-            <TargetPath Condition="'%(TargetPath)' == ''"
-                >%(RelativeDir)%(Filename)%(Extension)</TargetPath
-            >
-        </PrometeAsset>
-    </ItemGroup>
-
     <PropertyGroup>
         <!-- SDK はこのプロパティに追記するので、先に足しておいても残る -->
         <ResolveStaticWebAssetsInputsDependsOn>$(ResolveStaticWebAssetsInputsDependsOn);_PrometeDefineAssets</ResolveStaticWebAssetsInputsDependsOn>
@@ -67,39 +59,81 @@
         アセットと、取得するアセットの一覧 (promete-assets.json)、既定の index.html / main.js を、静的 Web アセットとして登録する。
         プロジェクトの外にあるファイルは Content からは拾われないので、DefineStaticWebAssets で直接登録する。
     -->
-    <Target Name="_PrometeDefineAssets">
+    <!--
+        契約の item (PrometeAssetFile) から promete-assets.json を書き、アセットを静的 Web アセットとして登録する。
+        PrometeResolveAssets (正規化) と PrometePackAssets (パッケージ) が終わってから行う。
+        パッケージが無くても、空の一覧のマニフェストを必ず書く (promete.js と C# のローダーが読むため)。
+    -->
+    <Target Name="_PrometeDefineAssets" DependsOnTargets="PrometeResolveAssets;PrometePackAssets">
         <!-- このファイルは SDK の targets より先に読み込まれるので、中間ディレクトリはターゲットの中で決める -->
         <PropertyGroup>
             <_PrometeAssetDir>$(ProjectDir)$(IntermediateOutputPath)promete\</_PrometeAssetDir>
-            <_PrometeAssetManifest>$(_PrometeAssetDir)promete-assets.json</_PrometeAssetManifest>
+            <_PrometeAssetManifest>$(_PrometeAssetDir)$(PrometeWebAssetManifestName)</_PrometeAssetManifest>
         </PropertyGroup>
+
+        <!-- 種類ごとに分ける。種類の名前 (File / Package / EmbeddedPackage) はコアの契約 -->
         <ItemGroup>
-            <_PrometeAssetEntry Include="@(PrometeAsset)">
-                <Url>$([System.String]::Copy('%(TargetPath)').Replace('\', '/'))</Url>
-                <Kind>other</Kind>
-                <Kind
-                    Condition="'%(Extension)' == '.ttf' or '%(Extension)' == '.otf' or '%(Extension)' == '.woff' or '%(Extension)' == '.woff2'"
-                    >font</Kind
-                >
-            </_PrometeAssetEntry>
-            <_PrometeAssetJson Include="@(_PrometeAssetEntry->'{&quot;path&quot;:&quot;/%(Url)&quot;,&quot;url&quot;:&quot;%(Url)&quot;,&quot;kind&quot;:&quot;%(Kind)&quot;}')" />
+            <_PrometeWebFile
+                Include="@(PrometeAssetFile)"
+                Condition="'%(PrometeAssetFile.PrometeAssetKind)' == 'File'"
+            />
+            <_PrometeWebPackage
+                Include="@(PrometeAssetFile)"
+                Condition="'%(PrometeAssetFile.PrometeAssetKind)' == 'Package'"
+            />
+            <_PrometeWebEmbeddedPackage
+                Include="@(PrometeAssetFile)"
+                Condition="'%(PrometeAssetFile.PrometeAssetKind)' == 'EmbeddedPackage'"
+            />
+        </ItemGroup>
+
+        <!-- JSON 用に論理パスをエスケープする (\ と " は本来ファイル名に使えないが、念のため) -->
+        <ItemGroup>
+            <_PrometeWebFile Update="@(_PrometeWebFile)">
+                <JsonPath>$([System.String]::Copy('%(_PrometeWebFile.LogicalPath)').Replace('\', '\\').Replace('&quot;', '\&quot;'))</JsonPath>
+            </_PrometeWebFile>
+        </ItemGroup>
+
+        <!-- フォントは kind を font にする (拡張子は大文字・小文字を区別しない) -->
+        <ItemGroup>
+            <_PrometeWebFont
+                Include="@(_PrometeWebFile)"
+                Condition="$([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) == '.ttf' or $([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) == '.otf' or $([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) == '.woff' or $([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) == '.woff2'"
+            />
+            <_PrometeWebPlainFile
+                Include="@(_PrometeWebFile)"
+                Condition="$([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) != '.ttf' and $([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) != '.otf' and $([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) != '.woff' and $([System.IO.Path]::GetExtension('%(_PrometeWebFile.LogicalPath)').ToLowerInvariant()) != '.woff2'"
+            />
+        </ItemGroup>
+
+        <!-- マニフェストの entries。形式は Promete.Web/Assets/WebAssetManifest.cs と promete.js の契約 (version 1) -->
+        <ItemGroup>
+            <_PrometeWebEntry Include="@(_PrometeWebFont->'{&quot;kind&quot;:&quot;font&quot;,&quot;path&quot;:&quot;/%(JsonPath)&quot;,&quot;url&quot;:&quot;%(JsonPath)&quot;,&quot;logicalPath&quot;:&quot;%(JsonPath)&quot;}')" />
+            <_PrometeWebEntry Include="@(_PrometeWebPlainFile->'{&quot;kind&quot;:&quot;file&quot;,&quot;path&quot;:&quot;/%(JsonPath)&quot;,&quot;url&quot;:&quot;%(JsonPath)&quot;,&quot;logicalPath&quot;:&quot;%(JsonPath)&quot;}')" />
+            <_PrometeWebEntry Include="@(_PrometeWebPackage->'{&quot;kind&quot;:&quot;package&quot;,&quot;path&quot;:&quot;/%(Location)&quot;,&quot;url&quot;:&quot;%(Location)&quot;,&quot;package&quot;:&quot;%(PackageName)&quot;}')" />
+            <_PrometeWebEntry Include="@(_PrometeWebEmbeddedPackage->'{&quot;kind&quot;:&quot;embedded-package&quot;,&quot;assembly&quot;:&quot;$(AssemblyName)&quot;,&quot;resource&quot;:&quot;%(Location)&quot;,&quot;package&quot;:&quot;%(PackageName)&quot;}')" />
         </ItemGroup>
 
         <WriteLinesToFile
             File="$(_PrometeAssetManifest)"
-            Lines="[;@(_PrometeAssetJson, ',');]"
+            Lines="{&quot;version&quot;:1,&quot;entries&quot;:[;@(_PrometeWebEntry, ',');]}"
             Overwrite="true"
             WriteOnlyWhenDifferent="true"
         />
 
         <ItemGroup>
             <FileWrites Include="$(_PrometeAssetManifest)" />
-            <_PrometeAssetCandidate Include="@(_PrometeAssetEntry->'%(FullPath)')">
-                <RelativePath>%(Url)</RelativePath>
-                <ContentRoot>%(RootDir)%(Directory)</ContentRoot>
+            <!-- 実ファイルは、論理パスの位置で配る (Folder と Package のファイル本体は、ここで静的 Web アセットになる) -->
+            <_PrometeAssetCandidate Include="@(_PrometeWebFile->'%(FullPath)')">
+                <RelativePath>%(_PrometeWebFile.LogicalPath)</RelativePath>
+                <ContentRoot>%(_PrometeWebFile.RootDir)%(_PrometeWebFile.Directory)</ContentRoot>
+            </_PrometeAssetCandidate>
+            <_PrometeAssetCandidate Include="@(_PrometeWebPackage->'%(FullPath)')">
+                <RelativePath>%(_PrometeWebPackage.Location)</RelativePath>
+                <ContentRoot>%(_PrometeWebPackage.RootDir)%(_PrometeWebPackage.Directory)</ContentRoot>
             </_PrometeAssetCandidate>
             <_PrometeAssetCandidate Include="$(_PrometeAssetManifest)">
-                <RelativePath>promete-assets.json</RelativePath>
+                <RelativePath>$(PrometeWebAssetManifestName)</RelativePath>
                 <ContentRoot>$(_PrometeAssetDir)</ContentRoot>
             </_PrometeAssetCandidate>
 
@@ -146,6 +180,47 @@
         <ItemGroup>
             <StaticWebAsset Include="@(_PrometeStaticWebAsset)" />
             <StaticWebAssetEndpoint Include="@(_PrometeStaticWebAssetEndpoint)" />
+        </ItemGroup>
+    </Target>
+
+    <!--
+        参照先の実行プロジェクト (デスクトップの Promete.Example など) から伝播してきた、Promete のマニフェストとパッケージを
+        出力と publish から外す。Web のアセットは PrometeAssetFile が届けるので、デスクトップ側のファイルは要らない。
+        伝播の途中でカスタムのメタデータは落ちるので、名前の末尾で見分ける。ただし、このプロジェクトのフォルダの中のファイルは
+        利用者自身の .prmtpak かもしれないので外さない。publish の一覧は出力の一覧から作られるので、ここで両方を外せる。
+    -->
+    <Target Name="_PrometeRemovePropagatedAssets" AfterTargets="GetCopyToOutputDirectoryItems">
+        <!--
+            候補の判定は metadata で行う (Condition の中で %() を property 関数に入れられないため)。
+            _PrometeIsAssetFile: 名前が Promete のマニフェストかパッケージ。_PrometeIsLocal: このプロジェクトのフォルダの中にある。
+        -->
+        <ItemGroup>
+            <_PrometeAssetCopyCandidate Include="@(_SourceItemsToCopyToOutputDirectory)">
+                <_PrometeIsAssetFile>$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '\.(prmtpak|promete-assets\.json)$'))</_PrometeIsAssetFile>
+                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith('$(MSBuildProjectDirectory)\'))</_PrometeIsLocal>
+            </_PrometeAssetCopyCandidate>
+            <_PrometeAssetCopyCandidate Include="@(_SourceItemsToCopyToOutputDirectoryAlways)">
+                <_PrometeIsAssetFile>$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '\.(prmtpak|promete-assets\.json)$'))</_PrometeIsAssetFile>
+                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith('$(MSBuildProjectDirectory)\'))</_PrometeIsLocal>
+            </_PrometeAssetCopyCandidate>
+            <_PrometeAssetCopyCandidate Include="@(_SourceItemsToCopyToOutputDirectoryIfDifferent)">
+                <_PrometeIsAssetFile>$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '\.(prmtpak|promete-assets\.json)$'))</_PrometeIsAssetFile>
+                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith('$(MSBuildProjectDirectory)\'))</_PrometeIsLocal>
+            </_PrometeAssetCopyCandidate>
+        </ItemGroup>
+
+        <ItemGroup>
+            <_PrometePropagatedAsset
+                Include="@(_PrometeAssetCopyCandidate)"
+                Condition="'%(_PrometeAssetCopyCandidate._PrometeIsAssetFile)' == 'true' and '%(_PrometeAssetCopyCandidate._PrometeIsLocal)' != 'true'"
+            />
+        </ItemGroup>
+
+        <ItemGroup>
+            <_SourceItemsToCopyToOutputDirectory Remove="@(_PrometePropagatedAsset)" />
+            <_SourceItemsToCopyToOutputDirectoryAlways Remove="@(_PrometePropagatedAsset)" />
+            <_SourceItemsToCopyToOutputDirectoryIfDifferent Remove="@(_PrometePropagatedAsset)" />
+            <AllItemsFullPathWithTargetPath Remove="@(_PrometePropagatedAsset)" />
         </ItemGroup>
     </Target>
 </Project>
