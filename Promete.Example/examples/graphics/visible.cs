@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -14,11 +15,11 @@ public class Visible : Scene
 
     private readonly Sprite _sprite;
 
-    public Visible(ConsoleLayer console, Keyboard keyboard)
+    public Visible(ConsoleLayer console, Keyboard keyboard, AssetManager assets)
     {
         _console = console;
         _keyboard = keyboard;
-        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
 
         _sprite = new Sprite(_tIchigo)
             .Scale(8, 8)
@@ -45,8 +46,5 @@ public class Visible : Scene
         }
     }
 
-    public override void OnDestroy()
-    {
-        _tIchigo.Dispose();
-    }
+    public override void OnDestroy() { }
 }

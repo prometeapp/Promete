@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -21,10 +22,10 @@ public class ContainerTrimModeWithNestingTestScene : Scene
 
     private readonly Container _container2 = new Container().Location(32, 32).Size(32, 32);
 
-    public ContainerTrimModeWithNestingTestScene(Keyboard keyboard)
+    public ContainerTrimModeWithNestingTestScene(Keyboard keyboard, AssetManager assets)
     {
         _keyboard = keyboard;
-        _texture = App.TextureFactory.Load("assets/ichigo2.png");
+        _texture = assets.LoadTexture("assets/ichigo2.png", AssetScope.Scene);
         _obj.Texture = _texture;
     }
 
@@ -85,8 +86,5 @@ public class ContainerTrimModeWithNestingTestScene : Scene
         }
     }
 
-    public override void OnDestroy()
-    {
-        _texture.Dispose();
-    }
+    public override void OnDestroy() { }
 }

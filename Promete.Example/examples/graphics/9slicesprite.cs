@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics.Fonts;
 using Promete.Input;
@@ -7,7 +8,8 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("graphics/9slicesprite.demo", "9-slice Spriteの例")]
-public class NineSliceSpriteTest(ConsoleLayer console, Keyboard keyboard) : Scene
+public class NineSliceSpriteTest(ConsoleLayer console, Keyboard keyboard, AssetManager assets)
+    : Scene
 {
 #pragma warning disable
     private static Sprite _sprite;
@@ -22,8 +24,15 @@ public class NineSliceSpriteTest(ConsoleLayer console, Keyboard keyboard) : Scen
 
         var font = Graphics.Fonts.Font.GetDefault(18);
 
-        var normalSprite = App.TextureFactory.Load("assets/rect.png");
-        var nineSliceSprite = App.TextureFactory.Load9Sliced("assets/rect.png", 16, 16, 16, 16);
+        var normalSprite = assets.LoadTexture("assets/rect.png", AssetScope.Scene);
+        var nineSliceSprite = assets.Load9Sliced(
+            "assets/rect.png",
+            16,
+            16,
+            16,
+            16,
+            AssetScope.Scene
+        );
 
         _sprite = new Sprite(normalSprite);
         _nineSlice = new NineSliceSprite(nineSliceSprite);

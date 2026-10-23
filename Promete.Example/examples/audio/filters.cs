@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Audio;
 using Promete.Audio.Filters;
 using Promete.Example.Kernel;
@@ -6,10 +7,11 @@ using Promete.Input;
 namespace Promete.Example.examples.audio;
 
 [Demo("/audio/filters.demo", "AudioPlayerのDSPフィルターを切り替えます")]
-public class FiltersExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
+public class FiltersExampleScene(Keyboard keyboard, ConsoleLayer console, AssetManager assets)
+    : Scene
 {
     private readonly AudioPlayer _audio = new();
-    private readonly VorbisAudioSource _bgm = new("./assets/amaebi.ogg");
+    private readonly IAudioSource _bgm = assets.LoadAudio("assets/amaebi.ogg", AssetScope.Scene);
 
     private readonly LowPassFilter _lowPass = new();
     private readonly DelayFilter _delay = new();
@@ -95,7 +97,6 @@ public class FiltersExampleScene(Keyboard keyboard, ConsoleLayer console) : Scen
     {
         _audio.Stop();
         _audio.Dispose();
-        _bgm.Dispose();
     }
 
     private void ToggleFilter(IAudioFilter filter, ref bool isEnabled)

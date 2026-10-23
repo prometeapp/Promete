@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -8,14 +9,19 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/container.demo", "ノードをコンテナーにいくつか追加する例")]
-public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse) : Scene
+public class ContainerExampleScene(
+    ConsoleLayer console,
+    Keyboard keyboard,
+    Mouse mouse,
+    AssetManager assets
+) : Scene
 {
     private readonly Container _container = new();
     private Texture2D _ichigo;
 
     public override void OnStart()
     {
-        _ichigo = App.TextureFactory.Load("assets/ichigo.png");
+        _ichigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         Root.Add(_container);
 
         var canvas = new Container().Location(400, 200);
@@ -95,8 +101,5 @@ public class ContainerExampleScene(ConsoleLayer console, Keyboard keyboard, Mous
             App.LoadScene<MainScene>();
     }
 
-    public override void OnDestroy()
-    {
-        _ichigo.Dispose();
-    }
+    public override void OnDestroy() { }
 }

@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -18,7 +19,11 @@ namespace Promete.Example.examples.debug;
 /// 60fps では概ね 8.5 秒でクラッシュに到達する。
 /// </summary>
 [Demo("/debug/vulkan_material_slot_leak", "指摘#07: Materialスロットが解放されずプール枯渇")]
-public class VulkanMaterialSlotLeakDebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
+public class VulkanMaterialSlotLeakDebugScene(
+    ConsoleLayer console,
+    Keyboard keyboard,
+    AssetManager assets
+) : Scene
 {
     // Vulkan 向け。uProjection は push constant、in/out はすべて location 必須。
     private const string VertSrc = """
@@ -84,7 +89,7 @@ public class VulkanMaterialSlotLeakDebugScene(ConsoleLayer console, Keyboard key
 
     public override void OnStart()
     {
-        _texture = App.TextureFactory.Load("assets/ichigo2.png");
+        _texture = assets.LoadTexture("assets/ichigo2.png", AssetScope.Scene);
         _shader = ShaderProgram.Create().Vertex(VertSrc).Fragment(FragSrc).Compile();
         _sharedMaterial = new Material(_shader) { ["uTime"] = 0f };
 
@@ -134,6 +139,5 @@ public class VulkanMaterialSlotLeakDebugScene(ConsoleLayer console, Keyboard key
     public override void OnDestroy()
     {
         _sprite.Destroy();
-        _texture.Dispose();
     }
 }

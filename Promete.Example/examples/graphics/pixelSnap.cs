@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -12,11 +13,11 @@ public class PixelSnap : Scene
     private readonly Keyboard _keyboard;
     private readonly Texture2D _tIchigo;
 
-    public PixelSnap(ConsoleLayer console, Keyboard keyboard)
+    public PixelSnap(ConsoleLayer console, Keyboard keyboard, AssetManager assets)
     {
         _console = console;
         _keyboard = keyboard;
-        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
 
         // 中央ピボット + 端数を含む位置で、スナップ有無による描画差を比較する
         Root =
@@ -44,8 +45,5 @@ public class PixelSnap : Scene
             App.LoadScene<MainScene>();
     }
 
-    public override void OnDestroy()
-    {
-        _tIchigo.Dispose();
-    }
+    public override void OnDestroy() { }
 }

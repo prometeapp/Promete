@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -11,10 +12,10 @@ public class Sprite_sheet : Scene
     private readonly Keyboard _keyboard;
     private Texture2D[] _textures;
 
-    public Sprite_sheet(Keyboard keyboard)
+    public Sprite_sheet(Keyboard keyboard, AssetManager assets)
     {
         _keyboard = keyboard;
-        _textures = App.TextureFactory.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32));
+        _textures = assets.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32), AssetScope.Scene);
         for (int i = 0; i < _textures.Length; i++)
         {
             var sprite = new Sprite(_textures[i]).Location((64 * i) + 16, 16).Scale(2, 2);
@@ -28,8 +29,5 @@ public class Sprite_sheet : Scene
             App.LoadScene<MainScene>();
     }
 
-    public override void OnDestroy()
-    {
-        _textures[0].Dispose();
-    }
+    public override void OnDestroy() { }
 }

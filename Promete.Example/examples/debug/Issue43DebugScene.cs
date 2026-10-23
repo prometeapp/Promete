@@ -1,4 +1,5 @@
 using System.Collections;
+using Promete.Assets;
 using Promete.Audio;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
@@ -13,8 +14,12 @@ namespace Promete.Example.examples.debug;
 /// https://github.com/prometeapp/Promete/issues/43
 /// </summary>
 [Demo("/debug/issue43", "Issue43: Debug Scene")]
-public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console, Keyboard keyboard)
-    : Scene
+public class Issue43DebugScene(
+    CoroutineManager coroutine,
+    ConsoleLayer console,
+    Keyboard keyboard,
+    AssetManager assets
+) : Scene
 {
     private AudioPlayer? _audioPlayer;
     private VorbisAudioSource? _source;
@@ -27,7 +32,7 @@ public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console,
     private IEnumerator Debug()
     {
         _audioPlayer = new AudioPlayer();
-        _source = new VorbisAudioSource("assets/amaebi.ogg");
+        _source = (VorbisAudioSource)assets.LoadAudio("assets/amaebi.ogg", AssetScope.Scene);
         console.Print("Loading...");
         yield return new WaitUntil(() => _source.IsLoadingFinished);
 
@@ -51,7 +56,6 @@ public class Issue43DebugScene(CoroutineManager coroutine, ConsoleLayer console,
     public override void OnDestroy()
     {
         _audioPlayer.Dispose();
-        _source.Dispose();
     }
 
     private void Assert(bool condition, string successMessage, string failureMessage)

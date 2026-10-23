@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -8,7 +9,8 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("graphics/deformedSprite.demo", "DeformedSpriteの例（頂点のランダム移動）")]
-public class DeformedSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
+public class DeformedSpriteDemo(ConsoleLayer console, Keyboard keyboard, AssetManager assets)
+    : Scene
 {
     private const float QuadSize = 128;
 
@@ -28,8 +30,8 @@ public class DeformedSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         console.Print("Press [ESC] to return");
 
         var font = Graphics.Fonts.Font.GetDefault(16);
-        _texture = App.TextureFactory.Load("assets/ichigo.png");
-        _cells = App.TextureFactory.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32));
+        _texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
+        _cells = assets.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32), AssetScope.Scene);
 
         var top = (View.Height / 2f) - (QuadSize / 2);
         var columnWidth = View.Width / 3f;
@@ -108,9 +110,6 @@ public class DeformedSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
     public override void OnDestroy()
     {
         _frameBuffer?.Dispose();
-        _texture.Dispose();
-        foreach (var cell in _cells)
-            cell.Dispose();
     }
 
     /// <summary>

@@ -24,7 +24,7 @@ var builder = PrometeApp
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
     .Use<ImGuiPlugin>()
-    .UseAssets(o => o.MountFolder("assets", "assets"));
+    .UseAssets();
 
 if (DemoKernel.UseVulkan && useValidation)
     builder = builder.UseVulkanValidation();

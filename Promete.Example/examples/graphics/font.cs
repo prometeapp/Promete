@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics.Fonts;
 using Promete.Input;
@@ -7,7 +8,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/font.demo", "フォントの描画例")]
-public class Font(Keyboard keyboard, ConsoleLayer console) : Scene
+public class Font(Keyboard keyboard, ConsoleLayer console, AssetManager assets) : Scene
 {
     private readonly (string name, string? path, int size, bool antialias)[] _fontDefinitions =
     [
@@ -47,7 +48,7 @@ public class Font(Keyboard keyboard, ConsoleLayer console) : Scene
             var font =
                 path == null
                     ? Graphics.Fonts.Font.GetDefault(size, FontStyle.Normal, antialias)
-                    : Graphics.Fonts.Font.FromFile(path, size, isAntialiased: antialias);
+                    : assets.LoadFont(path, size, FontStyle.Normal, antialias, AssetScope.Scene);
             var text = new Text(name, font, Color.White).Location(16, 24 + (i * 24));
 
             _menuItems.Add(text);

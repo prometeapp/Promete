@@ -1,4 +1,5 @@
 using System.Collections;
+using Promete.Assets;
 using Promete.Coroutines;
 using Promete.Example.Kernel;
 using Promete.Graphics;
@@ -8,7 +9,12 @@ using Promete.Nodes;
 namespace Promete.Example.examples.window;
 
 [Demo("window/time_scale.demo", "時間スケールを変更する")]
-public class Time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManager coroutine) : Scene
+public class Time_scale(
+    Keyboard keyboard,
+    ConsoleLayer console,
+    CoroutineManager coroutine,
+    AssetManager assets
+) : Scene
 {
     private Sprite? _sprite;
     private Texture2D _ichigo;
@@ -16,7 +22,7 @@ public class Time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManage
 
     public override void OnStart()
     {
-        _ichigo = App.TextureFactory.Load("assets/ichigo.png");
+        _ichigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         _sprite = new Sprite(_ichigo).Name("ichigo").Size(32, 32).Location(120, 120);
 
         Root.Add(_sprite);
@@ -56,10 +62,7 @@ public class Time_scale(Keyboard keyboard, ConsoleLayer console, CoroutineManage
         }
     }
 
-    public override void OnDestroy()
-    {
-        _ichigo.Dispose();
-    }
+    public override void OnDestroy() { }
 
     private IEnumerator MoveIchigo()
     {

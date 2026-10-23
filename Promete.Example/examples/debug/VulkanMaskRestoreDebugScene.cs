@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Graphics.Rendering;
@@ -18,7 +19,11 @@ namespace Promete.Example.examples.debug;
 /// 例外の前後で MaskedContainer の変換が保たれるかを確認する。
 /// </summary>
 [Demo("/debug/vulkan_mask_restore", "指摘#05: マスク描画中の例外で変換が復元されない")]
-public class VulkanMaskRestoreDebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
+public class VulkanMaskRestoreDebugScene(
+    ConsoleLayer console,
+    Keyboard keyboard,
+    AssetManager assets
+) : Scene
 {
     private static readonly Vector InitialLocation = (200, 120);
 
@@ -29,8 +34,8 @@ public class VulkanMaskRestoreDebugScene(ConsoleLayer console, Keyboard keyboard
 
     public override void OnStart()
     {
-        _backgroundTexture = App.TextureFactory.Load("assets/ichigo2.png");
-        _maskTexture = App.TextureFactory.Load("assets/circle_mask.png");
+        _backgroundTexture = assets.LoadTexture("assets/ichigo2.png", AssetScope.Scene);
+        _maskTexture = assets.LoadTexture("assets/circle_mask.png", AssetScope.Scene);
 
         _masked = new MaskedContainer(_maskTexture, useAlphaMask: true)
             .Location(InitialLocation)
@@ -86,8 +91,6 @@ public class VulkanMaskRestoreDebugScene(ConsoleLayer console, Keyboard keyboard
     public override void OnDestroy()
     {
         _masked.Destroy();
-        _backgroundTexture.Dispose();
-        _maskTexture.Dispose();
     }
 
     /// <summary>
