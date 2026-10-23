@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
@@ -6,10 +7,14 @@ using Promete.Windowing;
 namespace Promete.Example.examples.audio;
 
 [Demo("/audio/ogg vorbis.demo", "BGM を再生します")]
-public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
+public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console, AssetManager assets)
+    : Scene
 {
     private readonly AudioPlayer _audio = new();
-    private VorbisAudioSource _bgm = new("./assets/amaebi.ogg");
+    private IAudioSource _bgm = assets.LoadAudio("assets/amaebi.ogg", AssetScope.Scene);
+
+    // ドロップされたファイルは AssetManager の管理外なので、この画面で所有して破棄する
+    private VorbisAudioSource? _droppedBgm;
 
     public override void OnStart()
     {
@@ -26,7 +31,7 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
             $"""
             Location: {_audio.Time / 1000f:0.000} / {_audio.Length / 1000f:0.000}
             Location in Samples: {_audio.TimeInSamples} / {_audio.LengthInSamples}
-            Loaded: {_bgm.LoadedSize} / {_bgm.Frames}
+            Loaded: {(_bgm as VorbisAudioSource)?.LoadedSize} / {_bgm.Frames}
             Volume: {_audio.Gain}
             Pitch: {_audio.Pitch}
             Pan: {_audio.Pan}
@@ -92,7 +97,7 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
     {
         _audio.Stop();
         _audio.Dispose();
-        _bgm.Dispose();
+        _droppedBgm?.Dispose();
         View.FileDropped -= WindowOnFileDropped;
     }
 
@@ -103,7 +108,9 @@ public class OggVorbisExampleScene(Keyboard keyboard, ConsoleLayer console) : Sc
             return;
 
         _audio.Stop();
-        _bgm = new VorbisAudioSource(path);
+        _droppedBgm?.Dispose();
+        _droppedBgm = new VorbisAudioSource(path);
+        _bgm = _droppedBgm;
         _audio.Play(_bgm, 0);
     }
 }

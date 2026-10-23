@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics.Fonts;
 using Promete.Input;
@@ -7,7 +8,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("graphics/pieSprite.demo", "PieSpriteの例（円形プログレスバー/ワイプ）")]
-public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
+public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard, AssetManager assets) : Scene
 {
     private PieSprite _progressBar = null!;
     private PieSprite _progressBar2 = null!;
@@ -21,7 +22,7 @@ public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         console.Print("Press [ESC] to return");
 
         var font = Graphics.Fonts.Font.GetDefault(18);
-        var texture = App.TextureFactory.Load("assets/rect.png");
+        var texture = assets.LoadTexture("assets/rect.png", AssetScope.Scene);
 
         _progressBar = new PieSprite(texture)
             .Location((View.Width / 4f) - 64, (View.Height / 2f) - 64)
@@ -42,7 +43,7 @@ public class PieSpriteDemo(ConsoleLayer console, Keyboard keyboard) : Scene
         );
 
         // スプライトシートのセルでも、そのセルの範囲だけが扇状に描画されること
-        var cells = App.TextureFactory.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32));
+        var cells = assets.LoadSpriteSheet("assets/icons.png", 3, 1, (32, 32), AssetScope.Scene);
         _sheetBar = new PieSprite(cells[2])
             .Location(View.Width / 2f - 64, View.Height * 3f / 4 - 64)
             .Size(128, 128);

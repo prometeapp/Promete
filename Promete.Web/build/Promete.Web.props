@@ -15,6 +15,16 @@
         Condition="Exists('$(MSBuildThisFileDirectory)../build/Microsoft.AspNetCore.StaticWebAssets.props')"
     />
 
+    <!--
+        コアの Promete.targets との契約 (変えたら両方を直す)。props で立てるのは、コアの targets が評価される前に
+        値が見えている必要があるため。版を上げるのは契約の中身 (ターゲット・item・manifest の形式) を変えたとき。
+        古い Promete.Web はこれを立てないので、コアは Assets の処理をしない (警告のみ)。
+    -->
+    <PropertyGroup>
+        <PrometeWebAssetsContract>1</PrometeWebAssetsContract>
+        <PrometeWebAssetManifestName>promete-assets.json</PrometeWebAssetManifestName>
+    </PropertyGroup>
+
     <PropertyGroup>
         <!-- WebGL2 のコンテキスト生成と、calli のシグネチャ登録のため、ネイティブのシムをリンクする -->
         <WasmBuildNative>true</WasmBuildNative>

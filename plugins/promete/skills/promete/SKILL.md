@@ -84,6 +84,7 @@ Root.Add(sprite);
 - [ゲームビュー](references/manual/gameview.md): ウィンドウの表示・サイズ・状態を管理するIGameViewについて解説します。
 - [プラグインシステム](references/manual/plugin-system.mdx): Prometeのプラグインシステムと依存性注入の仕組み
 - [時間管理](references/manual/timeprovider.md): フレーム時間・FPS・タイムスケールを管理するITimeProviderについて解説します。
+- [アセット](references/manual/assets.md): 画像や設定ファイルなどのアセットを、論理パスで読み込むAssets APIについて解説します。
 
 ### グラフィック
 

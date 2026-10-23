@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -19,7 +20,7 @@ public class Issue44DebugScene : Scene
     private readonly Sprite _sprite;
     private readonly Texture2D[] _textures;
 
-    public Issue44DebugScene(Keyboard keyboard)
+    public Issue44DebugScene(Keyboard keyboard, AssetManager assets)
     {
         _keyboard = keyboard;
         _sprite = new Sprite()
@@ -29,14 +30,13 @@ public class Issue44DebugScene : Scene
 
         Root = [_sprite];
 
-        var textureFactory = App.TextureFactory;
         _textures =
         [
-            textureFactory.Load("./assets/anim1.png"),
-            textureFactory.Load("./assets/anim2.png"),
-            textureFactory.Load("./assets/anim3.png"),
-            textureFactory.Load("./assets/anim4.png"),
-            textureFactory.Load("./assets/anim5.png"),
+            assets.LoadTexture("assets/anim1.png", AssetScope.Scene),
+            assets.LoadTexture("assets/anim2.png", AssetScope.Scene),
+            assets.LoadTexture("assets/anim3.png", AssetScope.Scene),
+            assets.LoadTexture("assets/anim4.png", AssetScope.Scene),
+            assets.LoadTexture("assets/anim5.png", AssetScope.Scene),
         ];
     }
 

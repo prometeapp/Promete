@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -16,13 +17,18 @@ public class SpriteZTestScene : Scene
     private float _angle = 0;
     private bool _isPlaying = true;
 
-    public SpriteZTestScene(ConsoleLayer console, Keyboard keyboard, Mouse mouse)
+    public SpriteZTestScene(
+        ConsoleLayer console,
+        Keyboard keyboard,
+        Mouse mouse,
+        AssetManager assets
+    )
     {
         _console = console;
         _keyboard = keyboard;
         _mouse = mouse;
 
-        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
 
         for (var i = 1; i < 255; i++)
         {

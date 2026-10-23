@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
@@ -6,10 +7,14 @@ using Promete.Windowing;
 namespace Promete.Example.examples.audio;
 
 [Demo("/audio/handle_events.demo", "AudioPlayerのイベント")]
-public class HandleEventsExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
+public class HandleEventsExampleScene(Keyboard keyboard, ConsoleLayer console, AssetManager assets)
+    : Scene
 {
     private readonly AudioPlayer _audio = new();
-    private VorbisAudioSource _bgm = new("./assets/amaebi.ogg");
+    private IAudioSource _bgm = assets.LoadAudio("assets/amaebi.ogg", AssetScope.Scene);
+
+    // ドロップされたファイルは AssetManager の管理外なので、この画面で所有して破棄する
+    private VorbisAudioSource? _droppedBgm;
 
     public override void OnStart()
     {
@@ -42,7 +47,7 @@ public class HandleEventsExampleScene(Keyboard keyboard, ConsoleLayer console) :
     {
         _audio.Stop();
         _audio.Dispose();
-        _bgm.Dispose();
+        _droppedBgm?.Dispose();
         View.FileDropped -= WindowOnFileDropped;
     }
 
@@ -53,7 +58,9 @@ public class HandleEventsExampleScene(Keyboard keyboard, ConsoleLayer console) :
             return;
 
         _audio.Stop();
-        _bgm = new VorbisAudioSource(path);
+        _droppedBgm?.Dispose();
+        _droppedBgm = new VorbisAudioSource(path);
+        _bgm = _droppedBgm;
         _audio.Play(_bgm, 0);
     }
 }

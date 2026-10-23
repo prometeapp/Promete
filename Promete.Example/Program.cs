@@ -1,4 +1,5 @@
 using Promete;
+using Promete.Assets;
 using Promete.Coroutines;
 using Promete.Example;
 using Promete.Example.Kernel;
@@ -22,7 +23,8 @@ var builder = PrometeApp
     .Use<Gamepads>()
     .Use<ConsoleLayer>()
     .Use<CoroutineManager>()
-    .Use<ImGuiPlugin>();
+    .Use<ImGuiPlugin>()
+    .UseAssets();
 
 if (DemoKernel.UseVulkan && useValidation)
     builder = builder.UseVulkanValidation();

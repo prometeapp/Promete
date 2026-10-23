@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
@@ -5,10 +6,10 @@ using Promete.Input;
 namespace Promete.Example.examples.audio;
 
 [Demo("/audio/wav sfx.demo", "短い効果音をいくつか再生します")]
-public class WavExampleScene(Keyboard keyboard, ConsoleLayer console) : Scene
+public class WavExampleScene(Keyboard keyboard, ConsoleLayer console, AssetManager assets) : Scene
 {
     private readonly AudioPlayer _player = new();
-    private readonly WaveAudioSource _sfx = new("assets/lineclear.wav");
+    private readonly IAudioSource _sfx = assets.LoadAudio("assets/lineclear.wav", AssetScope.Scene);
 
     public override void OnStart()
     {

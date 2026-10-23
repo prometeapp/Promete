@@ -1,5 +1,6 @@
 using System.Drawing;
 using Promete;
+using Promete.Assets;
 using Promete.Audio;
 using Promete.Graphics.Fonts;
 using Promete.Input;
@@ -11,11 +12,11 @@ namespace Promete.Web.Example;
 /// オーディオの検証用シーン。WAV (SE) と Ogg Vorbis (BGM) を、Web Audio 経由で再生する。
 /// 1: BGM 再生/停止、2: WAV を Play、3: WAV を PlayOneShot。
 /// </summary>
-public class AudioScene(Keyboard keyboard) : Scene
+public class AudioScene(Keyboard keyboard, AssetManager assets) : Scene
 {
     private AudioPlayer _player = null!;
-    private VorbisAudioSource? _bgm;
-    private WaveAudioSource? _wav;
+    private IAudioSource? _bgm;
+    private IAudioSource? _wav;
     private Text _status = null!;
     private string _result = "(未実行)";
 
@@ -26,13 +27,13 @@ public class AudioScene(Keyboard keyboard) : Scene
     {
         App.BackgroundColor = Color.FromArgb(24, 28, 48);
 
-        var font = Font.FromFile("assets/MisakiGothic.ttf", 16);
+        var font = assets.LoadFont("assets/MisakiGothic.ttf", 16, AssetScope.Scene);
         _status = new Text("audio", font, Color.White).Location(10, 10);
         Root.Add(_status);
 
         _player = new AudioPlayer();
-        _bgm = new VorbisAudioSource("/assets/GB-Action-C02-2.ogg");
-        _wav = new WaveAudioSource("/assets/lineclear.wav");
+        _bgm = assets.LoadAudio("assets/GB-Action-C02-2.ogg", AssetScope.Scene);
+        _wav = assets.LoadAudio("assets/lineclear.wav", AssetScope.Scene);
     }
 
     public override void OnUpdate()

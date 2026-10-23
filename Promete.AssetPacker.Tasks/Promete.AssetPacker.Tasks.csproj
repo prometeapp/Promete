@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- Visual Studio の MSBuild は .NET Framework で動くため netstandard2.0 固定 -->
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- 単体の NuGet パッケージにはしない。コアのパッケージの tasks/ に同梱する (Promete.csproj を参照) -->
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- 実行時は MSBuild 自身のものを使うので、コンパイルにだけ使う -->
+        <PackageReference
+            Include="Microsoft.Build.Utilities.Core"
+            Version="17.14.28"
+            PrivateAssets="all"
+            ExcludeAssets="runtime"
+        />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Promete.AssetPacker/Promete.AssetPacker.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Promete.Test" />
+    </ItemGroup>
+</Project>

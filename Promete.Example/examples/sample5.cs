@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -6,7 +7,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples;
 
 [Demo("/sample5.demo", "10000スプライトを表示してFPSを計測します")]
-public class BenchmarkScene(Keyboard keyboard) : Scene
+public class BenchmarkScene(Keyboard keyboard, AssetManager assets) : Scene
 {
     private readonly Random _rnd = new();
     private bool _initialized;
@@ -14,7 +15,7 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
 
     public override async void OnStart()
     {
-        _strawberry = App.TextureFactory.Load("assets/ichigo.png");
+        _strawberry = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         App.NextFrame(Init);
         View.Title = "Initializing in background thread...";
     }
@@ -29,10 +30,7 @@ public class BenchmarkScene(Keyboard keyboard) : Scene
             App.LoadScene<MainScene>();
     }
 
-    public override void OnDestroy()
-    {
-        _strawberry.Dispose();
-    }
+    public override void OnDestroy() { }
 
     private async void Init()
     {

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- MSBuild Task (Visual Studio の MSBuild は .NET Framework で動く) と、将来の CLI から使うため netstandard2.0 固定 -->
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- 単体の NuGet パッケージにはしない。Phase 4 で MSBuild Task と一緒にコアのパッケージへ同梱する -->
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- 正規化が効かない環境 (InvariantGlobalization) の挙動を、テストから internal の口で確かめる -->
+        <InternalsVisibleTo Include="Promete.Test" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- 形式の定数はリーダー (Promete) と同じソースを使う -->
+        <Compile
+            Include="../Promete/Assets/Packaging/AssetPackageFormat.cs"
+            Link="Shared/AssetPackageFormat.cs"
+        />
+    </ItemGroup>
+</Project>

@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -15,12 +16,12 @@ public class SpriteRotateTest3Scene : Scene
     private float _angle;
     private bool _isPlaying = true;
 
-    public SpriteRotateTest3Scene(ConsoleLayer console, Keyboard keyboard)
+    public SpriteRotateTest3Scene(ConsoleLayer console, Keyboard keyboard, AssetManager assets)
     {
         _console = console;
         _keyboard = keyboard;
 
-        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
 
         var parent = CreateIchigo(View.Size / 2);
         var root = parent;

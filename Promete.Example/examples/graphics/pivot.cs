@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -17,11 +18,11 @@ public class Pivot : Scene
     private readonly Sprite _spriteCenter;
     private readonly Sprite _spriteBottomRight;
 
-    public Pivot(ConsoleLayer console, Keyboard keyboard)
+    public Pivot(ConsoleLayer console, Keyboard keyboard, AssetManager assets)
     {
         _console = console;
         _keyboard = keyboard;
-        _tIchigo = App.TextureFactory.Load("assets/ichigo.png");
+        _tIchigo = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
 
         var loc1 = new VectorInt(96, 128);
         var loc2 = new VectorInt(192, 128);
@@ -88,8 +89,5 @@ public class Pivot : Scene
             App.LoadScene<MainScene>();
     }
 
-    public override void OnDestroy()
-    {
-        _tIchigo.Dispose();
-    }
+    public override void OnDestroy() { }
 }

@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -7,7 +8,8 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/frameBuffer.demo", "FrameBufferのテスト")]
-public class FrameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) : Scene
+public class FrameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console, AssetManager assets)
+    : Scene
 {
     private Graphics.FrameBuffer? _frameBuffer;
     private bool _isSupported;
@@ -36,7 +38,7 @@ public class FrameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
         _previewSprite.Scale *= 2;
         _frameBuffer.BackgroundColor = Color.White;
 
-        _texture = App.TextureFactory.Load("assets/ichigo.png");
+        _texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
 
         _frameBuffer.Add(new Text("Hello", null, Color.Black));
         _frameBuffer.Add(new Sprite(_texture).Location(0, 32));
@@ -86,6 +88,5 @@ public class FrameBuffer(Mouse mouse, Keyboard keyboard, ConsoleLayer console) :
     public override void OnDestroy()
     {
         _frameBuffer?.Dispose();
-        _texture.Dispose();
     }
 }

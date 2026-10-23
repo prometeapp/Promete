@@ -17,6 +17,8 @@ WAV形式であれば `WaveAudioSource` クラス、Ogg Vorbis形式であれば
 
 必要に応じて独自のオーディオソースを実装することも可能です。
 
+Assets API の `LoadAudio` で読む形式を増やしたいときは、`IAudioDecoder` を実装して登録します。詳しくは[アセット](/guide/manual/assets)のページを参照してください。
+
 ## 基本の使い方
 
 ```csharp

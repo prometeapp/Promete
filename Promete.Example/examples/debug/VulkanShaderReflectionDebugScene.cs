@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -26,7 +27,11 @@ namespace Promete.Example.examples.debug;
 ///      プロセスが即死する。修正後は事前に InvalidOperationException で弾く。
 /// </summary>
 [Demo("/debug/vulkan_shader_reflection", "指摘#06/#08: シェーダーリフレクションの境界処理")]
-public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
+public class VulkanShaderReflectionDebugScene(
+    ConsoleLayer console,
+    Keyboard keyboard,
+    AssetManager assets
+) : Scene
 {
     // Vulkan 向けの標準頂点シェーダー。
     // uProjection は push constant (64 バイト = mat4)、in/out はすべて location 必須。
@@ -136,7 +141,7 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
 
     public override void OnStart()
     {
-        _texture = App.TextureFactory.Load("assets/ichigo2.png");
+        _texture = assets.LoadTexture("assets/ichigo2.png", AssetScope.Scene);
         _sprite = new Sprite(_texture).Location(280, 180).Scale(4, 4);
         Root.Add(_sprite);
 
@@ -218,6 +223,5 @@ public class VulkanShaderReflectionDebugScene(ConsoleLayer console, Keyboard key
     public override void OnDestroy()
     {
         _sprite.Destroy();
-        _texture.Dispose();
     }
 }

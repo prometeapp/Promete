@@ -3,6 +3,8 @@
     "path": "Promete.slnx",
     "projects": [
       "Promete\\Promete.csproj",
+      "Promete.AssetPacker\\Promete.AssetPacker.csproj",
+      "Promete.AssetPacker.Tasks\\Promete.AssetPacker.Tasks.csproj",
       "Promete.Example\\Promete.Example.csproj",
       "Promete.HeadlessTest\\Promete.HeadlessTest.csproj",
       "Promete.ImGui\\Promete.ImGui.csproj",

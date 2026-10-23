@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Input;
@@ -20,10 +21,10 @@ public class Issue69DebugScene : Scene
 
     private readonly Container _container = new Container().Location(32, 32).Size(32, 32);
 
-    public Issue69DebugScene(Keyboard keyboard)
+    public Issue69DebugScene(Keyboard keyboard, AssetManager assets)
     {
         _keyboard = keyboard;
-        _texture = App.TextureFactory.Load("assets/ichigo2.png");
+        _texture = assets.LoadTexture("assets/ichigo2.png", AssetScope.Scene);
         _obj.Texture = _texture;
     }
 
@@ -64,8 +65,5 @@ public class Issue69DebugScene : Scene
         }
     }
 
-    public override void OnDestroy()
-    {
-        _texture.Dispose();
-    }
+    public override void OnDestroy() { }
 }

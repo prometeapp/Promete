@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Numerics;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
@@ -9,7 +10,7 @@ using Promete.Nodes;
 namespace Promete.Example.examples.graphics;
 
 [Demo("/graphics/postProcess.demo", "画面全体にエフェクトをかける")]
-public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard) : Scene
+public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard, AssetManager assets) : Scene
 {
     private Texture2D _texture;
     private ShaderProgram _sepiaShader = null!;
@@ -107,7 +108,7 @@ public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard) : Scene
     public override void OnStart()
     {
         console.Print("Press [ESC] to exit");
-        _texture = App.TextureFactory.Load("assets/ichigo.png");
+        _texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
 
         // シェーダーのコンパイル（OnStart以降・メインスレッドで呼ぶ必要あり）
         _sepiaShader = ShaderProgram.Create().Vertex(VertSrc).Fragment(SepiaFragSrc).Compile();
@@ -174,7 +175,6 @@ public class PostProcessDemo(ConsoleLayer console, Keyboard keyboard) : Scene
     {
         App.BackgroundColor = Color.Black;
         App.PostProcessMaterials.Clear();
-        _texture.Dispose();
         _sepiaShader.Dispose();
         _grayscaleShader.Dispose();
         _mosaicShader.Dispose();

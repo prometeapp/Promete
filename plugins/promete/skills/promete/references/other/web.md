@@ -75,6 +75,7 @@ public static class Program
         var app = PrometeApp.Create()
             .Use<Keyboard>()
             .Use<Mouse>()
+            .UseAssets(typeof(Program).Assembly)
             .BuildWithWeb(WindowOptions.Default with
             {
                 Size = (320, 240),
@@ -89,6 +90,8 @@ public static class Program
 
 `WindowOptions` の `Size` と `Scale` はページ上の描画領域（canvas）の大きさに、`Title` はページのタイトルに反映されます。
 `Scale` で拡大するときは、ドットがぼやけないように表示されます。
+
+`UseAssets` には、ゲームのアセンブリ（`typeof(Program).Assembly`）を指定します。Web では、エントリアセンブリを取得できないためです。アセットの詳しい扱いは、次の「アセット」で説明します。
 
 :::note
 ブラウザでは、`Run` はゲームの終了を待たずにすぐ戻ります。以降は、ブラウザの描画ループがゲームを進めます。
@@ -124,7 +127,9 @@ dotnet run
 ## アセット
 
 ブラウザのゲームは、ディスク上のファイルを直接読むことができません。
-そこで Promete.Web は、`<PrometeAsset>` で指定したファイルを、ゲームの起動前にすべてダウンロードして、メモリ上のファイルシステムに置きます。
+そこで Promete.Web は、ビルドで出力したアセットを、ゲームの起動前にすべてダウンロードして、メモリ上のファイルシステムに置きます。
+
+アセットの宣言と読み方は、デスクトップ版と同じです。`<PrometeAsset>` で宣言し、`UseAssets` で読めるようにします。
 
 ```xml
 <ItemGroup>
@@ -132,11 +137,14 @@ dotnet run
 </ItemGroup>
 ```
 
-これにより、デスクトップ版と同じコードでアセットを読み込めます。
+シーンでは、`AssetManager` を受け取って読みます。
 
 ```csharp
-var texture = App.TextureFactory.Load("assets/player.png");
-var font = Font.FromFile("assets/fonts/MyFont.ttf", 16);
+public class MainScene(AssetManager assets) : Scene
+{
+    private readonly Texture2D _player = assets.LoadTexture("assets/player.png", AssetScope.Scene);
+    private readonly Font _font = assets.LoadFont("assets/fonts/MyFont.ttf", 16, AssetScope.Global);
+}
 ```
 
 ファイルのパスは、プロジェクトのフォルダーからの相対パスになります。
@@ -151,9 +159,30 @@ var font = Font.FromFile("assets/fonts/MyFont.ttf", 16);
 ```
 
 :::caution
-`<PrometeAsset>` で指定していないファイルは、ゲームから読み込めません。
+`<PrometeAsset>` で宣言していないファイルは、ゲームから読み込めません。
 また、ファイルへの書き込みはメモリ上で行われるため、ページを再読み込みすると消えます。
 :::
+
+### Folder と Package
+
+アセットは、次のどちらかの形で配られます。宣言の書き方は、デスクトップ版の「[csproj でアセットを宣言する](/guide/manual/assets/)」と同じです。
+
+- **Folder**（既定）: ファイルを、論理パスと同じ場所に1つずつ配ります。Web では、Release でも Folder が既定です。
+- **Package**: ファイルを1つのパッケージにまとめて配ります。ブラウザがダウンロードするファイルの数が減ります。
+
+```xml
+<PropertyGroup>
+  <PrometeAssetMode>Package</PrometeAssetMode>
+</PropertyGroup>
+```
+
+パッケージを実行ファイル（アセンブリ）に埋め込むこともできます。`<PrometeAssetEmbed>true</PrometeAssetEmbed>` を指定すると、Package モードのときだけ埋め込みます。埋め込んだパッケージの中のフォントも、起動前に読み込まれます。
+
+:::caution
+パスを直接渡す API（`App.TextureFactory.Load("assets/player.png")` や `Font.FromFile` など）は、Folder モードでだけ読めます。Package モードでも読めるように、`AssetManager` を使ってください。
+:::
+
+Promete.Web の版が古く、アセットの仕組みに対応していない場合は、ビルドが警告（PROMETE1013）を出し、`PrometeAsset` を処理しません。Promete.Web を 2.4 以降に更新してください。
 
 ## 公開する
 
@@ -257,7 +286,7 @@ await startPromete({
 `onProgress` の `phase` は、次の順に進みます。
 
 - `'runtime'`: .NET のランタイムとアセンブリの読み込み。`loaded` / `total` はファイルの数です
-- `'assets'`: `<PrometeAsset>` で指定したアセットの読み込み。`loaded` / `total` はファイルの数です
+- `'assets'`: `<PrometeAsset>` で宣言したアセットの読み込み。`loaded` / `total` は、読み込むファイルとパッケージの数です（埋め込んだパッケージは含みません）
 - `'starting'`: `Main` と、最初のシーンの `OnStart` の実行。`loaded` / `total` は 0 です
 
 ## デスクトップ版とコードを共有する
@@ -293,7 +322,8 @@ MyGame.Web/        Web版の起動部分
 
 ### デスクトップ版
 
-共有のプロジェクトを参照し、アセットを出力先にコピーします。
+共有のプロジェクトを参照し、アセットを実行プロジェクトで `<PrometeAsset>` として宣言します。
+共有のプロジェクト（ライブラリ）の `<PrometeAsset>` は無視されるので、アセットは起動するプロジェクトで宣言してください。
 
 ```xml title="MyGame.Desktop/MyGame.Desktop.csproj"
 <Project Sdk="Microsoft.NET.Sdk">
@@ -309,15 +339,14 @@ MyGame.Web/        Web版の起動部分
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../MyGame/assets/**" LinkBase="assets" CopyToOutputDirectory="PreserveNewest" />
+    <PrometeAsset Include="../MyGame/assets/**">
+      <TargetPath>assets/%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </PrometeAsset>
   </ItemGroup>
 </Project>
 ```
 
 シーンが起動するプロジェクトとは別のプロジェクトにあるので、`UseScenesFrom` で、シーンのあるプロジェクトを指定します。
-
-また、相対パスは、起動したときのカレントディレクトリを基準に解決されます。カレントディレクトリは起動方法によって変わり、`dotnet run` ではコマンドを実行したフォルダーになるため、出力先にコピーしたアセットが見つからないことがあります。
-起動時に、カレントディレクトリを実行ファイルの場所（`AppContext.BaseDirectory`）に変えておくと、どの方法で起動してもアセットを読めます。
 
 ```csharp title="MyGame.Desktop/Program.cs"
 using MyGame.Scenes;
@@ -325,12 +354,10 @@ using Promete;
 using Promete.GLDesktop;
 using Promete.Input;
 
-// アセットを実行ファイルの場所から読めるようにする
-Directory.SetCurrentDirectory(AppContext.BaseDirectory);
-
 var app = PrometeApp.Create()
     .Use<Keyboard>()
     .UseScenesFrom<MainScene>()
+    .UseAssets()
     .BuildWithOpenGLDesktop();
 
 return app.Run<MainScene>();
@@ -379,12 +406,15 @@ public static class Program
         var app = PrometeApp.Create()
             .Use<Keyboard>()
             .UseScenesFrom<MainScene>()
+            .UseAssets(typeof(Program).Assembly)
             .BuildWithWeb();
 
         app.Run<MainScene>();
     }
 }
 ```
+
+Web版は、デスクトップ版の実行プロジェクトで宣言したアセットを受け取りません。`<PrometeAsset>` は、Web版の実行プロジェクト（上の `MyGame.Web.csproj`）で宣言してください。
 
 プラグインの登録（`Use<Keyboard>()` など）は、両方の起動部分で同じにしておきます。
 シーンが必要とするプラグインが片方で登録されていないと、そのシーンを開いたときにエラーになります。
@@ -424,7 +454,7 @@ Webバックエンドでは、次の機能に対応していません。
 
 ### フォント
 
-- `Font.FromFile` で読み込むフォントファイルは、`<PrometeAsset>` で指定しておく必要があります
+- フォントは `AssetManager.LoadFont` で読んでください。`<PrometeAsset>` で宣言したフォントは、Folder と Package のどちらでも読めます。`Font.FromFile` にパスを直接渡す方法は、Package モードのフォントを読めません
 - `Font.FromStream` には対応していません（`NotSupportedException` をスローします）
 - 文字はブラウザの機能で描画するため、アンチエイリアスの無効化やカーニングの設定は効きません。デスクトップ版と見た目が少し異なる場合があります
 - `Font.GetDefault` は、ブラウザの既定のゴシック体（`sans-serif`）を使います。実際のフォントは、閲覧する環境によって異なります

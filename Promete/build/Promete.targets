@@ -1,4 +1,368 @@
 <Project>
+    <!--
+        Assets の MSBuild 統合 (Phase 4)。PrometeAsset の item をビルドで検証・正規化し、マニフェストとパッケージを出力に載せる。
+        出力 (マニフェスト・パッケージ) は PrometeWriteAssetManifest / PrometePackAssets が担う。
+
+        Promete.Web との契約 (変えたら両方を直す):
+          - プロパティ: Promete.Web.props が PrometeWebAssetsContract (1) と PrometeWebAssetManifestName (promete-assets.json) を立てる
+          - ターゲット: PrometeResolveAssets (検証と正規化。_PrometeResolvedAsset と _PrometeAssetPackageFile を作る)
+                        PrometePackAssets (パッケージを作る)、PrometeWriteAssetManifest (マニフェストを作る)
+          - item: PrometeAssetFile (メタデータ PrometeAssetKind = File / Package / EmbeddedPackage、LogicalPath、Location、PackageName)
+
+        評価時の PropertyGroup では、SDK の props とプロジェクト本体で決まる値だけを使う。
+        OutputType や IntermediateOutputPath は後から決まることがあるので、ターゲットの中で使う。
+        item の Condition と、ターゲットの中の Condition は評価時の最終値が見える。
+    -->
+
+    <!-- 中間出力の Task の場所。パッケージでは tasks/ (AssemblyTaskFactory、同じプロセス)、リポジトリ内では bin/ (TaskHostFactory。DLL をロックしない) -->
+    <PropertyGroup>
+        <_PrometeAssetTasksAssembly>$(MSBuildThisFileDirectory)../tasks/netstandard2.0/Promete.AssetPacker.Tasks.dll</_PrometeAssetTasksAssembly>
+        <_PrometeAssetTasksFactory>AssemblyTaskFactory</_PrometeAssetTasksFactory>
+        <_PrometeAssetTasksFactory Condition="!Exists('$(_PrometeAssetTasksAssembly)')"
+            >TaskHostFactory</_PrometeAssetTasksFactory
+        >
+        <_PrometeAssetTasksAssembly Condition="!Exists('$(_PrometeAssetTasksAssembly)')"
+            >$(MSBuildThisFileDirectory)../../Promete.AssetPacker.Tasks/bin/$(Configuration)/netstandard2.0/Promete.AssetPacker.Tasks.dll</_PrometeAssetTasksAssembly
+        >
+    </PropertyGroup>
+
+    <UsingTask
+        TaskName="Promete.AssetPacker.Tasks.ResolvePrometeAssets"
+        AssemblyFile="$(_PrometeAssetTasksAssembly)"
+        TaskFactory="$(_PrometeAssetTasksFactory)"
+    />
+    <UsingTask
+        TaskName="Promete.AssetPacker.Tasks.WritePrometeAssetManifest"
+        AssemblyFile="$(_PrometeAssetTasksAssembly)"
+        TaskFactory="$(_PrometeAssetTasksFactory)"
+    />
+    <UsingTask
+        TaskName="Promete.AssetPacker.Tasks.PackPrometeAssets"
+        AssemblyFile="$(_PrometeAssetTasksAssembly)"
+        TaskFactory="$(_PrometeAssetTasksFactory)"
+    />
+
+    <!-- 評価時のプロパティ。PrometeAssetMode の既定は、Web と Debug が Folder、それ以外が Package -->
+    <PropertyGroup>
+        <_PrometeAssetIsWeb>false</_PrometeAssetIsWeb>
+        <_PrometeAssetIsWeb Condition="'$(UsingMicrosoftNETSdkWebAssembly)' == 'true'"
+            >true</_PrometeAssetIsWeb
+        >
+
+        <_PrometeAssetModeExplicit Condition="'$(PrometeAssetMode)' != ''"
+            >true</_PrometeAssetModeExplicit
+        >
+        <PrometeAssetMode
+            Condition="'$(PrometeAssetMode)' == '' and ('$(_PrometeAssetIsWeb)' == 'true' or '$(Configuration)' == 'Debug')"
+            >Folder</PrometeAssetMode>
+        <PrometeAssetMode Condition="'$(PrometeAssetMode)' == ''">Package</PrometeAssetMode>
+
+        <PrometeAssetEmbed Condition="'$(PrometeAssetEmbed)' == ''">false</PrometeAssetEmbed>
+
+        <_PrometeAssetEnvironment>Desktop</_PrometeAssetEnvironment>
+        <_PrometeAssetEnvironment Condition="'$(_PrometeAssetIsWeb)' == 'true'"
+            >Web</_PrometeAssetEnvironment
+        >
+
+        <!-- 古い Promete.Web (契約のプロパティが無い、または版が 1 未満) では Assets の処理をしない -->
+        <_PrometeAssetsSupported>true</_PrometeAssetsSupported>
+        <_PrometeAssetsSupported
+            Condition="'$(_PrometeAssetIsWeb)' == 'true' and '$(PrometeWebAssetsContract)' == ''"
+            >false</_PrometeAssetsSupported
+        >
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(_PrometeAssetIsWeb)' == 'true' and '$(PrometeWebAssetsContract)' != ''">
+        <_PrometeAssetContractOk>$([MSBuild]::VersionGreaterThanOrEquals('$(PrometeWebAssetsContract)', '1'))</_PrometeAssetContractOk>
+        <_PrometeAssetsSupported Condition="'$(_PrometeAssetContractOk)' != 'true'"
+            >false</_PrometeAssetsSupported
+        >
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <_PrometeAssetPackageExtension>.prmtpak</_PrometeAssetPackageExtension>
+        <_PrometeAssetManifestSuffix>.promete-assets.json</_PrometeAssetManifestSuffix>
+    </PropertyGroup>
+
+    <!--
+        評価時の item。実行プロジェクトだけで有効にする (ライブラリとテストプロジェクトは無視する)。
+        'Package' の既定値を入れ、UpToDateCheckInput に登録して Visual Studio の高速更新チェックに載せる。
+    -->
+    <ItemGroup Condition="'$(_PrometeAssetsSupported)' == 'true' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true'">
+        <PrometeAsset Update="@(PrometeAsset)">
+            <Package Condition="'%(PrometeAsset.Package)' == ''">main</Package>
+        </PrometeAsset>
+
+        <UpToDateCheckInput Include="@(PrometeAsset)" />
+        <UpToDateCheckInput
+            Include="$(IntermediateOutputPath)$(AssemblyName).promete-assets.fingerprint"
+            Condition="'@(PrometeAsset)' != ''"
+        />
+    </ItemGroup>
+
+    <!--
+        デスクトップの Folder モードのマニフェストを出力先に置く item。評価時に宣言するのは、
+        参照元 (テスト → ゲーム) の GetCopyToOutputDirectoryItems に確実に載せるため。
+        出力先のファイル名にアセンブリ名が入るので、参照元の自分のマニフェストとぶつからない。
+        publish には載せない (開発機の絶対パスを含むため)。
+    -->
+    <ItemGroup Condition="'$(_PrometeAssetsSupported)' == 'true' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true' and '@(PrometeAsset)' != '' and '$(_PrometeAssetIsWeb)' != 'true' and '$(PrometeAssetMode)' == 'Folder'">
+        <None
+            Include="$(IntermediateOutputPath)$(AssemblyName)$(_PrometeAssetManifestSuffix)"
+            Link="$(AssemblyName)$(_PrometeAssetManifestSuffix)"
+            CopyToOutputDirectory="PreserveNewest"
+            CopyToPublishDirectory="Never"
+            Visible="false"
+        />
+    </ItemGroup>
+
+    <!--
+        Package モードのパッケージを宣言する item。評価時に宣言するのは、参照元 (テスト → ゲーム) の
+        GetCopyToOutputDirectoryItems に載せるため。名前は _PrometeResolveAssetsCore の _PrometeAssetPackageFile と同じ規則で作る。
+        出力先に置く None はデスクトップだけ (Web のパッケージは Promete.Web の targets が静的 Web アセットとして届ける)。
+        EmbeddedResource は Web も含め、Embed のときに宣言する (コンパイル前に作るのは PrometeAssetsBuild)。
+        変換で作った item は元の PrometeAsset のメタデータを引き継ぐので、TargetPath と Link を明示する。
+        WithCulture=false は、パッケージ名が ja などのときに AssignCulture がサテライトのリソースとして扱うのを防ぐ。
+    -->
+    <ItemGroup Condition="'$(_PrometeAssetsSupported)' == 'true' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true' and '@(PrometeAsset)' != '' and '$(PrometeAssetMode)' == 'Package'">
+        <_PrometeAssetDeclaredPackage Include="@(PrometeAsset->'%(Package)'->Distinct())" />
+
+        <None
+            Condition="'$(PrometeAssetEmbed)' != 'true' and '$(_PrometeAssetIsWeb)' != 'true'"
+            Include="@(_PrometeAssetDeclaredPackage->'$(IntermediateOutputPath)$(AssemblyName).%(Identity)$(_PrometeAssetPackageExtension)')"
+            Link="%(Filename)%(Extension)"
+            TargetPath="%(Filename)%(Extension)"
+            CopyToOutputDirectory="PreserveNewest"
+            CopyToPublishDirectory="PreserveNewest"
+            ExcludeFromSingleFile="true"
+            Visible="false"
+        />
+        <EmbeddedResource
+            Condition="'$(PrometeAssetEmbed)' == 'true'"
+            Include="@(_PrometeAssetDeclaredPackage->'$(IntermediateOutputPath)$(AssemblyName).%(Identity)$(_PrometeAssetPackageExtension)')"
+            LogicalName="%(Filename)%(Extension)"
+            TargetPath="%(Filename)%(Extension)"
+            Culture=""
+            DependentUpon=""
+            WithCulture="false"
+            Type="Non-Resx"
+            Visible="false"
+        />
+    </ItemGroup>
+
+    <!--
+        外側のターゲットは条件を持たず、依存先で状態を立ててから内側のターゲットの条件を判定する
+        (ターゲットの Condition は DependsOnTargets より前に評価されるため)。
+    -->
+
+    <!-- 有効か、警告・エラーを出すかを判定する。PrometeAsset が無いプロジェクトでは何も出さない -->
+    <Target Name="_PrometeCheckAssets">
+        <PropertyGroup>
+            <_PrometeAssetIsExecutable>false</_PrometeAssetIsExecutable>
+            <_PrometeAssetIsExecutable
+                Condition="('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true'"
+                >true</_PrometeAssetIsExecutable
+            >
+
+            <_PrometeAssetsActive>false</_PrometeAssetsActive>
+            <_PrometeAssetsActive
+                Condition="'@(PrometeAsset)' != '' and '$(_PrometeAssetsSupported)' == 'true' and '$(_PrometeAssetIsExecutable)' == 'true'"
+                >true</_PrometeAssetsActive
+            >
+
+            <_PrometeAssetIntermediateDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/$(IntermediateOutputPath)'))</_PrometeAssetIntermediateDir>
+            <_PrometeAssetFingerprint>$(_PrometeAssetIntermediateDir)$(AssemblyName).promete-assets.fingerprint</_PrometeAssetFingerprint>
+            <_PrometeAssetDesktopManifest>$(_PrometeAssetIntermediateDir)$(AssemblyName)$(_PrometeAssetManifestSuffix)</_PrometeAssetDesktopManifest>
+
+            <!-- 属性に書くマニフェストの名前。デスクトップは出力先のファイル名、Web は Promete.Web が決める名前 -->
+            <_PrometeAssetManifestLocation>$(AssemblyName)$(_PrometeAssetManifestSuffix)</_PrometeAssetManifestLocation>
+            <_PrometeAssetManifestLocation Condition="'$(_PrometeAssetIsWeb)' == 'true'"
+                >$(PrometeWebAssetManifestName)</_PrometeAssetManifestLocation
+            >
+        </PropertyGroup>
+
+        <!-- 古い Promete.Web: 明示した Package はビルドエラー、それ以外は警告して無視する -->
+        <Error
+            Condition="'@(PrometeAsset)' != '' and '$(_PrometeAssetsSupported)' != 'true' and '$(_PrometeAssetModeExplicit)' == 'true' and '$(PrometeAssetMode)' == 'Package'"
+            Code="PROMETE1014"
+            Text="古い Promete.Web では PrometeAssetMode=Package を使えません。Promete.Web を 2.4 以降に更新してください。"
+        />
+        <Warning
+            Condition="'@(PrometeAsset)' != '' and '$(_PrometeAssetsSupported)' != 'true' and ('$(_PrometeAssetModeExplicit)' != 'true' or '$(PrometeAssetMode)' != 'Package')"
+            Code="PROMETE1013"
+            Text="古い Promete.Web のため PrometeAsset を処理しませんでした。Promete.Web を 2.4 以降に更新してください。更新できないときは UseAssets(typeof(Program).Assembly, o =&gt; o.MountFolder(&quot;assets&quot;, &quot;assets&quot;)) で従来どおり読み込めます。"
+        />
+
+        <!-- 実行プロジェクトでない (ライブラリ・テスト) プロジェクトの PrometeAsset は無視する -->
+        <Warning
+            Condition="'@(PrometeAsset)' != '' and '$(_PrometeAssetsSupported)' == 'true' and '$(_PrometeAssetIsExecutable)' != 'true'"
+            Code="PROMETE1012"
+            Text="実行プロジェクトでない (OutputType が Exe / WinExe ではない、またはテストプロジェクト) ので PrometeAsset を無視します。テストからゲームのアセットを読むには、ゲームの実行プロジェクトを参照し UseAssets(typeof(GameScene).Assembly) を使ってください。"
+        />
+
+        <Error
+            Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' != 'Folder' and '$(PrometeAssetMode)' != 'Package'"
+            Code="PROMETE1010"
+            Text="PrometeAssetMode は Folder か Package にしてください (指定値: '$(PrometeAssetMode)')。"
+        />
+        <Error
+            Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetEmbed)' != 'true' and '$(PrometeAssetEmbed)' != 'false'"
+            Code="PROMETE1015"
+            Text="PrometeAssetEmbed は true か false にしてください (指定値: '$(PrometeAssetEmbed)')。"
+        />
+    </Target>
+
+    <!-- 契約。正規化された item を作る。ここでは検証のエラーも出る。_PrometeResolvedAsset と PrometeAssetFile、指紋を作る -->
+    <Target
+        Name="PrometeResolveAssets"
+        DependsOnTargets="_PrometeCheckAssets;_PrometeResolveAssetsCore"
+    />
+
+    <Target Name="_PrometeResolveAssetsCore" Condition="'$(_PrometeAssetsActive)' == 'true'">
+        <ResolvePrometeAssets
+            Assets="@(PrometeAsset)"
+            ProjectDirectory="$(MSBuildProjectDirectory)"
+        >
+            <Output TaskParameter="ResolvedAssets" ItemName="_PrometeResolvedAsset" />
+            <Output TaskParameter="PackerVersion" PropertyName="_PrometeAssetPackerVersion" />
+        </ResolvePrometeAssets>
+
+        <!-- Package モードのパッケージの一覧。変換で作らず %(X.Identity) のバッチングで作る (変換は元のメタデータを引き継ぐため) -->
+        <ItemGroup Condition="'$(PrometeAssetMode)' == 'Package'">
+            <_PrometeAssetPackageName Include="@(_PrometeResolvedAsset->'%(Package)'->Distinct())" />
+            <_PrometeAssetPackageFile Include="$(_PrometeAssetIntermediateDir)$(AssemblyName).%(_PrometeAssetPackageName.Identity)$(_PrometeAssetPackageExtension)">
+                <PackageName>%(_PrometeAssetPackageName.Identity)</PackageName>
+            </_PrometeAssetPackageFile>
+        </ItemGroup>
+
+        <!-- Folder は各ファイル、Package はパッケージを契約の item にする -->
+        <ItemGroup Condition="'$(PrometeAssetMode)' == 'Folder'">
+            <PrometeAssetFile Include="@(_PrometeResolvedAsset)">
+                <PrometeAssetKind>File</PrometeAssetKind>
+            </PrometeAssetFile>
+        </ItemGroup>
+        <ItemGroup Condition="'$(PrometeAssetMode)' == 'Package'">
+            <PrometeAssetFile Include="@(_PrometeAssetPackageFile)">
+                <PrometeAssetKind Condition="'$(PrometeAssetEmbed)' == 'true'"
+                    >EmbeddedPackage</PrometeAssetKind
+                >
+                <PrometeAssetKind Condition="'$(PrometeAssetEmbed)' != 'true'"
+                    >Package</PrometeAssetKind
+                >
+                <Location>%(_PrometeAssetPackageFile.Filename)%(_PrometeAssetPackageFile.Extension)</Location>
+            </PrometeAssetFile>
+        </ItemGroup>
+
+        <!-- 指紋。内容が変わったときだけ書き換える。パッケージを作り直す判断に使う -->
+        <ItemGroup>
+            <_PrometeAssetFingerprintLine Include="@(_PrometeResolvedAsset->'%(LogicalPath)|%(Identity)|%(Package)|%(Compress)|%(Obfuscate)')" />
+        </ItemGroup>
+        <WriteLinesToFile
+            File="$(_PrometeAssetFingerprint)"
+            Lines="packer=$(_PrometeAssetPackerVersion);mode=$(PrometeAssetMode);embed=$(PrometeAssetEmbed);environment=$(_PrometeAssetEnvironment);@(_PrometeAssetFingerprintLine)"
+            Overwrite="true"
+            WriteOnlyWhenDifferent="true"
+        />
+        <ItemGroup>
+            <FileWrites Include="$(_PrometeAssetFingerprint)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- 属性。BeforeTargets の GetAssemblyAttributes より前に AssemblyAttribute を足す。ターゲットに条件は付けず、中の ItemGroup で判定する -->
+    <Target
+        Name="_PrometeAddAssetAttributes"
+        BeforeTargets="GetAssemblyAttributes"
+        DependsOnTargets="PrometeResolveAssets"
+    >
+        <ItemGroup Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Folder'">
+            <AssemblyAttribute Include="Promete.Assets.Infrastructure.PrometeAssetSourceAttribute">
+                <_Parameter1>Manifest</_Parameter1>
+                <_Parameter2>$(_PrometeAssetManifestLocation)</_Parameter2>
+                <Environment>$(_PrometeAssetEnvironment)</Environment>
+            </AssemblyAttribute>
+        </ItemGroup>
+        <ItemGroup Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Package' and '$(PrometeAssetEmbed)' != 'true'">
+            <AssemblyAttribute Include="Promete.Assets.Infrastructure.PrometeAssetSourceAttribute">
+                <_Parameter1>Package</_Parameter1>
+                <_Parameter2>%(_PrometeAssetPackageFile.Filename)%(_PrometeAssetPackageFile.Extension)</_Parameter2>
+                <Environment>$(_PrometeAssetEnvironment)</Environment>
+                <Package>%(_PrometeAssetPackageFile.PackageName)</Package>
+            </AssemblyAttribute>
+        </ItemGroup>
+        <ItemGroup Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Package' and '$(PrometeAssetEmbed)' == 'true'">
+            <AssemblyAttribute Include="Promete.Assets.Infrastructure.PrometeAssetSourceAttribute">
+                <_Parameter1>EmbeddedPackage</_Parameter1>
+                <_Parameter2>%(_PrometeAssetPackageFile.Filename)%(_PrometeAssetPackageFile.Extension)</_Parameter2>
+                <Environment>$(_PrometeAssetEnvironment)</Environment>
+                <Package>%(_PrometeAssetPackageFile.PackageName)</Package>
+            </AssemblyAttribute>
+        </ItemGroup>
+    </Target>
+
+    <!-- ビルドに組み込む。CoreCompile より前に、マニフェストとパッケージをそろえる (埋め込むパッケージがコンパイルの前に必要なため) -->
+    <Target
+        Name="PrometeAssetsBuild"
+        BeforeTargets="CoreCompile"
+        DependsOnTargets="PrometePackAssets;PrometeWriteAssetManifest"
+    />
+
+    <!-- 出力の契約。Package のパッケージを obj/ に作り、FileWrites に足す (Clean の対象) -->
+    <Target Name="PrometePackAssets" DependsOnTargets="PrometeResolveAssets;_PrometePackAssetsCore">
+        <ItemGroup Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Package'">
+            <FileWrites Include="@(_PrometeAssetPackageFile)" />
+        </ItemGroup>
+    </Target>
+
+    <!--
+        パッケージを作る。Inputs は asset と指紋 (item の削除・メタデータ・Promete の版の変化は指紋に出る)、
+        Outputs はパッケージなので、どれかが新しくなったときだけ全パッケージを作り直す。
+    -->
+    <Target
+        Name="_PrometePackAssetsCore"
+        Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Package'"
+        Inputs="@(_PrometeResolvedAsset);$(_PrometeAssetFingerprint)"
+        Outputs="@(_PrometeAssetPackageFile)"
+    >
+        <PackPrometeAssets
+            Assets="@(_PrometeResolvedAsset)"
+            OutputDirectory="$(_PrometeAssetIntermediateDir)"
+            FileNamePrefix="$(AssemblyName)."
+            FileExtension="$(_PrometeAssetPackageExtension)"
+        />
+    </Target>
+
+    <!-- デスクトップの Folder のマニフェストを obj/ に書く。内容が同じなら書き換えない (Task が判断する) -->
+    <Target
+        Name="PrometeWriteAssetManifest"
+        DependsOnTargets="PrometeResolveAssets;_PrometeWriteAssetManifestCore"
+    />
+
+    <Target
+        Name="_PrometeWriteAssetManifestCore"
+        Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Folder' and '$(_PrometeAssetEnvironment)' == 'Desktop'"
+    >
+        <WritePrometeAssetManifest
+            Assets="@(_PrometeResolvedAsset)"
+            OutputFile="$(_PrometeAssetDesktopManifest)"
+        />
+        <ItemGroup>
+            <FileWrites Include="$(_PrometeAssetDesktopManifest)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Folder のマニフェストは開発機の絶対パスを含み、出力先では読めないので publish に載せない (警告する) -->
+    <Target
+        Name="_PrometeWarnFolderPublish"
+        BeforeTargets="PrepareForPublish"
+        DependsOnTargets="_PrometeCheckAssets"
+    >
+        <Warning
+            Condition="'$(_PrometeAssetsActive)' == 'true' and '$(PrometeAssetMode)' == 'Folder' and '$(_PrometeAssetEnvironment)' == 'Desktop'"
+            Code="PROMETE1011"
+            Text="PrometeAssetMode=Folder のまま publish しました。Folder のマニフェストは開発機のパスを含むため publish には載せず、出力先では読めません。配布するには PrometeAssetMode=Package にしてください。"
+        />
+    </Target>
+
+    <!-- MoltenVK の静的ライブラリ除去 -->
     <!-- Silk.NET.MoltenVK.Native は iOS / tvOS / Mac Catalyst 向けの静的ライブラリ (.a) も
          同梱している。.NET は実行時に静的アーカイブを読み込めず、Promete はデスクトップ
          専用なので出力から外す。osx の libMoltenVK.dylib だけ残る。 -->

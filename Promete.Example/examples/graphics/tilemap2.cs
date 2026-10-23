@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Backends;
 using Promete.Example.Kernel;
 using Promete.Graphics;
@@ -15,15 +16,17 @@ public class Tilemap2ExampleScene(
     ITimeProvider time,
     Keyboard keyboard,
     Mouse mouse,
-    ConsoleLayer console
+    ConsoleLayer console,
+    AssetManager assets
 ) : Scene
 {
     private readonly Random _random = new();
-    private readonly Texture2D[] _textures = app.TextureFactory.LoadSpriteSheet(
+    private readonly Texture2D[] _textures = assets.LoadSpriteSheet(
         "assets/tiles.png",
         4,
         1,
-        (16, 16)
+        (16, 16),
+        AssetScope.Scene
     );
     private bool _hudVisible = true;
     private Tilemap? _map;
@@ -114,13 +117,5 @@ public class Tilemap2ExampleScene(
         ).Degrees;
 
         _previousMousePosition = mouse.Position;
-    }
-
-    public override void OnDestroy()
-    {
-        foreach (var t in _textures)
-        {
-            t.Dispose();
-        }
     }
 }

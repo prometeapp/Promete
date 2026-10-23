@@ -1,3 +1,4 @@
+using Promete.Assets;
 using Promete.Audio;
 using Promete.Example.Kernel;
 using Promete.Input;
@@ -9,10 +10,10 @@ namespace Promete.Example.examples.debug;
 /// https://github.com/prometeapp/Promete/issues/39
 /// </summary>
 [Demo("/debug/issue39", "Issue39: Debug Scene")]
-public class Issue39DebugScene(ConsoleLayer console, Keyboard keyboard) : Scene
+public class Issue39DebugScene(ConsoleLayer console, Keyboard keyboard, AssetManager assets) : Scene
 {
-    private readonly IAudioSource _bgm = new VorbisAudioSource("./assets/amaebi.ogg");
-    private readonly IAudioSource _wav = new WaveAudioSource("./assets/lineclear.wav");
+    private readonly IAudioSource _bgm = assets.LoadAudio("assets/amaebi.ogg", AssetScope.Scene);
+    private readonly IAudioSource _wav = assets.LoadAudio("assets/lineclear.wav", AssetScope.Scene);
     private readonly AudioPlayer _player = new();
     private int _sfxPlayedCount;
 

@@ -1,4 +1,7 @@
+using System.Reflection;
 using System.Runtime.InteropServices.JavaScript;
+using Promete.Assets;
+using Promete.Web.Assets;
 
 namespace Promete.Web;
 
@@ -58,6 +61,37 @@ public static partial class PrometeWeb
         {
             return e.ToString();
         }
+    }
+
+    /// <summary>
+    /// 仮想ファイルシステムのルートに置かれたアセットパッケージから、フォントを取り出します。
+    /// <c>promete.js</c> のプリロードが、<c>Main</c> より前に呼びます。
+    /// </summary>
+    /// <param name="location">パッケージのファイル名 (ルートからの相対パス)。</param>
+    /// <returns>取り出したフォントのファイルの絶対パス。<c>promete.js</c> は、これをファミリー名として <c>FontFace</c> に登録します。</returns>
+    [JSExport]
+    internal static string[] PreparePackageFonts(string location)
+    {
+        using var package = new PackageAssetSource(Path.Combine("/", location));
+        return WebPackageFonts.Extract(package, WebPackageFonts.GetFontDirectory("/", location));
+    }
+
+    /// <summary>
+    /// アセンブリに埋め込んだアセットパッケージから、フォントを取り出します。
+    /// <c>promete.js</c> のプリロードが、<c>Main</c> より前に呼びます。
+    /// </summary>
+    /// <param name="assemblyName">リソースを持つアセンブリの名前。</param>
+    /// <param name="resourceName">埋め込みリソースの名前。</param>
+    /// <returns>取り出したフォントのファイルの絶対パス。</returns>
+    [JSExport]
+    internal static string[] PrepareEmbeddedPackageFonts(string assemblyName, string resourceName)
+    {
+        var assembly = Assembly.Load(assemblyName);
+        using var package = PackageAssetSource.FromEmbeddedResource(assembly, resourceName);
+        return WebPackageFonts.Extract(
+            package,
+            WebPackageFonts.GetFontDirectory("/", resourceName)
+        );
     }
 
     [JSImport("startLoop", MainModule)]

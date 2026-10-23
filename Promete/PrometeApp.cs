@@ -5,10 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Promete.Assets.Infrastructure;
 using Promete.Audio;
 using Promete.Backends;
 using Promete.Graphics;
@@ -33,6 +35,7 @@ public sealed class PrometeApp : IDisposable
 
     private readonly List<Type> _pluginTypes;
     private readonly Stack<Scene> _sceneStack = new();
+    private readonly List<ISceneLifecycleHook> _sceneLifecycleHooks = [];
 
     private readonly ServiceCollection _services;
     private readonly List<IUpdatable> _updatablePlugins = [];
@@ -186,6 +189,14 @@ public sealed class PrometeApp : IDisposable
     internal IAudioProvider AudioProvider { get; private set; } = null!;
 
     /// <summary>
+    /// 現在のシーンを取得します。シーンが無い場合は <see langword="null"/> を返します。
+    /// </summary>
+    /// <remarks>
+    /// 遷移の途中では、<c>OnDestroy</c> を呼んだ後のシーンや、<c>OnStart</c> を呼ぶ前のシーンを返すことがあります。
+    /// </remarks>
+    internal Scene? CurrentScene => _currentScene;
+
+    /// <summary>
     /// Promete アプリケーションを作成します。
     /// </summary>
     /// <returns></returns>
@@ -199,13 +210,23 @@ public sealed class PrometeApp : IDisposable
     /// </summary>
     public void Dispose()
     {
-        foreach (var plugin in _disposablePlugins)
-            plugin.Dispose();
-        _provider.Dispose();
+        var errors = new List<Exception>();
+        try
+        {
+            // 1 つの破棄で例外が出ても、残りのプラグインとサービスプロバイダの破棄は続ける
+            foreach (var plugin in _disposablePlugins)
+                CollectErrors(errors, plugin.Dispose);
+            CollectErrors(errors, _provider.Dispose);
+        }
+        finally
+        {
+            // 破棄済みのインスタンスが Current として参照され続けないようにする。
+            // getter は null のとき例外を投げるため、フィールドを直接比べる
+            if (_current == this)
+                _current = null;
+        }
 
-        // 破棄済みのインスタンスが Current として参照され続けないようにする
-        if (Current == this)
-            Current = null!;
+        ThrowCollected(errors);
     }
 
     /// <summary>
@@ -294,6 +315,17 @@ public sealed class PrometeApp : IDisposable
             }
         });
         return completion.Task;
+    }
+
+    /// <summary>
+    /// シーンの生成と破棄を知らせるフックを登録します。登録した順に呼ばれます。
+    /// </summary>
+    /// <param name="hook">登録するフック。</param>
+    /// <exception cref="ArgumentNullException"><paramref name="hook"/> が <see langword="null"/> の場合。</exception>
+    internal void AddSceneLifecycleHook(ISceneLifecycleHook hook)
+    {
+        ArgumentNullException.ThrowIfNull(hook);
+        _sceneLifecycleHooks.Add(hook);
     }
 
     /// <summary>
@@ -398,19 +430,32 @@ public sealed class PrometeApp : IDisposable
         _currentScene?.OnDestroy();
         try
         {
-            _currentScene = GetScene(typeScene);
+            _currentScene = CreateScene(typeScene);
         }
         catch
         {
             // 破棄済みのシーンを現在のシーンとして残すと、次の遷移で二重に破棄してしまう
             _currentScene = null;
+            ReleaseSceneQuietly(previous);
             throw;
         }
 
-        SceneWillChange?.Invoke(
-            new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
-        );
-        _currentScene.OnStart();
+        // 新しいシーンの OnStart の後に、前のシーンを解放する
+        try
+        {
+            SceneWillChange?.Invoke(
+                new SceneTransitionEventArgs(SceneTransitionType.Load, previous, _currentScene)
+            );
+            _currentScene.OnStart();
+        }
+        catch
+        {
+            // 元の例外を優先し、解放の例外は捨てる
+            ReleaseSceneQuietly(previous);
+            throw;
+        }
+
+        ReleaseScene(previous);
     }
 
     /// <summary>
@@ -439,7 +484,7 @@ public sealed class PrometeApp : IDisposable
 
         try
         {
-            _currentScene = GetScene(typeScene);
+            _currentScene = CreateScene(typeScene);
         }
         catch
         {
@@ -471,22 +516,39 @@ public sealed class PrometeApp : IDisposable
         var previous = _currentScene;
         _currentScene?.OnDestroy();
         _currentScene = _sceneStack.Pop();
-        SceneWillChange?.Invoke(
-            new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene)
-        );
-        _currentScene.OnResume();
+
+        // 下のシーンの OnResume の後に、破棄したシーンを解放する
+        try
+        {
+            SceneWillChange?.Invoke(
+                new SceneTransitionEventArgs(SceneTransitionType.Pop, previous, _currentScene)
+            );
+            _currentScene.OnResume();
+        }
+        catch
+        {
+            // 元の例外を優先し、解放の例外は捨てる
+            ReleaseSceneQuietly(previous);
+            throw;
+        }
+
+        ReleaseScene(previous);
         return true;
     }
 
     /// <summary>
-    /// スタックにある全てのシーンを破棄します。
+    /// スタックにある全てのシーンを破棄します。1 つのシーンで例外が出ても残りを処理し、最後に例外をまとめて投げます。
     /// </summary>
     public void ClearSceneStack()
     {
+        List<Exception> errors = [];
         while (_sceneStack.TryPop(out var scene))
         {
-            scene.OnDestroy();
+            CollectErrors(errors, scene.OnDestroy);
+            CollectErrors(errors, () => ReleaseScene(scene));
         }
+
+        ThrowCollected(errors);
     }
 
     /// <summary>
@@ -634,11 +696,16 @@ public sealed class PrometeApp : IDisposable
     /// <remarks>アプリケーションから直接呼び出さないでください。</remarks>
     public void OnDestroy()
     {
-        _currentScene?.OnDestroy();
-        ClearSceneStack();
+        // 途中の例外で後続の終了処理を止めず、最後に例外をまとめて投げる
+        List<Exception> errors = [];
+        var current = _currentScene;
+        CollectErrors(errors, () => current?.OnDestroy());
+        CollectErrors(errors, () => ReleaseScene(current));
+        CollectErrors(errors, ClearSceneStack);
+        CollectErrors(errors, Dispose);
+        CollectErrors(errors, () => Destroy?.Invoke());
 
-        Dispose();
-        Destroy?.Invoke();
+        ThrowCollected(errors);
     }
 
     private void RegisterBackend(BackendBase backend, WindowOptions opts)
@@ -730,6 +797,122 @@ public sealed class PrometeApp : IDisposable
     }
 
     /// <summary>
+    /// シーンを生成し、フックに生成の開始・成功・失敗を知らせます。
+    /// </summary>
+    /// <param name="typeScene">生成するシーンの型。</param>
+    /// <returns>生成されたシーン。</returns>
+    private Scene CreateScene(Type typeScene)
+    {
+        foreach (var hook in _sceneLifecycleHooks)
+        {
+            hook.OnSceneConstructing();
+        }
+
+        Scene scene;
+        try
+        {
+            scene = GetScene(typeScene);
+        }
+        catch
+        {
+            // 元の生成の例外を優先し、フックの例外は捨てる
+            InvokeHooksQuietly(hook => hook.OnSceneConstructionFailed());
+            throw;
+        }
+
+        foreach (var hook in _sceneLifecycleHooks)
+        {
+            hook.OnSceneConstructed(scene);
+        }
+
+        return scene;
+    }
+
+    /// <summary>
+    /// フックに、シーンが使われなくなったことを知らせます。<see langword="null"/> の場合は何もしません。
+    /// </summary>
+    /// <param name="scene">使われなくなったシーン。</param>
+    private void ReleaseScene(Scene? scene)
+    {
+        if (scene is null)
+            return;
+
+        InvokeHooks(hook => hook.OnSceneReleased(scene));
+    }
+
+    /// <summary>
+    /// 元の例外を優先する場面で、フックに解放を知らせ、フックの例外は捨てます。<see langword="null"/> の場合は何もしません。
+    /// </summary>
+    /// <param name="scene">使われなくなったシーン。</param>
+    private void ReleaseSceneQuietly(Scene? scene)
+    {
+        if (scene is null)
+            return;
+
+        InvokeHooksQuietly(hook => hook.OnSceneReleased(scene));
+    }
+
+    /// <summary>
+    /// 全てのフックに通知します。1 つのフックが例外を投げても残りのフックを呼び、最後に例外をまとめて投げます。
+    /// </summary>
+    /// <param name="call">各フックに対して行う通知。</param>
+    private void InvokeHooks(Action<ISceneLifecycleHook> call)
+    {
+        List<Exception> errors = [];
+        foreach (var hook in _sceneLifecycleHooks)
+        {
+            CollectErrors(errors, () => call(hook));
+        }
+
+        ThrowCollected(errors);
+    }
+
+    /// <summary>
+    /// <see cref="InvokeHooks"/> を行い、そこで投げられた例外を捨てます。元の例外を優先する場面でだけ使います。
+    /// </summary>
+    /// <param name="call">各フックに対して行う通知。</param>
+    private void InvokeHooksQuietly(Action<ISceneLifecycleHook> call)
+    {
+        try
+        {
+            InvokeHooks(call);
+        }
+        catch
+        {
+            // 呼び出し元が投げる元の例外を優先するため、ここでは何もしない
+        }
+    }
+
+    /// <summary>
+    /// 処理を実行し、投げられた例外を <paramref name="errors"/> に追加します。
+    /// </summary>
+    /// <param name="errors">集めた例外の一覧。</param>
+    /// <param name="action">実行する処理。</param>
+    private void CollectErrors(List<Exception> errors, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception ex)
+        {
+            errors.Add(ex);
+        }
+    }
+
+    /// <summary>
+    /// 集めた例外を投げます。1 つで <see cref="AggregateException"/> でなければそのまま、それ以外は <see cref="AggregateException"/> にまとめて平らにします。何も無ければ何もしません。
+    /// </summary>
+    /// <param name="errors">集めた例外の一覧。</param>
+    private void ThrowCollected(List<Exception> errors)
+    {
+        if (errors.Count == 1 && errors[0] is not AggregateException)
+            ExceptionDispatchInfo.Capture(errors[0]).Throw();
+        else if (errors.Count > 0)
+            throw new AggregateException(errors).Flatten();
+    }
+
+    /// <summary>
     /// シーンを使用せずにアプリケーションを実行する際に使用されるデフォルトの空のシーン。
     /// </summary>
     [IgnoredScene]
@@ -807,15 +990,6 @@ public sealed class PrometeApp : IDisposable
         }
 
         /// <summary>
-        /// 指定したインターフェースと実装型のプラグインを追加します。
-        /// </summary>
-        /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
-        /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
-        /// <returns>このビルダーインスタンス。</returns>
-        /// <remarks>
-        /// <inheritdoc cref="Use{T}" path="/remarks" />
-        /// </remarks>
-        /// <summary>
         /// 生成済みのプラグインを追加します。
         /// </summary>
         /// <typeparam name="TPlugin">プラグインとして公開する型。</typeparam>
@@ -836,6 +1010,15 @@ public sealed class PrometeApp : IDisposable
             return this;
         }
 
+        /// <summary>
+        /// 指定したインターフェースと実装型のプラグインを追加します。
+        /// </summary>
+        /// <typeparam name="TPlugin">プラグインのインターフェース型。</typeparam>
+        /// <typeparam name="TImpl">プラグインの実装型。</typeparam>
+        /// <returns>このビルダーインスタンス。</returns>
+        /// <remarks>
+        /// <inheritdoc cref="Use{T}()" path="/remarks" />
+        /// </remarks>
         public PrometeAppBuilder Use<
             TPlugin,
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TImpl
@@ -853,9 +1036,42 @@ public sealed class PrometeApp : IDisposable
         {
             // 描画ループはコマンドキューを前提とするため、バックエンドを問わず登録する
             _services.TryAddSingleton<RenderCommandQueue>();
+
+            // 利用者の IAudioDecoder は Build より前に登録されるため、列挙では標準のものより先に並ぶ
+            _services.AddSingleton<IAudioDecoder, WaveAudioDecoder>();
+            _services.AddSingleton<IAudioDecoder, VorbisAudioDecoder>();
+
+            // 単一の解決で使うので TryAdd にする。バックエンド (Web) が Build より前に登録した実装を上書きしないため
+            _services.TryAddSingleton<IAssetManifestLoader, DesktopAssetManifestLoader>();
             var app = new PrometeApp(_services, _pluginTypes, _sceneAssemblies);
             app.RegisterBackend(new T(), opts ?? WindowOptions.Default);
             return app;
+        }
+
+        /// <summary>
+        /// ファクトリを使ってプラグインを追加します。アセンブリ内部の拡張メソッドから使います。
+        /// </summary>
+        /// <typeparam name="T">プラグインの型。<see cref="IDisposable"/> などを実装していれば、アプリの開始・破棄の対象になります。</typeparam>
+        /// <param name="factory">インスタンスを作る処理。</param>
+        /// <returns>このビルダーインスタンス。</returns>
+        internal PrometeAppBuilder UseFactory<T>(Func<IServiceProvider, T> factory)
+            where T : class
+        {
+            ArgumentNullException.ThrowIfNull(factory);
+
+            _services.AddSingleton(factory);
+            CheckAndAddPluginTypes(typeof(T));
+            return this;
+        }
+
+        /// <summary>
+        /// 指定した型のサービスが既に登録されているかどうかを返します。
+        /// </summary>
+        /// <typeparam name="T">確認する型。</typeparam>
+        /// <returns>登録されていれば <see langword="true"/>。</returns>
+        internal bool IsRegistered<T>()
+        {
+            return _services.Any(descriptor => descriptor.ServiceType == typeof(T));
         }
 
         /// <summary>

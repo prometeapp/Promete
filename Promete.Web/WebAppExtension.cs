@@ -1,4 +1,6 @@
+using Promete.Assets.Infrastructure;
 using Promete.Backends.GL;
+using Promete.Web.Assets;
 using Promete.Windowing;
 
 namespace Promete.Web;
@@ -23,6 +25,9 @@ public static class WebAppExtension
     )
     {
         WebBackend.PendingOptions = web ?? WebOptions.Default;
+
+        // Build の中の TryAdd より先に登録する。コアの既定のローダー (デスクトップ用) が使われないようにするため
+        builder.Use<IAssetManifestLoader, WebAssetManifestLoader>();
         return builder.BuildWithGLBackend<WebBackend>(opts);
     }
 }

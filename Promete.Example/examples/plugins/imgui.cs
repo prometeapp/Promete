@@ -1,4 +1,5 @@
 using System.Drawing;
+using Promete.Assets;
 using Promete.Example.Kernel;
 using Promete.ImGui;
 using Promete.Input;
@@ -9,7 +10,7 @@ using UI = ImGuiNET.ImGui;
 namespace Promete.Example.examples.plugins;
 
 [Demo("/plugins/imgui.demo", "ImGui example")]
-public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
+public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui, AssetManager assets) : Scene
 {
     private Sprite? _ichigo;
 
@@ -29,7 +30,6 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
     {
         imgui.Render -= OnRender;
         _ichigo?.Destroy();
-        _ichigo?.Texture?.Dispose();
     }
 
     private void OnRender()
@@ -62,7 +62,7 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
     {
         if (_ichigo == null)
         {
-            var texture = App.TextureFactory.Load("./assets/ichigo.png");
+            var texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
             _ichigo = new Sprite(texture).Location(16, 16).Scale(4, 4);
             Root.Add(_ichigo);
         }
@@ -70,7 +70,6 @@ public class ImGuiExampleScene(Keyboard keyboard, ImGuiPlugin imgui) : Scene
         {
             Root.Remove(_ichigo);
             _ichigo.Destroy();
-            _ichigo.Texture?.Dispose();
             _ichigo = null;
         }
     }
