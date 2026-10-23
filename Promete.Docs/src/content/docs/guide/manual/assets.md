@@ -768,6 +768,7 @@ var app = PrometeApp.Create()
 | PROMETE1005 | エラー | `Package` の名前に、英数字・`_`・`-` 以外の文字がある | 使える文字だけにしてください |
 | PROMETE1006 | エラー | `Obfuscate` が `true` / `false` のどれでもない | `true` か `false` にしてください |
 | PROMETE1007 | エラー | 宣言したファイルが見つからない | `Include` のパスと、ファイル名の綴りを確認してください |
+| PROMETE1008 | エラー | 大文字・小文字だけが違うパッケージ名がある (例: `Main` と既定の `main`) | 綴りを揃えてください。MSBuild はこれらを同じパッケージとして扱えず、片方のアセットが失われます |
 | PROMETE1010 | エラー | `PrometeAssetMode` が `Folder` / `Package` のどちらでもない | `Folder` か `Package` にしてください |
 | PROMETE1011 | 警告 | Folder モードのまま publish した | `PrometeAssetMode=Package` で publish してください。Folder のマニフェストは publish に含まれません |
 | PROMETE1012 | 警告 | ライブラリやテストプロジェクトに `PrometeAsset` がある (無視されます) | ゲームの実行プロジェクトで宣言してください。テストは `UseAssets(typeof(GameScene).Assembly)` を使います |

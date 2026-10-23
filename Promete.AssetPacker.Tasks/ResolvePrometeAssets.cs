@@ -83,11 +83,54 @@ public sealed class ResolvePrometeAssets : Task
             resolved.Add(output);
         }
 
+        if (!CheckPackageNameCase(resolved))
+        {
+            succeeded = false;
+        }
+
         resolved.Sort(
             (a, b) =>
                 string.CompareOrdinal(a.GetMetadata("LogicalPath"), b.GetMetadata("LogicalPath"))
         );
         ResolvedAssets = resolved.ToArray();
+        return succeeded;
+    }
+
+    /// <summary>
+    /// 大文字・小文字だけが違うパッケージ名が混ざっていないかを確かめます。綴りの組ごとに 1 回だけ報告します。
+    /// </summary>
+    /// <param name="resolved">検証を通った item。</param>
+    /// <returns>違う綴りが無ければ <see langword="true"/>。</returns>
+    private bool CheckPackageNameCase(List<ITaskItem> resolved)
+    {
+        var firstSpellingByFold = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var reportedPairs = new HashSet<string>(StringComparer.Ordinal);
+        var succeeded = true;
+        foreach (var item in resolved)
+        {
+            var package = item.GetMetadata("Package");
+            if (!firstSpellingByFold.TryGetValue(package, out var first))
+            {
+                firstSpellingByFold.Add(package, package);
+                continue;
+            }
+
+            if (string.Equals(first, package, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (reportedPairs.Add(first + "\n" + package))
+            {
+                LogError(
+                    ErrorCodes.PackageNameCaseConflict,
+                    $"パッケージ名 '{first}' と '{package}' は大文字・小文字だけが違います。綴りを揃えてください。"
+                );
+            }
+
+            succeeded = false;
+        }
+
         return succeeded;
     }
 

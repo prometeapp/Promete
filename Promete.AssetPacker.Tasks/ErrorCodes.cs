@@ -41,6 +41,11 @@ internal static class ErrorCodes
     public const string AssetFileNotFound = "PROMETE1007";
 
     /// <summary>
+    /// 大文字・小文字だけが違うパッケージ名が混ざっている (例: <c>Main</c> と <c>main</c>)。MSBuild の重複除去と書き出しが大文字・小文字を区別しないため、アセットが黙って失われる。
+    /// </summary>
+    public const string PackageNameCaseConflict = "PROMETE1008";
+
+    /// <summary>
     /// パッケージの書き出しに失敗した。
     /// </summary>
     public const string PackFailed = "PROMETE1020";
