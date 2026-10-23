@@ -49,6 +49,9 @@ jobs:
           test -f "out/wwwroot/$f" || { echo "::error::out/wwwroot/$f が無い"; exit 1; }
         done
         ls out/wwwroot/_framework/dotnet.native.*.wasm
+        # 参照先の Promete.Example (Release では Package) のアセットは、wwwroot の外も含めて publish に残ってはいけない
+        leaked=$(find out \( -name 'Promete.Example.*.prmtpak' -o -name 'Promete.Example.promete-assets.json' \))
+        test -z "$leaked" || { echo "::error::参照先の Promete.Example のアセットが publish に残っている: $leaked"; exit 1; }
 
     # Package モードの公開。パッケージは wwwroot の直下に置かれ、wwwroot/assets は作られない
     - name: Publish (Release, Package)
@@ -64,6 +67,8 @@ jobs:
         test -f out-package/wwwroot/Promete.Web.Example.main.prmtpak || { echo "::error::Promete.Web.Example.main.prmtpak が無い"; exit 1; }
         test ! -e out-package/wwwroot/assets || { echo "::error::Package モードなのに wwwroot/assets がある"; exit 1; }
         grep -q '"kind":"package"' out-package/wwwroot/promete-assets.json || { echo "::error::promete-assets.json に package の項目が無い"; exit 1; }
+        leaked=$(find out-package \( -name 'Promete.Example.*.prmtpak' -o -name 'Promete.Example.promete-assets.json' \))
+        test -z "$leaked" || { echo "::error::参照先の Promete.Example のアセットが publish に残っている: $leaked"; exit 1; }
 
     # Web の MSBuild 統合テスト。wasm-tools のワークロードを入れたこの環境で回す
     - name: Test (MSBuild integration, Web)

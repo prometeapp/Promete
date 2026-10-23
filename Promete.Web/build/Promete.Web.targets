@@ -187,7 +187,8 @@
         参照先の実行プロジェクト (デスクトップの Promete.Example など) から伝播してきた、Promete のマニフェストとパッケージを
         出力と publish から外す。Web のアセットは PrometeAssetFile が届けるので、デスクトップ側のファイルは要らない。
         伝播の途中でカスタムのメタデータは落ちるので、名前の末尾で見分ける。ただし、このプロジェクトのフォルダの中のファイルは
-        利用者自身の .prmtpak かもしれないので外さない。publish の一覧は出力の一覧から作られるので、ここで両方を外せる。
+        利用者自身の .prmtpak かもしれないので外さない。publish の一覧 (ResolvedFileToPublish) は出力の一覧からは作られないので、
+        _PrometeRemovePropagatedPublishAssets で別に外す。
     -->
     <Target Name="_PrometeRemovePropagatedAssets" AfterTargets="GetCopyToOutputDirectoryItems">
         <!--
@@ -221,6 +222,35 @@
             <_SourceItemsToCopyToOutputDirectoryAlways Remove="@(_PrometePropagatedAsset)" />
             <_SourceItemsToCopyToOutputDirectoryIfDifferent Remove="@(_PrometePropagatedAsset)" />
             <AllItemsFullPathWithTargetPath Remove="@(_PrometePropagatedAsset)" />
+        </ItemGroup>
+    </Target>
+
+    <!--
+        publish の一覧 (ResolvedFileToPublish) から、参照先から伝播した Promete のマニフェストとパッケージを外す。
+        publish の一覧は CopyToPublishDirectory から別に作られるので、出力の一覧を外すだけでは残ってしまう。
+        判定は _PrometeRemovePropagatedAssets と同じ。ただし、このプロジェクトのフォルダの中のファイルは外さない
+        (Web 自身のパッケージは obj/ にあり、静的 Web アセットとして wwwroot に入る)。
+    -->
+    <Target
+        Name="_PrometeRemovePropagatedPublishAssets"
+        AfterTargets="ComputeResolvedFilesToPublishList"
+    >
+        <ItemGroup>
+            <_PrometePublishAssetCandidate Include="@(ResolvedFileToPublish)">
+                <_PrometeIsAssetFile>$([System.Text.RegularExpressions.Regex]::IsMatch('%(RelativePath)', '\.(prmtpak|promete-assets\.json)$'))</_PrometeIsAssetFile>
+                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith($([MSBuild]::EnsureTrailingSlash('$(MSBuildProjectDirectory)'))))</_PrometeIsLocal>
+            </_PrometePublishAssetCandidate>
+        </ItemGroup>
+
+        <ItemGroup>
+            <_PrometePropagatedPublishAsset
+                Include="@(_PrometePublishAssetCandidate)"
+                Condition="'%(_PrometePublishAssetCandidate._PrometeIsAssetFile)' == 'true' and '%(_PrometePublishAssetCandidate._PrometeIsLocal)' != 'true'"
+            />
+        </ItemGroup>
+
+        <ItemGroup>
+            <ResolvedFileToPublish Remove="@(_PrometePropagatedPublishAsset)" />
         </ItemGroup>
     </Target>
 </Project>
