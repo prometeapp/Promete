@@ -198,15 +198,15 @@
         <ItemGroup>
             <_PrometeAssetCopyCandidate Include="@(_SourceItemsToCopyToOutputDirectory)">
                 <_PrometeIsAssetFile>$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '\.(prmtpak|promete-assets\.json)$'))</_PrometeIsAssetFile>
-                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith('$(MSBuildProjectDirectory)\'))</_PrometeIsLocal>
+                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith($([MSBuild]::EnsureTrailingSlash('$(MSBuildProjectDirectory)'))))</_PrometeIsLocal>
             </_PrometeAssetCopyCandidate>
             <_PrometeAssetCopyCandidate Include="@(_SourceItemsToCopyToOutputDirectoryAlways)">
                 <_PrometeIsAssetFile>$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '\.(prmtpak|promete-assets\.json)$'))</_PrometeIsAssetFile>
-                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith('$(MSBuildProjectDirectory)\'))</_PrometeIsLocal>
+                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith($([MSBuild]::EnsureTrailingSlash('$(MSBuildProjectDirectory)'))))</_PrometeIsLocal>
             </_PrometeAssetCopyCandidate>
             <_PrometeAssetCopyCandidate Include="@(_SourceItemsToCopyToOutputDirectoryIfDifferent)">
                 <_PrometeIsAssetFile>$([System.Text.RegularExpressions.Regex]::IsMatch('%(TargetPath)', '\.(prmtpak|promete-assets\.json)$'))</_PrometeIsAssetFile>
-                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith('$(MSBuildProjectDirectory)\'))</_PrometeIsLocal>
+                <_PrometeIsLocal>$([System.String]::Copy('%(FullPath)').StartsWith($([MSBuild]::EnsureTrailingSlash('$(MSBuildProjectDirectory)'))))</_PrometeIsLocal>
             </_PrometeAssetCopyCandidate>
         </ItemGroup>
 
