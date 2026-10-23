@@ -116,17 +116,18 @@
     </ItemGroup>
 
     <!--
-        デスクトップの Package モードのパッケージを出力先に置く item。評価時に宣言するのは、参照元 (テスト → ゲーム) の
+        Package モードのパッケージを宣言する item。評価時に宣言するのは、参照元 (テスト → ゲーム) の
         GetCopyToOutputDirectoryItems に載せるため。名前は _PrometeResolveAssetsCore の _PrometeAssetPackageFile と同じ規則で作る。
-        Embed のときは出力先に置かず、EmbeddedResource としてアセンブリに入れる (コンパイル前に作るのは PrometeAssetsBuild)。
+        出力先に置く None はデスクトップだけ (Web のパッケージは Promete.Web の targets が静的 Web アセットとして届ける)。
+        EmbeddedResource は Web も含め、Embed のときに宣言する (コンパイル前に作るのは PrometeAssetsBuild)。
         変換で作った item は元の PrometeAsset のメタデータを引き継ぐので、TargetPath と Link を明示する。
         WithCulture=false は、パッケージ名が ja などのときに AssignCulture がサテライトのリソースとして扱うのを防ぐ。
     -->
-    <ItemGroup Condition="'$(_PrometeAssetsSupported)' == 'true' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true' and '@(PrometeAsset)' != '' and '$(_PrometeAssetIsWeb)' != 'true' and '$(PrometeAssetMode)' == 'Package'">
+    <ItemGroup Condition="'$(_PrometeAssetsSupported)' == 'true' and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe') and '$(IsTestProject)' != 'true' and '@(PrometeAsset)' != '' and '$(PrometeAssetMode)' == 'Package'">
         <_PrometeAssetDeclaredPackage Include="@(PrometeAsset->'%(Package)'->Distinct())" />
 
         <None
-            Condition="'$(PrometeAssetEmbed)' != 'true'"
+            Condition="'$(PrometeAssetEmbed)' != 'true' and '$(_PrometeAssetIsWeb)' != 'true'"
             Include="@(_PrometeAssetDeclaredPackage->'$(IntermediateOutputPath)$(AssemblyName).%(Identity)$(_PrometeAssetPackageExtension)')"
             Link="%(Filename)%(Extension)"
             TargetPath="%(Filename)%(Extension)"
