@@ -46,9 +46,20 @@ public sealed class WritePrometeAssetManifest : Task
     public override bool Execute()
     {
         Written = false;
-        var outputPath = Path.GetFullPath(OutputFile);
         try
         {
+            // 実行時のリーダーは重複したキーを不正とするので、壊れたマニフェストは書かず既存のファイルも残す
+            var duplicate = FindDuplicateLogicalPath();
+            if (duplicate != null)
+            {
+                LogError(
+                    ErrorCodes.ManifestWriteFailed,
+                    $"論理パス '{duplicate}' を持つ item が複数あるため、マニフェストを書き出せません"
+                );
+                return false;
+            }
+
+            var outputPath = Path.GetFullPath(OutputFile);
             var bytes = BuildManifest();
             if (File.Exists(outputPath) && IsSameContent(outputPath, bytes))
             {
@@ -65,14 +76,38 @@ public sealed class WritePrometeAssetManifest : Task
             Written = true;
             return true;
         }
-        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is IOException
+                || ex is UnauthorizedAccessException
+                || ex is ArgumentException
+                || ex is NotSupportedException
+            )
         {
             LogError(
                 ErrorCodes.ManifestWriteFailed,
-                $"マニフェストを書き出せません '{outputPath}': {ex.Message}"
+                $"マニフェストを書き出せません '{OutputFile}': {ex.Message}"
             );
             return false;
         }
+    }
+
+    /// <summary>
+    /// 論理パスが序数で重複している最初のものを探します。
+    /// </summary>
+    /// <returns>重複している論理パス。重複が無ければ <see langword="null"/>。</returns>
+    private string? FindDuplicateLogicalPath()
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var item in Assets)
+        {
+            var logical = item.GetMetadata("LogicalPath");
+            if (!seen.Add(logical))
+            {
+                return logical;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
