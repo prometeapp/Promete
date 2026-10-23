@@ -45,7 +45,7 @@ public static partial class Program
             .Use<ConsoleLayer>()
             .Use<BackButton>()
             .Use<ViewportSize>()
-            .UseAssets(typeof(Program).Assembly, o => o.MountFolder("/assets", "assets"))
+            .UseAssets(typeof(Program).Assembly)
             .BuildWithWeb(WindowOptions.Default with { Title = "Promete.Web Example" });
 
         switch (query["scene"])

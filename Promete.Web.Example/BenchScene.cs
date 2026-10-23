@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using Promete;
+using Promete.Assets;
 using Promete.Graphics;
 using Promete.Graphics.Fonts;
 using Promete.Nodes;
@@ -11,7 +12,7 @@ namespace Promete.Web.Example;
 /// 描画性能の計測用シーン。スプライトを 20000 個動かしながら、ウォームアップの 30 フレームの後、10 秒間の fps の最小・最大・平均を出す。
 /// 結果はコンソールと <see cref="Report"/> に出る。インタプリタと AOT の比較などに使う。
 /// </summary>
-public class BenchScene : Scene
+public class BenchScene(AssetManager assets) : Scene
 {
     private const int SpriteCount = 20000;
     private const int WarmupFrames = 30;
@@ -33,7 +34,7 @@ public class BenchScene : Scene
 
     public override void OnStart()
     {
-        var texture = App.TextureFactory.Load("assets/ichigo.png");
+        var texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         var size = App.View.Size;
         for (var i = 0; i < SpriteCount; i++)
         {

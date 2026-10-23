@@ -1,5 +1,6 @@
 using System.Drawing;
 using Promete;
+using Promete.Assets;
 using Promete.Graphics.Fonts;
 using Promete.Input;
 using Promete.Nodes;
@@ -9,7 +10,7 @@ namespace Promete.Web.Example;
 /// <summary>
 /// 入力の検証用シーン。キーボード (押下中のキー、矢印キーで移動) とマウス (座標、ボタン、ホイール) を表示する。
 /// </summary>
-public class InputScene(Keyboard keyboard, Mouse mouse) : Scene
+public class InputScene(Keyboard keyboard, Mouse mouse, AssetManager assets) : Scene
 {
     private Text _keys = null!;
     private Text _mouseInfo = null!;
@@ -27,7 +28,7 @@ public class InputScene(Keyboard keyboard, Mouse mouse) : Scene
     {
         App.BackgroundColor = Color.FromArgb(24, 28, 48);
 
-        var font = Font.FromFile("assets/MisakiGothic.ttf", 16);
+        var font = assets.LoadFont("assets/MisakiGothic.ttf", 16, AssetScope.Scene);
         _keys = new Text("keys:", font, Color.White).Location(10, 10);
         _mouseInfo = new Text("mouse:", font, Color.Lime).Location(10, 40);
         _events = new Text("event:", font, Color.Gold).Location(10, 70);

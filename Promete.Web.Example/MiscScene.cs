@@ -8,7 +8,7 @@ using Promete.Nodes;
 namespace Promete.Web.Example;
 
 /// <summary>
-/// その他の検証用シーン。既定フォント、コルーチン、HttpClient による画像取得、メインスレッド判定、View の操作を調べる。
+/// その他の検証用シーン。既定フォント、コルーチン、HttpClient による目次の取得、メインスレッド判定、View の操作を調べる。
 /// </summary>
 public class MiscScene(CoroutineManager coroutine) : Scene
 {
@@ -56,13 +56,14 @@ public class MiscScene(CoroutineManager coroutine) : Scene
         yield return new WaitForTask(delay);
         Lines.Add("coroutine WaitForTask(Task.Delay): ok");
 
+        // Package モードではばらのアセットを配信しないので、どちらのモードでも配信される目次を取得する
         var http = new HttpClient { BaseAddress = new Uri(BaseAddress) };
-        var request = http.GetStreamAsync("assets/ichigo.png");
+        var request = http.GetStreamAsync("promete-assets.json");
         yield return new WaitForTask(request);
         if (request.IsFaulted)
         {
             Lines.Add(
-                "HttpClient GET assets/ichigo.png: "
+                "HttpClient GET promete-assets.json: "
                     + request.Exception!.GetBaseException().GetType().Name
                     + " "
                     + request.Exception.GetBaseException().Message
@@ -70,9 +71,8 @@ public class MiscScene(CoroutineManager coroutine) : Scene
             yield break;
         }
 
-        var texture = App.TextureFactory.Load(request.Result);
-        Root.Add(new Sprite(texture).Location(20, 20).Scale(4, 4));
-        Lines.Add($"HttpClient GET + TextureFactory.Load(Stream): ok {texture.Size}");
+        using var manifest = request.Result;
+        Lines.Add("HttpClient GET promete-assets.json: ok");
 
         Task.Run(() => Lines.Add("Task.Run: ok (IsMainThread=" + App.IsMainThread() + ")"));
         yield return new WaitForSeconds(0.3f);

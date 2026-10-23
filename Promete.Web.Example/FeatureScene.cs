@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Numerics;
 using Promete;
+using Promete.Assets;
 using Promete.Graphics;
 using Promete.Nodes;
 
@@ -9,7 +10,7 @@ namespace Promete.Web.Example;
 /// <summary>
 /// 描画系ノードを 1 画面に並べた検証用シーン。ノードの生成時に起きた例外は <see cref="Failures"/> に記録する。
 /// </summary>
-public class FeatureScene : Scene
+public class FeatureScene(AssetManager assets) : Scene
 {
     private const int CellWidth = 160;
     private const int CellHeight = 120;
@@ -198,7 +199,7 @@ public class FeatureScene : Scene
 
     private void BuildSprite(Container c)
     {
-        var texture = App.TextureFactory.Load("/assets/ichigo.png");
+        var texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         c.Add(new Sprite(texture).Location(8, 8).Scale(3, 3));
         c.Add(new Sprite(texture, Color.FromArgb(255, 80, 200, 255)).Location(64, 8).Scale(3, 3));
         _rotating = new Sprite(texture) { Pivot = (0.5f, 0.5f), Scale = (3, 3) }.Location(120, 40);
@@ -215,7 +216,7 @@ public class FeatureScene : Scene
 
     private void BuildMask(Container c, bool useAlphaMask)
     {
-        var mask = App.TextureFactory.Load("/assets/circle_mask.png");
+        var mask = assets.LoadTexture("assets/circle_mask.png", AssetScope.Scene);
         var texture = App.TextureFactory.CreateSolid(Color.Orange, (32, 32));
         var masked = new MaskedContainer(mask, useAlphaMask)
             .Location(40, 20)
@@ -234,7 +235,7 @@ public class FeatureScene : Scene
 
     private void BuildDeformed(Container c)
     {
-        var texture = App.TextureFactory.Load("/assets/ichigo.png");
+        var texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         _deformed = new DeformedSprite(texture, (0, 0), (96, 0), (0, 80), (96, 80)).Location(
             32,
             20
@@ -244,13 +245,13 @@ public class FeatureScene : Scene
 
     private void BuildNineSlice(Container c)
     {
-        var sliced = App.TextureFactory.Load9Sliced("/assets/rect.png", 16, 16, 16, 16);
+        var sliced = assets.Load9Sliced("assets/rect.png", 16, 16, 16, 16, AssetScope.Scene);
         c.Add(new NineSliceSprite(sliced).Location(10, 10).Size(140, 90));
     }
 
     private void BuildTilemap(Container c)
     {
-        var textures = App.TextureFactory.LoadSpriteSheet("/assets/tiles.png", 4, 1, (16, 16));
+        var textures = assets.LoadSpriteSheet("assets/tiles.png", 4, 1, (16, 16), AssetScope.Scene);
         var tiles = textures.Select(t => new Tile(t)).ToArray();
         var map = new Tilemap((16, 16));
         for (var x = 0; x < 8; x++)
@@ -262,7 +263,7 @@ public class FeatureScene : Scene
 
     private void BuildMaterial(Container c)
     {
-        var texture = App.TextureFactory.Load("/assets/ichigo.png");
+        var texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         var sepia = new Material(
             ShaderProgram.Create().Vertex(InstancedVertexShader).Fragment(SepiaFragment).Compile()
         );
@@ -294,7 +295,7 @@ public class FeatureScene : Scene
         if (!App.IsFrameBufferSupported)
             throw new NotSupportedException("IsFrameBufferSupported = false");
 
-        var texture = App.TextureFactory.Load("/assets/ichigo.png");
+        var texture = assets.LoadTexture("assets/ichigo.png", AssetScope.Scene);
         _frameBuffer = new Graphics.FrameBuffer(64, 64) { BackgroundColor = Color.White };
         _frameBufferContent = new Sprite(texture).Location(10, 10);
         _frameBuffer.Add(_frameBufferContent);
